@@ -68,13 +68,26 @@ jobs:
             typesense/typesense:27.1 \
             --data-dir=/data \
             --api-key=xyz
+          
+          echo "Typesense container started, checking logs..."
+          sleep 2
+          docker logs typesense
 
       - name: Wait for Typesense
         run: |
+          timeout=60
+          count=0
           until curl -f http://localhost:8108/health; do
-            echo "Waiting for typesense..."
+            if [ $count -ge $timeout ]; then
+              echo "Timeout waiting for Typesense"
+              docker logs typesense
+              exit 1
+            fi
+            echo "Waiting for typesense... ($count/$timeout)"
             sleep 1
+            count=$((count + 1))
           done
+          echo "Typesense is ready!"
 
       - name: Reset Typesense
         run: |
