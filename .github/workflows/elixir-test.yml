@@ -32,19 +32,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
-      typesense:
-        image: typesense/typesense:27.1
-        ports:
-          - 8108:8108
-        env:
-          TYPESENSE_API_KEY: xyz
-        options: >-
-          --health-cmd "curl -f http://localhost:8108/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-          --tmpfs /data
 
     strategy:
       matrix:
@@ -72,6 +59,15 @@ jobs:
         run: |
           mix ecto.create
           mix ecto.migrate
+
+      - name: Start Typesense
+        run: |
+          docker run -d \
+            --name typesense \
+            -p 8108:8108 \
+            typesense/typesense:27.1 \
+            --data-dir=/data \
+            --api-key=xyz
 
       - name: Wait for Typesense
         run: |
