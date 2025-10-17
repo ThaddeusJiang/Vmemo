@@ -65,6 +65,7 @@ jobs:
           docker run -d \
             --name typesense \
             -p 8108:8108 \
+            --tmpfs /data:rw,size=512m \
             typesense/typesense:27.1 \
             --data-dir=/data \
             --api-key=xyz
