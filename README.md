@@ -20,5 +20,13 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/H3EL85)
 
+## Lint
+
+To check code formatting:
+
+```bash
+mix format --check-formatted
+```
+
 ## Changelog
 TODO:
