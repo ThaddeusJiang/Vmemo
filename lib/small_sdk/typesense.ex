@@ -184,15 +184,22 @@ defmodule SmallSdk.Typesense do
         # }
 
         documents =
-          data["results"] |> hd() |> Map.get("hits") |> Enum.map(&Map.get(&1, "document"))
+          case data["results"] do
+            [%{"hits" => hits} | _] when is_list(hits) ->
+              hits |> Enum.map(&Map.get(&1, "document"))
+
+            _ ->
+              []
+          end
 
         {:ok, documents}
 
       {:error, "Not Found"} ->
-        {:ok, %{"results" => []}}
+        {:ok, []}
 
-      _ ->
-        {:error, "Request failed"}
+      error ->
+        Logger.warning("Typesense multi search failed: #{inspect(error)}")
+        {:ok, []}
     end
   end
 
