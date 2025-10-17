@@ -14,6 +14,7 @@ ENV MIX_ENV="prod"
 COPY . .
 # install node modules
 RUN cd assets && npm install
+RUN mix deps.get
 RUN mix compile
 RUN mix assets.deploy
 
