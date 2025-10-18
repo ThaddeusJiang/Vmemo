@@ -5,7 +5,7 @@ defmodule Vmemo.MixProject do
     [
       app: :vmemo,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -34,8 +34,8 @@ defmodule Vmemo.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
-      {:phoenix, "~> 1.7.18"},
-      {:phoenix_live_view, "~> 1.0.0", override: true},
+      {:phoenix, "~> 1.8"},
+      {:phoenix_live_view, "~> 1.1", override: true},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
@@ -44,7 +44,7 @@ defmodule Vmemo.MixProject do
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.4", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.1.1",
