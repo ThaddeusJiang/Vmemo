@@ -93,7 +93,7 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Sign in")|)
+        |> element("main a", "Sign in")
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log_in")
 
@@ -108,7 +108,7 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Register")|)
+        |> element("main a", "Register")
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 
