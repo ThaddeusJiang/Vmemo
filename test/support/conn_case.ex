@@ -55,10 +55,9 @@ defmodule VmemoWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    token = Vmemo.Account.generate_user_session_token(user)
-
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user_token, token)
+    |> Plug.Conn.put_session(:user, user)
+    |> Plug.Conn.assign(:current_user, user)
   end
 end
