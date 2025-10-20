@@ -1,7 +1,7 @@
 FROM elixir:1.17.3 AS builder
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git nodejs npm \
+  apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -12,8 +12,6 @@ RUN mix do local.hex --force, local.rebar --force, deps.get --only prod
 ENV MIX_ENV="prod"
 
 COPY . .
-# install node modules
-RUN cd assets && npm install
 RUN mix deps.get
 RUN mix compile
 RUN mix assets.deploy
