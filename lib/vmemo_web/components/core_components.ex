@@ -130,20 +130,21 @@ defmodule VmemoWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "fixed bottom-2 left-2 ml-2 w-80 sm:w-96 z-50 rounded-lg p-3 ring-1",
-        @kind == :info && "bg-emerald-50 text-emerald-800 ring-emerald-500 fill-cyan-900",
-        @kind == :error && "bg-rose-50 text-rose-900 shadow-md ring-rose-500 fill-rose-900"
+        "alert fixed bottom-2 left-2 ml-2 w-80 sm:w-96 z-50",
+        @kind == :info && "alert-success",
+        @kind == :error && "alert-error"
       ]}
       phx-hook="Toast"
       {@rest}
     >
-      <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
+      <div :if={@title} class="flex items-center gap-1.5">
         <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" /> {@title}
-      </p>
-      <p class="mt-2 text-sm leading-5">{msg}</p>
-      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={gettext("close")}>
-        <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
+        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
+        <span class="font-semibold">{@title}</span>
+      </div>
+      <div class="text-sm">{msg}</div>
+      <button type="button" class="btn btn-sm btn-circle" aria-label={gettext("close")}>
+        <.icon name="hero-x-mark-solid" class="h-4 w-4" />
       </button>
     </div>
     """
@@ -217,11 +218,11 @@ defmodule VmemoWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="mt-8 space-y-4 ">
+      <div class="space-y-6">
         {render_slot(@inner_block, f)}
-        <footer :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+        <div :for={action <- @actions} class="pt-4">
           {render_slot(action, f)}
-        </footer>
+        </div>
       </div>
     </.form>
     """
@@ -250,17 +251,21 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <button
       class={[
-        "phx-submit-loading:opacity-75 ",
-        "btn",
-        @variant == "submit" && "btn-accent",
-        @variant == "ghost" && "btn-ghost ",
+        "btn rounded-2xl py-3",
+        "phx-submit-loading:opacity-75 phx-submit-loading:cursor-wait",
+        @variant == "submit" && "btn-neutral",
+        @variant == "ghost" && "btn-ghost",
         @variant == "danger" && "btn-error",
-        @variant == "outline" && "btn-outline bg-base-100 text-base-content",
+        @variant == "outline" && "btn-outline",
         @class
       ]}
       {@rest}
     >
-      {render_slot(@inner_block)}
+      <span class="phx-submit-loading:hidden">{render_slot(@inner_block)}</span>
+      <span class="phx-submit-loading:inline hidden">
+        <span class="loading loading-spinner loading-sm"></span>
+        处理中...
+      </span>
     </button>
     """
   end
@@ -332,8 +337,8 @@ defmodule VmemoWeb.CoreComponents do
       end)
 
     ~H"""
-    <div>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+    <div class="form-control">
+      <label class="label cursor-pointer">
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
           type="checkbox"
@@ -341,30 +346,37 @@ defmodule VmemoWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class="checkbox"
           {@rest}
-        /> {@label}
+        />
+        <span class="label-text ml-2">{@label}</span>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}>
+        <span class="label-text-alt text-error">{msg}</span>
+      </.error>
     </div>
     """
   end
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div>
-      <.label for={@id}>{@label}</.label>
-      <select
-        id={@id}
-        name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
-        multiple={@multiple}
-        {@rest}
-      >
-        <option :if={@prompt} value="">{@prompt}</option>
-        {Phoenix.HTML.Form.options_for_select(@options, @value)}
-      </select>
-      <.error :for={msg <- @errors}>{msg}</.error>
+    <div class="form-control w-full">
+      <div class="grid grid-cols-[80px_1fr] gap-4 items-center">
+        <.label for={@id} class="label-text">{@label}</.label>
+        <select
+          id={@id}
+          name={@name}
+          class="select select-bordered w-full rounded-2xl"
+          multiple={@multiple}
+          {@rest}
+        >
+          <option :if={@prompt} value="">{@prompt}</option>
+          {Phoenix.HTML.Form.options_for_select(@options, @value)}
+        </select>
+      </div>
+      <.error :for={msg <- @errors}>
+        <span class="label-text-alt text-error">{msg}</span>
+      </.error>
     </div>
     """
   end
@@ -372,24 +384,38 @@ defmodule VmemoWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div>
-      <.label for={@id}>{@label}</.label>
-      <input
-        type={@type}
-        name={@name}
-        id={@id}
-        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
-        ]}
-        {@rest}
-      />
-      <.error :for={msg <- @errors}>{msg}</.error>
+    <div class="form-control w-full">
+      <div class="grid grid-cols-[80px_1fr] gap-6 items-center">
+        <.label for={@id} class="label-text">{@label}</.label>
+        <input
+          type={@type}
+          name={@name}
+          id={@id}
+          value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+          class={[
+            "input input-bordered w-full rounded-2xl",
+            @errors != [] && "input-error"
+          ]}
+          autocomplete={get_autocomplete_value(@type, @name)}
+          {@rest}
+        />
+      </div>
+      <.error :for={msg <- @errors}>
+        <span class="label-text-alt text-error mt-1">{msg}</span>
+      </.error>
     </div>
     """
   end
+
+  # Helper function to set appropriate autocomplete values
+  defp get_autocomplete_value(type, _name) when type == "email", do: "email"
+  defp get_autocomplete_value(type, name) when type == "password" do
+    case name do
+      "current_password" -> "current-password"
+      _ -> "new-password"
+    end
+  end
+  defp get_autocomplete_value(_type, _name), do: nil
 
   attr :id, :string, required: true
   attr :name, :string, required: true
@@ -402,10 +428,14 @@ defmodule VmemoWeb.CoreComponents do
 
   def textarea_field(assigns) do
     ~H"""
-    <div class="grid w-full items-center gap-2">
-      <.label for={@id}>{@label}</.label>
-      <.textarea id={@id} name={@name} value={@value} />
-      <.error :for={msg <- @errors}>{msg}</.error>
+    <div class="form-control w-full">
+      <div class="grid grid-cols-[80px_1fr] gap-4 items-start">
+        <.label for={@id} class="label-text mt-2">{@label}</.label>
+        <.textarea id={@id} name={@name} value={@value} />
+      </div>
+      <.error :for={msg <- @errors}>
+        <span class="label-text-alt text-error">{msg}</span>
+      </.error>
     </div>
     """
   end
@@ -423,7 +453,7 @@ defmodule VmemoWeb.CoreComponents do
       id={@id}
       name={@name}
       class={[
-        " textarea textarea-bordered",
+        "textarea textarea-bordered w-full rounded-2xl",
         @class
       ]}
       {@rest}
@@ -435,12 +465,13 @@ defmodule VmemoWeb.CoreComponents do
   Renders a label.
   """
   attr :for, :string, default: nil
+  attr :class, :string, default: nil
   slot :inner_block, required: true
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
-      {render_slot(@inner_block)}
+    <label for={@for} class={["label", @class]}>
+      <span class="label-text">{render_slot(@inner_block)}</span>
     </label>
     """
   end
@@ -452,10 +483,10 @@ defmodule VmemoWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
-      {render_slot(@inner_block)}
-    </p>
+    <div class="alert alert-error">
+      <.icon name="hero-exclamation-circle-mini" class="h-4 w-4" />
+      <span>{render_slot(@inner_block)}</span>
+    </div>
     """
   end
 
@@ -472,10 +503,10 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
+        <h1 class="text-2xl font-bold">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
+        <p :if={@subtitle != []} class="text-base-content/70 mt-2">
           {render_slot(@subtitle)}
         </p>
       </div>
@@ -761,19 +792,18 @@ defmodule VmemoWeb.CoreComponents do
   """
   def not_found(assigns) do
     ~H"""
-    <div class="mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center sm:items-center px-6 py-24 lg:px-8">
-      <img src="/images/undraw_taken.svg" alt="not found" class="w-60 h-60 mx-auto" />
-
-      <h1 class="mt-4 text-pretty text-5xl font-semibold tracking-tight text-gray-900 sm:text-6xl">
-        Page not found
-      </h1>
-      <p class="mt-6 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">
-        Sorry, we couldn’t find the page you’re looking for.
-      </p>
-      <div class="mt-10">
-        <.link navigate="/" class="text-sm/7 font-semibold text-indigo-600">
-          <span aria-hidden="true">&larr;</span> Back to home
-        </.link>
+    <div class="hero min-h-screen">
+      <div class="hero-content text-center">
+        <div class="max-w-md">
+          <img src="/images/undraw_taken.svg" alt="not found" class="w-60 h-60 mx-auto" />
+          <h1 class="text-5xl font-bold">Page not found</h1>
+          <p class="py-6">
+            Sorry, we couldn't find the page you're looking for.
+          </p>
+          <.link navigate="/" class="btn btn-primary">
+            <span aria-hidden="true">&larr;</span> Back to home
+          </.link>
+        </div>
       </div>
     </div>
     """
@@ -788,19 +818,21 @@ defmodule VmemoWeb.CoreComponents do
   """
   def photo_note(assigns) do
     ~H"""
-    <figure class="max-w-md mx-auto  overflow-hidden ">
-      <img
-        src={@src}
-        alt={@alt}
-        class="w-full h-auto object-cover rounded-lg shadow hover:shadow-lg hover:transition-transform"
-      />
-      <figcaption class="py-2">
-        <p role="heading  font-bold">Note</p>
-        <p class="text-sm text-gray-600 mt-2">
+    <div class="card max-w-md mx-auto bg-base-100 shadow-xl rounded-3xl">
+      <figure>
+        <img
+          src={@src}
+          alt={@alt}
+          class="w-full h-auto object-cover"
+        />
+      </figure>
+      <div class="card-body">
+        <h2 class="card-title">Note</h2>
+        <p class="text-base-content/70">
           {@note}
         </p>
-      </figcaption>
-    </figure>
+      </div>
+    </div>
     """
   end
 end
