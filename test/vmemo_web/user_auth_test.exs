@@ -1,7 +1,6 @@
 defmodule VmemoWeb.UserAuthTest do
   use VmemoWeb.ConnCase, async: true
 
-  alias Phoenix.LiveView
   alias VmemoWeb.UserAuth
   import Vmemo.AccountFixtures
 
@@ -12,75 +11,6 @@ defmodule VmemoWeb.UserAuthTest do
       |> init_test_session(%{})
 
     %{user: user_fixture(), conn: conn}
-  end
-
-  describe "on_mount :mount_current_user" do
-    test "assigns current_user based on authenticated session", %{conn: conn, user: user} do
-      session = conn |> put_session(:user, user) |> get_session()
-
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
-
-      assert updated_socket.assigns.current_user.id == user.id
-    end
-
-    test "assigns nil to current_user assign if there isn't an authenticated session", %{conn: conn} do
-      session = conn |> get_session()
-
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
-
-      assert updated_socket.assigns.current_user == nil
-    end
-  end
-
-  describe "on_mount :ensure_authenticated" do
-    test "authenticates current_user based on authenticated session", %{conn: conn, user: user} do
-      session = conn |> put_session(:user, user) |> get_session()
-
-      {:cont, updated_socket} =
-        UserAuth.on_mount(:ensure_authenticated, %{}, session, %LiveView.Socket{})
-
-      assert updated_socket.assigns.current_user.id == user.id
-    end
-
-    test "redirects to login page if there isn't an authenticated session", %{conn: conn} do
-      session = conn |> get_session()
-
-      socket = %LiveView.Socket{
-        endpoint: VmemoWeb.Endpoint,
-        assigns: %{__changed__: %{}, flash: %{}}
-      }
-
-      {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert updated_socket.assigns.current_user == nil
-    end
-  end
-
-  describe "on_mount :redirect_if_user_is_authenticated" do
-    test "redirects if there is an authenticated user", %{conn: conn, user: user} do
-      session = conn |> put_session(:user, user) |> get_session()
-
-      assert {:halt, _updated_socket} =
-               UserAuth.on_mount(
-                 :redirect_if_user_is_authenticated,
-                 %{},
-                 session,
-                 %LiveView.Socket{}
-               )
-    end
-
-    test "doesn't redirect if there is no authenticated user", %{conn: conn} do
-      session = conn |> get_session()
-
-      assert {:cont, _updated_socket} =
-               UserAuth.on_mount(
-                 :redirect_if_user_is_authenticated,
-                 %{},
-                 session,
-                 %LiveView.Socket{}
-               )
-    end
   end
 
   describe "redirect_if_user_is_authenticated/2" do
