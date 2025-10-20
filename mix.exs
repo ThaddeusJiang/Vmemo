@@ -62,7 +62,12 @@ defmodule Vmemo.MixProject do
       {:bandit, "~> 1.5"},
       {:resend, "~> 0.4.0"},
       {:req, "~> 0.5.0"},
-      {:mime, "~> 2.0"}
+      {:mime, "~> 2.0"},
+      {:ash, "~> 3.4"},
+      {:ash_postgres, "~> 2.4"},
+      {:ash_phoenix, "~> 2.1"},
+      {:ash_authentication, "~> 4.0"},
+      {:ash_authentication_phoenix, "~> 2.1"}
     ]
   end
 

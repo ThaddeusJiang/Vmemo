@@ -1,5 +1,6 @@
 defmodule VmemoWeb.Router do
   use VmemoWeb, :router
+  use AshAuthentication.Phoenix.Router
 
   import VmemoWeb.UserAuth
 
@@ -10,7 +11,7 @@ defmodule VmemoWeb.Router do
     plug :put_root_layout, html: {VmemoWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_current_user
+    plug :load_from_session
   end
 
   pipeline :api do
@@ -48,17 +49,19 @@ defmodule VmemoWeb.Router do
   ## Authentication routes
 
   scope "/", VmemoWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
+    pipe_through :browser
 
-    live_session :redirect_if_user_is_authenticated,
-      on_mount: [{VmemoWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
-    end
+    sign_in_route(
+      register_path: "/register",
+      reset_path: "/reset",
+      auth_routes_prefix: "/auth",
+      on_mount: [{VmemoWeb.UserAuth, :mount_current_user}],
+      overrides: [AshAuthentication.Phoenix.Overrides.Default, VmemoWeb]
+    )
 
-    post "/users/log_in", UserSessionController, :create
+    sign_out_route AuthController
+    auth_routes AuthController, Vmemo.Account.Resources.User, path: "/auth"
+    reset_route []
   end
 
   scope "/", VmemoWeb do
@@ -82,17 +85,6 @@ defmodule VmemoWeb.Router do
     end
   end
 
-  scope "/", VmemoWeb do
-    pipe_through [:browser]
-
-    delete "/users/log_out", UserSessionController, :delete
-
-    live_session :current_user,
-      on_mount: [{VmemoWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
-    end
-  end
 
   scope "/storage/v1/", VmemoWeb do
     pipe_through :browser

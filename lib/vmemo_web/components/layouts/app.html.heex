@@ -99,8 +99,8 @@
               </li>
               <li>
                 <.link
-                  href={~p"/users/log_out"}
-                  method="delete"
+                  href={~p"/sign-out"}
+                  method="get"
                   class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
                 >
                   <svg
@@ -123,7 +123,7 @@
             </ul>
           </div>
         <% else %>
-          <a href="/users/log_in" class="btn btn-accent rounded-full" data-headlessui-state="">
+          <a href="/sign-in" class="btn btn-accent rounded-full" data-headlessui-state="">
             Get started
           </a>
         <% end %>
