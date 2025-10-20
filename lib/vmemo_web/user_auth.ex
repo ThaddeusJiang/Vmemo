@@ -4,8 +4,10 @@ defmodule VmemoWeb.UserAuth do
 
   import Plug.Conn
   import Phoenix.Controller, except: [redirect: 2, put_flash: 3]
-  import Phoenix.LiveView
   import Phoenix.Component, only: [assign_new: 3]
+  
+  alias Phoenix.LiveView
+  alias Phoenix.Controller
 
   @doc """
   Handles mounting and authenticating the current_user in LiveViews.
@@ -35,8 +37,8 @@ defmodule VmemoWeb.UserAuth do
     else
       socket =
         socket
-        |> put_flash(:error, "You must sign in to access this page.")
-        |> redirect(to: ~p"/sign-in")
+        |> LiveView.put_flash(:error, "You must sign in to access this page.")
+        |> LiveView.redirect(to: ~p"/sign-in")
 
       {:halt, socket}
     end
@@ -52,7 +54,7 @@ defmodule VmemoWeb.UserAuth do
     end)
 
     if socket.assigns.current_user do
-      {:halt, redirect(socket, to: signed_in_path(socket))}
+      {:halt, LiveView.redirect(socket, to: signed_in_path(socket))}
     else
       {:cont, socket}
     end
@@ -64,7 +66,7 @@ defmodule VmemoWeb.UserAuth do
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: signed_in_path(conn))
+      |> Controller.redirect(to: signed_in_path(conn))
       |> halt()
     else
       conn
@@ -79,9 +81,9 @@ defmodule VmemoWeb.UserAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must sign in to access this page.")
+      |> Controller.put_flash(:error, "You must sign in to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/sign-in")
+      |> Controller.redirect(to: ~p"/sign-in")
       |> halt()
     end
   end
