@@ -11,7 +11,7 @@ config :vmemo, Vmemo.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :vmemo, typesense_url: "http://localhost:8765"
+config :vmemo, typesense_url: "http://localhost:8766"
 config :vmemo, typesense_api_key: "xyz"
 
 config :vmemo, ollama_url: "http://localhost:11434"
@@ -87,7 +87,9 @@ config :phoenix_live_view,
   # Include HEEx debug annotations as HTML comments in rendered markup
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
-  enable_expensive_runtime_checks: true
+  enable_expensive_runtime_checks: true,
+  # Enable debug attributes for Tidewave
+  debug_attributes: true
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

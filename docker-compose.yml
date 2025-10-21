@@ -17,12 +17,12 @@ services:
     restart: on-failure
     hostname: typesense
     ports:
-      - "8765:8108"
+      - "8766:8108"
     volumes:
       - ./_data/ts-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
       interval: 30s
       timeout: 10s
       retries: 5
