@@ -263,8 +263,7 @@ defmodule VmemoWeb.CoreComponents do
     >
       <span class="phx-submit-loading:hidden">{render_slot(@inner_block)}</span>
       <span class="phx-submit-loading:inline hidden">
-        <span class="loading loading-spinner loading-sm"></span>
-        处理中...
+        <span class="loading loading-spinner loading-sm"></span> 处理中...
       </span>
     </button>
     """
@@ -409,12 +408,14 @@ defmodule VmemoWeb.CoreComponents do
 
   # Helper function to set appropriate autocomplete values
   defp get_autocomplete_value(type, _name) when type == "email", do: "email"
+
   defp get_autocomplete_value(type, name) when type == "password" do
     case name do
       "current_password" -> "current-password"
       _ -> "new-password"
     end
   end
+
   defp get_autocomplete_value(_type, _name), do: nil
 
   attr :id, :string, required: true
