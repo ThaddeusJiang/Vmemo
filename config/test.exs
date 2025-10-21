@@ -12,6 +12,7 @@ config :vmemo, Vmemo.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
   database: "vmemo_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
@@ -22,7 +23,9 @@ config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 config :vmemo, ollama_url: System.get_env("OLLAMA_URL", "http://localhost:11434")
 config :vmemo, ollama_api_key: System.get_env("OLLAMA_API_KEY", "local")
 
-config :vmemo, Oban, testing: :inline
+config :vmemo, Oban,
+  repo: Vmemo.Repo,
+  testing: :inline
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
