@@ -57,7 +57,7 @@ defmodule VmemoWeb.ConnCase do
   def log_in_user(conn, user) do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user, user)
+    |> AshAuthentication.Plug.Helpers.store_in_session(user)
     |> Plug.Conn.assign(:current_user, user)
   end
 end

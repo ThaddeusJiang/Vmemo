@@ -20,7 +20,7 @@ defmodule VmemoWeb.UserSettingsLiveTest do
       assert {:error, redirect} = live(conn, ~p"/users/settings")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/users/log_in"
+      assert path == ~p"/sign-in"
       assert %{"error" => "You must sign in to access this page."} = flash
     end
   end
