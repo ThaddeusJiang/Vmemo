@@ -62,7 +62,8 @@ defmodule Vmemo.MixProject do
       {:bandit, "~> 1.5"},
       {:resend, "~> 0.4.0"},
       {:req, "~> 0.5.0"},
-      {:mime, "~> 2.0"}
+      {:mime, "~> 2.0"},
+      {:tidewave, "~> 0.5", only: :dev}
     ]
   end
 
