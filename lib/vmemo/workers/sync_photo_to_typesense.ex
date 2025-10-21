@@ -3,16 +3,18 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
   alias Vmemo.Photos.Photo
   alias Vmemo.PhotoService.TsPhoto
-  alias Vmemo.Repo
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
-    case Repo.get(Photo, photo_id) do
-      nil ->
+    case Ash.get(Photo, photo_id) do
+      {:ok, photo} ->
+        sync_to_typesense(photo)
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
         {:error, :photo_not_found}
 
-      photo ->
-        sync_to_typesense(photo)
+      {:error, error} ->
+        {:error, error}
     end
   end
 
