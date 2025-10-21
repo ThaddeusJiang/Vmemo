@@ -199,37 +199,44 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
     case uploaded_entries(socket, :photos) do
       {[_ | _] = entries, []} ->
-        ts_photos =
+        results =
           for entry <- entries do
-            ts_photo =
-              consume_uploaded_entry(socket, entry, fn %{path: path} ->
-                filename = entry.uuid <> Path.extname(entry.client_name)
+            consume_uploaded_entry(socket, entry, fn %{path: path} ->
+              filename = entry.uuid <> Path.extname(entry.client_name)
 
-                {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
+              {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
-                {:ok, ts_photo} =
-                  TsPhoto.create(%{
-                    image: FileSystem.read_image_base64(dest),
-                    note: note_text,
-                    note_ids: (note != nil && [note.id]) || [],
-                    url: Path.join("/", dest),
-                    inserted_by: user_id |> Integer.to_string()
-                  })
-
-                {:ok, ts_photo}
-              end)
-
-            ts_photo
+              case TsPhoto.create(%{
+                     image: FileSystem.read_image_base64(dest),
+                     note: note_text,
+                     note_ids: (note != nil && [note.id]) || [],
+                     url: Path.join("/", dest),
+                     inserted_by: user_id |> Integer.to_string()
+                   }) do
+                {:ok, ts_photo} -> {:ok, ts_photo}
+                {:error, reason} -> {:error, reason}
+              end
+            end)
           end
 
-        if note != nil do
-          TsNote.update_photo_ids(note.id, Enum.map(ts_photos, & &1.id))
-        end
+        case Enum.find(results, fn result -> match?({:error, _}, result) end) do
+          {:error, reason} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to upload photo: #{reason}")}
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Photos uploaded successfully")
-         |> push_navigate(to: "/photos")}
+          nil ->
+            ts_photos = Enum.map(results, fn {:ok, photo} -> photo end)
+
+            if note != nil do
+              TsNote.update_photo_ids(note.id, Enum.map(ts_photos, & &1.id))
+            end
+
+            {:noreply,
+             socket
+             |> put_flash(:info, "Photos uploaded successfully")
+             |> push_navigate(to: "/photos")}
+        end
 
       _ ->
         {:noreply, socket}

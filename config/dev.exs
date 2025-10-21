@@ -11,7 +11,7 @@ config :vmemo, Vmemo.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :vmemo, typesense_url: "http://localhost:8765"
+config :vmemo, typesense_url: "http://localhost:8766"
 config :vmemo, typesense_api_key: "xyz"
 
 config :vmemo, ollama_url: "http://localhost:11434"
