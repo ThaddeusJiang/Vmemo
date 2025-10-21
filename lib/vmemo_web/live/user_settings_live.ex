@@ -89,18 +89,6 @@ defmodule VmemoWeb.UserSettingsLive do
     """
   end
 
-  def mount(%{"token" => token}, _session, socket) do
-    socket =
-      case Account.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
-          put_flash(socket, :info, "Email changed successfully.")
-
-        :error ->
-          put_flash(socket, :error, "Email change link is invalid or it has expired.")
-      end
-
-    {:ok, push_navigate(socket, to: ~p"/users/settings")}
-  end
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
@@ -139,14 +127,14 @@ defmodule VmemoWeb.UserSettingsLive do
 
     case Account.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
-        Account.deliver_user_update_email_instructions(
-          applied_user,
-          user.email,
-          &url(~p"/users/settings/confirm_email/#{&1}")
-        )
+        case Account.update_user_email(user, applied_user.email) do
+          :ok ->
+            info = "Email changed successfully."
+            {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-        info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
+          :error ->
+            {:noreply, socket |> put_flash(:error, "Failed to update email.") |> assign(email_form_current_password: nil)}
+        end
 
       {:error, changeset} ->
         {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}

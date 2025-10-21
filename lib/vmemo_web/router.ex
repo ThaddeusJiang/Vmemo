@@ -79,7 +79,6 @@ defmodule VmemoWeb.Router do
       live "/upload", PhotoUploadLive
 
       live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
       live "/ui", Live.UiPlayground
     end
