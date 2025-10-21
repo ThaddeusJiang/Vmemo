@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - dev
+      - develop
   pull_request:
     branches:
       - main
-      - dev
+      - develop
 
 jobs:
   test:
@@ -69,7 +69,7 @@ jobs:
             typesense/typesense:27.1 \
             --data-dir=/data \
             --api-key=xyz
-          
+
           echo "Typesense container started, checking logs..."
           sleep 2
           docker logs typesense

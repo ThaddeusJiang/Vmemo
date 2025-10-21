@@ -5,7 +5,7 @@ on:
     tags:
       - "*"
     branches:
-      - dev
+      - develop
       - main
 
 jobs:
