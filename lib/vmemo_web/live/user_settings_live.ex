@@ -13,18 +13,18 @@ defmodule VmemoWeb.UserSettingsLive do
 
       <div class="space-y-12 divide-y mx-auto w-full max-w-md ">
         <div>
-            <%!-- change display_name --%>
-            <.simple_form
-              for={@display_name_form}
-              id="display_name_form"
-              phx-submit="update_display_name"
-              phx-change="validate_display_name"
-            >
-              <.input field={@display_name_form[:display_name]} label="Display Name" />
-              <:actions>
-                <.button phx-disable-with="Changing...">Change</.button>
-              </:actions>
-            </.simple_form>
+          <%!-- change display_name --%>
+          <.simple_form
+            for={@display_name_form}
+            id="display_name_form"
+            phx-submit="update_display_name"
+            phx-change="validate_display_name"
+          >
+            <.input field={@display_name_form[:display_name]} label="Display Name" />
+            <:actions>
+              <.button phx-disable-with="Changing...">Change</.button>
+            </:actions>
+          </.simple_form>
         </div>
         <div>
           <.simple_form
@@ -33,20 +33,20 @@ defmodule VmemoWeb.UserSettingsLive do
             phx-submit="update_email"
             phx-change="validate_email"
           >
-              <.input field={@email_form[:email]} type="email" label="Email" required />
-              <.input
-                field={@email_form[:current_password]}
-                name="current_password"
-                id="current_password_for_email"
-                type="password"
-                label="Current password"
-                value={@email_form_current_password}
-                required
-              />
-              <:actions>
-                <.button phx-disable-with="Changing...">Change Email</.button>
-              </:actions>
-            </.simple_form>
+            <.input field={@email_form[:email]} type="email" label="Email" required />
+            <.input
+              field={@email_form[:current_password]}
+              name="current_password"
+              id="current_password_for_email"
+              type="password"
+              label="Current password"
+              value={@email_form_current_password}
+              required
+            />
+            <:actions>
+              <.button phx-disable-with="Changing...">Change Email</.button>
+            </:actions>
+          </.simple_form>
         </div>
         <div>
           <.simple_form
@@ -58,31 +58,31 @@ defmodule VmemoWeb.UserSettingsLive do
             phx-submit="update_password"
             phx-trigger-action={@trigger_submit}
           >
-              <input
-                name={@password_form[:email].name}
-                type="hidden"
-                id="hidden_user_email"
-                value={@current_email}
-              />
-              <.input field={@password_form[:password]} type="password" label="New password" required />
-              <.input
-                field={@password_form[:password_confirmation]}
-                type="password"
-                label="Confirm new password"
-              />
-              <.input
-                field={@password_form[:current_password]}
-                name="current_password"
-                type="password"
-                label="Current password"
-                id="current_password_for_password"
-                value={@current_password}
-                required
-              />
-              <:actions>
-                <.button phx-disable-with="Changing...">Change Password</.button>
-              </:actions>
-            </.simple_form>
+            <input
+              name={@password_form[:email].name}
+              type="hidden"
+              id="hidden_user_email"
+              value={@current_email}
+            />
+            <.input field={@password_form[:password]} type="password" label="New password" required />
+            <.input
+              field={@password_form[:password_confirmation]}
+              type="password"
+              label="Confirm new password"
+            />
+            <.input
+              field={@password_form[:current_password]}
+              name="current_password"
+              type="password"
+              label="Current password"
+              id="current_password_for_password"
+              value={@current_password}
+              required
+            />
+            <:actions>
+              <.button phx-disable-with="Changing...">Change Password</.button>
+            </:actions>
+          </.simple_form>
         </div>
       </div>
     </div>
