@@ -9,7 +9,12 @@ import Config
 
 config :vmemo,
   ecto_repos: [Vmemo.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  ash_domains: [Vmemo.Photos]
+
+config :ash, :include_embedded_source_by_default?, false
+
+config :vmemo, :ash_domains, [Vmemo.Photos]
 
 # Configures the endpoint
 config :vmemo, VmemoWeb.Endpoint,

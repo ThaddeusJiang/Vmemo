@@ -14,6 +14,8 @@ defmodule Vmemo.Application do
       {Phoenix.PubSub, name: Vmemo.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Vmemo.Finch},
+      # Start Oban
+      {Oban, Application.fetch_env!(:vmemo, Oban)},
       # Start a worker by calling: Vmemo.Worker.start_link(arg)
       # {Vmemo.Worker, arg},
       # Start to serve requests, typically the last entry
