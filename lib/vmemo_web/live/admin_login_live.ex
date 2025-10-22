@@ -4,7 +4,10 @@ defmodule VmemoWeb.AdminLoginLive do
   on_mount {VmemoWeb.AdminAuth, :redirect_if_admin_is_authenticated}
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: :admin))}
+    # get error message from flash
+    error_message = Phoenix.Flash.get(socket.assigns.flash, :error)
+    form = to_form(%{}, as: :admin)
+    {:ok, assign(socket, form: form, error_message: error_message)}
   end
 
   def handle_event("validate", %{"admin" => admin_params}, socket) do
@@ -35,6 +38,9 @@ defmodule VmemoWeb.AdminLoginLive do
               required
               class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             />
+            <div :if={@error_message} class="mt-2 text-sm text-red-600">
+              {@error_message}
+            </div>
           </div>
 
           <div>

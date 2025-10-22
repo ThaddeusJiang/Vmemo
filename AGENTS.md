@@ -1,25 +1,21 @@
 # Vmemo AGENTS.md
 
+This is a web application written using the Phoenix web framework.
+
 ## Do
 
 - alway response in **Chinese**, write code in **English**
 - **short** git message, use `feat:` `fix:` `chore:` as prefix
+- fetches up-to-date code examples and documentation use **Context7**
+- debug in browser use **Playwright**, take screen image for UI
 
 ## Don't
 
 - do **not** create `.heex` for LiveView, alway write HTML in **render()**
 - **No** need too many comments, keep the code simple and easy to understand
 - do **not** run build and start commands when development
-
-## Code Format
-
-- do **not** remove the space inside of **HTML class**
-
-## Debug
-
 - do **not** commit MCP debug content, like: .playwright-mcp/*
-
-This is a web application written using the Phoenix web framework.
+- do **not** remove the space inside of **HTML class**
 
 ## Project guidelines
 

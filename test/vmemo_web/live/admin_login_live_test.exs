@@ -30,5 +30,23 @@ defmodule VmemoWeb.AdminLoginLiveTest do
       # Form should still be valid
       assert has_element?(view, "form#admin-login-form")
     end
+
+    test "displays error message from flash", %{conn: conn} do
+      conn = Phoenix.ConnTest.init_test_session(conn, %{})
+      conn = fetch_flash(conn)
+      conn = put_flash(conn, :error, "Invalid admin token")
+
+      {:ok, _view, html} = live(conn, ~p"/admin/login")
+
+      assert html =~ "Invalid admin token"
+      assert html =~ "text-red-600"
+    end
+
+    test "does not display error message when none present", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/admin/login")
+
+      refute html =~ "Invalid admin token"
+      refute html =~ "Please provide admin token"
+    end
   end
 end

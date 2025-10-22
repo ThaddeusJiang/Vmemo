@@ -47,5 +47,35 @@ defmodule VmemoWeb.AdminAuthTest do
       assert conn.halted
       assert redirected_to(conn) == "/admin/login"
     end
+
+    test "redirects silently when silent option is true", %{conn: conn} do
+      conn = Phoenix.ConnTest.init_test_session(conn, %{})
+      conn = fetch_flash(conn)
+      conn = AdminAuth.require_admin(conn, silent: true)
+
+      assert conn.halted
+      assert redirected_to(conn) == "/admin/login"
+      refute get_flash(conn, :error)
+    end
+  end
+
+  describe "require_admin_silent/2" do
+    test "allows access when admin is logged in", %{conn: conn} do
+      conn = Phoenix.ConnTest.init_test_session(conn, %{})
+      conn = put_session(conn, "admin_token", "admin")
+      conn = AdminAuth.require_admin_silent(conn, [])
+
+      refute conn.halted
+    end
+
+    test "redirects silently when admin is not logged in", %{conn: conn} do
+      conn = Phoenix.ConnTest.init_test_session(conn, %{})
+      conn = fetch_flash(conn)
+      conn = AdminAuth.require_admin_silent(conn, [])
+
+      assert conn.halted
+      assert redirected_to(conn) == "/admin/login"
+      refute get_flash(conn, :error)
+    end
   end
 end

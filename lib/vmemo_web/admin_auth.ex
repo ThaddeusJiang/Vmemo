@@ -43,12 +43,31 @@ defmodule VmemoWeb.AdminAuth do
   @doc """
   Plug function: require admin authentication
   """
-  def require_admin(conn, _opts) do
+  def require_admin(conn, opts) do
+    if admin_logged_in?(conn) do
+      conn
+    else
+      if opts[:silent] do
+        conn
+        |> redirect(to: "/admin/login")
+        |> halt()
+      else
+        conn
+        |> put_flash(:error, "Admin privileges required to access this page")
+        |> redirect(to: "/admin/login")
+        |> halt()
+      end
+    end
+  end
+
+  @doc """
+  Plug function: require admin authentication (silent mode)
+  """
+  def require_admin_silent(conn, _opts) do
     if admin_logged_in?(conn) do
       conn
     else
       conn
-      |> put_flash(:error, "Admin privileges required to access this page")
       |> redirect(to: "/admin/login")
       |> halt()
     end

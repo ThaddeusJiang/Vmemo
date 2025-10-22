@@ -118,7 +118,7 @@ defmodule VmemoWeb.Router do
 
   # Admin protected routes (require admin privileges)
   scope "/admin" do
-    pipe_through [:browser, :require_admin]
+    pipe_through [:browser, :require_admin_silent]
 
     ash_admin "/"
 
