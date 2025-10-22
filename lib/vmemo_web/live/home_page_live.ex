@@ -5,7 +5,7 @@ defmodule VmemoWeb.HomePageLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.PhotoService
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
 
   alias VmemoWeb.LiveComponents.Waterfall
   alias VmemoWeb.LiveComponents.UploadForm
@@ -73,28 +73,33 @@ defmodule VmemoWeb.HomePageLive do
           if image_base64 == nil do
             {:error, "Failed to read image file"}
           else
-            {:ok, ts_photo} =
-              TsPhoto.create(%{
+            {:ok, photo} =
+              Photo.create_with_sync(%{
                 image: image_base64,
                 note: "",
-                note_ids: [],
                 url: Path.join("/", dest),
-                inserted_by: user_id |> Integer.to_string()
+                file_id: filename,
+                user_id: user_id
               })
 
-            {:ok, ts_photo}
+            {:ok, photo}
           end
         end)
 
+      photo_id = if is_map(uploaded_file), do: uploaded_file.id, else: nil
+
       {:noreply,
-       socket |> push_navigate(to: ~p"/photos/#{uploaded_file.id}?action=search", replace: true)}
+       socket |> push_navigate(to: ~p"/photos/#{photo_id}?action=search", replace: true)}
     else
       {:noreply, socket}
     end
   end
 
   defp load_photos(q, page, user_id) do
-    TsPhoto.hybird_search_photos({q, nil}, user_id: user_id, page: page)
+    case Photo.hybrid_search(q, nil, user_id, page) do
+      {:ok, photos} -> photos
+      _ -> []
+    end
   end
 
   @impl true

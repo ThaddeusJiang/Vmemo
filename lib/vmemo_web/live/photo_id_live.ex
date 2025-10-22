@@ -4,99 +4,130 @@ defmodule VmemoWeb.PhotoIdLive do
 
   use VmemoWeb, :live_view
 
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
 
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
   def mount(%{"id" => id, "action" => action}, _session, socket) do
     user_id = socket.assigns.current_user.id
-    {:ok, %{photo: photo, notes: notes}} = TsPhoto.get(id, :notes)
 
-    if photo == nil do
-      {:ok,
-       socket
-       |> assign(photo: nil)
-       |> assign(notes: [])}
-    else
-      photos = TsPhoto.list_similar_photos(photo.id, user_id: user_id)
+    case Photo.get_with_notes(id) do
+      {:ok, photo} ->
+        notes = photo.notes || []
 
-      socket =
-        socket
-        |> assign(photo: photo)
-        |> assign(notes: notes)
-        |> assign(show_expanded: false)
-        |> assign(photos: photos)
-        |> assign_new(:form, fn ->
-          to_form(%{
-            "note" => photo.note,
-            "_gen_description" => photo._gen_description
-          })
-        end)
-        |> assign(:action, action)
+        case Photo.list_similar(photo.id, user_id) do
+          {:ok, photos} ->
+            socket =
+              socket
+              |> assign(photo: photo)
+              |> assign(notes: notes)
+              |> assign(show_expanded: false)
+              |> assign(photos: photos)
+              |> assign_new(:form, fn ->
+                to_form(%{
+                  "note" => photo.note,
+                  "_gen_description" => nil
+                })
+              end)
+              |> assign(:action, action)
 
-      {:ok, socket}
+            {:ok, socket}
+
+          _ ->
+            {:ok,
+             socket
+             |> assign(photo: nil)
+             |> assign(notes: [])}
+        end
+
+      _ ->
+        {:ok,
+         socket
+         |> assign(photo: nil)
+         |> assign(notes: [])}
     end
   end
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     user_id = socket.assigns.current_user.id
-    {:ok, %{photo: photo, notes: notes}} = TsPhoto.get(id, :notes)
 
-    if photo == nil do
-      {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
-    else
-      photos = TsPhoto.list_similar_photos(photo.id, user_id: user_id)
+    case Photo.get_with_notes(id) do
+      {:ok, photo} ->
+        notes = photo.notes || []
 
-      socket =
-        socket
-        |> assign(photo: photo)
-        |> assign(notes: notes)
-        |> assign(show_expanded: false)
-        |> assign(photos: photos)
-        |> assign_new(:form, fn ->
-          to_form(%{
-            "note" => photo.note,
-            "_gen_description" => photo._gen_description
-          })
-        end)
-        |> assign(:action, "edit")
+        case Photo.list_similar(photo.id, user_id) do
+          {:ok, photos} ->
+            socket =
+              socket
+              |> assign(photo: photo)
+              |> assign(notes: notes)
+              |> assign(show_expanded: false)
+              |> assign(photos: photos)
+              |> assign_new(:form, fn ->
+                to_form(%{
+                  "note" => photo.note,
+                  "_gen_description" => nil
+                })
+              end)
+              |> assign(:action, "edit")
 
-      {:ok, socket}
+            {:ok, socket}
+
+          _ ->
+            {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
+        end
+
+      _ ->
+        {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
     end
   end
 
   @impl true
   def handle_event("delete_photo", %{"id" => id}, socket) do
-    {:ok, _} = TsPhoto.delete_photo(id)
+    case Ash.get(Photo, id) do
+      {:ok, photo} ->
+        Photo.destroy(photo)
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Deleted")
-     |> push_navigate(to: ~p"/photos")}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Deleted")
+         |> push_navigate(to: ~p"/photos")}
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Photo not found")}
+    end
   end
 
   @impl true
-  def handle_event("save", %{"note" => note, "_gen_description" => gen_description}, socket) do
-    {:ok, _} =
-      TsPhoto.update(socket.assigns.photo.id, %{note: note, _gen_description: gen_description})
+  def handle_event("save", %{"note" => note, "_gen_description" => _gen_description}, socket) do
+    case Photo.update(socket.assigns.photo, %{note: note}) do
+      {:ok, _updated_photo} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Saved")}
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Saved")}
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to save")}
+    end
   end
 
   @impl true
   def handle_event("gen_description", _, socket) do
-    case TsPhoto.gen_description(socket.assigns.photo.id) do
+    case Photo.gen_description(socket.assigns.photo) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Description generated")}
 
       {:error, reason} ->
-        {:noreply, socket |> put_flash(:error, "Failed to generate description: #{reason}")}
+        {:noreply,
+         socket |> put_flash(:error, "Failed to generate description: #{inspect(reason)}")}
     end
   end
 
