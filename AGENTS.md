@@ -1,5 +1,7 @@
 # Vmemo AGENTS.md
 
+- Response in **Chinese**
+
 ## Code Format
 
 - do **not** remove the space inside of **HTML class**

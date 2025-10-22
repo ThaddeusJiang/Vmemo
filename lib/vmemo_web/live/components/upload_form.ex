@@ -206,15 +206,21 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
               {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
-              case TsPhoto.create(%{
-                     image: FileSystem.read_image_base64(dest),
-                     note: note_text,
-                     note_ids: (note != nil && [note.id]) || [],
-                     url: Path.join("/", dest),
-                     inserted_by: user_id |> Integer.to_string()
-                   }) do
-                {:ok, ts_photo} -> {:ok, ts_photo}
-                {:error, reason} -> {:error, reason}
+              image_base64 = FileSystem.read_image_base64(dest)
+
+              if image_base64 == nil do
+                {:error, "Failed to read image file"}
+              else
+                case TsPhoto.create(%{
+                       image: image_base64,
+                       note: note_text,
+                       note_ids: (note != nil && [note.id]) || [],
+                       url: Path.join("/", dest),
+                       inserted_by: user_id |> Integer.to_string()
+                     }) do
+                  {:ok, ts_photo} -> {:ok, ts_photo}
+                  {:error, reason} -> {:error, reason}
+                end
               end
             end)
           end
@@ -226,7 +232,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
              |> put_flash(:error, "Failed to upload photo: #{reason}")}
 
           nil ->
-            ts_photos = Enum.map(results, fn {:ok, photo} -> photo end)
+            ts_photos = results
 
             if note != nil do
               TsNote.update_photo_ids(note.id, Enum.map(ts_photos, & &1.id))
