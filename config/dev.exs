@@ -29,6 +29,9 @@ config :vmemo, typesense_api_key: "xyz"
 config :vmemo, ollama_url: "http://localhost:11434"
 config :vmemo, ollama_api_key: "local"
 
+# Admin token for development
+config :vmemo, admin_token: "admin"
+
 config :vmemo, Oban,
   repo: Vmemo.Repo,
   notifier: Oban.Notifiers.PG,

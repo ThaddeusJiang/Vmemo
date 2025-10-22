@@ -174,6 +174,21 @@ defmodule VmemoWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_admin, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    if socket.assigns.current_user && is_admin?(socket.assigns.current_user) do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "需要管理员权限才能访问此页面")
+        |> Phoenix.LiveView.redirect(to: ~p"/")
+
+      {:halt, socket}
+    end
+  end
+
   defp mount_current_user(socket, session) do
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       if user_token = session["user_token"] do
@@ -226,4 +241,13 @@ defmodule VmemoWeb.UserAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/home"
+
+  @doc """
+  检查用户是否为管理员
+  """
+  def is_admin?(user) do
+    # 简单的管理员检查逻辑，可以根据需要扩展
+    # 这里假设邮箱为 admin@vmemo.app 的用户是管理员
+    user.email == "admin@vmemo.app"
+  end
 end

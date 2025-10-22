@@ -1,7 +1,8 @@
 defmodule Vmemo.Photos.Photo do
   use Ash.Resource,
     domain: Vmemo.Photos,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshAdmin.Resource]
 
   postgres do
     table "photos"
@@ -66,5 +67,9 @@ defmodule Vmemo.Photos.Photo do
       source_attribute_on_join_resource :photo_id
       destination_attribute_on_join_resource :note_id
     end
+  end
+
+  admin do
+    table_columns [:id, :url, :note, :user_id, :inserted_at]
   end
 end

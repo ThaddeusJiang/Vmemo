@@ -1,6 +1,12 @@
 # Vmemo AGENTS.md
 
-- Response in **Chinese**
+## Do
+
+- alway response in **Chinese**
+
+## Don't
+
+- do not create `.heex` for LiveView, alway write HTML in **render()**
 
 ## Code Format
 

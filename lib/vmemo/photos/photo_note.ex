@@ -1,7 +1,8 @@
 defmodule Vmemo.Photos.PhotoNote do
   use Ash.Resource,
     domain: Vmemo.Photos,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshAdmin.Resource]
 
   postgres do
     table "photos_notes"
@@ -34,5 +35,9 @@ defmodule Vmemo.Photos.PhotoNote do
       allow_nil? false
       attribute_writable? true
     end
+  end
+
+  admin do
+    table_columns [:id, :photo_id, :note_id, :inserted_at]
   end
 end

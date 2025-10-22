@@ -70,6 +70,7 @@ defmodule Vmemo.MixProject do
       {:ash_postgres, "~> 2.0"},
       {:ash_phoenix, "~> 2.0"},
       {:ash_oban, "~> 0.2"},
+      {:ash_admin, "~> 0.13.19"},
       {:oban, "~> 2.17"},
       {:oban_web, "~> 2.0"},
       {:igniter, "~> 0.5", only: [:dev]}

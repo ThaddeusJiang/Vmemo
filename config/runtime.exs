@@ -48,6 +48,16 @@ if config_env() == :prod do
   config :vmemo, ollama_url: System.get_env("OLLAMA_URL")
   config :vmemo, ollama_api_key: System.get_env("OLLAMA_API_KEY")
 
+  # Admin token for production
+  admin_token =
+    System.get_env("ADMIN_TOKEN") ||
+      raise """
+      environment variable ADMIN_TOKEN is missing.
+      Please set a secure admin token for production.
+      """
+
+  config :vmemo, admin_token: admin_token
+
   config :vmemo, Oban,
     repo: Vmemo.Repo,
     plugins: [Oban.Plugins.Pruner],

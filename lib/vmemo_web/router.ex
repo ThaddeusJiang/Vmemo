@@ -2,6 +2,8 @@ defmodule VmemoWeb.Router do
   use VmemoWeb, :router
 
   import VmemoWeb.UserAuth
+  import VmemoWeb.AdminAuth
+  import AshAdmin.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -100,5 +102,26 @@ defmodule VmemoWeb.Router do
     pipe_through :browser
 
     get "/:user_id/photos/:filename", FileController, :show
+  end
+
+  # Admin 认证路由
+  scope "/admin" do
+    pipe_through [:browser, :redirect_if_admin_is_authenticated]
+
+    live_session :redirect_if_admin_is_authenticated,
+      on_mount: [{VmemoWeb.AdminAuth, :redirect_if_admin_is_authenticated}] do
+      live "/login", VmemoWeb.AdminLoginLive, :new
+    end
+
+    post "/login", VmemoWeb.AdminSessionController, :create
+  end
+
+  # Admin 保护路由（需要管理员权限）
+  scope "/admin" do
+    pipe_through [:browser, :require_admin]
+
+    ash_admin "/"
+
+    delete "/logout", VmemoWeb.AdminSessionController, :delete
   end
 end
