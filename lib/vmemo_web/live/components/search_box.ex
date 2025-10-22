@@ -2,7 +2,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   use VmemoWeb, :live_component
 
   alias Vmemo.PhotoService
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
   alias SmallSdk.FileSystem
 
   @impl true
@@ -59,16 +59,22 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
           {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_user.id, filename)
 
-          {:ok, ts_photo} =
-            TsPhoto.create(%{
-              image: FileSystem.read_image_base64(dest),
-              note: "",
-              note_ids: [],
-              url: Path.join("/", dest),
-              inserted_by: user_id |> Integer.to_string()
-            })
+          image_base64 = FileSystem.read_image_base64(dest)
 
-          {:ok, ts_photo}
+          if image_base64 == nil do
+            {:error, "Failed to read image file"}
+          else
+            case Photo.create_with_sync(%{
+                   image: image_base64,
+                   note: "",
+                   url: Path.join("/", dest),
+                   file_id: filename,
+                   user_id: user_id |> Integer.to_string()
+                 }) do
+              {:ok, photo} -> {:ok, photo}
+              {:error, reason} -> {:error, reason}
+            end
+          end
         end)
 
       {:noreply,

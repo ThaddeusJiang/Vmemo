@@ -10,7 +10,8 @@ defmodule Vmemo.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: Mix.compilers() ++ []
+      compilers: Mix.compilers() ++ [],
+      listeners: [Phoenix.CodeReloader]
     ]
   end
 
@@ -63,7 +64,16 @@ defmodule Vmemo.MixProject do
       {:resend, "~> 0.4.0"},
       {:req, "~> 0.5.0"},
       {:mime, "~> 2.0"},
-      {:tidewave, "~> 0.5", only: :dev}
+      {:tidewave, "~> 0.5", only: :dev},
+      {:sourceror, "~> 1.7", only: [:dev, :test]},
+      {:ash, "~> 3.0"},
+      {:ash_postgres, "~> 2.0"},
+      {:ash_phoenix, "~> 2.0"},
+      {:ash_oban, "~> 0.2"},
+      {:ash_admin, "~> 0.13.19"},
+      {:oban, "~> 2.17"},
+      {:oban_web, "~> 2.0"},
+      {:igniter, "~> 0.5", only: [:dev]}
     ]
   end
 

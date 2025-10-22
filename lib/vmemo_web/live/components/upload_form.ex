@@ -4,8 +4,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias VmemoWeb.LiveComponents.Waterfall
 
   alias Vmemo.PhotoService
-  alias Vmemo.PhotoService.TsNote
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
+  alias Vmemo.Photos.Note
+  alias Vmemo.Photos.PhotoNote
   alias SmallSdk.FileSystem
 
   @impl true
@@ -185,13 +186,13 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     note =
       case is_whole do
         "true" ->
-          {:ok, note} =
-            TsNote.create(%{
-              text: note_text,
-              belongs_to: user_id |> Integer.to_string()
-            })
-
-          note
+          case Note.create_with_sync(%{
+                 text: note_text,
+                 user_id: user_id |> Integer.to_string()
+               }) do
+            {:ok, note} -> note
+            {:error, _} -> nil
+          end
 
         _ ->
           nil
@@ -206,15 +207,21 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
               {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
-              case TsPhoto.create(%{
-                     image: FileSystem.read_image_base64(dest),
-                     note: note_text,
-                     note_ids: (note != nil && [note.id]) || [],
-                     url: Path.join("/", dest),
-                     inserted_by: user_id |> Integer.to_string()
-                   }) do
-                {:ok, ts_photo} -> {:ok, ts_photo}
-                {:error, reason} -> {:error, reason}
+              image_base64 = FileSystem.read_image_base64(dest)
+
+              if image_base64 == nil do
+                {:error, "Failed to read image file"}
+              else
+                case Photo.create_with_sync(%{
+                       image: image_base64,
+                       note: note_text,
+                       url: Path.join("/", dest),
+                       file_id: filename,
+                       user_id: user_id |> Integer.to_string()
+                     }) do
+                  {:ok, photo} -> {:ok, photo}
+                  {:error, reason} -> {:error, reason}
+                end
               end
             end)
           end
@@ -226,10 +233,18 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
              |> put_flash(:error, "Failed to upload photo: #{reason}")}
 
           nil ->
-            ts_photos = Enum.map(results, fn {:ok, photo} -> photo end)
+            photos =
+              results
+              |> Enum.filter(fn result -> match?({:ok, _}, result) end)
+              |> Enum.map(fn {:ok, photo} -> photo end)
 
             if note != nil do
-              TsNote.update_photo_ids(note.id, Enum.map(ts_photos, & &1.id))
+              for photo <- photos do
+                Ash.create(PhotoNote, %{
+                  photo_id: photo.id,
+                  note_id: note.id
+                })
+              end
             end
 
             {:noreply,

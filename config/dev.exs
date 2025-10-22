@@ -1,7 +1,19 @@
 import Config
 
+config :ash, policies: [show_policy_breakdowns?: true]
+
 # Configure your database
 config :vmemo, Vmemo.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "vmemo_dev",
+  port: 54321,
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
+config :vmemo, Vmemo.AshRepo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -16,6 +28,15 @@ config :vmemo, typesense_api_key: "xyz"
 
 config :vmemo, ollama_url: "http://localhost:11434"
 config :vmemo, ollama_api_key: "local"
+
+# Admin token for development
+config :vmemo, admin_token: "admin"
+
+config :vmemo, Oban,
+  repo: Vmemo.Repo,
+  notifier: Oban.Notifiers.PG,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [default: 10, sync_typesense: 5]
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

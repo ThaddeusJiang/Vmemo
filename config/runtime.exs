@@ -36,11 +36,32 @@ if config_env() == :prod do
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 
+  config :vmemo, Vmemo.AshRepo,
+    # ssl: true,
+    url: database_url,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    socket_options: maybe_ipv6
+
   config :vmemo, typesense_url: System.get_env("TYPESENSE_URL")
   config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY")
 
   config :vmemo, ollama_url: System.get_env("OLLAMA_URL")
   config :vmemo, ollama_api_key: System.get_env("OLLAMA_API_KEY")
+
+  # Admin token for production
+  admin_token =
+    System.get_env("ADMIN_TOKEN") ||
+      raise """
+      environment variable ADMIN_TOKEN is missing.
+      Please set a secure admin token for production.
+      """
+
+  config :vmemo, admin_token: admin_token
+
+  config :vmemo, Oban,
+    repo: Vmemo.Repo,
+    plugins: [Oban.Plugins.Pruner],
+    queues: [default: 10, sync_typesense: 5]
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you

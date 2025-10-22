@@ -1,6 +1,6 @@
 {
     "mcpServers": {
-      "tidewave": {
+      "Tidewave": {
         "command": "~/macos-setup/mcp-proxy",
         "args": [
           "http://localhost:4000/tidewave/mcp"

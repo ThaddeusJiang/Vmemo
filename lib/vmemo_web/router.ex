@@ -2,6 +2,8 @@ defmodule VmemoWeb.Router do
   use VmemoWeb, :router
 
   import VmemoWeb.UserAuth
+  import VmemoWeb.AdminAuth
+  import AshAdmin.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -36,12 +38,14 @@ defmodule VmemoWeb.Router do
     # you can use Plug.BasicAuth to set up some basic authentication
     # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
+    import Oban.Web.Router
 
     scope "/dev" do
       pipe_through :browser
 
       live_dashboard "/dashboard", metrics: VmemoWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+      oban_dashboard("/oban")
     end
   end
 
@@ -98,5 +102,26 @@ defmodule VmemoWeb.Router do
     pipe_through :browser
 
     get "/:user_id/photos/:filename", FileController, :show
+  end
+
+  # Admin authentication routes
+  scope "/admin" do
+    pipe_through [:browser, :redirect_if_admin_is_authenticated]
+
+    live_session :redirect_if_admin_is_authenticated,
+      on_mount: [{VmemoWeb.AdminAuth, :redirect_if_admin_is_authenticated}] do
+      live "/login", VmemoWeb.AdminLoginLive, :new
+    end
+
+    post "/login", VmemoWeb.AdminSessionController, :create
+  end
+
+  # Admin protected routes (require admin privileges)
+  scope "/admin" do
+    pipe_through [:browser, :require_admin_silent]
+
+    ash_admin("/")
+
+    delete "/logout", VmemoWeb.AdminSessionController, :delete
   end
 end

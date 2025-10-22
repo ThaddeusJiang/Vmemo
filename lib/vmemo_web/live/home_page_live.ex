@@ -68,16 +68,22 @@ defmodule VmemoWeb.HomePageLive do
 
           {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_user.id, filename)
 
-          {:ok, ts_photo} =
-            TsPhoto.create(%{
-              image: FileSystem.read_image_base64(dest),
-              note: "",
-              note_ids: [],
-              url: Path.join("/", dest),
-              inserted_by: user_id |> Integer.to_string()
-            })
+          image_base64 = FileSystem.read_image_base64(dest)
 
-          {:ok, ts_photo}
+          if image_base64 == nil do
+            {:error, "Failed to read image file"}
+          else
+            {:ok, ts_photo} =
+              TsPhoto.create(%{
+                image: image_base64,
+                note: "",
+                note_ids: [],
+                url: Path.join("/", dest),
+                inserted_by: user_id |> Integer.to_string()
+              })
+
+            {:ok, ts_photo}
+          end
         end)
 
       {:noreply,
