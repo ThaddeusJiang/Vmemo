@@ -21,8 +21,9 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   defp sync_to_typesense(photo) do
     typesense_data = %{
       id: photo.id,
-      image: photo.image,
+      image: photo.image,  # 使用 base64 图片数据
       note: photo.note,
+      note_ids: [],  # 添加 note_ids 字段
       url: photo.url,
       file_id: photo.file_id,
       inserted_at: DateTime.to_unix(photo.inserted_at),
