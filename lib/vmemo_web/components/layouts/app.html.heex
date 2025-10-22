@@ -37,7 +37,7 @@
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if @current_user do %>
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="avatar placeholder online ">
+            <div tabindex="0" role="button" class="avatar avatar-placeholder avatar-online">
               <div class="bg-accent text-accent-content w-8 rounded-full">
                 <span>
                   {String.at(@current_user.display_name || @current_user.email, 0)}
