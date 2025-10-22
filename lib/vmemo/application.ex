@@ -10,6 +10,7 @@ defmodule Vmemo.Application do
     children = [
       VmemoWeb.Telemetry,
       Vmemo.Repo,
+      Vmemo.AshRepo,
       {DNSCluster, query: Application.get_env(:vmemo, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Vmemo.PubSub},
       # Start the Finch HTTP client for sending emails

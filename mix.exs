@@ -64,6 +64,7 @@ defmodule Vmemo.MixProject do
       {:req, "~> 0.5.0"},
       {:mime, "~> 2.0"},
       {:tidewave, "~> 0.5", only: :dev},
+      {:sourceror, "~> 1.7", only: [:dev, :test]},
       {:ash, "~> 3.0"},
       {:ash_postgres, "~> 2.0"},
       {:ash_phoenix, "~> 2.0"},

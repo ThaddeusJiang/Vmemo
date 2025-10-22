@@ -1,5 +1,7 @@
 import Config
 
+config :ash, policies: [show_policy_breakdowns?: true]
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
@@ -17,7 +19,16 @@ config :vmemo, Vmemo.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8765")
+config :vmemo, Vmemo.AshRepo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
+  database: "vmemo_test#{System.get_env("MIX_TEST_PARTITION")}",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: System.schedulers_online() * 2
+
+config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
 config :vmemo, ollama_url: System.get_env("OLLAMA_URL", "http://localhost:11434")

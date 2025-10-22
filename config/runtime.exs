@@ -36,6 +36,12 @@ if config_env() == :prod do
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 
+  config :vmemo, Vmemo.AshRepo,
+    # ssl: true,
+    url: database_url,
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    socket_options: maybe_ipv6
+
   config :vmemo, typesense_url: System.get_env("TYPESENSE_URL")
   config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY")
 
