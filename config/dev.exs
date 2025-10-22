@@ -31,6 +31,7 @@ config :vmemo, ollama_api_key: "local"
 
 config :vmemo, Oban,
   repo: Vmemo.Repo,
+  notifier: Oban.Notifiers.PG,
   plugins: [Oban.Plugins.Pruner],
   queues: [default: 10, sync_typesense: 5]
 
