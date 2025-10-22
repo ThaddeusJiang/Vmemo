@@ -83,7 +83,16 @@ defmodule Vmemo.Photos.Photo do
             page: page
           )
 
-        photo_ids = Enum.map(photos, & &1.id)
+        photo_ids =
+          photos
+          |> Enum.map(& &1.id)
+          |> Enum.filter(fn id ->
+            case Ecto.UUID.cast(id) do
+              {:ok, _} -> true
+              :error -> false
+            end
+          end)
+          |> Enum.map(&Ecto.UUID.cast!/1)
 
         Ash.Query.filter(query, id: [in: photo_ids])
       end

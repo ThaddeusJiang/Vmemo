@@ -96,7 +96,7 @@ defmodule VmemoWeb.HomePageLive do
   end
 
   defp load_photos(q, page, user_id) do
-    case Photo.hybrid_search(q, nil, user_id, page) do
+    case Photo.hybrid_search(q, nil, Integer.to_string(user_id), page) do
       {:ok, photos} -> photos
       _ -> []
     end
@@ -109,6 +109,8 @@ defmodule VmemoWeb.HomePageLive do
     q = Map.get(params, "q", "")
 
     photos = load_photos(q, 1, user_id)
+
+    Logger.info("HomePageLive handle_params: user_id=#{user_id} (#{inspect(user_id)}), q=#{q}, photos_count=#{length(photos)}")
 
     {:noreply,
      socket

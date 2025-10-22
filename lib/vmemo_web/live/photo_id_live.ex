@@ -16,7 +16,7 @@ defmodule VmemoWeb.PhotoIdLive do
       {:ok, photo} ->
         notes = photo.notes || []
 
-        case Photo.list_similar(photo.id, user_id) do
+        case Photo.list_similar(photo.id, Integer.to_string(user_id)) do
           {:ok, photos} ->
             socket =
               socket
@@ -57,7 +57,7 @@ defmodule VmemoWeb.PhotoIdLive do
       {:ok, photo} ->
         notes = photo.notes || []
 
-        case Photo.list_similar(photo.id, user_id) do
+        case Photo.list_similar(photo.id, Integer.to_string(user_id)) do
           {:ok, photos} ->
             socket =
               socket
@@ -156,7 +156,7 @@ defmodule VmemoWeb.PhotoIdLive do
                   <%= @photo.note %>
                 </figcaption> --%>
 
-                <%= if @photo._gen_description do %>
+                <%!-- <%= if @photo._gen_description do %>
                   <.button
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle text-green-500"
@@ -215,7 +215,7 @@ defmodule VmemoWeb.PhotoIdLive do
                       />
                     </svg>
                   </.button>
-                <% end %>
+                <% end %> --%>
 
                 <.img src={@photo.url} alt={@photo.note} />
                 <.button
