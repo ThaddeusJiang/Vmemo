@@ -45,7 +45,7 @@ defmodule VmemoWeb.Router do
 
       live_dashboard "/dashboard", metrics: VmemoWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
-      oban_dashboard "/oban"
+      oban_dashboard("/oban")
     end
   end
 
@@ -120,7 +120,7 @@ defmodule VmemoWeb.Router do
   scope "/admin" do
     pipe_through [:browser, :require_admin_silent]
 
-    ash_admin "/"
+    ash_admin("/")
 
     delete "/logout", VmemoWeb.AdminSessionController, :delete
   end

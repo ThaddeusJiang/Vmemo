@@ -9,6 +9,10 @@ defmodule Vmemo.Photos.PhotoNote do
     repo Vmemo.AshRepo
   end
 
+  admin do
+    table_columns([:id, :photo_id, :note_id, :inserted_at])
+  end
+
   code_interface do
     define :create
     define :read
@@ -35,9 +39,5 @@ defmodule Vmemo.Photos.PhotoNote do
       allow_nil? false
       attribute_writable? true
     end
-  end
-
-  admin do
-    table_columns [:id, :photo_id, :note_id, :inserted_at]
   end
 end

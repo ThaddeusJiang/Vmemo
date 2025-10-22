@@ -9,6 +9,10 @@ defmodule Vmemo.Photos.Note do
     repo Vmemo.AshRepo
   end
 
+  admin do
+    table_columns([:id, :text, :user_id, :inserted_at, :updated_at])
+  end
+
   code_interface do
     define :create_with_sync
     define :read
@@ -64,9 +68,5 @@ defmodule Vmemo.Photos.Note do
       source_attribute_on_join_resource :note_id
       destination_attribute_on_join_resource :photo_id
     end
-  end
-
-  admin do
-    table_columns [:id, :text, :user_id, :inserted_at, :updated_at]
   end
 end

@@ -28,7 +28,14 @@ defmodule VmemoWeb.AdminLoginLive do
           </p>
         </div>
 
-        <.form for={@form} id="admin-login-form" phx-change="validate" action={~p"/admin/login"} method="post" class="mt-8 space-y-6">
+        <.form
+          for={@form}
+          id="admin-login-form"
+          phx-change="validate"
+          action={~p"/admin/login"}
+          method="post"
+          class="mt-8 space-y-6"
+        >
           <div>
             <.input
               field={@form[:token]}
