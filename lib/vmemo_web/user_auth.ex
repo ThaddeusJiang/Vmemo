@@ -182,7 +182,7 @@ defmodule VmemoWeb.UserAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "需要管理员权限才能访问此页面")
+        |> Phoenix.LiveView.put_flash(:error, "Admin privileges required to access this page")
         |> Phoenix.LiveView.redirect(to: ~p"/")
 
       {:halt, socket}
@@ -242,12 +242,7 @@ defmodule VmemoWeb.UserAuth do
 
   defp signed_in_path(_conn), do: ~p"/home"
 
-  @doc """
-  检查用户是否为管理员
-  """
   def is_admin?(user) do
-    # 简单的管理员检查逻辑，可以根据需要扩展
-    # 这里假设邮箱为 admin@vmemo.app 的用户是管理员
     user.email == "admin@vmemo.app"
   end
 end

@@ -7,8 +7,8 @@ defmodule VmemoWeb.AdminLoginLiveTest do
     test "renders login form", %{conn: conn} do
       {:ok, view, html} = live(conn, ~p"/admin/login")
 
-      assert html =~ "管理员登录"
-      assert html =~ "请输入管理员 token"
+      assert html =~ "Admin Login"
+      assert html =~ "Please enter your admin token to access the admin panel"
       assert has_element?(view, "form#admin-login-form")
       assert has_element?(view, "input[name=\"admin[token]\"]")
     end
@@ -24,7 +24,7 @@ defmodule VmemoWeb.AdminLoginLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/login")
 
       view
-      |> element("input[name=\"admin[token]\"]")
+      |> element("form#admin-login-form")
       |> render_change(%{"admin" => %{"token" => "test"}})
 
       # Form should still be valid

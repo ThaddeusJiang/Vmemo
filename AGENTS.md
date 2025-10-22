@@ -2,11 +2,14 @@
 
 ## Do
 
-- alway response in **Chinese**
+- alway response in **Chinese**, write code in **English**
+- **short** git message, use `feat:` `fix:` `chore:` as prefix
 
 ## Don't
 
-- do not create `.heex` for LiveView, alway write HTML in **render()**
+- do **not** create `.heex` for LiveView, alway write HTML in **render()**
+- **No** need too many comments, keep the code simple and easy to understand
+- do **not** run build and start commands when development
 
 ## Code Format
 

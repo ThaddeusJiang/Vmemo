@@ -233,13 +233,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
              |> put_flash(:error, "Failed to upload photo: #{reason}")}
 
           nil ->
-            # 提取成功的照片
             photos =
               results
               |> Enum.filter(fn result -> match?({:ok, _}, result) end)
               |> Enum.map(fn {:ok, photo} -> photo end)
 
-            # 如果创建了笔记，建立照片和笔记的关联关系
             if note != nil do
               for photo <- photos do
                 Ash.create(PhotoNote, %{

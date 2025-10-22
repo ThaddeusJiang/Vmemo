@@ -104,7 +104,7 @@ defmodule VmemoWeb.Router do
     get "/:user_id/photos/:filename", FileController, :show
   end
 
-  # Admin 认证路由
+  # Admin authentication routes
   scope "/admin" do
     pipe_through [:browser, :redirect_if_admin_is_authenticated]
 
@@ -116,7 +116,7 @@ defmodule VmemoWeb.Router do
     post "/login", VmemoWeb.AdminSessionController, :create
   end
 
-  # Admin 保护路由（需要管理员权限）
+  # Admin protected routes (require admin privileges)
   scope "/admin" do
     pipe_through [:browser, :require_admin]
 

@@ -263,7 +263,7 @@ defmodule VmemoWeb.CoreComponents do
     >
       <span class="phx-submit-loading:hidden">{render_slot(@inner_block)}</span>
       <span class="phx-submit-loading:inline hidden">
-        <span class="loading loading-spinner loading-sm"></span> 处理中...
+        <span class="loading loading-spinner loading-sm"></span> Processing...
       </span>
     </button>
     """
