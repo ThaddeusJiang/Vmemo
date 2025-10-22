@@ -79,7 +79,7 @@ defmodule VmemoWeb.HomePageLive do
                 note: "",
                 url: Path.join("/", dest),
                 file_id: filename,
-                user_id: user_id
+                user_id: Integer.to_string(user_id)
               })
 
             {:ok, photo}
