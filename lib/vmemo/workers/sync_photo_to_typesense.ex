@@ -6,11 +6,26 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
-    case Ash.get(Photo, photo_id) do
-      {:ok, photo} ->
+    # 使用字符串查询避免 UUID 转换问题
+    query = "SELECT id::text, image, note, url, file_id, inserted_at, user_id FROM photos WHERE id::text = $1"
+
+    case Vmemo.AshRepo.query(query, [photo_id]) do
+      {:ok, %{rows: [row]}} ->
+        [id, image, note, url, file_id, inserted_at, user_id] = row
+
+        photo = %{
+          id: id,
+          image: image,
+          note: note,
+          url: url,
+          file_id: file_id,
+          inserted_at: inserted_at,
+          user_id: user_id
+        }
+
         sync_to_typesense(photo)
 
-      {:error, %Ash.Error.Query.NotFound{}} ->
+      {:ok, %{rows: []}} ->
         {:error, :photo_not_found}
 
       {:error, error} ->
@@ -19,6 +34,19 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   end
 
   defp sync_to_typesense(photo) do
+    # 将 NaiveDateTime 转换为 DateTime 然后转换为 unix 时间戳
+    inserted_at_unix =
+      case photo.inserted_at do
+        %NaiveDateTime{} = naive_dt ->
+          naive_dt
+          |> DateTime.from_naive!("Etc/UTC")
+          |> DateTime.to_unix()
+        %DateTime{} = dt ->
+          DateTime.to_unix(dt)
+        _ ->
+          :os.system_time(:second)
+      end
+
     typesense_data = %{
       id: photo.id,
       image: photo.image,
@@ -26,7 +54,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
       note_ids: [],
       url: photo.url,
       file_id: photo.file_id,
-      inserted_at: DateTime.to_unix(photo.inserted_at),
+      inserted_at: inserted_at_unix,
       inserted_by: photo.user_id
     }
 

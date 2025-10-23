@@ -9,3 +9,8 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
+# Create test users for dev and test environments
+if Mix.env() in [:dev, :test] do
+  Code.require_file("seeds/test_users.exs", __DIR__)
+end

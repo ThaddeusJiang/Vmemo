@@ -189,7 +189,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
           case Note.create_with_sync(%{
                  text: note_text,
                  user_id: user_id |> Integer.to_string()
-               }) do
+               }, actor: socket.assigns.current_user) do
             {:ok, note} -> note
             {:error, _} -> nil
           end
@@ -218,7 +218,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                        url: Path.join("/", dest),
                        file_id: filename,
                        user_id: user_id |> Integer.to_string()
-                     }) do
+                     }, actor: socket.assigns.current_user) do
                   {:ok, photo} -> {:ok, photo}
                   {:error, reason} -> {:error, reason}
                 end

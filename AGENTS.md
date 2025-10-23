@@ -2,6 +2,15 @@
 
 This is a web application written using the Phoenix web framework.
 
+## PhoenixFramework
+
+- get routes by `mix phx.routes`
+
+# PostgreSQL rules
+
+- Do **not** use `LIKE` operators! use Postgres built-in `Full Text Search` Queries.
+- Do **not** use the Postgres `UUID` type, use `String` type ID instead.
+
 ## Do
 
 - alway response in **Chinese**, write code in **English**
