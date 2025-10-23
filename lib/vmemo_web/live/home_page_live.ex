@@ -80,7 +80,7 @@ defmodule VmemoWeb.HomePageLive do
                 url: Path.join("/", dest),
                 file_id: filename,
                 user_id: Integer.to_string(user_id)
-              })
+              }, actor: socket.assigns.current_user)
 
             {:ok, photo}
           end

@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "_vmemo_key",
+      "value": "SFMyNTY.g3QAAAADbQAAAAtfY3NyZl90b2tlbm0AAAAYLXFsRkE5VVpGc3d0ZmxVRHFKalV6UDdJbQAAAA5saXZlX3NvY2tldF9pZG0AAAA7dXNlcnNfc2Vzc2lvbnM6N2lwaVp3MWFSVlo5cF8xRmxERlhDalpVVEFCRzd5ZE9nbUxJd1JzS3FsWT1tAAAACnVzZXJfdG9rZW5tAAAAIO4qYmcNWkVWfaf9RZQxVwo2VEwARu8nToJiyMEbCqpW.bvek4T-NZ8UO-fSCQYEjrMEsnbT6ZwqZiwJ1vo1ThQw",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
