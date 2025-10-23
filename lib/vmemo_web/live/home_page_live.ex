@@ -36,11 +36,11 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def handle_event("load_more", _, socket) do
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
     q = socket.assigns.q
 
     page = socket.assigns.page + 1
-    more_photos = load_photos(q, page, user_id)
+    more_photos = load_photos(q, page, user)
 
     {:noreply,
      socket
@@ -95,8 +95,8 @@ defmodule VmemoWeb.HomePageLive do
     end
   end
 
-  defp load_photos(q, page, user_id) do
-    case Photo.hybrid_search(q, nil, Integer.to_string(user_id), page) do
+  defp load_photos(q, page, user) do
+    case Photo.hybrid_search(q, nil, Integer.to_string(user.id), page, actor: user) do
       {:ok, photos} -> photos
       _ -> []
     end
@@ -104,13 +104,13 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
 
     q = Map.get(params, "q", "")
 
-    photos = load_photos(q, 1, user_id)
+    photos = load_photos(q, 1, user)
 
-    Logger.info("HomePageLive handle_params: user_id=#{user_id} (#{inspect(user_id)}), q=#{q}, photos_count=#{length(photos)}")
+    Logger.info("HomePageLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}")
 
     {:noreply,
      socket

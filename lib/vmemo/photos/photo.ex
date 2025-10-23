@@ -26,6 +26,15 @@ defmodule Vmemo.Photos.Photo do
     define :gen_description
   end
 
+  defp valid_uuid?(id) when is_binary(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, _} -> true
+      :error -> false
+    end
+  end
+
+  defp valid_uuid?(_), do: false
+
   actions do
     defaults [:read, :destroy]
 
@@ -57,8 +66,9 @@ defmodule Vmemo.Photos.Photo do
     read :get_with_notes do
       get? true
       argument :id, :uuid, allow_nil?: false
+      argument :user_id, :string, allow_nil?: false
 
-      filter expr(id == ^arg(:id))
+      filter expr(id == ^arg(:id) and user_id == ^arg(:user_id))
 
       prepare fn query, _context ->
         Ash.Query.load(query, :notes)
@@ -107,7 +117,10 @@ defmodule Vmemo.Photos.Photo do
         user_id = Ash.Query.get_argument(query, :user_id)
 
         photos = Vmemo.PhotoService.TsPhoto.list_similar_photos(photo_id, user_id: user_id)
-        photo_ids = Enum.map(photos, & &1.id)
+        photo_ids = 
+          photos
+          |> Enum.map(& &1.id)
+          |> Enum.filter(&valid_uuid?/1)
 
         Ash.Query.filter(query, id: [in: photo_ids])
       end

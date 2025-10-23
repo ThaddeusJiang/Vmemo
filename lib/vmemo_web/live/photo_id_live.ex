@@ -10,13 +10,13 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def mount(%{"id" => id, "action" => action}, _session, socket) do
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
 
-    case Photo.get_with_notes(id) do
+    case Photo.get_with_notes(id, Integer.to_string(user.id)) do
       {:ok, photo} ->
         notes = photo.notes || []
 
-        case Photo.list_similar(photo.id, Integer.to_string(user_id)) do
+        case Photo.list_similar(photo.id, Integer.to_string(user.id), nil, actor: user) do
           {:ok, photos} ->
             socket =
               socket
@@ -51,13 +51,13 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
 
-    case Photo.get_with_notes(id) do
+    case Photo.get_with_notes(id, %{"user_id" => Integer.to_string(user.id)}, actor: user) do
       {:ok, photo} ->
         notes = photo.notes || []
 
-        case Photo.list_similar(photo.id, Integer.to_string(user_id)) do
+        case Photo.list_similar(photo.id, Integer.to_string(user.id), nil, actor: user) do
           {:ok, photos} ->
             socket =
               socket
@@ -86,9 +86,11 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("delete_photo", %{"id" => id}, socket) do
-    case Ash.get(Photo, id) do
+    user = socket.assigns.current_user
+
+    case Ash.get(Photo, id, actor: user) do
       {:ok, photo} ->
-        Photo.destroy(photo)
+        Photo.destroy(photo, actor: user)
 
         {:noreply,
          socket
@@ -104,7 +106,9 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("save", %{"note" => note, "_gen_description" => _gen_description}, socket) do
-    case Photo.update(socket.assigns.photo, %{note: note}) do
+    user = socket.assigns.current_user
+
+    case Photo.update(socket.assigns.photo, %{note: note}, actor: user) do
       {:ok, _updated_photo} ->
         {:noreply,
          socket
@@ -119,7 +123,9 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("gen_description", _, socket) do
-    case Photo.gen_description(socket.assigns.photo) do
+    user = socket.assigns.current_user
+
+    case Photo.gen_description(socket.assigns.photo, actor: user) do
       {:ok, _} ->
         {:noreply,
          socket
