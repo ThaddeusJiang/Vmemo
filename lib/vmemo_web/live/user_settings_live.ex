@@ -11,7 +11,7 @@ defmodule VmemoWeb.UserSettingsLive do
         <:subtitle>Manage your account email address and password settings</:subtitle>
       </.header>
 
-      <div class="space-y-6 divide-y mx-auto w-full max-w-md ">
+      <div class="space-y-6 mx-auto w-full max-w-md ">
         <div>
           <%!-- change display_name --%>
           <.simple_form
