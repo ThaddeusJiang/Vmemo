@@ -121,7 +121,7 @@
         border: none;
         box-shadow: none;
         outline: none;
-        @apply rounded-2xl;
+        @apply rounded-lg;
     }
 
     .input:focus,
@@ -135,7 +135,7 @@
         min-height: 3lh;
         height: 3lh;
 
-        @apply px-3 py-2 w-full rounded-2xl;
+        @apply px-3 py-2 w-full rounded-lg;
     }
 
     .textarea:focus {

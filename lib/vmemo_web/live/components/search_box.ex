@@ -118,7 +118,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       <div
         :if={@show_expanded}
-        class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-3xl p-4 sm:p-8  container "
+        class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-lg p-4 sm:p-4  container "
       >
         <header class="container flex items-center justify-center ">
           <p class="text-gray-500">Search any image</p>

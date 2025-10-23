@@ -144,11 +144,11 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-4 sm:py-6 lg:px-8">
+    <div class="p-4 sm:p-4 lg:p-4">
       <%= if @photo == nil do %>
         <.not_found />
       <% else %>
-        <div class=" flex flex-col space-y-10 w-full mx-auto max-w-screen-lg">
+        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
           <div class=" gap-4 space-y-4 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
             <div class="space-y-4 flex flex-col justify-center relative">
               <figure class="w-auto h-auto group relative">

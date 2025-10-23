@@ -66,13 +66,13 @@ defmodule VmemoWeb.CoreComponents do
         tabindex="0"
       >
         <div class="h-full max-h-screen flex items-center justify-center">
-          <div class="w-full max-w-prose h-full max-h-screen p-6 lg:py-8 ">
+          <div class="w-full max-w-prose h-full max-h-screen p-6 lg:p-6 ">
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="h-full max-h-max bg-base-100 rounded-box shadow-lg p-4 sm:py-6 relative transition"
+              class="h-full max-h-max bg-base-100 rounded-box shadow-lg p-4 sm:p-4 relative transition"
             >
               <.button
                 phx-click={JS.exec("data-cancel", to: "##{@id}")}
@@ -137,7 +137,7 @@ defmodule VmemoWeb.CoreComponents do
       phx-hook="Toast"
       {@rest}
     >
-      <div :if={@title} class="flex items-center gap-1.5">
+      <div :if={@title} class="flex items-center gap-2">
         <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
         <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
         <span class="font-semibold">{@title}</span>
@@ -174,7 +174,7 @@ defmodule VmemoWeb.CoreComponents do
         hidden
       >
         {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="hero-arrow-path" class="ml-2 h-3 w-3 animate-spin" />
       </.flash>
 
       <.flash
@@ -186,7 +186,7 @@ defmodule VmemoWeb.CoreComponents do
         hidden
       >
         {gettext("Hang in there while we get back on track")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="hero-arrow-path" class="ml-2 h-3 w-3 animate-spin" />
       </.flash> --%>
     </div>
     """
@@ -218,7 +218,7 @@ defmodule VmemoWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="space-y-6">
+      <div class="space-y-4">
         {render_slot(@inner_block, f)}
         <div :for={action <- @actions} class="pt-4">
           {render_slot(action, f)}
@@ -251,7 +251,7 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <button
       class={[
-        "btn rounded-2xl py-3",
+        "btn rounded-lg py-2",
         "phx-submit-loading:opacity-75 phx-submit-loading:cursor-wait",
         @variant == "submit" && "btn-neutral",
         @variant == "ghost" && "btn-ghost",
@@ -360,12 +360,12 @@ defmodule VmemoWeb.CoreComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div class="form-control w-full">
-      <div class="grid grid-cols-[80px_1fr] gap-4 items-center">
+      <div class="space-y-2">
         <.label for={@id} class="label-text">{@label}</.label>
         <select
           id={@id}
           name={@name}
-          class="select select-bordered w-full rounded-2xl"
+          class="select select-bordered w-full rounded-lg"
           multiple={@multiple}
           {@rest}
         >
@@ -384,7 +384,7 @@ defmodule VmemoWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div class="form-control w-full">
-      <div class="grid grid-cols-[80px_1fr] gap-6 items-center">
+      <div class="space-y-2">
         <.label for={@id} class="label-text">{@label}</.label>
         <input
           type={@type}
@@ -392,7 +392,7 @@ defmodule VmemoWeb.CoreComponents do
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
-            "input input-bordered w-full rounded-2xl",
+            "input input-bordered w-full rounded-lg",
             @errors != [] && "input-error"
           ]}
           autocomplete={get_autocomplete_value(@type, @name)}
@@ -400,7 +400,7 @@ defmodule VmemoWeb.CoreComponents do
         />
       </div>
       <.error :for={msg <- @errors}>
-        <span class="label-text-alt text-error mt-1">{msg}</span>
+        <span class="label-text-alt text-error mt-2">{msg}</span>
       </.error>
     </div>
     """
@@ -430,8 +430,8 @@ defmodule VmemoWeb.CoreComponents do
   def textarea_field(assigns) do
     ~H"""
     <div class="form-control w-full">
-      <div class="grid grid-cols-[80px_1fr] gap-4 items-start">
-        <.label for={@id} class="label-text mt-2">{@label}</.label>
+      <div class="space-y-2">
+        <.label for={@id} class="label-text">{@label}</.label>
         <.textarea id={@id} name={@name} value={@value} />
       </div>
       <.error :for={msg <- @errors}>
@@ -454,7 +454,7 @@ defmodule VmemoWeb.CoreComponents do
       id={@id}
       name={@name}
       class={[
-        "textarea textarea-bordered w-full rounded-2xl",
+        "textarea textarea-bordered w-full rounded-lg",
         @class
       ]}
       {@rest}
@@ -549,7 +549,7 @@ defmodule VmemoWeb.CoreComponents do
 
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
+      <table class="w-[40rem] mt-6 sm:w-full">
         <thead class="text-sm text-left leading-6 text-zinc-500">
           <tr>
             <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
@@ -610,9 +610,9 @@ defmodule VmemoWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <div class="mt-14">
+    <div class="mt-6">
       <dl class="-my-4 divide-y divide-zinc-100">
-        <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
+        <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-6">
           <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
           <dd class="text-zinc-700">{render_slot(item)}</dd>
         </div>
@@ -633,7 +633,7 @@ defmodule VmemoWeb.CoreComponents do
 
   def back(assigns) do
     ~H"""
-    <div class="mt-16">
+    <div class="mt-6">
       <.link
         navigate={@navigate}
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
@@ -660,7 +660,7 @@ defmodule VmemoWeb.CoreComponents do
   ## Examples
 
       <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
+      <.icon name="hero-arrow-path" class="ml-2 w-3 h-3 animate-spin" />
   """
   attr :name, :string, required: true
   attr :class, :string, default: nil
@@ -798,7 +798,7 @@ defmodule VmemoWeb.CoreComponents do
         <div class="max-w-md">
           <img src="/images/undraw_taken.svg" alt="not found" class="w-60 h-60 mx-auto" />
           <h1 class="text-5xl font-bold">Page not found</h1>
-          <p class="py-6">
+          <p class="py-4">
             Sorry, we couldn't find the page you're looking for.
           </p>
           <.link navigate="/" class="btn btn-primary">

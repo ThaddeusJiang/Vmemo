@@ -122,7 +122,7 @@ defmodule VmemoWeb.HomePageLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:py-6 lg:px-8 grow">
+    <section class="p-4 sm:p-4 lg:p-4 grow">
       <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
         <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
           <:empty>
