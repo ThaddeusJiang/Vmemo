@@ -4,18 +4,14 @@ test.describe('User Login', () => {
   test('should successfully login with valid credentials', async ({ page }) => {
     await page.goto('/users/log_in');
     
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Sign in to account')).toBeVisible();
     
-    await expect(page.locator('text=Sign in to account')).toBeVisible();
+    await page.getByLabel('Email').fill('test@example.com');
+    await page.getByLabel('Password').fill('password123456');
     
-    await page.fill('input[name="user[email]"]', 'test@example.com');
-    await page.fill('input[name="user[password]"]', 'password123456');
+    await page.getByLabel('Keep me logged in').check();
     
-    await page.check('input[name="user[remember_me]"]');
-    
-    await page.click('button:has-text("Sign in")');
-    
-    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Sign in' }).click();
     
     await expect(page).toHaveURL(/\/(home|photos)/);
     
@@ -25,19 +21,12 @@ test.describe('User Login', () => {
   test('should show error with invalid credentials', async ({ page }) => {
     await page.goto('/users/log_in');
     
-    await page.waitForLoadState('networkidle');
+    await page.getByLabel('Email').fill('invalid@example.com');
+    await page.getByLabel('Password').fill('wrongpassword');
     
-    await page.fill('input[name="user[email]"]', 'invalid@example.com');
-    await page.fill('input[name="user[password]"]', 'wrongpassword');
+    await page.getByRole('button', { name: 'Sign in' }).click();
     
-    await page.click('button:has-text("Sign in")');
-    
-    await page.waitForTimeout(2000);
-    
-    const errorVisible = await page.locator('text=/Invalid email or password/i').isVisible().catch(() => false);
-    const stillOnLoginPage = page.url().includes('/users/log_in');
-    
-    expect(errorVisible || stillOnLoginPage).toBeTruthy();
+    await expect(page).toHaveURL(/\/users\/log_in/);
     
     await page.screenshot({ path: 'test-results/login-error.png' });
   });
@@ -45,11 +34,7 @@ test.describe('User Login', () => {
   test('should navigate to registration page', async ({ page }) => {
     await page.goto('/users/log_in');
     
-    await page.waitForLoadState('networkidle');
-    
-    await page.click('a:has-text("Sign up")');
-    
-    await page.waitForLoadState('networkidle');
+    await page.getByRole('link', { name: 'Sign up' }).click();
     
     await expect(page).toHaveURL(/\/users\/register/);
   });
@@ -57,11 +42,7 @@ test.describe('User Login', () => {
   test('should navigate to forgot password page', async ({ page }) => {
     await page.goto('/users/log_in');
     
-    await page.waitForLoadState('networkidle');
-    
-    await page.click('a:has-text("Forgot your password?")');
-    
-    await page.waitForLoadState('networkidle');
+    await page.getByRole('link', { name: 'Forgot your password?' }).click();
     
     await expect(page).toHaveURL(/\/users\/reset_password/);
   });
