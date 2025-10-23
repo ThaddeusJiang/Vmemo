@@ -10,7 +10,7 @@ setup('authenticate', async ({ page }) => {
   await page.waitForLoadState('networkidle');
 
   // 填写登录表单
-  await page.fill('input[name="user[email]"]', 'test@example.com');
+  await page.fill('input[name="user[email]"]', 'test@mail.com');
   await page.fill('input[name="user[password]"]', 'password123456');
 
   // 提交登录表单

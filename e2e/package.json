@@ -1,31 +1,15 @@
 {
   "name": "vmemo-e2e-tests",
   "version": "1.0.0",
-  "description": "E2E tests for Vmemo application using Playwright",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report",
-    "test:install": "playwright install",
-    "test:real-world": "playwright test real-world-testing.spec.ts",
-    "test:comprehensive": "playwright test comprehensive-workflow.spec.ts",
-    "test:upload": "playwright test photo-upload.spec.ts",
-    "test:list": "playwright test photo-list.spec.ts",
-    "test:detail": "playwright test photo-detail.spec.ts",
-    "test:note": "playwright test photo-note.spec.ts",
-    "test:auth": "playwright test auth.setup.ts",
-    "test:setup": "playwright install && playwright test --project=setup",
-    "test:all": "playwright test --reporter=html",
-    "test:ci": "playwright test --reporter=github"
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
-  "keywords": ["e2e", "testing", "playwright", "vmemo"],
-  "author": "",
-  "license": "ISC",
   "packageManager": "pnpm@10.15.1",
   "devDependencies": {
-    "@playwright/test": "^1.56.1"
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.9.1"
   }
 }
