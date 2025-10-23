@@ -17,10 +17,10 @@ defmodule VmemoWeb.AdminLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-md w-full space-y-8">
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full space-y-6">
         <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 class="mt-4 text-center text-3xl font-extrabold text-gray-900">
             Admin Login
           </h2>
           <p class="mt-2 text-center text-sm text-gray-600">
@@ -34,7 +34,7 @@ defmodule VmemoWeb.AdminLoginLive do
           phx-change="validate"
           action={~p"/admin/login"}
           method="post"
-          class="mt-8 space-y-6"
+          class="mt-6 space-y-4"
         >
           <div>
             <.input
@@ -43,7 +43,6 @@ defmodule VmemoWeb.AdminLoginLive do
               label="Admin Token"
               placeholder="Enter admin token"
               required
-              class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             />
             <div :if={@error_message} class="mt-2 text-sm text-red-600">
               {@error_message}

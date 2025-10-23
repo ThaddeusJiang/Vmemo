@@ -6,12 +6,12 @@ defmodule VmemoWeb.UserRegistrationLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:py-6 lg:px-8">
+    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
       <.header class="text-center">
         Register for an account
         <:subtitle>
           Already registered?
-          <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/users/log_in"} class="link font-semibold">
             Sign in
           </.link>
           to your account now.

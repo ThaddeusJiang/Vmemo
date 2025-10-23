@@ -4,99 +4,136 @@ defmodule VmemoWeb.PhotoIdLive do
 
   use VmemoWeb, :live_view
 
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
 
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
   def mount(%{"id" => id, "action" => action}, _session, socket) do
-    user_id = socket.assigns.current_user.id
-    {:ok, %{photo: photo, notes: notes}} = TsPhoto.get(id, :notes)
+    user = socket.assigns.current_user
 
-    if photo == nil do
-      {:ok,
-       socket
-       |> assign(photo: nil)
-       |> assign(notes: [])}
-    else
-      photos = TsPhoto.list_similar_photos(photo.id, user_id: user_id)
+    case Photo.get_with_notes(id, Integer.to_string(user.id)) do
+      {:ok, photo} ->
+        notes = photo.notes || []
 
-      socket =
-        socket
-        |> assign(photo: photo)
-        |> assign(notes: notes)
-        |> assign(show_expanded: false)
-        |> assign(photos: photos)
-        |> assign_new(:form, fn ->
-          to_form(%{
-            "note" => photo.note,
-            "_gen_description" => photo._gen_description
-          })
-        end)
-        |> assign(:action, action)
+        case Photo.list_similar(photo.id, Integer.to_string(user.id), nil, actor: user) do
+          {:ok, photos} ->
+            socket =
+              socket
+              |> assign(photo: photo)
+              |> assign(notes: notes)
+              |> assign(show_expanded: false)
+              |> assign(photos: photos)
+              |> assign_new(:form, fn ->
+                to_form(%{
+                  "note" => photo.note,
+                  "_gen_description" => nil
+                })
+              end)
+              |> assign(:action, action)
 
-      {:ok, socket}
+            {:ok, socket}
+
+          _ ->
+            {:ok,
+             socket
+             |> assign(photo: nil)
+             |> assign(notes: [])}
+        end
+
+      _ ->
+        {:ok,
+         socket
+         |> assign(photo: nil)
+         |> assign(notes: [])}
     end
   end
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    user_id = socket.assigns.current_user.id
-    {:ok, %{photo: photo, notes: notes}} = TsPhoto.get(id, :notes)
+    user = socket.assigns.current_user
 
-    if photo == nil do
-      {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
-    else
-      photos = TsPhoto.list_similar_photos(photo.id, user_id: user_id)
+    case Photo.get_with_notes(id, %{"user_id" => Integer.to_string(user.id)}, actor: user) do
+      {:ok, photo} ->
+        notes = photo.notes || []
 
-      socket =
-        socket
-        |> assign(photo: photo)
-        |> assign(notes: notes)
-        |> assign(show_expanded: false)
-        |> assign(photos: photos)
-        |> assign_new(:form, fn ->
-          to_form(%{
-            "note" => photo.note,
-            "_gen_description" => photo._gen_description
-          })
-        end)
-        |> assign(:action, "edit")
+        case Photo.list_similar(photo.id, Integer.to_string(user.id), nil, actor: user) do
+          {:ok, photos} ->
+            socket =
+              socket
+              |> assign(photo: photo)
+              |> assign(notes: notes)
+              |> assign(show_expanded: false)
+              |> assign(photos: photos)
+              |> assign_new(:form, fn ->
+                to_form(%{
+                  "note" => photo.note,
+                  "_gen_description" => nil
+                })
+              end)
+              |> assign(:action, "edit")
 
-      {:ok, socket}
+            {:ok, socket}
+
+          _ ->
+            {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
+        end
+
+      _ ->
+        {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
     end
   end
 
   @impl true
   def handle_event("delete_photo", %{"id" => id}, socket) do
-    {:ok, _} = TsPhoto.delete_photo(id)
+    user = socket.assigns.current_user
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Deleted")
-     |> push_navigate(to: ~p"/photos")}
+    case Ash.get(Photo, id, actor: user) do
+      {:ok, photo} ->
+        Photo.destroy(photo, actor: user)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Deleted")
+         |> push_navigate(to: ~p"/photos")}
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Photo not found")}
+    end
   end
 
   @impl true
-  def handle_event("save", %{"note" => note, "_gen_description" => gen_description}, socket) do
-    {:ok, _} =
-      TsPhoto.update(socket.assigns.photo.id, %{note: note, _gen_description: gen_description})
+  def handle_event("save", %{"note" => note, "_gen_description" => _gen_description}, socket) do
+    user = socket.assigns.current_user
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Saved")}
+    case Photo.update(socket.assigns.photo, %{note: note}, actor: user) do
+      {:ok, _updated_photo} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Saved")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to save")}
+    end
   end
 
   @impl true
   def handle_event("gen_description", _, socket) do
-    case TsPhoto.gen_description(socket.assigns.photo.id) do
+    user = socket.assigns.current_user
+
+    case Photo.gen_description(socket.assigns.photo, actor: user) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Description generated")}
 
       {:error, reason} ->
-        {:noreply, socket |> put_flash(:error, "Failed to generate description: #{reason}")}
+        {:noreply,
+         socket |> put_flash(:error, "Failed to generate description: #{inspect(reason)}")}
     end
   end
 
@@ -113,11 +150,11 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-4 sm:py-6 lg:px-8">
+    <div class="p-4 sm:p-4 lg:p-4">
       <%= if @photo == nil do %>
         <.not_found />
       <% else %>
-        <div class=" flex flex-col space-y-10 w-full mx-auto max-w-screen-lg">
+        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
           <div class=" gap-4 space-y-4 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
             <div class="space-y-4 flex flex-col justify-center relative">
               <figure class="w-auto h-auto group relative">
@@ -125,7 +162,7 @@ defmodule VmemoWeb.PhotoIdLive do
                   <%= @photo.note %>
                 </figcaption> --%>
 
-                <%= if @photo._gen_description do %>
+                <%!-- <%= if @photo._gen_description do %>
                   <.button
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle text-green-500"
@@ -184,7 +221,7 @@ defmodule VmemoWeb.PhotoIdLive do
                       />
                     </svg>
                   </.button>
-                <% end %>
+                <% end %> --%>
 
                 <.img src={@photo.url} alt={@photo.note} />
                 <.button

@@ -45,7 +45,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       phx-drop-target={@uploads.photos.ref}
     >
       <label for={@uploads.photos.ref} class="relative h-auto">
-        <section class=" aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border bg-base-100 border-gray-300 p-4 text-center hover:border-gray-400 hover:bg-base-200 hover:shadow-inner hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ">
+        <section class=" aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 ">
           <.live_component
             id="waterfall-upload-photos"
             module={Waterfall}
@@ -128,9 +128,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
           <label
             for={@uploads.photos.ref}
-            class="block flex-none py-[2px] rounded-3xl place-content-center  hover:cursor-pointer"
+            class="block flex-none py-2 rounded-3xl place-content-center hover:cursor-pointer"
           >
-            <span class="text-xs text-gray-500">
+            <span class="text-sm text-gray-600 font-medium">
               Drag and drop images here or click to upload
             </span>
           </label>

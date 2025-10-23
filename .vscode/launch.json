@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "mix_task",
+      "name": "mix test",
+      "request": "launch",
+      "task": "test",
+      "taskArgs": [],
+      "projectDir": "${workspaceFolder}"
+    },
+    {
+      "type": "mix_task",
+      "name": "mix test --failed",
+      "request": "launch",
+      "task": "test",
+      "taskArgs": ["--failed"],
+      "projectDir": "${workspaceFolder}"
+    },
+    {
+      "type": "mix_task",
+      "name": "mix phx.server",
+      "request": "launch",
+      "task": "phx.server",
+      "taskArgs": [],
+      "projectDir": "${workspaceFolder}"
+    }
+  ]
+}

@@ -5,13 +5,13 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:py-6 lg:px-8">
+    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
       <.header class="text-center">
         Account Settings
         <:subtitle>Manage your account email address and password settings</:subtitle>
       </.header>
 
-      <div class="space-y-12 divide-y mx-auto w-full max-w-md ">
+      <div class="space-y-6 mx-auto w-full max-w-md ">
         <div>
           <%!-- change display_name --%>
           <.simple_form

@@ -5,7 +5,7 @@ defmodule VmemoWeb.UserConfirmationLive do
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:py-6 lg:px-8">
+    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
       <.header class="text-center">Confirm Account</.header>
 
       <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">

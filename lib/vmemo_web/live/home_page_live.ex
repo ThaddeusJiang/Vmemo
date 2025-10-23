@@ -5,7 +5,7 @@ defmodule VmemoWeb.HomePageLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.PhotoService
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
 
   alias VmemoWeb.LiveComponents.Waterfall
   alias VmemoWeb.LiveComponents.UploadForm
@@ -36,11 +36,11 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def handle_event("load_more", _, socket) do
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
     q = socket.assigns.q
 
     page = socket.assigns.page + 1
-    more_photos = load_photos(q, page, user_id)
+    more_photos = load_photos(q, page, user)
 
     {:noreply,
      socket
@@ -73,37 +73,44 @@ defmodule VmemoWeb.HomePageLive do
           if image_base64 == nil do
             {:error, "Failed to read image file"}
           else
-            {:ok, ts_photo} =
-              TsPhoto.create(%{
+            {:ok, photo} =
+              Photo.create_with_sync(%{
                 image: image_base64,
                 note: "",
-                note_ids: [],
                 url: Path.join("/", dest),
-                inserted_by: user_id |> Integer.to_string()
+                file_id: filename,
+                user_id: Integer.to_string(user_id)
               })
 
-            {:ok, ts_photo}
+            {:ok, photo}
           end
         end)
 
+      photo_id = if is_map(uploaded_file), do: uploaded_file.id, else: nil
+
       {:noreply,
-       socket |> push_navigate(to: ~p"/photos/#{uploaded_file.id}?action=search", replace: true)}
+       socket |> push_navigate(to: ~p"/photos/#{photo_id}?action=search", replace: true)}
     else
       {:noreply, socket}
     end
   end
 
-  defp load_photos(q, page, user_id) do
-    TsPhoto.hybird_search_photos({q, nil}, user_id: user_id, page: page)
+  defp load_photos(q, page, user) do
+    case Photo.hybrid_search(q, nil, Integer.to_string(user.id), page, actor: user) do
+      {:ok, photos} -> photos
+      _ -> []
+    end
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
-    user_id = socket.assigns.current_user.id
+    user = socket.assigns.current_user
 
     q = Map.get(params, "q", "")
 
-    photos = load_photos(q, 1, user_id)
+    photos = load_photos(q, 1, user)
+
+    Logger.info("HomePageLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}")
 
     {:noreply,
      socket
@@ -115,7 +122,7 @@ defmodule VmemoWeb.HomePageLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:py-6 lg:px-8 grow">
+    <section class="p-4 sm:p-4 lg:p-4 grow">
       <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
         <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
           <:empty>
