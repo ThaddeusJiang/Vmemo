@@ -31,7 +31,7 @@ defmodule Vmemo.Seeds.TestUsers do
             {:ok, user} ->
               # Confirm the user automatically for dev/test
               user
-              |> Ecto.Changeset.change(%{confirmed_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)})
+              |> Ecto.Changeset.change(%{confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)})
               |> Repo.update!()
 
               IO.puts("✓ Created and confirmed user: #{user_attrs.email}")
