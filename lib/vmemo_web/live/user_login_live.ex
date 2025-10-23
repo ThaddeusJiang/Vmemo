@@ -8,7 +8,7 @@ defmodule VmemoWeb.UserLoginLive do
         Sign in to account
         <:subtitle>
           Don't have an account?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/users/register"} class="link font-semibold">
             Sign up
           </.link>
           for an account now.
@@ -21,7 +21,7 @@ defmodule VmemoWeb.UserLoginLive do
 
         <:actions>
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
+          <.link href={~p"/users/reset_password"} class="text-sm font-semibold link">
             Forgot your password?
           </.link>
         </:actions>

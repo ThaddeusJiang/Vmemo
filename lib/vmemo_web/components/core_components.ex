@@ -220,7 +220,7 @@ defmodule VmemoWeb.CoreComponents do
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div class="space-y-4">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} class="pt-4">
+        <div :for={action <- @actions} >
           {render_slot(action, f)}
         </div>
       </div>
@@ -348,7 +348,7 @@ defmodule VmemoWeb.CoreComponents do
           class="checkbox"
           {@rest}
         />
-        <span class="label-text ml-2">{@label}</span>
+        <span class="label-text">{@label}</span>
       </label>
       <.error :for={msg <- @errors}>
         <span class="label-text-alt text-error">{msg}</span>
@@ -504,7 +504,7 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-2xl font-bold">
+        <h1 class="text-2xl font-bold mt-4">
           {render_slot(@inner_block)}
         </h1>
         <p :if={@subtitle != []} class="text-base-content/70 mt-2">
@@ -801,7 +801,7 @@ defmodule VmemoWeb.CoreComponents do
           <p class="py-4">
             Sorry, we couldn't find the page you're looking for.
           </p>
-          <.link navigate="/" class="btn btn-primary">
+          <.link navigate="/" class="btn btn-neutral">
             <span aria-hidden="true">&larr;</span> Back to home
           </.link>
         </div>
