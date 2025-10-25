@@ -12,6 +12,14 @@ defmodule VmemoWeb.UserSettingsLive do
       </.header>
 
       <div class="space-y-6 mx-auto w-full max-w-md ">
+        <div class="text-center">
+          <.link
+            href={~p"/tokens"}
+            class="btn btn-outline btn-primary w-full"
+          >
+            <.icon name="hero-key" class="h-4 w-4" />Tokens
+          </.link>
+        </div>
         <div>
           <%!-- change display_name --%>
           <.simple_form

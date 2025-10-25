@@ -1,7 +1,6 @@
 defmodule Vmemo.Workers.SyncPhotoToTypesense do
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
-  alias Vmemo.Photos.Photo
   alias Vmemo.PhotoService.TsPhoto
 
   @impl Oban.Worker

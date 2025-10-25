@@ -1,6 +1,8 @@
 # Vmemo AGENTS.md
 
-This is a web application written using the Phoenix web framework.
+This is a web application written using **Ash** and **Phoenix**
+
+- use **Ash** instead of **Ecto**
 
 ## PhoenixFramework
 
@@ -13,10 +15,11 @@ This is a web application written using the Phoenix web framework.
 
 ## Do
 
-- alway response in **Chinese**, write code in **English**
+- alway response in **Chinese**, write code(includes UI) in **English**
 - **short** git message, use `feat:` `fix:` `chore:` as prefix
 - fetches up-to-date code examples and documentation use **Context7**
 - debug in browser use **Playwright**, take screen image for UI
+- `Tidewave` is a coding agent that runs in the browser alongside your web application, deeply integrated with your web framework.
 
 ## Don't
 

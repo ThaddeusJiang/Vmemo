@@ -47,10 +47,10 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <div
       id={@id}
-      phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
-      class="relative z-50 hidden"
+      class={if @show, do: "relative z-50", else: "relative z-50 hidden"}
+      data-show={@show}
     >
       <div
         id={"#{@id}-bg"}
@@ -548,12 +548,12 @@ defmodule VmemoWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-6 sm:w-full">
-        <thead class="text-sm text-left leading-6 text-zinc-500">
+    <div class="overflow-x-auto">
+      <table class="table table-zebra w-full">
+        <thead>
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
-            <th :if={@action != []} class="relative p-0 pb-4">
+            <th :for={col <- @col}>{col[:label]}</th>
+            <th :if={@action != []}>
               <span class="sr-only">{gettext("Actions")}</span>
             </th>
           </tr>
@@ -561,28 +561,21 @@ defmodule VmemoWeb.CoreComponents do
         <tbody
           id={@id}
           phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
         >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
-            <td
-              :for={{col, i} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
-            >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  {render_slot(col, @row_item.(row))}
-                </span>
-              </div>
+          <tr
+            :for={row <- @rows}
+            id={@row_id && @row_id.(row)}
+            class={[@row_click && "hover:bg-base-300 cursor-pointer"]}
+            phx-click={@row_click && @row_click.(row)}
+          >
+            <td :for={{col, i} <- Enum.with_index(@col)}>
+              <span class={[i == 0 && "font-semibold"]}>
+                {render_slot(col, @row_item.(row))}
+              </span>
             </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-                >
+            <td :if={@action != []} class="text-right">
+              <div class="flex justify-end gap-2">
+                <span :for={action <- @action}>
                   {render_slot(action, @row_item.(row))}
                 </span>
               </div>
@@ -620,6 +613,65 @@ defmodule VmemoWeb.CoreComponents do
     </div>
     """
   end
+
+  @doc """
+  Formats a datetime to display in the current timezone.
+
+  ## Examples
+
+      <.format_datetime datetime={~U[2023-01-01 12:00:00Z]} />
+      <.format_datetime datetime={~U[2023-01-01 12:00:00Z]} format="date" />
+      <.format_datetime datetime={~U[2023-01-01 12:00:00Z]} format="datetime" />
+  """
+  attr :datetime, :any, required: true, doc: "The datetime to format"
+  attr :format, :string, default: "datetime", doc: "Format: 'date', 'time', 'datetime', or custom format string"
+  attr :class, :string, default: nil
+
+  def format_datetime(assigns) do
+    assigns = assign(assigns, :formatted, case assigns.format do
+      "date" -> format_to_local_date(assigns.datetime)
+      "time" -> format_to_local_time(assigns.datetime)
+      "datetime" -> format_to_local_datetime(assigns.datetime)
+      custom_format -> format_to_local_custom(assigns.datetime, custom_format)
+    end)
+
+    ~H"""
+    <span class={@class}>{@formatted}</span>
+    """
+  end
+
+  # Helper functions for datetime formatting
+  defp format_to_local_date(datetime) when not is_nil(datetime) do
+    # 将 UTC 时间转换为中国时区 (UTC+8)
+    local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
+    Calendar.strftime(local_datetime, "%Y-%m-%d")
+  end
+
+  defp format_to_local_date(_), do: ""
+
+  defp format_to_local_time(datetime) when not is_nil(datetime) do
+    # 将 UTC 时间转换为中国时区 (UTC+8)
+    local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
+    Calendar.strftime(local_datetime, "%H:%M:%S")
+  end
+
+  defp format_to_local_time(_), do: ""
+
+  defp format_to_local_datetime(datetime) when not is_nil(datetime) do
+    # 将 UTC 时间转换为中国时区 (UTC+8)
+    local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
+    Calendar.strftime(local_datetime, "%Y-%m-%d %H:%M")
+  end
+
+  defp format_to_local_datetime(_), do: ""
+
+  defp format_to_local_custom(datetime, format) when not is_nil(datetime) do
+    # 将 UTC 时间转换为中国时区 (UTC+8)
+    local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
+    Calendar.strftime(local_datetime, format)
+  end
+
+  defp format_to_local_custom(_, _), do: ""
 
   @doc """
   Renders a back navigation link.

@@ -10,6 +10,9 @@ defmodule Vmemo.Account.User do
     field :confirmed_at, :utc_datetime
     field :display_name, :string
 
+    # 关联 API Tokens
+    has_many :api_tokens, Vmemo.Account.ApiToken
+
     timestamps(type: :utc_datetime)
   end
 

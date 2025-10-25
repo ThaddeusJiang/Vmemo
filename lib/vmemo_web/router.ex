@@ -82,6 +82,11 @@ defmodule VmemoWeb.Router do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
+      # API Token 管理路由
+      live "/tokens", ApiTokenLive.Index, :index
+      live "/tokens/new", ApiTokenLive.Form, :new
+      live "/tokens/:id", ApiTokenLive.Show, :show
+
       live "/ui", Live.UiPlayground
     end
   end
