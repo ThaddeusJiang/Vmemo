@@ -24,8 +24,12 @@ defmodule VmemoWeb.AshUserAuth do
   defp generate_ash_user_session_token(ash_user) do
     # 使用 Ash Authentication JWT 生成 session token
     case AshAuthentication.Jwt.token_for_user(ash_user) do
-      {:ok, token, _claims} -> token
-      {:ok, token} -> token
+      {:ok, token, _claims} ->
+        token
+
+      {:ok, token} ->
+        token
+
       _ ->
         # 如果失败，生成一个简单的 session token
         :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
@@ -34,7 +38,10 @@ defmodule VmemoWeb.AshUserAuth do
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
     put_resp_cookie(conn, "_vmemo_web_user_remember_me", token,
-      sign: true, max_age: 60 * 60 * 24 * 60, same_site: "Lax")
+      sign: true,
+      max_age: 60 * 60 * 24 * 60,
+      same_site: "Lax"
+    )
   end
 
   defp maybe_write_remember_me_cookie(conn, _token, _params) do
@@ -73,7 +80,9 @@ defmodule VmemoWeb.AshUserAuth do
       {:ok, claims, _resource} ->
         # 从 claims 中获取 jti (token ID) 并撤销 token
         case Map.get(claims, "jti") do
-          nil -> :ok
+          nil ->
+            :ok
+
           jti ->
             # 删除 token 记录
             case Ash.get(Vmemo.Account.AshUserToken, jti) do
@@ -81,6 +90,7 @@ defmodule VmemoWeb.AshUserAuth do
               _ -> :ok
             end
         end
+
       _ ->
         :ok
     end
@@ -115,17 +125,24 @@ defmodule VmemoWeb.AshUserAuth do
       {:ok, claims, _resource} ->
         # 从 claims 中获取用户 ID
         case Map.get(claims, "sub") do
-          nil -> nil
+          nil ->
+            nil
+
           "ash_user?id=" <> user_id ->
             case Ash.get(AshUser, user_id) do
               {:ok, ash_user} -> ash_user
               _ -> nil
             end
-          _ -> nil
+
+          _ ->
+            nil
         end
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
+
   def require_authenticated_ash_user(conn, _opts) do
     if conn.assigns[:current_ash_user] do
       conn

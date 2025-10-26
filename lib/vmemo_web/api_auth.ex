@@ -16,6 +16,7 @@ defmodule VmemoWeb.ApiAuth do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] ->
         verify_token(conn, token)
+
       _ ->
         unauthorized(conn)
     end
@@ -28,6 +29,7 @@ defmodule VmemoWeb.ApiAuth do
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_ash_user, api_token.ash_user)
+
       {:error, reason} ->
         Logger.warning("API token verification failed: #{reason}")
         unauthorized(conn)

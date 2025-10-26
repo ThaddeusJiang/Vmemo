@@ -7,7 +7,6 @@ defmodule VmemoWeb.UserSessionLive do
     {:ok, assign(socket, current_scope: :user, form: form), temporary_assigns: [form: form]}
   end
 
-
   def handle_event("sign_out", _params, socket) do
     socket =
       socket
@@ -16,7 +15,6 @@ defmodule VmemoWeb.UserSessionLive do
 
     {:noreply, socket}
   end
-
 
   def render(assigns) do
     ~H"""

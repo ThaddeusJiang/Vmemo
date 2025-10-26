@@ -6,7 +6,8 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
     # 使用字符串查询避免 UUID 转换问题
-    query = "SELECT id::text, image, note, url, file_id, inserted_at, user_id FROM photos WHERE id::text = $1"
+    query =
+      "SELECT id::text, image, note, url, file_id, inserted_at, user_id FROM photos WHERE id::text = $1"
 
     case Vmemo.AshRepo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
@@ -40,8 +41,10 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
           naive_dt
           |> DateTime.from_naive!("Etc/UTC")
           |> DateTime.to_unix()
+
         %DateTime{} = dt ->
           DateTime.to_unix(dt)
+
         _ ->
           :os.system_time(:second)
       end

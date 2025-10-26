@@ -49,6 +49,7 @@ defmodule Vmemo.Account do
   """
   def get_ash_user_by_email(email) do
     require Ash.Query
+
     case AshUser
          |> Ash.Query.filter(email == ^email)
          |> Ash.read_one() do
@@ -152,10 +153,14 @@ defmodule Vmemo.Account do
     # 使用 Ash Authentication 验证密码
     strategy = AshAuthentication.Info.strategy!(AshUser, :password)
 
-    case AshAuthentication.Strategy.action(strategy, :sign_in, %{"email" => ash_user.email, "password" => password}) do
+    case AshAuthentication.Strategy.action(strategy, :sign_in, %{
+           "email" => ash_user.email,
+           "password" => password
+         }) do
       {:ok, _user} ->
         # 密码正确，返回更新后的用户
         {:ok, Map.merge(ash_user, attrs)}
+
       {:error, _reason} ->
         # 密码错误
         {:error, %{errors: [password: {"is not valid", []}]}}
@@ -176,9 +181,11 @@ defmodule Vmemo.Account do
         case update_ash_user(ash_user, %{email: ash_user.email}) do
           {:ok, updated_user} ->
             {:ok, updated_user}
+
           {:error, changeset} ->
             {:error, changeset}
         end
+
       _ ->
         {:error, %{errors: [token: {"is not valid", []}]}}
     end
@@ -215,7 +222,9 @@ defmodule Vmemo.Account do
       {:ok, claims, _resource} ->
         # 从 claims 中获取用户 ID
         case Map.get(claims, "sub") do
-          nil -> {:error, :invalid_token}
+          nil ->
+            {:error, :invalid_token}
+
           "ash_user?id=" <> user_id ->
             case Ash.get(AshUser, user_id) do
               {:ok, ash_user} ->
@@ -223,15 +232,19 @@ defmodule Vmemo.Account do
                 case update_ash_user(ash_user, %{confirmed_at: DateTime.utc_now()}) do
                   {:ok, updated_user} ->
                     {:ok, updated_user}
+
                   {:error, changeset} ->
                     {:error, changeset}
                 end
+
               _ ->
                 {:error, :invalid_token}
             end
+
           _ ->
             {:error, :invalid_token}
         end
+
       _ ->
         {:error, :invalid_token}
     end
@@ -270,15 +283,21 @@ defmodule Vmemo.Account do
       {:ok, claims, _resource} ->
         # 从 claims 中获取用户 ID
         case Map.get(claims, "sub") do
-          nil -> nil
+          nil ->
+            nil
+
           "ash_user?id=" <> user_id ->
             case Ash.get(AshUser, user_id) do
               {:ok, ash_user} -> ash_user
               _ -> nil
             end
-          _ -> nil
+
+          _ ->
+            nil
         end
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
 
@@ -316,10 +335,14 @@ defmodule Vmemo.Account do
     # 验证当前密码
     strategy = AshAuthentication.Info.strategy!(AshUser, :password)
 
-    case AshAuthentication.Strategy.action(strategy, :sign_in, %{"email" => ash_user.email, "password" => password}) do
+    case AshAuthentication.Strategy.action(strategy, :sign_in, %{
+           "email" => ash_user.email,
+           "password" => password
+         }) do
       {:ok, _user} ->
         # 密码正确，更新密码
         reset_ash_user_password(ash_user, attrs)
+
       {:error, _reason} ->
         # 密码错误
         {:error, %{errors: [current_password: {"is not valid", []}]}}
@@ -355,7 +378,10 @@ defmodule Vmemo.Account do
     # 使用 Ash Authentication 验证密码
     strategy = AshAuthentication.Info.strategy!(AshUser, :password)
 
-    case AshAuthentication.Strategy.action(strategy, :sign_in, %{"email" => email, "password" => password}) do
+    case AshAuthentication.Strategy.action(strategy, :sign_in, %{
+           "email" => email,
+           "password" => password
+         }) do
       {:ok, ash_user} -> ash_user
       {:error, _reason} -> nil
     end
@@ -373,8 +399,12 @@ defmodule Vmemo.Account do
   def generate_user_session_token(%AshUser{} = ash_user) do
     # 使用 Ash Authentication JWT 生成 session token
     case AshAuthentication.Jwt.token_for_user(ash_user) do
-      {:ok, token, _claims} -> token
-      {:ok, token} -> token
+      {:ok, token, _claims} ->
+        token
+
+      {:ok, token} ->
+        token
+
       _ ->
         # 如果失败，生成一个简单的 session token
         :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
@@ -398,15 +428,21 @@ defmodule Vmemo.Account do
       {:ok, claims, _resource} ->
         # 从 claims 中获取用户 ID
         case Map.get(claims, "sub") do
-          nil -> nil
+          nil ->
+            nil
+
           "ash_user?id=" <> user_id ->
             case Ash.get(AshUser, user_id) do
               {:ok, ash_user} -> ash_user
               _ -> nil
             end
-          _ -> nil
+
+          _ ->
+            nil
         end
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
 
@@ -455,7 +491,11 @@ defmodule Vmemo.Account do
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_ash_user_update_email_instructions(%AshUser{} = _ash_user, current_email, update_email_url_fun)
+  def deliver_ash_user_update_email_instructions(
+        %AshUser{} = _ash_user,
+        current_email,
+        update_email_url_fun
+      )
       when is_function(update_email_url_fun, 1) do
     # 使用 Ash Authentication 发送更新邮箱邮件
     # 这里需要实现邮件发送逻辑
@@ -464,7 +504,11 @@ defmodule Vmemo.Account do
 
   # 为了向后兼容，保留一些旧的函数名
   defdelegate get_user_by_email(email), to: __MODULE__, as: :get_ash_user_by_email
-  defdelegate get_user_by_email_and_password(email, password), to: __MODULE__, as: :get_ash_user_by_email_and_password
+
+  defdelegate get_user_by_email_and_password(email, password),
+    to: __MODULE__,
+    as: :get_ash_user_by_email_and_password
+
   defdelegate get_user!(id), to: __MODULE__, as: :get_ash_user!
   defdelegate create_user(attrs), to: __MODULE__, as: :create_ash_user
   defdelegate update_user(user, attrs), to: __MODULE__, as: :update_ash_user
@@ -473,12 +517,30 @@ defmodule Vmemo.Account do
   defdelegate change_user_email(user, attrs), to: __MODULE__, as: :change_ash_user_email
   defdelegate apply_user_email(user, password, attrs), to: __MODULE__, as: :apply_ash_user_email
   defdelegate update_user_email(user, token), to: __MODULE__, as: :update_ash_user_email
-  defdelegate deliver_user_confirmation_instructions(user, url_fun), to: __MODULE__, as: :deliver_ash_user_confirmation_instructions
+
+  defdelegate deliver_user_confirmation_instructions(user, url_fun),
+    to: __MODULE__,
+    as: :deliver_ash_user_confirmation_instructions
+
   defdelegate confirm_user(token), to: __MODULE__, as: :confirm_ash_user
-  defdelegate deliver_user_reset_password_instructions(user, url_fun), to: __MODULE__, as: :deliver_ash_user_reset_password_instructions
-  defdelegate get_user_by_reset_password_token(token), to: __MODULE__, as: :get_ash_user_by_reset_password_token
+
+  defdelegate deliver_user_reset_password_instructions(user, url_fun),
+    to: __MODULE__,
+    as: :deliver_ash_user_reset_password_instructions
+
+  defdelegate get_user_by_reset_password_token(token),
+    to: __MODULE__,
+    as: :get_ash_user_by_reset_password_token
+
   defdelegate reset_user_password(user, attrs), to: __MODULE__, as: :reset_ash_user_password
-  defdelegate update_user_password(user, password, attrs), to: __MODULE__, as: :update_ash_user_password
+
+  defdelegate update_user_password(user, password, attrs),
+    to: __MODULE__,
+    as: :update_ash_user_password
+
   defdelegate change_user_password(user, attrs), to: __MODULE__, as: :change_ash_user_password
-  defdelegate deliver_user_update_email_instructions(user, email, url_fun), to: __MODULE__, as: :deliver_ash_user_update_email_instructions
+
+  defdelegate deliver_user_update_email_instructions(user, email, url_fun),
+    to: __MODULE__,
+    as: :deliver_ash_user_update_email_instructions
 end

@@ -37,7 +37,11 @@
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="avatar avatar-placeholder avatar-online hover:cursor-pointer">
+            <div
+              tabindex="0"
+              role="button"
+              class="avatar avatar-placeholder avatar-online hover:cursor-pointer"
+            >
               <div class="bg-neutral text-neutral-content w-8 rounded-full">
                 <span>
                   {String.at((assigns[:current_ash_user] || assigns[:current_user]).email, 0)}

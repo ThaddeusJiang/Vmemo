@@ -117,6 +117,7 @@ defmodule Vmemo.Photos.Photo do
         user_id = Ash.Query.get_argument(query, :user_id)
 
         photos = Vmemo.PhotoService.TsPhoto.list_similar_photos(photo_id, user_id: user_id)
+
         photo_ids =
           photos
           |> Enum.map(& &1.id)

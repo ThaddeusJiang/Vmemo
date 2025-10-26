@@ -220,7 +220,7 @@ defmodule VmemoWeb.CoreComponents do
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div class="space-y-4">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} >
+        <div :for={action <- @actions}>
           {render_slot(action, f)}
         </div>
       </div>
@@ -624,16 +624,25 @@ defmodule VmemoWeb.CoreComponents do
       <.format_datetime datetime={~U[2023-01-01 12:00:00Z]} format="datetime" />
   """
   attr :datetime, :any, required: true, doc: "The datetime to format"
-  attr :format, :string, default: "datetime", doc: "Format: 'date', 'time', 'datetime', or custom format string"
+
+  attr :format, :string,
+    default: "datetime",
+    doc: "Format: 'date', 'time', 'datetime', or custom format string"
+
   attr :class, :string, default: nil
 
   def format_datetime(assigns) do
-    assigns = assign(assigns, :formatted, case assigns.format do
-      "date" -> format_to_local_date(assigns.datetime)
-      "time" -> format_to_local_time(assigns.datetime)
-      "datetime" -> format_to_local_datetime(assigns.datetime)
-      custom_format -> format_to_local_custom(assigns.datetime, custom_format)
-    end)
+    assigns =
+      assign(
+        assigns,
+        :formatted,
+        case assigns.format do
+          "date" -> format_to_local_date(assigns.datetime)
+          "time" -> format_to_local_time(assigns.datetime)
+          "datetime" -> format_to_local_datetime(assigns.datetime)
+          custom_format -> format_to_local_custom(assigns.datetime, custom_format)
+        end
+      )
 
     ~H"""
     <span class={@class}>{@formatted}</span>

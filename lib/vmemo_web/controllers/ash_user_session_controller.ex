@@ -7,7 +7,10 @@ defmodule VmemoWeb.AshUserSessionController do
   def create(conn, %{"user" => %{"email" => email, "password" => password}}) do
     strategy = AshAuthentication.Info.strategy!(AshUser, :password)
 
-    case AshAuthentication.Strategy.action(strategy, :sign_in, %{"email" => email, "password" => password}) do
+    case AshAuthentication.Strategy.action(strategy, :sign_in, %{
+           "email" => email,
+           "password" => password
+         }) do
       {:ok, ash_user} ->
         # 使用 AshUserAuth 处理登录
         conn

@@ -74,13 +74,16 @@ defmodule VmemoWeb.HomePageLive do
             {:error, "Failed to read image file"}
           else
             {:ok, photo} =
-              Photo.create_with_sync(%{
-                image: image_base64,
-                note: "",
-                url: Path.join("/", dest),
-                file_id: filename,
-                user_id: user_id
-              }, actor: socket.assigns.current_ash_user)
+              Photo.create_with_sync(
+                %{
+                  image: image_base64,
+                  note: "",
+                  url: Path.join("/", dest),
+                  file_id: filename,
+                  user_id: user_id
+                },
+                actor: socket.assigns.current_ash_user
+              )
 
             {:ok, photo}
           end
@@ -110,7 +113,9 @@ defmodule VmemoWeb.HomePageLive do
 
     photos = load_photos(q, 1, user)
 
-    Logger.info("HomePageLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}")
+    Logger.info(
+      "HomePageLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}"
+    )
 
     {:noreply,
      socket

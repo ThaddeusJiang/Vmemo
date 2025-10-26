@@ -7,10 +7,14 @@ defmodule VmemoWeb.UserRegistrationLive do
   end
 
   def handle_event("register", %{"user" => user_params}, socket) do
-    case Ash.create(Vmemo.Account.AshUser, %{
-           email: user_params["email"],
-           password: user_params["password"]
-         }, action: :register) do
+    case Ash.create(
+           Vmemo.Account.AshUser,
+           %{
+             email: user_params["email"],
+             password: user_params["password"]
+           },
+           action: :register
+         ) do
       {:ok, _user} ->
         socket =
           socket

@@ -7,8 +7,13 @@ defmodule VmemoWeb.TokenLiveTest do
     # Use existing user from database directly
     user = Vmemo.Repo.get!(Vmemo.Account.User, 1)
     # Use ApiTokenService to create token
-    case Vmemo.ApiTokenService.create_api_token(user, %{"name" => "test token", "expires_at" => "30"}) do
-      {:ok, token, _raw_token} -> %{token: token, user: user}
+    case Vmemo.ApiTokenService.create_api_token(user, %{
+           "name" => "test token",
+           "expires_at" => "30"
+         }) do
+      {:ok, token, _raw_token} ->
+        %{token: token, user: user}
+
       {:error, error} ->
         IO.puts("Token creation failed: #{inspect(error)}")
         raise "Token creation failed"
@@ -43,7 +48,10 @@ defmodule VmemoWeb.TokenLiveTest do
       conn = log_in_user(conn, user)
       {:ok, index_live, _html} = live(conn, ~p"/tokens")
 
-      assert index_live |> element("button[phx-click=\"delete_token\"][phx-value-id=\"#{token.id}\"]") |> render_click()
+      assert index_live
+             |> element("button[phx-click=\"delete_token\"][phx-value-id=\"#{token.id}\"]")
+             |> render_click()
+
       refute has_element?(index_live, "##{token.id}")
     end
   end

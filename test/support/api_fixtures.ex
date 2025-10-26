@@ -16,11 +16,14 @@ defmodule VmemoWeb.ApiFixtures do
     case Account.get_ash_user_by_email(@test_email) do
       nil ->
         # Create test user if not exists
-        {:ok, user} = Account.register_user(%{
-          email: @test_email,
-          password: @test_password
-        })
+        {:ok, user} =
+          Account.register_user(%{
+            email: @test_email,
+            password: @test_password
+          })
+
         user
+
       user ->
         user
     end
@@ -73,11 +76,12 @@ defmodule VmemoWeb.ApiFixtures do
   Reads test token from file if available
   """
   def test_token_from_file do
-    token_file = Path.join([
-      Application.app_dir(:vmemo, "priv"),
-      "repo",
-      "test_token.txt"
-    ])
+    token_file =
+      Path.join([
+        Application.app_dir(:vmemo, "priv"),
+        "repo",
+        "test_token.txt"
+      ])
 
     case File.read(token_file) do
       {:ok, token} -> String.trim(token)
@@ -97,7 +101,9 @@ defmodule VmemoWeb.ApiFixtures do
     token_file = Path.join([Application.app_dir(:vmemo, "priv"), "repo", "test_token.txt"])
 
     case File.read(token_file) do
-      {:ok, token} -> String.trim(token)
+      {:ok, token} ->
+        String.trim(token)
+
       {:error, _} ->
         IO.puts("⚠ Test token file not found, creating new token...")
         test_token_from_db()
@@ -114,8 +120,10 @@ defmodule VmemoWeb.ApiFixtures do
       {:ok, %{rows: [[token_hash]]}} ->
         # We can't get the raw token from hash, so return the hash
         token_hash
+
       _ ->
-        "test123456"  # fallback
+        # fallback
+        "test123456"
     end
   end
 end

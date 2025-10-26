@@ -12,7 +12,16 @@ defmodule Vmemo.Account.ApiToken do
   end
 
   admin do
-    table_columns([:id, :name, :description, :is_active, :expires_at, :last_used_at, :user_id, :inserted_at])
+    table_columns([
+      :id,
+      :name,
+      :description,
+      :is_active,
+      :expires_at,
+      :last_used_at,
+      :user_id,
+      :inserted_at
+    ])
   end
 
   code_interface do
@@ -29,53 +38,6 @@ defmodule Vmemo.Account.ApiToken do
     define :get_expired_tokens, args: [:user_id]
   end
 
-  attributes do
-    integer_primary_key :id, generated?: true
-
-    attribute :token_hash, :string do
-      allow_nil? false
-      constraints max_length: 64
-    end
-
-    attribute :name, :string do
-      allow_nil? false
-      constraints max_length: 100
-    end
-
-    attribute :description, :string do
-      constraints max_length: 500
-    end
-
-    attribute :expires_at, :utc_datetime
-    attribute :last_used_at, :utc_datetime
-    attribute :is_active, :boolean do
-      default true
-    end
-
-    attribute :created_at, :utc_datetime do
-      allow_nil? false
-    end
-
-    # @deprecated "Use ash_user_id instead. This field is kept for migration compatibility."
-    attribute :user_id, :integer do
-      allow_nil? false
-    end
-
-    attribute :ash_user_id, :string do
-      allow_nil? false
-    end
-
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
-  end
-
-  relationships do
-    belongs_to :ash_user, Vmemo.Account.AshUser do
-      attribute_type :string
-      attribute_writable? true
-    end
-  end
-
   actions do
     defaults [:read, :destroy]
 
@@ -84,7 +46,10 @@ defmodule Vmemo.Account.ApiToken do
 
       change fn changeset, _context ->
         changeset
-        |> Ash.Changeset.change_attribute(:created_at, DateTime.utc_now() |> DateTime.truncate(:second))
+        |> Ash.Changeset.change_attribute(
+          :created_at,
+          DateTime.utc_now() |> DateTime.truncate(:second)
+        )
       end
 
       validate fn changeset, _context ->
@@ -157,6 +122,7 @@ defmodule Vmemo.Account.ApiToken do
           {:ok, token} ->
             new_status = !token.is_active
             Ash.Changeset.change_attribute(changeset, :is_active, new_status)
+
           {:error, _} ->
             Ash.Changeset.add_error(changeset, field: :id, message: "Token not found")
         end
@@ -194,6 +160,54 @@ defmodule Vmemo.Account.ApiToken do
         )
         |> Ash.Query.sort(expires_at: :desc)
       end
+    end
+  end
+
+  attributes do
+    integer_primary_key :id, generated?: true
+
+    attribute :token_hash, :string do
+      allow_nil? false
+      constraints max_length: 64
+    end
+
+    attribute :name, :string do
+      allow_nil? false
+      constraints max_length: 100
+    end
+
+    attribute :description, :string do
+      constraints max_length: 500
+    end
+
+    attribute :expires_at, :utc_datetime
+    attribute :last_used_at, :utc_datetime
+
+    attribute :is_active, :boolean do
+      default true
+    end
+
+    attribute :created_at, :utc_datetime do
+      allow_nil? false
+    end
+
+    # @deprecated "Use ash_user_id instead. This field is kept for migration compatibility."
+    attribute :user_id, :integer do
+      allow_nil? false
+    end
+
+    attribute :ash_user_id, :string do
+      allow_nil? false
+    end
+
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :ash_user, Vmemo.Account.AshUser do
+      attribute_type :string
+      attribute_writable? true
     end
   end
 

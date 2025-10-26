@@ -43,26 +43,54 @@ defmodule Vmemo.ApiTokenService do
   """
   def create_api_token(user, attrs) do
     # 处理过期时间选项
-    expires_at = attrs
-    |> Map.get("expires_at")
-    |> case do
-      "30" -> DateTime.utc_now() |> DateTime.add(30 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
-      "90" -> DateTime.utc_now() |> DateTime.add(90 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
-      "180" -> DateTime.utc_now() |> DateTime.add(180 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
-      "never" -> nil
-      nil -> DateTime.utc_now() |> DateTime.add(90 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)  # 默认90天
-      date when is_binary(date) ->
-        case DateTime.from_iso8601(date <> ":00") do
-          {:ok, datetime, _} -> DateTime.truncate(datetime, :second)
-          {:error, _} -> DateTime.utc_now() |> DateTime.add(90 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
-        end
-      date -> DateTime.truncate(date, :second)
-    end
+    expires_at =
+      attrs
+      |> Map.get("expires_at")
+      |> case do
+        "30" ->
+          DateTime.utc_now()
+          |> DateTime.add(30 * 24 * 60 * 60, :second)
+          |> DateTime.truncate(:second)
+
+        "90" ->
+          DateTime.utc_now()
+          |> DateTime.add(90 * 24 * 60 * 60, :second)
+          |> DateTime.truncate(:second)
+
+        "180" ->
+          DateTime.utc_now()
+          |> DateTime.add(180 * 24 * 60 * 60, :second)
+          |> DateTime.truncate(:second)
+
+        "never" ->
+          nil
+
+        # 默认90天
+        nil ->
+          DateTime.utc_now()
+          |> DateTime.add(90 * 24 * 60 * 60, :second)
+          |> DateTime.truncate(:second)
+
+        date when is_binary(date) ->
+          case DateTime.from_iso8601(date <> ":00") do
+            {:ok, datetime, _} ->
+              DateTime.truncate(datetime, :second)
+
+            {:error, _} ->
+              DateTime.utc_now()
+              |> DateTime.add(90 * 24 * 60 * 60, :second)
+              |> DateTime.truncate(:second)
+          end
+
+        date ->
+          DateTime.truncate(date, :second)
+      end
 
     # 转换字符串键为原子键
-    attrs_atoms = attrs
-    |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
-    |> Map.new()
+    attrs_atoms =
+      attrs
+      |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
+      |> Map.new()
 
     attrs_with_expires = Map.put(attrs_atoms, :expires_at, expires_at)
     attrs_with_user = Map.put(attrs_with_expires, :user_id, user.id)
@@ -76,6 +104,7 @@ defmodule Vmemo.ApiTokenService do
         # 记录创建日志
         log_token_usage(api_token, "create", nil, %{})
         {:ok, api_token, raw_token}
+
       {:error, changeset} ->
         {:error, changeset}
     end
@@ -88,6 +117,7 @@ defmodule Vmemo.ApiTokenService do
     case ApiToken.update(api_token, attrs, actor: api_token) do
       {:ok, api_token} ->
         {:ok, api_token}
+
       {:error, changeset} ->
         {:error, changeset}
     end
@@ -99,6 +129,7 @@ defmodule Vmemo.ApiTokenService do
   def delete_api_token(api_token) do
     # 记录删除日志
     log_token_usage(api_token, "revoked", nil, %{})
+
     case ApiToken.destroy(api_token, actor: api_token) do
       :ok -> :ok
       {:error, changeset} -> {:error, changeset}
@@ -109,12 +140,16 @@ defmodule Vmemo.ApiTokenService do
   Toggles the active status of an API token.
   """
   def toggle_api_token_status(api_token) do
-    case Ash.ActionInput.for_action(ApiToken, :toggle_status, %{id: api_token.id}, actor: api_token) |> Ash.update() do
+    case Ash.ActionInput.for_action(ApiToken, :toggle_status, %{id: api_token.id},
+           actor: api_token
+         )
+         |> Ash.update() do
       {:ok, updated_token} ->
         # 记录状态变更日志
         action = if updated_token.is_active, do: "activated", else: "deactivated"
         log_token_usage(updated_token, action, nil, %{})
         {:ok, updated_token}
+
       {:error, changeset} ->
         {:error, changeset}
     end
@@ -127,7 +162,8 @@ defmodule Vmemo.ApiTokenService do
     case ApiToken.verify_token(token) do
       {:ok, api_token} ->
         # 检查是否过期（nil 表示永不过期）
-        if api_token.expires_at && DateTime.compare(DateTime.utc_now(), api_token.expires_at) == :gt do
+        if api_token.expires_at &&
+             DateTime.compare(DateTime.utc_now(), api_token.expires_at) == :gt do
           {:error, "Token expired"}
         else
           # 更新最后使用时间
@@ -136,11 +172,11 @@ defmodule Vmemo.ApiTokenService do
           api_token = Ash.load!(api_token, :ash_user)
           {:ok, api_token}
         end
+
       {:error, _} ->
         {:error, "Invalid token"}
     end
   end
-
 
   @doc """
   Gets tokens that are expiring soon (within 7 days).
@@ -165,11 +201,14 @@ defmodule Vmemo.ApiTokenService do
   # Private functions
 
   defp update_last_used_at(api_token) do
-    ApiToken.update(api_token, %{last_used_at: DateTime.utc_now() |> DateTime.truncate(:second)}, actor: api_token)
+    ApiToken.update(api_token, %{last_used_at: DateTime.utc_now() |> DateTime.truncate(:second)},
+      actor: api_token
+    )
   end
 
-
   defp log_token_usage(api_token, action, _conn, metadata) do
-    Logger.info("API Token #{action}: token_id=#{api_token.id}, user_id=#{api_token.user_id}, metadata=#{inspect(metadata)}")
+    Logger.info(
+      "API Token #{action}: token_id=#{api_token.id}, user_id=#{api_token.user_id}, metadata=#{inspect(metadata)}"
+    )
   end
 end

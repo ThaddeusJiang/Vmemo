@@ -18,8 +18,8 @@ defmodule VmemoWeb.ApiTokenLive.Show do
           <span>{@error_message}</span>
           <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
         </div>
-
-        <!-- Loading state -->
+        
+    <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
           <span class="ml-2 text-lg">Processing...</span>
@@ -34,7 +34,12 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
               <div class="stat-title">Token Status</div>
               <div class="stat-value text-sm">
-                <span :if={@api_token.is_active && !is_expired?(@api_token)} class="badge badge-success">Active</span>
+                <span
+                  :if={@api_token.is_active && !is_expired?(@api_token)}
+                  class="badge badge-success"
+                >
+                  Active
+                </span>
                 <span :if={!@api_token.is_active} class="badge badge-warning">Disabled</span>
                 <span :if={is_expired?(@api_token)} class="badge badge-error">Expired</span>
               </div>
@@ -45,7 +50,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                 <.icon name="hero-calendar" class="h-6 w-6" />
               </div>
               <div class="stat-title">Created</div>
-              <div class="stat-value text-sm">{format_datetime_to_local(@api_token.inserted_at, "date")}</div>
+              <div class="stat-value text-sm">
+                {format_datetime_to_local(@api_token.inserted_at, "date")}
+              </div>
             </div>
 
             <div class="stat bg-base-100 rounded-box shadow">
@@ -54,12 +61,14 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
               <div class="stat-title">Expires</div>
               <div class="stat-value text-sm">
-                {if @api_token.expires_at, do: format_datetime_to_local(@api_token.expires_at, "date"), else: "Never expires"}
+                {if @api_token.expires_at,
+                  do: format_datetime_to_local(@api_token.expires_at, "date"),
+                  else: "Never expires"}
               </div>
             </div>
           </div>
-
-          <!-- Token details -->
+          
+    <!-- Token details -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Token Information</h3>
 
@@ -76,7 +85,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                   <label class="label">
                     <span class="label-text font-semibold">Token Preview</span>
                   </label>
-                  <code class="text-xs bg-base-200 px-2 py-1 rounded">{display_token_preview(@api_token)}</code>
+                  <code class="text-xs bg-base-200 px-2 py-1 rounded">
+                    {display_token_preview(@api_token)}
+                  </code>
                 </div>
               </div>
 
@@ -85,7 +96,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                   <label class="label">
                     <span class="label-text font-semibold">Created</span>
                   </label>
-                  <div class="text-sm">{format_datetime_to_local(@api_token.inserted_at, "%Y-%m-%d %H:%M:%S")}</div>
+                  <div class="text-sm">
+                    {format_datetime_to_local(@api_token.inserted_at, "%Y-%m-%d %H:%M:%S")}
+                  </div>
                 </div>
 
                 <div>
@@ -93,7 +106,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                     <span class="label-text font-semibold">Expires</span>
                   </label>
                   <div class="text-sm">
-                    {if @api_token.expires_at, do: format_datetime_to_local(@api_token.expires_at, "%Y-%m-%d %H:%M:%S"), else: "Never expires"}
+                    {if @api_token.expires_at,
+                      do: format_datetime_to_local(@api_token.expires_at, "%Y-%m-%d %H:%M:%S"),
+                      else: "Never expires"}
                   </div>
                 </div>
               </div>
@@ -104,7 +119,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                     <span class="label-text font-semibold">Last Used</span>
                   </label>
                   <div class="text-sm">
-                    {if @api_token.last_used_at, do: format_datetime_to_local(@api_token.last_used_at, "%Y-%m-%d %H:%M:%S"), else: "Never used"}
+                    {if @api_token.last_used_at,
+                      do: format_datetime_to_local(@api_token.last_used_at, "%Y-%m-%d %H:%M:%S"),
+                      else: "Never used"}
                   </div>
                 </div>
 
@@ -117,8 +134,8 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-
-          <!-- Usage statistics -->
+          
+    <!-- Usage statistics -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Usage Statistics</h3>
 
@@ -144,36 +161,41 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-
-          <!-- Action buttons -->
+          
+    <!-- Action buttons -->
           <div class="flex flex-wrap gap-2 justify-center">
-
             <.button
               variant="outline"
               phx-click="toggle_token_status"
               class={if @api_token.is_active, do: "text-warning", else: "text-success"}
             >
-              <.icon name={if @api_token.is_active, do: "hero-pause", else: "hero-play"} class="h-4 w-4" />
+              <.icon
+                name={if @api_token.is_active, do: "hero-pause", else: "hero-play"}
+                class="h-4 w-4"
+              />
               {if @api_token.is_active, do: "Disable", else: "Enable"}
             </.button>
 
             <.button variant="danger" phx-click="delete_token">
-              <.icon name="hero-trash" class="h-4 w-4" />
-              Delete Token
+              <.icon name="hero-trash" class="h-4 w-4" /> Delete Token
             </.button>
           </div>
         </div>
       </div>
-
-      <!-- Delete confirmation Modal -->
+      
+    <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>
           <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
         </:header>
 
         <div class="space-y-4">
-          <p>Are you sure you want to delete the token "<span class="font-medium">{@api_token.name}</span>"?</p>
-          <p class="text-sm text-base-content/70">This action cannot be undone. Applications using this token will no longer be able to access the API.</p>
+          <p>
+            Are you sure you want to delete the token "<span class="font-medium">{@api_token.name}</span>"?
+          </p>
+          <p class="text-sm text-base-content/70">
+            This action cannot be undone. Applications using this token will no longer be able to access the API.
+          </p>
         </div>
 
         <:footer>
@@ -234,6 +256,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
     case ApiTokenService.toggle_api_token_status(token) do
       {:ok, updated_token} ->
         status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
+
         {:noreply,
          socket
          |> assign(:api_token, updated_token)
@@ -261,6 +284,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   end
 
   defp format_datetime_to_local(datetime, format)
+
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
     # 将 UTC 时间转换为中国时区 (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
@@ -276,7 +300,8 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
   defp is_expired?(token) do
     case token.expires_at do
-      nil -> false  # 永不过期
+      # 永不过期
+      nil -> false
       expires_at -> DateTime.compare(DateTime.utc_now(), expires_at) == :gt
     end
   end

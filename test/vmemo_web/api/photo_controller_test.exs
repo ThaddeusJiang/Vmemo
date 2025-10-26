@@ -126,10 +126,12 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
   defp ensure_test_user do
     case Account.get_ash_user_by_email(@test_email) do
       nil ->
-        {:ok, user} = Account.register_user(%{
-          email: @test_email,
-          password: @test_password
-        })
+        {:ok, user} =
+          Account.register_user(%{
+            email: @test_email,
+            password: @test_password
+          })
+
         user
 
       user ->
@@ -139,17 +141,17 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
 
   defp create_test_image do
     # Create a simple 1x1 PNG image
-    png_data = <<137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
-                  0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0, 144, 119, 83, 222, 0,
-                  0, 0, 9, 112, 72, 89, 115, 0, 0, 11, 19, 0, 0, 11, 19, 1,
-                  0, 154, 156, 24, 0, 0, 0, 12, 73, 68, 65, 84, 8, 215, 99,
-                  248, 15, 4, 1, 1, 1, 0, 0, 5, 0, 1, 101, 168, 227, 25, 0,
-                  0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130>>
+    png_data =
+      <<137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8,
+        2, 0, 0, 0, 144, 119, 83, 222, 0, 0, 0, 9, 112, 72, 89, 115, 0, 0, 11, 19, 0, 0, 11, 19,
+        1, 0, 154, 156, 24, 0, 0, 0, 12, 73, 68, 65, 84, 8, 215, 99, 248, 15, 4, 1, 1, 1, 0, 0, 5,
+        0, 1, 101, 168, 227, 25, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130>>
 
-    temp_file = Path.join([
-      System.tmp_dir!(),
-      "test_image_#{:rand.uniform(10000)}.png"
-    ])
+    temp_file =
+      Path.join([
+        System.tmp_dir!(),
+        "test_image_#{:rand.uniform(10000)}.png"
+      ])
 
     File.write!(temp_file, png_data)
     temp_file

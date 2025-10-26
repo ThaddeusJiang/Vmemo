@@ -186,10 +186,13 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     note =
       case is_whole do
         "true" ->
-          case Note.create_with_sync(%{
-                 text: note_text,
-                 user_id: user_id
-               }, actor: socket.assigns.current_user) do
+          case Note.create_with_sync(
+                 %{
+                   text: note_text,
+                   user_id: user_id
+                 },
+                 actor: socket.assigns.current_user
+               ) do
             {:ok, note} -> note
             {:error, _} -> nil
           end
@@ -212,13 +215,16 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               if image_base64 == nil do
                 {:error, "Failed to read image file"}
               else
-                case Photo.create_with_sync(%{
-                       image: image_base64,
-                       note: note_text,
-                       url: Path.join("/", dest),
-                       file_id: filename,
-                       user_id: user_id
-                     }, actor: socket.assigns.current_user) do
+                case Photo.create_with_sync(
+                       %{
+                         image: image_base64,
+                         note: note_text,
+                         url: Path.join("/", dest),
+                         file_id: filename,
+                         user_id: user_id
+                       },
+                       actor: socket.assigns.current_user
+                     ) do
                   {:ok, photo} -> {:ok, photo}
                   {:error, reason} -> {:error, reason}
                 end

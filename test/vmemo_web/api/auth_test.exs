@@ -80,10 +80,12 @@ defmodule VmemoWeb.Api.V1.AuthTest do
   defp ensure_test_user do
     case Account.get_ash_user_by_email(@test_email) do
       nil ->
-        {:ok, user} = Account.register_user(%{
-          email: @test_email,
-          password: @test_password
-        })
+        {:ok, user} =
+          Account.register_user(%{
+            email: @test_email,
+            password: @test_password
+          })
+
         user
 
       user ->

@@ -4,16 +4,25 @@ defmodule Vmemo.Account.AshUserToken do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAuthentication.TokenResource]
 
-  token do
-  end
-
   postgres do
     table "ash_user_tokens"
     repo Vmemo.AshRepo
   end
 
+  token do
+  end
+
+  actions do
+    defaults [:read, :destroy, :create]
+  end
+
   attributes do
-    attribute :jti, :string, allow_nil?: false, sensitive?: true, primary_key?: true, public?: true
+    attribute :jti, :string,
+      allow_nil?: false,
+      sensitive?: true,
+      primary_key?: true,
+      public?: true
+
     attribute :aud, :string, allow_nil?: false
     attribute :exp, :utc_datetime, allow_nil?: false
     attribute :iss, :string, allow_nil?: false
@@ -28,9 +37,5 @@ defmodule Vmemo.Account.AshUserToken do
       attribute_type :string
       attribute_writable? true
     end
-  end
-
-  actions do
-    defaults [:read, :destroy, :create]
   end
 end

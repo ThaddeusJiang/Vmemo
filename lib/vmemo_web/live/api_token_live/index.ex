@@ -24,19 +24,21 @@ defmodule VmemoWeb.ApiTokenLive.Index do
         <div :if={length(@expiring_tokens) > 0} class="alert alert-warning mb-4">
           <.icon name="hero-clock" class="h-5 w-5" />
           <div>
-            <div class="font-semibold">{length(@expiring_tokens)} tokens will expire within 7 days</div>
+            <div class="font-semibold">
+              {length(@expiring_tokens)} tokens will expire within 7 days
+            </div>
             <div class="text-sm">It's recommended to update these tokens in advance</div>
           </div>
         </div>
-
-        <!-- Error message -->
+        
+    <!-- Error message -->
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
           <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
         </div>
-
-        <!-- Loading state -->
+        
+    <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
           <span class="ml-2 text-lg">Processing...</span>
@@ -46,12 +48,11 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">My API Tokens</h2>
             <.link navigate={~p"/tokens/new"} class="btn btn-primary">
-              <.icon name="hero-plus" class="h-4 w-4" />
-              Create New Token
+              <.icon name="hero-plus" class="h-4 w-4" /> Create New Token
             </.link>
           </div>
-
-          <!-- Statistics cards -->
+          
+    <!-- Statistics cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-primary">
@@ -85,8 +86,8 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
             </div>
           </div>
-
-          <!-- Token list -->
+          
+    <!-- Token list -->
           <div class="bg-base-100 rounded-box shadow overflow-x-auto">
             <.table id="api-tokens" rows={@api_tokens}>
               <:col :let={token} label="Name">
@@ -98,7 +99,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               </:col>
               <:col :let={token} label="Token">
                 <div class="flex items-center gap-2">
-                  <code class="text-xs bg-base-200 px-2 py-1 rounded">{display_token_preview(token)}</code>
+                  <code class="text-xs bg-base-200 px-2 py-1 rounded">
+                    {display_token_preview(token)}
+                  </code>
                   <span class="text-xs text-gray-500">Only visible at creation</span>
                 </div>
               </:col>
@@ -107,12 +110,16 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               </:col>
               <:col :let={token} label="Expires">
                 <span class="text-sm">
-                  {if token.expires_at, do: format_datetime_to_local(token.expires_at), else: "Never expires"}
+                  {if token.expires_at,
+                    do: format_datetime_to_local(token.expires_at),
+                    else: "Never expires"}
                 </span>
               </:col>
               <:col :let={token} label="Last Used">
                 <span class="text-sm">
-                  {if token.last_used_at, do: format_datetime_to_local(token.last_used_at), else: "Never used"}
+                  {if token.last_used_at,
+                    do: format_datetime_to_local(token.last_used_at),
+                    else: "Never used"}
                 </span>
               </:col>
               <:col :let={_token} label="Usage Count">
@@ -126,9 +133,17 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     phx-value-id={token.id}
                     class={if token.is_active, do: "btn-sm text-warning", else: "btn-sm text-success"}
                   >
-                    <.icon name={if token.is_active, do: "hero-pause", else: "hero-play"} class="h-4 w-4" />
+                    <.icon
+                      name={if token.is_active, do: "hero-pause", else: "hero-play"}
+                      class="h-4 w-4"
+                    />
                   </.button>
-                  <.button variant="danger" phx-click="delete_token" phx-value-id={token.id} class="btn-sm">
+                  <.button
+                    variant="danger"
+                    phx-click="delete_token"
+                    phx-value-id={token.id}
+                    class="btn-sm"
+                  >
                     <.icon name="hero-trash" class="h-4 w-4" />
                   </.button>
                 </div>
@@ -137,16 +152,20 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           </div>
         </div>
       </div>
-
-      <!-- Delete confirmation Modal -->
+      
+    <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>
           <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
         </:header>
 
         <div class="space-y-4">
-          <p>Are you sure you want to delete the token "<span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?</p>
-          <p class="text-sm text-base-content/70">This action cannot be undone. Applications using this token will no longer be able to access the API.</p>
+          <p>
+            Are you sure you want to delete the token "<span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
+          </p>
+          <p class="text-sm text-base-content/70">
+            This action cannot be undone. Applications using this token will no longer be able to access the API.
+          </p>
         </div>
 
         <:footer>
@@ -181,6 +200,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   def handle_event("delete_token", %{"id" => id}, socket) do
     user = socket.assigns.current_ash_user
     token = ApiTokenService.get_user_api_token!(user, id)
+
     {:noreply,
      socket
      |> assign(:show_delete_modal, true)
@@ -219,11 +239,13 @@ defmodule VmemoWeb.ApiTokenLive.Index do
       token ->
         case ApiTokenService.toggle_api_token_status(token) do
           {:ok, updated_token} ->
-            updated_tokens = Enum.map(socket.assigns.api_tokens, fn t ->
-              if t.id == updated_token.id, do: updated_token, else: t
-            end)
+            updated_tokens =
+              Enum.map(socket.assigns.api_tokens, fn t ->
+                if t.id == updated_token.id, do: updated_token, else: t
+              end)
 
             status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
+
             {:noreply,
              socket
              |> assign(:api_tokens, updated_tokens)
@@ -252,6 +274,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   end
 
   defp format_datetime_to_local(datetime, format \\ "datetime")
+
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
     # 将 UTC 时间转换为中国时区 (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
@@ -267,7 +290,8 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   defp is_expired?(token) do
     case token.expires_at do
-      nil -> false  # 永不过期
+      # 永不过期
+      nil -> false
       expires_at -> DateTime.compare(DateTime.utc_now(), expires_at) == :gt
     end
   end

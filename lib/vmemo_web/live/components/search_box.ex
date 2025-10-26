@@ -64,13 +64,16 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           if image_base64 == nil do
             {:error, "Failed to read image file"}
           else
-            case Photo.create_with_sync(%{
-                   image: image_base64,
-                   note: "",
-                   url: Path.join("/", dest),
-                   file_id: filename,
-                   user_id: user_id
-                 }, actor: socket.assigns.current_ash_user) do
+            case Photo.create_with_sync(
+                   %{
+                     image: image_base64,
+                     note: "",
+                     url: Path.join("/", dest),
+                     file_id: filename,
+                     user_id: user_id
+                   },
+                   actor: socket.assigns.current_ash_user
+                 ) do
               {:ok, photo} -> {:ok, photo}
               {:error, reason} -> {:error, reason}
             end

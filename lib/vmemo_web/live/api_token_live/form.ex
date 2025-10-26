@@ -18,8 +18,8 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           <span>{@error_message}</span>
           <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
         </div>
-
-        <!-- Loading state -->
+        
+    <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
           <span class="ml-2 text-lg">Processing...</span>
@@ -49,22 +49,28 @@ defmodule VmemoWeb.ApiTokenLive.Form do
               </:actions>
             </.simple_form>
           </div>
-
-          <!-- Help information -->
+          
+    <!-- Help information -->
           <div class="bg-info/10 rounded-box p-4">
             <h4 class="font-semibold mb-2">Usage Instructions</h4>
             <ul class="text-sm space-y-1">
               <li>• Token name is used to identify different applications or purposes</li>
               <li>• It's recommended to set a reasonable expiration time for better security</li>
-              <li>• Please save the token immediately after creation, as you won't be able to view the full content again</li>
+              <li>
+                • Please save the token immediately after creation, as you won't be able to view the full content again
+              </li>
               <li>• Usage format: <code>Authorization: Bearer your_token</code></li>
             </ul>
           </div>
         </div>
       </div>
-
-      <!-- Token Created Successfully Modal -->
-      <.modal id="token-created-modal" show={@show_token_created} on_cancel={JS.hide(to: "#token-created-modal")}>
+      
+    <!-- Token Created Successfully Modal -->
+      <.modal
+        id="token-created-modal"
+        show={@show_token_created}
+        on_cancel={JS.hide(to: "#token-created-modal")}
+      >
         <:header>
           <h3 class="text-lg font-semibold text-success">Token Created Successfully</h3>
         </:header>
@@ -72,7 +78,9 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         <div class="space-y-4">
           <div class="alert alert-warning">
             <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
-            <span>Please copy and save this token immediately. You won't be able to view the full content again after creation.</span>
+            <span>
+              Please copy and save this token immediately. You won't be able to view the full content again after creation.
+            </span>
           </div>
 
           <div class="form-control">
@@ -100,19 +108,30 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
           <div class="text-sm text-gray-600">
             <p>• Token format: vmemo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
-            <p>• Expiration: {if @new_token_expires_at, do: format_datetime_to_local(@new_token_expires_at, "datetime"), else: "Never expires"}</p>
-            <p>• Usage: Authorization: Bearer {if @new_token, do: String.slice(@new_token, 0, 20) <> "...", else: "token"}</p>
+            <p>
+              • Expiration: {if @new_token_expires_at,
+                do: format_datetime_to_local(@new_token_expires_at, "datetime"),
+                else: "Never expires"}
+            </p>
+            <p>
+              • Usage: Authorization: Bearer {if @new_token,
+                do: String.slice(@new_token, 0, 20) <> "...",
+                else: "token"}
+            </p>
           </div>
         </div>
 
         <:footer>
-          <.button phx-click={JS.hide(to: "#token-created-modal") |> JS.push("navigate", to: ~p"/tokens")}>I've Saved It</.button>
+          <.button phx-click={
+            JS.hide(to: "#token-created-modal") |> JS.push("navigate", to: ~p"/tokens")
+          }>
+            I've Saved It
+          </.button>
         </:footer>
       </.modal>
     </div>
     """
   end
-
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -129,38 +148,49 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     user = socket.assigns.current_ash_user
 
     # 处理表单参数
-    token_params = case params do
-      %{"api_token" => token_params} -> token_params
-      params -> params
-    end
+    token_params =
+      case params do
+        %{"api_token" => token_params} -> token_params
+        params -> params
+      end
 
     socket = assign(socket, :loading, true)
 
     # 创建新 token
     case ApiTokenService.create_api_token(user, token_params) do
-        {:ok, token, raw_token} ->
-          {:noreply,
-           socket
-           |> assign(:show_token_created, true)
-           |> assign(:new_token, raw_token)
-           |> assign(:new_token_expires_at, token.expires_at)
-           |> assign(:loading, false)
-           |> put_flash(:info, "API Token 创建成功")}
+      {:ok, token, raw_token} ->
+        {:noreply,
+         socket
+         |> assign(:show_token_created, true)
+         |> assign(:new_token, raw_token)
+         |> assign(:new_token_expires_at, token.expires_at)
+         |> assign(:loading, false)
+         |> put_flash(:info, "API Token 创建成功")}
 
       {:error, changeset} ->
         # 处理 Ash.Error.Invalid
-        error_message = case changeset do
-          %Ash.Error.Invalid{errors: errors} ->
-            error_texts = Enum.map(errors, fn error ->
-              case error do
-                %Ash.Error.Changes.Required{field: field} -> "#{field} 是必填字段"
-                %Ash.Error.Changes.InvalidAttribute{field: field, message: message} -> "#{field}: #{message}"
-                _ -> "验证失败"
-              end
-            end)
-            Enum.join(error_texts, "; ")
-          _ -> "创建失败，请检查输入信息"
-        end
+        error_message =
+          case changeset do
+            %Ash.Error.Invalid{errors: errors} ->
+              error_texts =
+                Enum.map(errors, fn error ->
+                  case error do
+                    %Ash.Error.Changes.Required{field: field} ->
+                      "#{field} 是必填字段"
+
+                    %Ash.Error.Changes.InvalidAttribute{field: field, message: message} ->
+                      "#{field}: #{message}"
+
+                    _ ->
+                      "验证失败"
+                  end
+                end)
+
+              Enum.join(error_texts, "; ")
+
+            _ ->
+              "创建失败，请检查输入信息"
+          end
 
         {:noreply,
          socket
@@ -172,10 +202,11 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
   def handle_event("validate_token", params, socket) do
     # 处理表单验证参数
-    token_params = case params do
-      %{"api_token" => token_params} -> token_params
-      params -> params
-    end
+    token_params =
+      case params do
+        %{"api_token" => token_params} -> token_params
+        params -> params
+      end
 
     form = to_form(token_params, as: :api_token)
     {:noreply, assign(socket, :form, form)}
@@ -192,6 +223,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
   # Helper functions
   defp format_datetime_to_local(datetime, format)
+
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
     # 将 UTC 时间转换为中国时区 (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)

@@ -29,6 +29,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
     case handle_file_upload(conn, params) do
       {:ok, %{path: path, filename: filename}} ->
         process_photo_upload(conn, path, filename, params, current_user)
+
       {:error, reason} ->
         error_response(conn, 400, "INVALID_FILE", reason)
     end
@@ -50,6 +51,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
           note: photo.note,
           inserted_at: photo.inserted_at
         })
+
       {:error, _reason} ->
         error_response(conn, 404, "PHOTO_NOT_FOUND", "Photo not found")
     end
@@ -68,9 +70,11 @@ defmodule VmemoWeb.Api.V1.PhotoController do
         case Photo.destroy(photo, actor: current_user) do
           :ok ->
             success_response(conn, %{message: "Photo deleted successfully"})
+
           {:error, _reason} ->
             error_response(conn, 500, "DELETE_FAILED", "Failed to delete photo")
         end
+
       {:error, _reason} ->
         error_response(conn, 404, "PHOTO_NOT_FOUND", "Photo not found")
     end
@@ -82,6 +86,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
     case params do
       %{"file" => %Plug.Upload{} = upload} ->
         validate_and_process_upload(upload)
+
       _ ->
         {:error, "No file provided"}
     end
@@ -98,6 +103,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
         :ok ->
           filename = generate_filename(upload.filename)
           {:ok, %{path: upload.path, filename: filename}}
+
         {:error, reason} ->
           {:error, reason}
       end
@@ -111,12 +117,17 @@ defmodule VmemoWeb.Api.V1.PhotoController do
       {:ok, content} ->
         # 检查文件头
         case content do
-          <<0x89, 0x50, 0x4E, 0x47, _::binary>> -> :ok  # PNG
-          <<0xFF, 0xD8, 0xFF, _::binary>> -> :ok        # JPEG
-          <<0x47, 0x49, 0x46, _::binary>> -> :ok         # GIF
-          <<0x52, 0x49, 0x46, 0x46, _::binary>> -> :ok   # WEBP
+          # PNG
+          <<0x89, 0x50, 0x4E, 0x47, _::binary>> -> :ok
+          # JPEG
+          <<0xFF, 0xD8, 0xFF, _::binary>> -> :ok
+          # GIF
+          <<0x47, 0x49, 0x46, _::binary>> -> :ok
+          # WEBP
+          <<0x52, 0x49, 0x46, 0x46, _::binary>> -> :ok
           _ -> {:error, "Invalid image format"}
         end
+
       {:error, reason} ->
         {:error, "Failed to read file: #{reason}"}
     end
@@ -143,13 +154,16 @@ defmodule VmemoWeb.Api.V1.PhotoController do
       # 创建照片记录
       note = Map.get(params, "note", "")
 
-      case Photo.create_with_sync(%{
-             image: image_base64,
-             note: note,
-             url: Path.join("/", dest),
-             file_id: filename,
-             user_id: user_id
-           }, actor: current_user) do
+      case Photo.create_with_sync(
+             %{
+               image: image_base64,
+               note: note,
+               url: Path.join("/", dest),
+               file_id: filename,
+               user_id: user_id
+             },
+             actor: current_user
+           ) do
         {:ok, photo} ->
           success_response(conn, %{
             id: photo.id,
@@ -157,6 +171,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
             note: photo.note,
             inserted_at: photo.inserted_at
           })
+
         {:error, changeset} ->
           Logger.error("Failed to create photo: #{inspect(changeset.errors)}")
           error_response(conn, 500, "CREATE_FAILED", "Failed to create photo")
