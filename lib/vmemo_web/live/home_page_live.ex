@@ -36,7 +36,7 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def handle_event("load_more", _, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_ash_user
     q = socket.assigns.q
 
     page = socket.assigns.page + 1
@@ -59,14 +59,14 @@ defmodule VmemoWeb.HomePageLive do
   end
 
   defp handle_progress(:photo, entry, socket) do
-    user_id = socket.assigns.current_user.id
+    user_id = socket.assigns.current_ash_user.id
 
     if entry.done? do
       uploaded_file =
         consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
           filename = entry.uuid <> Path.extname(entry.client_name)
 
-          {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_user.id, filename)
+          {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_ash_user.id, filename)
 
           image_base64 = FileSystem.read_image_base64(dest)
 
@@ -79,8 +79,8 @@ defmodule VmemoWeb.HomePageLive do
                 note: "",
                 url: Path.join("/", dest),
                 file_id: filename,
-                user_id: Integer.to_string(user_id)
-              }, actor: socket.assigns.current_user)
+                user_id: user_id
+              }, actor: socket.assigns.current_ash_user)
 
             {:ok, photo}
           end
@@ -96,7 +96,7 @@ defmodule VmemoWeb.HomePageLive do
   end
 
   defp load_photos(q, page, user) do
-    case Photo.hybrid_search(q, nil, Integer.to_string(user.id), page, actor: user) do
+    case Photo.hybrid_search(q, nil, user.id, page, actor: user) do
       {:ok, photos} -> photos
       _ -> []
     end
@@ -104,7 +104,7 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_ash_user
 
     q = Map.get(params, "q", "")
 
@@ -126,7 +126,7 @@ defmodule VmemoWeb.HomePageLive do
       <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
         <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
           <:empty>
-            <.live_component id="upload-form" module={UploadForm} current_user={@current_user} />
+            <.live_component id="upload-form" module={UploadForm} current_user={@current_ash_user} />
           </:empty>
 
           <:card :let={photo}>

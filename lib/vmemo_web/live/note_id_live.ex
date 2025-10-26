@@ -12,7 +12,7 @@ defmodule VmemoWeb.NoteIdLive do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    user_id = socket.assigns.current_user.id
+    user_id = socket.assigns.current_ash_user.id
     {:ok, %{note: note, photos: photos}} = TsNote.get(id, :photos)
 
     if note == nil || note.belongs_to != Integer.to_string(user_id) do

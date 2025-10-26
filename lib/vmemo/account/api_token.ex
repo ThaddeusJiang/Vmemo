@@ -60,11 +60,19 @@ defmodule Vmemo.Account.ApiToken do
       allow_nil? false
     end
 
+    attribute :ash_user_id, :uuid do
+      allow_nil? true
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
 
   relationships do
+    belongs_to :ash_user, Vmemo.Account.AshUser do
+      attribute_type :uuid
+      attribute_writable? true
+    end
   end
 
   actions do

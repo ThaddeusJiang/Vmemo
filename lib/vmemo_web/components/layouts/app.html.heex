@@ -2,7 +2,7 @@
   <header class="px-4 lg:px-4 flex-none ">
     <div class="flex items-center justify-between border-b border-base-300 h-[60px] text-sm gap-2 sm:gap-4">
       <div class="flex grow items-center gap-2 sm:gap-4">
-        <%= if @current_user do %>
+        <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
           <.link href="/home" class="flex gap-2 sm:gap-4 items-center font-bold ">
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" />
             <span class="hidden md:block">Vmemo</span>
@@ -11,7 +11,7 @@
             module={VmemoWeb.LiveComponents.SearchBox}
             id="search-box"
             q={assigns[:q] || ""}
-            current_user={@current_user}
+            current_user={assigns[:current_ash_user] || assigns[:current_user]}
           />
           <.link href="/upload" class="hidden sm:flex items-center">
             <svg
@@ -35,12 +35,12 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
-        <%= if @current_user do %>
+        <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
           <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="avatar avatar-placeholder avatar-online hover:cursor-pointer">
               <div class="bg-neutral text-neutral-content w-8 rounded-full">
                 <span>
-                  {String.at(@current_user.display_name || @current_user.email, 0)}
+                  {String.at((assigns[:current_ash_user] || assigns[:current_user]).email, 0)}
                 </span>
               </div>
             </div>

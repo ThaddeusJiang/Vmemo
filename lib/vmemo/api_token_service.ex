@@ -166,21 +166,6 @@ defmodule Vmemo.ApiTokenService do
     ApiToken.update(api_token, %{last_used_at: DateTime.utc_now() |> DateTime.truncate(:second)}, actor: api_token)
   end
 
-  defp get_client_ip(conn) do
-    # 优先从 X-Forwarded-For 获取真实 IP
-    case get_req_header(conn, "x-forwarded-for") do
-      [ip | _] -> ip |> String.split(",") |> List.first() |> String.trim()
-      [] ->
-        case get_req_header(conn, "x-real-ip") do
-          [ip | _] -> ip
-          [] -> to_string(:inet.ntoa(conn.remote_ip))
-        end
-    end
-  end
-
-  defp get_req_header(conn, header) do
-    Plug.Conn.get_req_header(conn, header)
-  end
 
   defp log_token_usage(api_token, action, _conn, metadata) do
     Logger.info("API Token #{action}: token_id=#{api_token.id}, user_id=#{api_token.user_id}, metadata=#{inspect(metadata)}")

@@ -186,7 +186,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   end
 
   def mount(%{"id" => id}, _session, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_ash_user
 
     case ApiTokenService.get_user_api_token!(user, id) do
       api_token ->
@@ -260,7 +260,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
     "#{created_date}_#{hash_preview}..."
   end
 
-  defp format_datetime_to_local(datetime, format \\ "datetime")
+  defp format_datetime_to_local(datetime, format)
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
     # 将 UTC 时间转换为中国时区 (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)

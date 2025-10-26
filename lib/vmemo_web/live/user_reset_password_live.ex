@@ -44,7 +44,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
     form_source =
       case socket.assigns do
         %{user: user} ->
-          Account.change_user_password(user)
+          Account.change_user_password(user, %{})
 
         _ ->
           %{}

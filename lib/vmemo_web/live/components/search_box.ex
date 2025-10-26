@@ -50,14 +50,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   defp handle_progress(:photo, entry, socket) do
-    user_id = socket.assigns.current_user.id
+    user_id = socket.assigns.current_ash_user.id
 
     if entry.done? do
       uploaded_file =
         consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
           filename = entry.uuid <> Path.extname(entry.client_name)
 
-          {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_user.id, filename)
+          {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_ash_user.id, filename)
 
           image_base64 = FileSystem.read_image_base64(dest)
 
@@ -70,7 +70,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                    url: Path.join("/", dest),
                    file_id: filename,
                    user_id: user_id |> Integer.to_string()
-                 }, actor: socket.assigns.current_user) do
+                 }, actor: socket.assigns.current_ash_user) do
               {:ok, photo} -> {:ok, photo}
               {:error, reason} -> {:error, reason}
             end

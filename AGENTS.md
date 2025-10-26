@@ -2,11 +2,20 @@
 
 This is a web application written using **Ash** and **Phoenix**
 
+- 文档资料
+
+  - **PDCA driven development**: Plan 保存在 `docs/tasks`
+
 - use **Ash** instead of **Ecto**
 
-## PhoenixFramework
+## Elixir 生态
+
+- elixir 使用 **pattern matching**
 
 - get routes by `mix phx.routes`
+- alway use `iex` `mix` run scripts
+
+
 
 # PostgreSQL rules
 

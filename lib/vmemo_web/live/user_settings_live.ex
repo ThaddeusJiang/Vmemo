@@ -21,20 +21,6 @@ defmodule VmemoWeb.UserSettingsLive do
           </.link>
         </div>
         <div>
-          <%!-- change display_name --%>
-          <.simple_form
-            for={@display_name_form}
-            id="display_name_form"
-            phx-submit="update_display_name"
-            phx-change="validate_display_name"
-          >
-            <.input field={@display_name_form[:display_name]} label="Display Name" />
-            <:actions>
-              <.button phx-disable-with="Changing...">Change</.button>
-            </:actions>
-          </.simple_form>
-        </div>
-        <div>
           <.simple_form
             for={@email_form}
             id="email_form"
@@ -99,11 +85,11 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Account.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
+      case Account.update_user_email(socket.assigns.current_ash_user, token) do
+        {:ok, _user} ->
           put_flash(socket, :info, "Email changed successfully.")
 
-        :error ->
+        {:error, _changeset} ->
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
       end
 
@@ -111,19 +97,15 @@ defmodule VmemoWeb.UserSettingsLive do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
-    email_changeset = Account.change_user_email(user)
-    password_changeset = Account.change_user_password(user)
-    display_name_changeset = Account.change_display_name(user)
+    user = socket.assigns.current_ash_user
 
     socket =
       socket
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
-      |> assign(:email_form, to_form(email_changeset))
-      |> assign(:password_form, to_form(password_changeset))
-      |> assign(:display_name_form, to_form(display_name_changeset))
+      |> assign(:email_form, to_form(%{"email" => user.email}, as: :user))
+      |> assign(:password_form, to_form(%{}, as: :user))
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
@@ -132,18 +114,14 @@ defmodule VmemoWeb.UserSettingsLive do
   def handle_event("validate_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
 
-    email_form =
-      socket.assigns.current_user
-      |> Account.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+    email_form = to_form(user_params, as: :user)
 
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
 
   def handle_event("update_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
+    user = socket.assigns.current_ash_user
 
     case Account.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
@@ -156,69 +134,31 @@ defmodule VmemoWeb.UserSettingsLive do
         info = "A link to confirm your email change has been sent to the new address."
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+      {:error, _changeset} ->
+        {:noreply, assign(socket, :email_form, to_form(user_params, as: :user))}
     end
   end
 
   def handle_event("validate_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
 
-    password_form =
-      socket.assigns.current_user
-      |> Account.change_user_password(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+    password_form = to_form(user_params, as: :user)
 
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
 
   def handle_event("update_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
+    user = socket.assigns.current_ash_user
 
     case Account.update_user_password(user, password, user_params) do
-      {:ok, user} ->
-        password_form =
-          user
-          |> Account.change_user_password(user_params)
-          |> to_form()
+      {:ok, _user} ->
+        password_form = to_form(user_params, as: :user)
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
-    end
-  end
-
-  # validate display_name
-  def handle_event("validate_display_name", params, socket) do
-    display_name_form =
-      socket.assigns.current_user
-      |> Account.change_display_name(params["user"])
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, display_name_form: display_name_form)}
-  end
-
-  # update display_name
-  def handle_event("update_display_name", params, socket) do
-    user = socket.assigns.current_user
-
-    case Account.update_user_display_name(user, params["user"]) do
-      {:ok, _} ->
-        display_name_form =
-          user
-          |> Account.change_display_name(params["user"])
-          |> to_form()
-
-        socket = socket |> put_flash(:info, "Display name changed successfully.")
-
-        {:noreply, assign(socket, display_name_form: display_name_form)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, display_name_form: to_form(changeset))}
+      {:error, _changeset} ->
+        {:noreply, assign(socket, password_form: to_form(user_params, as: :user))}
     end
   end
 end

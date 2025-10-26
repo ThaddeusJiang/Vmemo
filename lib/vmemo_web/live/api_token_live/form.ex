@@ -126,7 +126,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   end
 
   def handle_event("save_token", params, socket) do
-    user = socket.assigns.current_user
+    user = socket.assigns.current_ash_user
 
     # 处理表单参数
     token_params = case params do
@@ -191,7 +191,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   end
 
   # Helper functions
-  defp format_datetime_to_local(datetime, format \\ "datetime")
+  defp format_datetime_to_local(datetime, format)
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
     # 将 UTC 时间转换为中国时区 (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
