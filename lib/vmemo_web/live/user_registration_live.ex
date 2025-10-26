@@ -2,13 +2,14 @@ defmodule VmemoWeb.UserRegistrationLive do
   use VmemoWeb, :live_view
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, current_scope: :user)}
+    form = to_form(%{"email" => "", "password" => ""}, as: "user")
+    {:ok, assign(socket, current_scope: :user, form: form), temporary_assigns: [form: form]}
   end
 
-  def handle_event("register", %{"email" => email, "password" => password}, socket) do
+  def handle_event("register", %{"user" => user_params}, socket) do
     case Ash.create(Vmemo.Account.AshUser, %{
-           email: email,
-           password: password
+           email: user_params["email"],
+           password: user_params["password"]
          }, action: :register) do
       {:ok, _user} ->
         socket =
@@ -29,51 +30,34 @@ defmodule VmemoWeb.UserRegistrationLive do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col min-h-screen">
-      <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-          <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Create your account
-            </h2>
-          </div>
-          <form phx-submit="register" class="mt-8 space-y-6">
-            <div class="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label for="email" class="sr-only">Email address</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autocomplete="email"
-                  required
-                  class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
-                />
-              </div>
-              <div>
-                <label for="password" class="sr-only">Password</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autocomplete="new-password"
-                  required
-                  class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
-                />
-              </div>
-            </div>
+    <div class="min-h-screen flex items-center justify-center bg-base-200 py-12 px-4 sm:px-6 lg:px-8">
+      <div class="card w-full max-w-md bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title text-center text-3xl font-bold text-base-content mb-6">
+            Create your account
+          </h2>
 
-            <div>
-              <button
-                type="submit"
-                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
+          <.simple_form for={@form} id="registration_form" phx-submit="register">
+            <.input field={@form[:email]} type="email" label="Email address" required />
+            <.input field={@form[:password]} type="password" label="Password" required />
+
+            <:actions>
+              <.button class="w-full">
                 Create Account
-              </button>
-            </div>
-          </form>
+              </.button>
+            </:actions>
+          </.simple_form>
+
+          <div class="divider">OR</div>
+
+          <div class="text-center">
+            <span class="text-sm text-base-content/70">
+              Already have an account?
+            </span>
+            <.link navigate={~p"/users/log_in"} class="link link-primary font-semibold ml-1">
+              Sign in
+            </.link>
+          </div>
         </div>
       </div>
     </div>
