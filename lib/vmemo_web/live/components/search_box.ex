@@ -89,7 +89,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
     ~H"""
     <div class="grow container max-w-md dropdown dropdown-open place-self-start">
       <form :if={!@show_expanded} action="/home" method="get" class="form-control container">
-        <label class="input input-bordered flex items-center rounded-3xl">
+        <label class="input input-bordered flex items-center rounded-3xl w-full">
           <input type="search" name="q" class=" grow" placeholder="Search" value={@q} />
 
           <div class="flex items-center">
@@ -118,7 +118,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       <div
         :if={@show_expanded}
-        class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-lg p-4 sm:p-4  container "
+        class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-lg p-4 sm:p-4  container aspect-3/2 "
       >
         <header class="container flex items-center justify-center ">
           <p class="text-gray-500">Search any image</p>
@@ -133,7 +133,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         </header>
         <form
           id="search-by-photo"
-          class="form-control flex flex-col items-center justify-center gap-4"
+          class="form-control flex flex-col items-center justify-center gap-4 "
           phx-submit="search_by_photo"
           phx-change="validate"
           phx-target={@myself}
@@ -144,8 +144,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
               <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
             </div>
             <span class="text-xs text-gray-500 mt-4">
-              <span class="hidden md:block">Drag an image here or</span>
-              <span class="link link-hover link-info">upload a file</span>
+              Drag and drop an image here or click to upload
             </span>
 
             <.live_file_input upload={@uploads.photo} class="hidden" />
