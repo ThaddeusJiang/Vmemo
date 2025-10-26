@@ -13,7 +13,7 @@ defmodule Vmemo.Repo.Migrations.CreateTokens do
       add :is_active, :boolean, default: true, null: false
       # 创建时间，用于 token 显示
       add :created_at, :utc_datetime
-      add :user_id, references(:account_users, on_delete: :delete_all), null: false
+      add :user_id, :text, null: false
 
       timestamps()
     end

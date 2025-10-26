@@ -11,10 +11,6 @@ defmodule Vmemo.AshRepo.Migrations.ChangeUuidToString do
     ALTER TABLE ash_user_tokens DROP CONSTRAINT IF EXISTS ash_user_tokens_ash_user_id_fkey
     """)
 
-    execute("""
-    ALTER TABLE api_tokens DROP CONSTRAINT IF EXISTS api_tokens_ash_user_id_fkey
-    """)
-
     # 修改 ash_users 表的 id 从 UUID 改为 TEXT
     execute("""
     ALTER TABLE ash_users ALTER COLUMN id TYPE text USING id::text
@@ -25,19 +21,23 @@ defmodule Vmemo.AshRepo.Migrations.ChangeUuidToString do
     ALTER TABLE ash_users ALTER COLUMN id DROP DEFAULT
     """)
 
-    # 修改 api_tokens 表的 ash_user_id 从 UUID 改为 TEXT
+    # 修改 api_tokens 表的 ash_user_id 从 UUID 改为 TEXT (if column exists)
     execute("""
-    ALTER TABLE api_tokens
-    ALTER COLUMN ash_user_id TYPE text
-    """)
-
-    # 重新创建外键
-    execute("""
-    ALTER TABLE api_tokens
-    ADD CONSTRAINT api_tokens_ash_user_id_fkey
-    FOREIGN KEY (ash_user_id)
-    REFERENCES ash_users(id)
-    ON DELETE CASCADE
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'api_tokens' AND column_name = 'ash_user_id'
+      ) THEN
+        ALTER TABLE api_tokens ALTER COLUMN ash_user_id TYPE text;
+        
+        ALTER TABLE api_tokens
+        ADD CONSTRAINT api_tokens_ash_user_id_fkey
+        FOREIGN KEY (ash_user_id)
+        REFERENCES ash_users(id)
+        ON DELETE CASCADE;
+      END IF;
+    END $$;
     """)
 
     # 修改 ash_user_tokens 表的 ash_user_id
@@ -75,22 +75,23 @@ defmodule Vmemo.AshRepo.Migrations.ChangeUuidToString do
     ON DELETE CASCADE
     """)
 
+    # Revert api_tokens if column exists
     execute("""
-    ALTER TABLE api_tokens
-    DROP CONSTRAINT IF EXISTS api_tokens_ash_user_id_fkey
-    """)
-
-    execute("""
-    ALTER TABLE api_tokens
-    ALTER COLUMN ash_user_id TYPE uuid USING ash_user_id::uuid
-    """)
-
-    execute("""
-    ALTER TABLE api_tokens
-    ADD CONSTRAINT api_tokens_ash_user_id_fkey
-    FOREIGN KEY (ash_user_id)
-    REFERENCES ash_users(id)
-    ON DELETE CASCADE
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'api_tokens' AND column_name = 'ash_user_id'
+      ) THEN
+        ALTER TABLE api_tokens DROP CONSTRAINT IF EXISTS api_tokens_ash_user_id_fkey;
+        ALTER TABLE api_tokens ALTER COLUMN ash_user_id TYPE uuid USING ash_user_id::uuid;
+        ALTER TABLE api_tokens
+        ADD CONSTRAINT api_tokens_ash_user_id_fkey
+        FOREIGN KEY (ash_user_id)
+        REFERENCES ash_users(id)
+        ON DELETE CASCADE;
+      END IF;
+    END $$;
     """)
 
     execute("""

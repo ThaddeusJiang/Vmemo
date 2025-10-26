@@ -4,8 +4,8 @@ defmodule VmemoWeb.TokenLiveTest do
   import Phoenix.LiveViewTest
 
   defp create_token(_) do
-    # Use existing user from database directly
-    user = Vmemo.Repo.get!(Vmemo.Account.User, 1)
+    # Create a test user using AccountFixtures
+    user = Vmemo.AccountFixtures.user_fixture()
     # Use ApiTokenService to create token
     case Vmemo.ApiTokenService.create_api_token(user, %{
            "name" => "test token",

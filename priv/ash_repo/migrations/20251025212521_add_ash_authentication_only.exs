@@ -60,25 +60,11 @@ defmodule Vmemo.AshRepo.Migrations.AddAshAuthenticationOnly do
           )
     end
 
-    # 为 api_tokens 表添加 ash_user_id 列
-    alter table(:api_tokens) do
-      add :ash_user_id,
-          references(:ash_users,
-            column: :id,
-            name: "api_tokens_ash_user_id_fkey",
-            type: :uuid,
-            prefix: "public"
-          )
-    end
+    # Note: api_tokens table ash_user_id column will be added by a separate Ecto migration
+    # after the api_tokens table is created
   end
 
   def down do
-    # 删除 api_tokens 表的 ash_user_id 外键
-    drop constraint(:api_tokens, "api_tokens_ash_user_id_fkey")
-    alter table(:api_tokens) do
-      remove :ash_user_id
-    end
-
     # 删除 ash_user_tokens 表
     drop constraint(:ash_user_tokens, "ash_user_tokens_ash_user_id_fkey")
     drop table(:ash_user_tokens)

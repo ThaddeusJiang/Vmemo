@@ -31,6 +31,9 @@ config :vmemo, Vmemo.AshRepo,
 config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
+# JWT signing secret for Ash Authentication
+config :vmemo, :jwt_signing_secret, "test-secret-for-jwt-signing-in-tests"
+
 config :vmemo, ollama_url: System.get_env("OLLAMA_URL", "http://localhost:11434")
 config :vmemo, ollama_api_key: System.get_env("OLLAMA_API_KEY", "local")
 

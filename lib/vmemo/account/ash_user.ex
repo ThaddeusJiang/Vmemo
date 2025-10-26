@@ -22,7 +22,7 @@ defmodule Vmemo.Account.AshUser do
     tokens do
       enabled?(true)
       token_lifetime(60 * 24 * 60 * 60)
-      signing_secret("m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC")
+      signing_secret(Application.fetch_env!(:vmemo, :jwt_signing_secret))
       token_resource(Vmemo.Account.AshUserToken)
     end
   end
@@ -51,6 +51,9 @@ defmodule Vmemo.Account.AshUser do
         end
       end
 
+      # Validate required fields with custom messages - run before hash_password
+      change &validate_required_fields/2
+
       change &hash_password/2
     end
 
@@ -71,8 +74,22 @@ defmodule Vmemo.Account.AshUser do
       primary_key? true
     end
 
-    attribute :email, :string, allow_nil?: false, public?: true
-    attribute :password, :string, allow_nil?: true, sensitive?: true
+    attribute :email, :string do
+      allow_nil? false
+      public? true
+
+      constraints match: ~r/^[^\s]+@[^\s]+$/,
+                  max_length: 160
+    end
+
+    attribute :password, :string do
+      allow_nil? true
+      sensitive? true
+
+      constraints min_length: 12,
+                  max_length: 72
+    end
+
     attribute :hashed_password, :string, allow_nil?: false, sensitive?: true
     attribute :confirmed_at, :utc_datetime, public?: true
     create_timestamp :inserted_at
@@ -85,6 +102,35 @@ defmodule Vmemo.Account.AshUser do
 
   identities do
     identity :unique_email, [:email]
+  end
+
+  # 验证必填字段
+  defp validate_required_fields(changeset, _context) do
+    # Get the attributes to check what was actually provided
+    # When using 'accept', values are set as attributes, not arguments
+    email = Ash.Changeset.get_attribute(changeset, :email)
+    password = Ash.Changeset.get_attribute(changeset, :password)
+
+    changeset
+    |> validate_field_present(:email, email)
+    |> validate_field_present(:password, password)
+  end
+
+  defp validate_field_present(changeset, field, value) do
+    # Only add "can't be blank" error if:
+    # 1. Value is nil or empty string
+    # 2. There are no existing errors for this field (to avoid duplicate errors)
+    if (is_nil(value) or value == "") and not has_error_for_field?(changeset, field) do
+      Ash.Changeset.add_error(changeset, field: field, message: "can't be blank")
+    else
+      changeset
+    end
+  end
+
+  defp has_error_for_field?(changeset, field) do
+    Enum.any?(changeset.errors, fn error ->
+      Map.get(error, :field) == field
+    end)
   end
 
   # 密码哈希函数
