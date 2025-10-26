@@ -4,7 +4,7 @@ defmodule Vmemo.AccountTest do
   alias Vmemo.Account
 
   import Vmemo.AccountFixtures
-  alias Vmemo.Account.{User, UserToken}
+  alias Vmemo.Account.{AshUser, AshUserToken}
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -13,7 +13,7 @@ defmodule Vmemo.AccountTest do
 
     test "returns the user if the email exists" do
       %{id: id} = user = user_fixture()
-      assert %User{id: ^id} = Account.get_user_by_email(user.email)
+      assert %AshUser{id: ^id} = Account.get_user_by_email(user.email)
     end
   end
 
@@ -30,7 +30,7 @@ defmodule Vmemo.AccountTest do
     test "returns the user if the email and password are valid" do
       %{id: id} = user = user_fixture()
 
-      assert %User{id: ^id} =
+      assert %AshUser{id: ^id} =
                Account.get_user_by_email_and_password(user.email, valid_user_password())
     end
   end
@@ -44,7 +44,7 @@ defmodule Vmemo.AccountTest do
 
     test "returns the user with the given id" do
       %{id: id} = user = user_fixture()
-      assert %User{id: ^id} = Account.get_user!(user.id)
+      assert %AshUser{id: ^id} = Account.get_user!(user.id)
     end
   end
 
@@ -96,7 +96,7 @@ defmodule Vmemo.AccountTest do
 
   describe "change_user_registration/2" do
     test "returns a changeset" do
-      assert %Ecto.Changeset{} = changeset = Account.change_user_registration(%User{})
+      assert %Ecto.Changeset{} = changeset = Account.change_user_registration(%AshUser{})
       assert changeset.required == [:password, :email]
     end
 
@@ -106,7 +106,7 @@ defmodule Vmemo.AccountTest do
 
       changeset =
         Account.change_user_registration(
-          %User{},
+          %AshUser{},
           valid_user_attributes(email: email, password: password)
         )
 
@@ -119,7 +119,7 @@ defmodule Vmemo.AccountTest do
 
   describe "change_user_email/2" do
     test "returns a user changeset" do
-      assert %Ecto.Changeset{} = changeset = Account.change_user_email(%User{})
+      assert %Ecto.Changeset{} = changeset = Account.change_user_email(%AshUser{})
       assert changeset.required == [:email]
     end
   end
@@ -186,10 +186,10 @@ defmodule Vmemo.AccountTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
-      assert user_token.user_id == user.id
-      assert user_token.sent_to == user.email
-      assert user_token.context == "change:current@vmemo.app"
+      assert user_token = Repo.get_by(AshUserToken, jti: :crypto.hash(:sha256, token))
+      assert user_token.ash_user_id == user.id
+      assert user_token.subject == user.email
+      assert user_token.purpose == "change:current@vmemo.app"
     end
   end
 
@@ -208,43 +208,43 @@ defmodule Vmemo.AccountTest do
 
     test "updates the email with a valid token", %{user: user, token: token, email: email} do
       assert Account.update_user_email(user, token) == :ok
-      changed_user = Repo.get!(User, user.id)
+      changed_user = Repo.get!(AshUser, user.id)
       assert changed_user.email != user.email
       assert changed_user.email == email
       assert changed_user.confirmed_at
       assert changed_user.confirmed_at != user.confirmed_at
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not update email with invalid token", %{user: user} do
       assert Account.update_user_email(user, "oops") == :error
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(AshUser, user.id).email == user.email
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not update email if user email changed", %{user: user, token: token} do
       assert Account.update_user_email(%{user | email: "current@vmemo.app"}, token) == :error
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(AshUser, user.id).email == user.email
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not update email if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(AshUserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       assert Account.update_user_email(user, token) == :error
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(AshUser, user.id).email == user.email
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
   end
 
   describe "change_user_password/2" do
     test "returns a user changeset" do
-      assert %Ecto.Changeset{} = changeset = Account.change_user_password(%User{})
+      assert %Ecto.Changeset{} = changeset = Account.change_user_password(%AshUser{})
       assert changeset.required == [:password]
     end
 
     test "allows fields to be set" do
       changeset =
-        Account.change_user_password(%User{}, %{
+        Account.change_user_password(%AshUser{}, %{
           "password" => "new valid password"
         })
 
@@ -306,7 +306,7 @@ defmodule Vmemo.AccountTest do
           password: "new valid password"
         })
 
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
   end
 
@@ -317,15 +317,22 @@ defmodule Vmemo.AccountTest do
 
     test "generates a token", %{user: user} do
       token = Account.generate_user_session_token(user)
-      assert user_token = Repo.get_by(UserToken, token: token)
-      assert user_token.context == "session"
+      assert user_token = Repo.get_by(AshUserToken, jti: token)
+      assert user_token.purpose == "session"
 
       # Creating the same token for another user should fail
       assert_raise Ecto.ConstraintError, fn ->
-        Repo.insert!(%UserToken{
-          token: user_token.token,
-          user_id: user_fixture().id,
-          context: "session"
+        Repo.insert!(%AshUserToken{
+          jti: user_token.jti,
+          ash_user_id: user_fixture().id,
+          purpose: "session",
+          subject: "test",
+          aud: "test",
+          exp: DateTime.utc_now(),
+          iss: "test",
+          sub: "test",
+          typ: "test",
+          expires_at: DateTime.utc_now()
         })
       end
     end
@@ -348,7 +355,7 @@ defmodule Vmemo.AccountTest do
     end
 
     test "does not return user for expired token", %{token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(AshUserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       refute Account.get_user_by_session_token(token)
     end
   end
@@ -374,10 +381,10 @@ defmodule Vmemo.AccountTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
-      assert user_token.user_id == user.id
-      assert user_token.sent_to == user.email
-      assert user_token.context == "confirm"
+      assert user_token = Repo.get_by(AshUserToken, jti: :crypto.hash(:sha256, token))
+      assert user_token.ash_user_id == user.id
+      assert user_token.subject == user.email
+      assert user_token.purpose == "confirm"
     end
   end
 
@@ -397,21 +404,21 @@ defmodule Vmemo.AccountTest do
       assert {:ok, confirmed_user} = Account.confirm_user(token)
       assert confirmed_user.confirmed_at
       assert confirmed_user.confirmed_at != user.confirmed_at
-      assert Repo.get!(User, user.id).confirmed_at
-      refute Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(AshUser, user.id).confirmed_at
+      refute Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not confirm with invalid token", %{user: user} do
       assert Account.confirm_user("oops") == :error
-      refute Repo.get!(User, user.id).confirmed_at
-      assert Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get!(AshUser, user.id).confirmed_at
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not confirm email if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(AshUserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       assert Account.confirm_user(token) == :error
-      refute Repo.get!(User, user.id).confirmed_at
-      assert Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get!(AshUser, user.id).confirmed_at
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
   end
 
@@ -427,10 +434,10 @@ defmodule Vmemo.AccountTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
-      assert user_token.user_id == user.id
-      assert user_token.sent_to == user.email
-      assert user_token.context == "reset_password"
+      assert user_token = Repo.get_by(AshUserToken, jti: :crypto.hash(:sha256, token))
+      assert user_token.ash_user_id == user.id
+      assert user_token.subject == user.email
+      assert user_token.purpose == "reset_password"
     end
   end
 
@@ -447,19 +454,19 @@ defmodule Vmemo.AccountTest do
     end
 
     test "returns the user with valid token", %{user: %{id: id}, token: token} do
-      assert %User{id: ^id} = Account.get_user_by_reset_password_token(token)
-      assert Repo.get_by(UserToken, user_id: id)
+      assert %AshUser{id: ^id} = Account.get_user_by_reset_password_token(token)
+      assert Repo.get_by(AshUserToken, ash_user_id: id)
     end
 
     test "does not return the user with invalid token", %{user: user} do
       refute Account.get_user_by_reset_password_token("oops")
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not return the user if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} = Repo.update_all(AshUserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       refute Account.get_user_by_reset_password_token(token)
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
   end
 
@@ -496,13 +503,13 @@ defmodule Vmemo.AccountTest do
     test "deletes all tokens for the given user", %{user: user} do
       _ = Account.generate_user_session_token(user)
       {:ok, _} = Account.reset_user_password(user, %{password: "new valid password"})
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
   end
 
-  describe "inspect/2 for the User module" do
+  describe "inspect/2 for the AshUser module" do
     test "does not include password" do
-      refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+      refute inspect(%AshUser{password: "123456"}) =~ "password: \"123456\""
     end
   end
 end
