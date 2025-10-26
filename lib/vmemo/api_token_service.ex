@@ -132,6 +132,8 @@ defmodule Vmemo.ApiTokenService do
         else
           # 更新最后使用时间
           update_last_used_at(api_token)
+          # 加载 ash_user
+          api_token = Ash.load!(api_token, :ash_user)
           {:ok, api_token}
         end
       {:error, _} ->

@@ -19,16 +19,24 @@ defmodule VmemoWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :api_auth do
+    plug VmemoWeb.ApiAuth
+  end
+
   scope "/", VmemoWeb do
     pipe_through :browser
 
     get "/", PageController, :landing
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", VmemoWeb do
-  #   pipe_through :api
-  # end
+  # API routes
+  scope "/api/v1", VmemoWeb.Api.V1 do
+    pipe_through [:api, :api_auth]
+
+    post "/photos", PhotoController, :create
+    get "/photos/:id", PhotoController, :show
+    delete "/photos/:id", PhotoController, :delete
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:vmemo, :dev_routes) do

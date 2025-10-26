@@ -12,11 +12,11 @@ defmodule VmemoWeb.PhotoIdLive do
   def mount(%{"id" => id, "action" => action}, _session, socket) do
     user = socket.assigns.current_ash_user
 
-    case Photo.get_with_notes(id, Integer.to_string(user.id)) do
+    case Photo.get_with_notes(id, user.id, actor: user) do
       {:ok, photo} ->
         notes = photo.notes || []
 
-        case Photo.list_similar(photo.id, Integer.to_string(user.id), nil, actor: user) do
+        case Photo.list_similar(photo.id, user.id, actor: user) do
           {:ok, photos} ->
             socket =
               socket
@@ -53,11 +53,11 @@ defmodule VmemoWeb.PhotoIdLive do
   def mount(%{"id" => id}, _session, socket) do
     user = socket.assigns.current_ash_user
 
-    case Photo.get_with_notes(id, %{"user_id" => Integer.to_string(user.id)}, actor: user) do
+    case Photo.get_with_notes(id, user.id, actor: user) do
       {:ok, photo} ->
         notes = photo.notes || []
 
-        case Photo.list_similar(photo.id, Integer.to_string(user.id), nil, actor: user) do
+        case Photo.list_similar(photo.id, user.id, actor: user) do
           {:ok, photos} ->
             socket =
               socket

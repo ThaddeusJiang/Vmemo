@@ -56,12 +56,13 @@ defmodule Vmemo.Account.ApiToken do
       allow_nil? false
     end
 
+    # @deprecated "Use ash_user_id instead. This field is kept for migration compatibility."
     attribute :user_id, :integer do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :uuid do
-      allow_nil? true
+    attribute :ash_user_id, :string do
+      allow_nil? false
     end
 
     create_timestamp :inserted_at
@@ -70,7 +71,7 @@ defmodule Vmemo.Account.ApiToken do
 
   relationships do
     belongs_to :ash_user, Vmemo.Account.AshUser do
-      attribute_type :uuid
+      attribute_type :string
       attribute_writable? true
     end
   end

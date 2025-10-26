@@ -15,7 +15,7 @@ defmodule VmemoWeb.NoteIdLive do
     user_id = socket.assigns.current_ash_user.id
     {:ok, %{note: note, photos: photos}} = TsNote.get(id, :photos)
 
-    if note == nil || note.belongs_to != Integer.to_string(user_id) do
+    if note == nil || note.belongs_to != user_id do
       {:noreply,
        socket
        |> assign(note: nil)

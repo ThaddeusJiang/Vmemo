@@ -28,7 +28,10 @@ defmodule Vmemo.Account.AshUser do
   end
 
   attributes do
-    uuid_primary_key :id
+    attribute :id, :string do
+      allow_nil? false
+      primary_key? true
+    end
     attribute :email, :string, allow_nil?: false, public?: true
     attribute :password, :string, allow_nil?: true, sensitive?: true
     attribute :hashed_password, :string, allow_nil?: false, sensitive?: true
@@ -50,11 +53,21 @@ defmodule Vmemo.Account.AshUser do
 
     create :register do
       accept [:email, :password]
+      change fn changeset, _context ->
+        # 如果没有提供 ID，生成一个 UUID 字符串
+        case Ash.Changeset.get_attribute(changeset, :id) do
+          nil ->
+            id = Ecto.UUID.generate()
+            Ash.Changeset.change_attribute(changeset, :id, id)
+          _existing_id ->
+            changeset
+        end
+      end
       change &hash_password/2
     end
 
     update :update_profile do
-      accept [:email]
+      accept [:email, :confirmed_at]
     end
 
     update :change_password do

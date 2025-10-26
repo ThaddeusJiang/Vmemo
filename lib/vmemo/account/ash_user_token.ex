@@ -25,7 +25,7 @@ defmodule Vmemo.Account.AshUserToken do
 
   relationships do
     belongs_to :ash_user, Vmemo.Account.AshUser do
-      attribute_type :uuid
+      attribute_type :string
       attribute_writable? true
     end
   end

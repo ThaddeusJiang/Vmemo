@@ -20,7 +20,7 @@ defmodule Vmemo.Photos.Photo do
     define :read
     define :update
     define :destroy
-    define :get_with_notes, args: [:id]
+    define :get_with_notes, args: [:id, :user_id]
     define :hybrid_search, args: [:query, :similar_photo_id, :user_id, :page]
     define :list_similar, args: [:photo_id, :user_id]
     define :gen_description
@@ -65,7 +65,7 @@ defmodule Vmemo.Photos.Photo do
 
     read :get_with_notes do
       get? true
-      argument :id, :uuid, allow_nil?: false
+      argument :id, :string, allow_nil?: false
       argument :user_id, :string, allow_nil?: false
 
       filter expr(id == ^arg(:id) and user_id == ^arg(:user_id))
@@ -117,7 +117,7 @@ defmodule Vmemo.Photos.Photo do
         user_id = Ash.Query.get_argument(query, :user_id)
 
         photos = Vmemo.PhotoService.TsPhoto.list_similar_photos(photo_id, user_id: user_id)
-        photo_ids = 
+        photo_ids =
           photos
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)

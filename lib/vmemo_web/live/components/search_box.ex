@@ -69,7 +69,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                    note: "",
                    url: Path.join("/", dest),
                    file_id: filename,
-                   user_id: user_id |> Integer.to_string()
+                   user_id: user_id
                  }, actor: socket.assigns.current_ash_user) do
               {:ok, photo} -> {:ok, photo}
               {:error, reason} -> {:error, reason}
