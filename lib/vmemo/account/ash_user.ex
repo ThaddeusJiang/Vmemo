@@ -22,7 +22,11 @@ defmodule Vmemo.Account.AshUser do
     tokens do
       enabled?(true)
       token_lifetime(60 * 24 * 60 * 60)
-      signing_secret(Application.fetch_env!(:vmemo, :jwt_signing_secret))
+
+      signing_secret(
+        Application.compile_env(:vmemo, :jwt_signing_secret, "default_secret_for_compilation")
+      )
+
       token_resource(Vmemo.Account.AshUserToken)
     end
   end

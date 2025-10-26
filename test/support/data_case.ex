@@ -66,13 +66,13 @@ defmodule Vmemo.DataCase do
           messages =
             Enum.map(errors, fn error ->
               # Extract error message, stripping bread crumbs if present
-              message = 
+              message =
                 if function_exported?(error.__struct__, :message, 1) do
                   error.__struct__.message(error)
                 else
                   Map.get(error, :message, inspect(error))
                 end
-              
+
               # Strip "Bread Crumbs:" prefix if present
               # Format: "Bread Crumbs:\n  > ...\n\n\nactual message"
               message
@@ -94,13 +94,13 @@ defmodule Vmemo.DataCase do
           messages =
             Enum.map(errors, fn error ->
               # Extract error message, stripping bread crumbs if present
-              message = 
+              message =
                 if function_exported?(error.__struct__, :message, 1) do
                   error.__struct__.message(error)
                 else
                   Map.get(error, :message, inspect(error))
                 end
-              
+
               # Strip "Bread Crumbs:" prefix if present
               # Format: "Bread Crumbs:\n  > ...\n\n\nactual message"
               message
@@ -130,28 +130,28 @@ defmodule Vmemo.DataCase do
   # Normalize Ash error messages to match Ecto-style messages
   defp normalize_error_message(message) do
     # Strip "Invalid value provided for X:" prefix if present
-    message = 
+    message =
       case Regex.run(~r/Invalid value provided for \w+: (.+)\n\nValue:/, message) do
         [_, core_message] -> String.trim(core_message)
         _ -> message
       end
-    
+
     # Remove trailing period
     message = String.trim_trailing(message, ".")
-    
+
     cond do
       String.contains?(message, "must match the pattern") ->
         "must have the @ sign and no spaces"
-      
+
       String.contains?(message, "length must be greater than or equal to 12") ->
         "should be at least 12 character(s)"
-      
+
       String.contains?(message, "length must be less than or equal to 72") ->
         "should be at most 72 character(s)"
-      
+
       String.contains?(message, "length must be less than or equal to 160") ->
         "should be at most 160 character(s)"
-      
+
       true ->
         message
     end
