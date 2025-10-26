@@ -60,7 +60,7 @@ defmodule Vmemo.DataCase do
         |> Map.new()
 
       # For Ecto-style changesets (if still used)
-      %Ecto.Changeset{errors: errors} ->
+      %Ecto.Changeset{errors: _errors} ->
         Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
           Regex.replace(~r"%{(\w+)}", message, fn _, key ->
             opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()

@@ -38,7 +38,7 @@ defmodule VmemoWeb.ApiFixtures do
     attrs = Map.merge(default_attrs, attrs)
 
     case ApiTokenService.create_api_token(user, attrs) do
-w      {:ok, _api_token, raw_token} -> raw_token
+      {:ok, _api_token, raw_token} -> raw_token
       {:error, error} -> raise "Failed to create test API token: #{inspect(error)}"
     end
   end

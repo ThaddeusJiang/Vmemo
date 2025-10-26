@@ -25,7 +25,7 @@ defmodule Vmemo.AccountFixtures do
       {:ok, user} ->
         user
 
-      {:error, error} ->
+      {:error, _error} ->
         # Retry with new unique email if email conflict
         retry_attrs = fresh_attrs |> Map.put(:email, unique_user_email())
 
