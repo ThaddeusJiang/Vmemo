@@ -44,7 +44,7 @@ config :spark,
   ]
 
 config :vmemo,
-  ecto_repos: [Vmemo.Repo, Vmemo.AshRepo],
+  ecto_repos: [Vmemo.AshRepo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [Vmemo.Photos, Vmemo.AccountDomain]
 

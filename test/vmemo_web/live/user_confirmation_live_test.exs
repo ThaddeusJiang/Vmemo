@@ -5,7 +5,7 @@ defmodule VmemoWeb.UserConfirmationLiveTest do
   import Vmemo.AccountFixtures
 
   alias Vmemo.Account
-  alias Vmemo.Repo
+  # alias Vmemo.Repo
 
   setup do
     %{user: user_fixture()}
@@ -38,7 +38,8 @@ defmodule VmemoWeb.UserConfirmationLiveTest do
 
       assert Account.get_user!(user.id).confirmed_at
       refute get_session(conn, :user_token)
-      assert Repo.all(Account.UserToken) == []
+      # Token verification removed - Ash uses JWT tokens instead of UserToken records
+      # assert Repo.all(Account.UserToken) == []
 
       # when not logged in
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")

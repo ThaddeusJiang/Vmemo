@@ -30,12 +30,6 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
-  config :vmemo, Vmemo.Repo,
-    # ssl: true,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
-
   config :vmemo, Vmemo.AshRepo,
     # ssl: true,
     url: database_url,
@@ -59,7 +53,7 @@ if config_env() == :prod do
   config :vmemo, admin_token: admin_token
 
   config :vmemo, Oban,
-    repo: Vmemo.Repo,
+    repo: Vmemo.AshRepo,
     plugins: [Oban.Plugins.Pruner],
     queues: [default: 10, sync_typesense: 5]
 

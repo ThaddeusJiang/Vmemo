@@ -3,16 +3,6 @@ import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
-config :vmemo, Vmemo.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "vmemo_dev",
-  port: 54321,
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
-
 config :vmemo, Vmemo.AshRepo,
   username: "postgres",
   password: "postgres",
@@ -33,7 +23,7 @@ config :vmemo, ollama_api_key: "local"
 config :vmemo, admin_token: "admin"
 
 config :vmemo, Oban,
-  repo: Vmemo.Repo,
+  repo: Vmemo.AshRepo,
   notifier: Oban.Notifiers.PG,
   plugins: [Oban.Plugins.Pruner],
   queues: [default: 10, sync_typesense: 5]

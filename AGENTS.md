@@ -2,6 +2,8 @@
 
 This is a web application written using **Ash** and **Phoenix**
 
+- alway response in **Chinese**, write code(includes UI) in **English**
+
 - 文档资料
 
   - **PDCA driven development**: Plan 保存在 `docs/tasks`
@@ -24,7 +26,6 @@ This is a web application written using **Ash** and **Phoenix**
 
 ## Do
 
-- alway response in **Chinese**, write code(includes UI) in **English**
 - **short** git message, use `feat:` `fix:` `chore:` as prefix
 - fetches up-to-date code examples and documentation use **Context7**
 - debug in browser use **Playwright**, take screen image for UI

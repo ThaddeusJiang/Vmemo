@@ -42,7 +42,7 @@ defmodule Vmemo.Account.ApiToken do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:name, :description, :expires_at, :user_id, :token_hash]
+      accept [:name, :description, :expires_at, :ash_user_id, :token_hash]
 
       change fn changeset, _context ->
         changeset
@@ -88,15 +88,15 @@ defmodule Vmemo.Account.ApiToken do
     read :get_by_user_and_id do
       get? true
       argument :id, :integer, allow_nil?: false
-      argument :user_id, :integer, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
 
-      filter expr(id == ^arg(:id) and user_id == ^arg(:user_id))
+      filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
     end
 
     read :list_by_user do
-      argument :user_id, :integer, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
 
-      filter expr(user_id == ^arg(:user_id))
+      filter expr(ash_user_id == ^arg(:ash_user_id))
     end
 
     read :verify_token do
@@ -130,16 +130,16 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_expiring_tokens do
-      argument :user_id, :integer, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
       argument :days, :integer, default: 7
 
       prepare fn query, _context ->
-        user_id = Ash.Query.get_argument(query, :user_id)
+        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
         days = Ash.Query.get_argument(query, :days)
         cutoff_date = DateTime.utc_now() |> DateTime.add(days * 24 * 60 * 60, :second)
 
         Ash.Query.filter(query,
-          user_id: user_id,
+          ash_user_id: ash_user_id,
           is_active: true,
           expires_at: [less_than_or_equal_to: cutoff_date, greater_than: DateTime.utc_now()]
         )
@@ -148,13 +148,13 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_expired_tokens do
-      argument :user_id, :integer, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
 
       prepare fn query, _context ->
-        user_id = Ash.Query.get_argument(query, :user_id)
+        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
 
         Ash.Query.filter(query,
-          user_id: user_id,
+          ash_user_id: ash_user_id,
           is_active: true,
           expires_at: [less_than_or_equal_to: DateTime.utc_now()]
         )
@@ -193,7 +193,7 @@ defmodule Vmemo.Account.ApiToken do
 
     # @deprecated "Use ash_user_id instead. This field is kept for migration compatibility."
     attribute :user_id, :integer do
-      allow_nil? false
+      allow_nil? true
     end
 
     attribute :ash_user_id, :string do

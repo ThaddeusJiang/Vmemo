@@ -11,9 +11,9 @@ defmodule Vmemo.AshRepo.Migrations.ChangeUuidToString do
     ALTER TABLE ash_user_tokens DROP CONSTRAINT IF EXISTS ash_user_tokens_ash_user_id_fkey
     """)
 
-    execute("""
-    ALTER TABLE api_tokens DROP CONSTRAINT IF EXISTS api_tokens_ash_user_id_fkey
-    """)
+    # execute("""
+    # ALTER TABLE api_tokens DROP CONSTRAINT IF EXISTS api_tokens_ash_user_id_fkey
+    # """)
 
     # 修改 ash_users 表的 id 从 UUID 改为 TEXT
     execute("""
@@ -26,19 +26,19 @@ defmodule Vmemo.AshRepo.Migrations.ChangeUuidToString do
     """)
 
     # 修改 api_tokens 表的 ash_user_id 从 UUID 改为 TEXT
-    execute("""
-    ALTER TABLE api_tokens
-    ALTER COLUMN ash_user_id TYPE text
-    """)
+    # execute("""
+    # ALTER TABLE api_tokens
+    # ALTER COLUMN ash_user_id TYPE text
+    # """)
 
     # 重新创建外键
-    execute("""
-    ALTER TABLE api_tokens
-    ADD CONSTRAINT api_tokens_ash_user_id_fkey
-    FOREIGN KEY (ash_user_id)
-    REFERENCES ash_users(id)
-    ON DELETE CASCADE
-    """)
+    # execute("""
+    # ALTER TABLE api_tokens
+    # ADD CONSTRAINT api_tokens_ash_user_id_fkey
+    # FOREIGN KEY (ash_user_id)
+    # REFERENCES ash_users(id)
+    # ON DELETE CASCADE
+    # """)
 
     # 修改 ash_user_tokens 表的 ash_user_id
     execute("""

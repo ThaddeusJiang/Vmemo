@@ -15,7 +15,7 @@ defmodule VmemoWeb.ApiAuth do
   def call(conn, _opts) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] ->
-        verify_token(conn, token)
+        if token != "", do: verify_token(conn, token), else: unauthorized(conn)
 
       _ ->
         unauthorized(conn)

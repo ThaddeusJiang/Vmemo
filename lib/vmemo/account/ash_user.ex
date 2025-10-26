@@ -43,7 +43,7 @@ defmodule Vmemo.Account.AshUser do
         # 如果没有提供 ID，生成一个 UUID 字符串
         case Ash.Changeset.get_attribute(changeset, :id) do
           nil ->
-            id = Ecto.UUID.generate()
+            id = generate_uuid()
             Ash.Changeset.change_attribute(changeset, :id, id)
 
           _existing_id ->
@@ -97,5 +97,11 @@ defmodule Vmemo.Account.AshUser do
         hashed_password = Bcrypt.hash_pwd_salt(password)
         Ash.Changeset.change_attribute(changeset, :hashed_password, hashed_password)
     end
+  end
+
+  defp generate_uuid do
+    :crypto.strong_rand_bytes(16)
+    |> Base.encode16(case: :lower)
+    |> String.replace(~r/(.{8})(.{4})(.{4})(.{4})(.{12})/, "\\1-\\2-\\3-\\4-\\5")
   end
 end

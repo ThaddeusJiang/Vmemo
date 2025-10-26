@@ -134,7 +134,11 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   end
 
   defp generate_filename(original_filename) do
-    uuid = Ecto.UUID.generate()
+    # Use Elixir's built-in :crypto or generate UUID string
+    uuid =
+      :crypto.strong_rand_bytes(16)
+      |> Base.encode16(case: :lower)
+      |> String.replace(~r/(.{8})(.{4})(.{4})(.{4})(.{12})/, "\\1-\\2-\\3-\\4-\\5")
     extension = Path.extname(original_filename)
     "#{uuid}#{extension}"
   end

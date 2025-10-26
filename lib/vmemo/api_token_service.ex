@@ -24,7 +24,7 @@ defmodule Vmemo.ApiTokenService do
   def get_api_token!(id) do
     case ApiToken.get_by_id(id) do
       {:ok, token} -> token
-      {:error, _} -> raise Ecto.NoResultsError, queryable: ApiToken
+      {:error, _} -> raise "No API token found with id: #{id}"
     end
   end
 
@@ -34,7 +34,7 @@ defmodule Vmemo.ApiTokenService do
   def get_user_api_token!(user, id) do
     case ApiToken.get_by_user_and_id(id, user.id, actor: user) do
       {:ok, token} -> token
-      {:error, _} -> raise Ecto.NoResultsError, queryable: ApiToken
+      {:error, _} -> raise "No API token found with id: #{id} for user: #{user.id}"
     end
   end
 
@@ -93,7 +93,7 @@ defmodule Vmemo.ApiTokenService do
       |> Map.new()
 
     attrs_with_expires = Map.put(attrs_atoms, :expires_at, expires_at)
-    attrs_with_user = Map.put(attrs_with_expires, :user_id, user.id)
+    attrs_with_user = Map.put(attrs_with_expires, :ash_user_id, user.id)
 
     # 生成 token
     {raw_token, hash} = Vmemo.Account.ApiToken.generate_token()

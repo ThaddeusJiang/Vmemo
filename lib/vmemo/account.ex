@@ -3,7 +3,6 @@ defmodule Vmemo.Account do
   The Account context.
   """
 
-  import Ecto.Query, warn: false
   alias Vmemo.Account.AshUser
 
   @doc """
