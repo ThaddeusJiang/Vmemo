@@ -68,9 +68,10 @@ defmodule Vmemo.MixProject do
       {:sourceror, "~> 1.7", only: [:dev, :test]},
       {:ash, "~> 3.0"},
       {:ash_postgres, "~> 2.0"},
-      {:ash_phoenix, "~> 2.0"},
+      {:ash_phoenix, "~> 2.1"},
       {:ash_oban, "~> 0.2"},
       {:ash_admin, "~> 0.13.19"},
+      {:ash_authentication, "~> 4.0"},
       {:oban, "~> 2.17"},
       {:oban_web, "~> 2.0"},
       {:igniter, "~> 0.5", only: [:dev]}

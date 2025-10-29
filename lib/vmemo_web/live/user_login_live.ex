@@ -3,34 +3,45 @@ defmodule VmemoWeb.UserLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header class="text-center pb-4">
-        Sign in to account
-        <:subtitle>
-          Don't have an account?
-          <.link navigate={~p"/users/register"} class="link font-semibold">
-            Sign up
-          </.link>
-          for an account now.
-        </:subtitle>
-      </.header>
+    <div class="min-h-screen flex items-center justify-center bg-base-200 py-12 px-4 sm:px-6 lg:px-8">
+      <div class="card w-full max-w-md bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title text-center text-3xl font-bold text-base-content mb-6">
+            Sign in to your account
+          </h2>
 
-      <.simple_form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore">
-        <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Password" required />
+          <.simple_form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore">
+            <.input field={@form[:email]} type="email" label="Email address" required />
+            <.input field={@form[:password]} type="password" label="Password" required />
 
-        <:actions>
-          <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link href={~p"/users/reset_password"} class="text-sm font-semibold link">
-            Forgot your password?
-          </.link>
-        </:actions>
-        <:actions>
-          <.button phx-disable-with="Logging in..." class="w-full">
-            Sign in <span aria-hidden="true">→</span>
-          </.button>
-        </:actions>
-      </.simple_form>
+            <:actions>
+              <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
+              <.link href={~p"/users/reset_password"} class="link link-primary text-sm font-semibold">
+                Forgot your password?
+              </.link>
+            </:actions>
+            <:actions>
+              <.button phx-disable-with="Logging in..." class="w-full">
+                Sign in <span aria-hidden="true">→</span>
+              </.button>
+            </:actions>
+          </.simple_form>
+
+          <div class="divider">OR</div>
+
+          <div class="text-center">
+            <span class="text-sm text-base-content/70">
+              Don't have an account?
+            </span>
+            <.link navigate={~p"/users/register"} class="link link-primary font-semibold ml-1">
+              Sign up
+            </.link>
+            <span class="text-sm text-base-content/70 ml-1">
+              for an account now.
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
     """
   end

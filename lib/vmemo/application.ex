@@ -9,7 +9,6 @@ defmodule Vmemo.Application do
   def start(_type, _args) do
     children = [
       VmemoWeb.Telemetry,
-      Vmemo.Repo,
       Vmemo.AshRepo,
       {DNSCluster, query: Application.get_env(:vmemo, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Vmemo.PubSub},

@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(Vmemo.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Vmemo.AshRepo, :manual)

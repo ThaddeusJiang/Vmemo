@@ -1,87 +1,70 @@
 defmodule VmemoWeb.UserRegistrationLive do
   use VmemoWeb, :live_view
 
-  alias Vmemo.Account
-  alias Vmemo.Account.User
+  def mount(_params, _session, socket) do
+    form = to_form(%{"email" => "", "password" => ""}, as: "user")
+    {:ok, assign(socket, current_scope: :user, form: form), temporary_assigns: [form: form]}
+  end
+
+  def handle_event("register", %{"user" => user_params}, socket) do
+    case Ash.create(
+           Vmemo.Account.AshUser,
+           %{
+             email: user_params["email"],
+             password: user_params["password"]
+           },
+           action: :register
+         ) do
+      {:ok, _user} ->
+        socket =
+          socket
+          |> put_flash(:info, "Account created successfully")
+          |> redirect(to: ~p"/users/log_in")
+
+        {:noreply, socket}
+
+      {:error, reason} ->
+        socket =
+          socket
+          |> put_flash(:error, "Failed to create account: #{inspect(reason)}")
+
+        {:noreply, socket}
+    end
+  end
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header class="text-center">
-        Register for an account
-        <:subtitle>
-          Already registered?
-          <.link navigate={~p"/users/log_in"} class="link font-semibold">
-            Sign in
-          </.link>
-          to your account now.
-        </:subtitle>
-      </.header>
+    <div class="min-h-screen flex items-center justify-center bg-base-200 py-12 px-4 sm:px-6 lg:px-8">
+      <div class="card w-full max-w-md bg-base-100 shadow-xl">
+        <div class="card-body">
+          <h2 class="card-title text-center text-3xl font-bold text-base-content mb-6">
+            Create your account
+          </h2>
 
-      <.simple_form
-        for={@form}
-        id="registration_form"
-        phx-submit="save"
-        phx-change="validate"
-        phx-trigger-action={@trigger_submit}
-        action={~p"/users/log_in?_action=registered"}
-        method="post"
-      >
-        <.error :if={@check_errors}>
-          Oops, something went wrong! Please check the errors below.
-        </.error>
+          <.simple_form for={@form} id="registration_form" phx-submit="register">
+            <.input field={@form[:email]} type="email" label="Email address" required />
+            <.input field={@form[:password]} type="password" label="Password" required />
 
-        <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Password" required />
+            <:actions>
+              <.button class="w-full">
+                Create Account
+              </.button>
+            </:actions>
+          </.simple_form>
 
-        <:actions>
-          <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
-        </:actions>
-      </.simple_form>
+          <div class="divider">OR</div>
+
+          <div class="text-center">
+            <span class="text-sm text-base-content/70">
+              Already have an account?
+            </span>
+            <.link navigate={~p"/users/log_in"} class="link link-primary font-semibold ml-1">
+              Sign in
+            </.link>
+          </div>
+        </div>
+      </div>
     </div>
     """
-  end
-
-  def mount(_params, _session, socket) do
-    changeset = Account.change_user_registration(%User{})
-
-    socket =
-      socket
-      |> assign(trigger_submit: false, check_errors: false)
-      |> assign_form(changeset)
-
-    {:ok, socket, temporary_assigns: [form: nil]}
-  end
-
-  def handle_event("save", %{"user" => user_params}, socket) do
-    case Account.register_user(user_params) do
-      {:ok, user} ->
-        {:ok, _} =
-          Account.deliver_user_confirmation_instructions(
-            user,
-            &url(~p"/users/confirm/#{&1}")
-          )
-
-        changeset = Account.change_user_registration(user)
-        {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
-    end
-  end
-
-  def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Account.change_user_registration(%User{}, user_params)
-    {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
-  end
-
-  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    form = to_form(changeset, as: "user")
-
-    if changeset.valid? do
-      assign(socket, form: form, check_errors: false)
-    else
-      assign(socket, form: form)
-    end
   end
 end
