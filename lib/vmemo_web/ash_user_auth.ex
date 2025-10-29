@@ -10,16 +10,42 @@ defmodule VmemoWeb.AshUserAuth do
   Logs the Ash user in.
   """
   def log_in_ash_user(conn, ash_user, params \\ %{}) do
-    # 使用 Ash Authentication 的 token 系统
-    token = generate_ash_user_session_token(ash_user)
+    # Get user_return_to BEFORE renewing session (which clears it)
     user_return_to = get_session(conn, :user_return_to)
 
+    # Delete old session token if it exists (important for password updates)
+    if old_token = get_session(conn, :user_token) do
+      delete_ash_user_session_token(old_token)
+    end
+
+    # 使用 Ash Authentication 的 token 系统
+    # Generate a NEW token for this login
+    token = generate_ash_user_session_token(ash_user)
+
     conn
+    |> Phoenix.Controller.fetch_flash()
     |> renew_session()
     |> put_token_in_session(token)
     |> maybe_write_remember_me_cookie(token, params)
+    |> maybe_put_return_flash(user_return_to)
     |> redirect(to: user_return_to || signed_in_path(conn))
   end
+
+  defp maybe_put_return_flash(conn, user_return_to) when is_binary(user_return_to) do
+    # Only set "Welcome back!" if there's no existing flash message
+    case Map.get(conn.assigns, :flash) do
+      nil ->
+        put_flash(conn, :info, "Welcome back!")
+
+      flash ->
+        case Phoenix.Flash.get(flash, :info) do
+          nil -> put_flash(conn, :info, "Welcome back!")
+          _ -> conn
+        end
+    end
+  end
+
+  defp maybe_put_return_flash(conn, _), do: conn
 
   defp generate_ash_user_session_token(ash_user) do
     # 使用 Ash Authentication JWT 生成 session token
@@ -57,7 +83,7 @@ defmodule VmemoWeb.AshUserAuth do
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{System.unique_integer([:positive])}")
+    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
   end
 
   @doc """
@@ -66,6 +92,10 @@ defmodule VmemoWeb.AshUserAuth do
   def log_out_ash_user(conn) do
     user_token = get_session(conn, :user_token)
     user_token && delete_ash_user_session_token(user_token)
+
+    if live_socket_id = get_session(conn, :live_socket_id) do
+      VmemoWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
+    end
 
     conn
     |> renew_session()
@@ -148,6 +178,7 @@ defmodule VmemoWeb.AshUserAuth do
       conn
     else
       conn
+      |> Phoenix.Controller.fetch_flash()
       |> put_flash(:error, "You must sign in to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")

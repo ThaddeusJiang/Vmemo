@@ -149,20 +149,53 @@ defmodule Vmemo.Account do
 
   """
   def apply_ash_user_email(ash_user, password, attrs) do
-    # 使用 Ash Authentication 验证密码
+    # First validate the email using Ash changeset
+    changeset = Ash.Changeset.for_update(ash_user, :update_profile, attrs)
+
+    # Collect validation errors
+    validation_errors =
+      if changeset.valid? do
+        []
+      else
+        Enum.map(changeset.errors, fn error ->
+          field = Map.get(error, :field) || Map.get(error, :input) || :base
+          message = Map.get(error, :message, "is invalid")
+          {field, {message, []}}
+        end)
+      end
+
+    # Check if email changed
+    new_email = Map.get(attrs, "email") || Map.get(attrs, :email)
+
+    email_change_errors =
+      if new_email == ash_user.email do
+        [email: {"did not change", []}]
+      else
+        []
+      end
+
+    # Verify current password
     strategy = AshAuthentication.Info.strategy!(AshUser, :password)
 
-    case AshAuthentication.Strategy.action(strategy, :sign_in, %{
-           "email" => ash_user.email,
-           "password" => password
-         }) do
-      {:ok, _user} ->
-        # 密码正确，返回更新后的用户
-        {:ok, Map.merge(ash_user, attrs)}
+    password_errors =
+      case AshAuthentication.Strategy.action(strategy, :sign_in, %{
+             "email" => ash_user.email,
+             "password" => password
+           }) do
+        {:ok, _user} ->
+          []
 
-      {:error, _reason} ->
-        # 密码错误
-        {:error, %{errors: [password: {"is not valid", []}]}}
+        {:error, _reason} ->
+          [current_password: {"is not valid", []}]
+      end
+
+    # Combine all errors
+    all_errors = validation_errors ++ email_change_errors ++ password_errors
+
+    if Enum.empty?(all_errors) do
+      {:ok, Map.merge(ash_user, attrs)}
+    else
+      {:error, %{errors: all_errors}}
     end
   end
 
@@ -173,16 +206,22 @@ defmodule Vmemo.Account do
   The confirmation success response is returned, otherwise the error is returned.
   """
   def update_ash_user_email(ash_user, token) do
-    # 使用 Ash Authentication JWT 验证 token
-    case AshAuthentication.Jwt.verify(token, AshUser) do
-      {:ok, _claims, _resource} ->
-        # Token 有效，更新邮箱
-        case update_ash_user(ash_user, %{email: ash_user.email}) do
-          {:ok, updated_user} ->
-            {:ok, updated_user}
+    # Verify the token and extract the payload
+    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_email", token, max_age: 86400) do
+      {:ok, %{user_id: user_id, current_email: current_email, new_email: new_email}} ->
+        # Verify the token is for this user and the current email matches
+        if ash_user.id == user_id and ash_user.email == current_email do
+          # Update the email to the new email
+          case update_ash_user(ash_user, %{email: new_email}) do
+            {:ok, updated_user} ->
+              {:ok, updated_user}
 
-          {:error, changeset} ->
-            {:error, changeset}
+            {:error, changeset} ->
+              {:error, changeset}
+          end
+        else
+          # Token is for a different user or email has already been changed
+          {:error, %{errors: [token: {"is not valid", []}]}}
         end
 
       _ ->
@@ -207,18 +246,23 @@ defmodule Vmemo.Account do
     if ash_user.confirmed_at do
       {:error, :already_confirmed}
     else
-      # 生成一个简单的 confirmation token 用于测试
-      # 在实际应用中，这应该是一个随机生成的唯一 token
-      token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+      # Generate a signed token containing user_id for confirmation
+      token =
+        Phoenix.Token.sign(VmemoWeb.Endpoint, "user_confirmation", %{
+          user_id: ash_user.id
+        })
+
       confirmation_url = confirmation_url_fun.(token)
 
       # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
-      {:ok, %{
-        to: ash_user.email,
-        body: confirmation_url,
-        text_body: confirmation_url,
-        html_body: "<html><body><a href=\"#{confirmation_url}\">Confirm your email</a></body></html>"
-      }}
+      {:ok,
+       %{
+         to: ash_user.email,
+         body: confirmation_url,
+         text_body: confirmation_url,
+         html_body:
+           "<html><body><a href=\"#{confirmation_url}\">Confirm your email</a></body></html>"
+       }}
     end
   end
 
@@ -226,27 +270,23 @@ defmodule Vmemo.Account do
   Confirms the ash_user by setting `confirmed_at` to the current time.
   """
   def confirm_ash_user(token) do
-    case AshAuthentication.Jwt.verify(token, AshUser) do
-      {:ok, claims, _resource} ->
-        # 从 claims 中获取用户 ID
-        case Map.get(claims, "sub") do
-          nil ->
-            {:error, :invalid_token}
+    # Verify the token and extract the payload
+    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86400) do
+      {:ok, %{user_id: user_id}} ->
+        case Ash.get(AshUser, user_id) do
+          {:ok, ash_user} ->
+            # Check if user is already confirmed
+            if ash_user.confirmed_at do
+              {:error, :already_confirmed}
+            else
+              # 更新 confirmed_at
+              case update_ash_user(ash_user, %{confirmed_at: DateTime.utc_now()}) do
+                {:ok, updated_user} ->
+                  {:ok, updated_user}
 
-          "ash_user?id=" <> user_id ->
-            case Ash.get(AshUser, user_id) do
-              {:ok, ash_user} ->
-                # 更新 confirmed_at
-                case update_ash_user(ash_user, %{confirmed_at: DateTime.utc_now()}) do
-                  {:ok, updated_user} ->
-                    {:ok, updated_user}
-
-                  {:error, changeset} ->
-                    {:error, changeset}
-                end
-
-              _ ->
-                {:error, :invalid_token}
+                {:error, changeset} ->
+                  {:error, changeset}
+              end
             end
 
           _ ->
@@ -275,12 +315,13 @@ defmodule Vmemo.Account do
     reset_url = reset_password_url_fun.(token)
 
     # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
-    {:ok, %{
-      to: ash_user.email,
-      body: reset_url,
-      text_body: reset_url,
-      html_body: "<html><body><a href=\"#{reset_url}\">Reset your password</a></body></html>"
-    }}
+    {:ok,
+     %{
+       to: ash_user.email,
+       body: reset_url,
+       text_body: reset_url,
+       html_body: "<html><body><a href=\"#{reset_url}\">Reset your password</a></body></html>"
+     }}
   end
 
   @doc """
@@ -349,20 +390,48 @@ defmodule Vmemo.Account do
 
   """
   def update_ash_user_password(ash_user, password, attrs) do
-    # 验证当前密码
+    # Filter out email from attrs since change_password action doesn't accept it
+    password_attrs =
+      Map.take(attrs, ["password", "password_confirmation", :password, :password_confirmation])
+
+    # First validate the password using Ash changeset
+    changeset = Ash.Changeset.for_update(ash_user, :change_password, password_attrs)
+
+    # Collect validation errors
+    validation_errors =
+      if changeset.valid? do
+        []
+      else
+        Enum.map(changeset.errors, fn error ->
+          field = Map.get(error, :field) || Map.get(error, :input) || :base
+          message = Map.get(error, :message, "is invalid")
+          {field, {message, []}}
+        end)
+      end
+
+    # Verify current password
     strategy = AshAuthentication.Info.strategy!(AshUser, :password)
 
-    case AshAuthentication.Strategy.action(strategy, :sign_in, %{
-           "email" => ash_user.email,
-           "password" => password
-         }) do
-      {:ok, _user} ->
-        # 密码正确，更新密码
-        reset_ash_user_password(ash_user, attrs)
+    password_errors =
+      case AshAuthentication.Strategy.action(strategy, :sign_in, %{
+             "email" => ash_user.email,
+             "password" => password
+           }) do
+        {:ok, _user} ->
+          []
 
-      {:error, _reason} ->
-        # 密码错误
-        {:error, %{errors: [current_password: {"is not valid", []}]}}
+        {:error, _reason} ->
+          [current_password: {"is not valid", []}]
+      end
+
+    # Combine all errors
+    all_errors = validation_errors ++ password_errors
+
+    if Enum.empty?(all_errors) do
+      # All validations passed, update password
+      reset_ash_user_password(ash_user, password_attrs)
+    else
+      {:error, %{errors: all_errors}}
     end
   end
 
@@ -514,59 +583,24 @@ defmodule Vmemo.Account do
         update_email_url_fun
       )
       when is_function(update_email_url_fun, 1) do
-    # 生成一个简单的 update email token 用于测试
-    # 在实际应用中，这应该是一个随机生成的唯一 token
-    token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+    # Generate a signed token containing user_id, current_email, and new_email
+    # This ensures the token can only be used once and for the correct email change
+    token =
+      Phoenix.Token.sign(VmemoWeb.Endpoint, "user_email", %{
+        user_id: ash_user.id,
+        current_email: current_email,
+        new_email: ash_user.email
+      })
+
     update_url = update_email_url_fun.(token)
 
     # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
-    {:ok, %{
-      to: current_email,
-      body: update_url,
-      text_body: update_url,
-      html_body: "<html><body><a href=\"#{update_url}\">Update your email</a></body></html>"
-    }}
+    {:ok,
+     %{
+       to: ash_user.email,
+       body: update_url,
+       text_body: update_url,
+       html_body: "<html><body><a href=\"#{update_url}\">Update your email</a></body></html>"
+     }}
   end
-
-  # 为了向后兼容，保留一些旧的函数名
-  defdelegate get_user_by_email(email), to: __MODULE__, as: :get_ash_user_by_email
-
-  defdelegate get_user_by_email_and_password(email, password),
-    to: __MODULE__,
-    as: :get_ash_user_by_email_and_password
-
-  defdelegate get_user!(id), to: __MODULE__, as: :get_ash_user!
-  defdelegate create_user(attrs), to: __MODULE__, as: :create_ash_user
-  defdelegate update_user(user, attrs), to: __MODULE__, as: :update_ash_user
-  defdelegate delete_user(user), to: __MODULE__, as: :delete_ash_user
-  defdelegate change_user(user, attrs), to: __MODULE__, as: :change_ash_user
-  defdelegate change_user_email(user, attrs), to: __MODULE__, as: :change_ash_user_email
-  defdelegate apply_user_email(user, password, attrs), to: __MODULE__, as: :apply_ash_user_email
-  defdelegate update_user_email(user, token), to: __MODULE__, as: :update_ash_user_email
-
-  defdelegate deliver_user_confirmation_instructions(user, url_fun),
-    to: __MODULE__,
-    as: :deliver_ash_user_confirmation_instructions
-
-  defdelegate confirm_user(token), to: __MODULE__, as: :confirm_ash_user
-
-  defdelegate deliver_user_reset_password_instructions(user, url_fun),
-    to: __MODULE__,
-    as: :deliver_ash_user_reset_password_instructions
-
-  defdelegate get_user_by_reset_password_token(token),
-    to: __MODULE__,
-    as: :get_ash_user_by_reset_password_token
-
-  defdelegate reset_user_password(user, attrs), to: __MODULE__, as: :reset_ash_user_password
-
-  defdelegate update_user_password(user, password, attrs),
-    to: __MODULE__,
-    as: :update_ash_user_password
-
-  defdelegate change_user_password(user, attrs), to: __MODULE__, as: :change_ash_user_password
-
-  defdelegate deliver_user_update_email_instructions(user, email, url_fun),
-    to: __MODULE__,
-    as: :deliver_ash_user_update_email_instructions
 end

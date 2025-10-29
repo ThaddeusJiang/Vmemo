@@ -5,9 +5,6 @@ defmodule Vmemo.Seeds.TestUsers do
 
   alias Vmemo.Account
   alias Vmemo.AshRepo
-  alias Vmemo.Repo
-
-  require Ecto.Query
 
   def run do
     # 创建 test 用户
@@ -21,22 +18,23 @@ defmodule Vmemo.Seeds.TestUsers do
     email = "test@mail.com"
     password = "password123456"
 
-    # 确保有 account_users 记录（用于 api_tokens.user_id 外键）
-    create_account_user_if_needed(email)
-
     case Account.get_ash_user_by_email(email) do
       nil ->
         case Account.register_user(%{email: email, password: password}) do
           {:ok, user} ->
-            # 确认用户
-            user
-            |> Ash.Changeset.for_update(:update_profile, %{
-              confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)
-            })
-            |> Ash.update!()
-
-            IO.puts("✓ Created and confirmed user: #{email}")
-            user
+            # 确认用户 - 使用 raw SQL 更新 confirmed_at
+            now = DateTime.utc_now() |> DateTime.truncate(:second)
+            
+            case AshRepo.query("UPDATE ash_users SET confirmed_at = $1 WHERE id = $2", [now, user.id]) do
+              {:ok, _} ->
+                IO.puts("✓ Created and confirmed user: #{email}")
+                # 重新加载用户以获取更新后的 confirmed_at
+                Account.get_ash_user_by_email(email)
+              
+              {:error, error} ->
+                IO.puts("⚠ User created but confirmation failed: #{inspect(error)}")
+                user
+            end
 
           {:error, changeset} ->
             IO.puts("✗ Failed to create user #{email}: #{inspect(changeset.errors)}")
@@ -46,44 +44,6 @@ defmodule Vmemo.Seeds.TestUsers do
       existing_user ->
         IO.puts("→ User already exists: #{email}")
         existing_user
-    end
-  end
-
-  # 创建 account_users 记录（用于兼容旧系统）
-  defp create_account_user_if_needed(email) do
-    # 检查是否已存在
-    sql = "SELECT id FROM account_users WHERE email = $1 LIMIT 1"
-
-    case Repo.query(sql, [email]) do
-      {:ok, %{rows: []}} ->
-        # 需要创建
-        insert_sql = """
-        INSERT INTO account_users (email, hashed_password, inserted_at, updated_at)
-        VALUES ($1, $2, NOW(), NOW())
-        RETURNING id
-        """
-
-        # 生成一个简单的 hash
-        hash = Bcrypt.hash_pwd_salt("dummy")
-
-        case Repo.query(insert_sql, [email, hash]) do
-          {:ok, %{rows: [[id]]}} ->
-            IO.puts("✓ Created account_users record: #{id}")
-          _ ->
-            :ok
-        end
-      _ ->
-        :ok
-    end
-  end
-
-  # 获取 account_users 的 id
-  defp get_account_user_id do
-    sql = "SELECT id FROM account_users LIMIT 1"
-
-    case Repo.query(sql, []) do
-      {:ok, %{rows: [[id]]}} -> id
-      _ -> 1  # fallback
     end
   end
 
@@ -107,11 +67,7 @@ defmodule Vmemo.Seeds.TestUsers do
     now_sec = DateTime.utc_now() |> DateTime.truncate(:second)
     now_usec = DateTime.utc_now()
 
-    # 使用 raw SQL 插入以绕过 Ash/Ecto 限制
-    # 尝试不设置 user_id 或者设置一个存在的值
-    # 获取一个 account_users 的 id
-    account_user_id = get_account_user_id()
-
+    # 使用 raw SQL 插入 - user_id 字段设置为 NULL（已经是 nullable）
     sql = """
     INSERT INTO api_tokens (name, description, expires_at, token_hash, ash_user_id, user_id, created_at, inserted_at, updated_at, is_active)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -125,7 +81,7 @@ defmodule Vmemo.Seeds.TestUsers do
            expires_at,
            hash,
            user.id,  # 字符串 ID
-           account_user_id,  # 整数 ID from account_users
+           nil,  # user_id 设置为 NULL（不再需要 account_users）
            now_sec,
            now_usec,
            now_usec,

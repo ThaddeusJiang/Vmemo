@@ -33,8 +33,8 @@ defmodule VmemoWeb.UserConfirmationInstructionsLive do
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
-    if user = Account.get_user_by_email(email) do
-      Account.deliver_user_confirmation_instructions(
+    if user = Account.get_ash_user_by_email(email) do
+      Account.deliver_ash_user_confirmation_instructions(
         user,
         &url(~p"/users/confirm/#{&1}")
       )

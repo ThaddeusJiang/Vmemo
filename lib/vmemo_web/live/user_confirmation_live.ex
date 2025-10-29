@@ -31,7 +31,7 @@ defmodule VmemoWeb.UserConfirmationLive do
   # Do not sign in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
   def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
-    case Account.confirm_user(token) do
+    case Account.confirm_ash_user(token) do
       {:ok, _} ->
         {:noreply,
          socket

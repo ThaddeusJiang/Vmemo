@@ -9,6 +9,7 @@ defmodule Vmemo.AccountFixtures do
 
   def valid_user_attributes(attrs \\ %{}) do
     password = valid_user_password()
+
     Enum.into(attrs, %{
       email: unique_user_email(),
       password: password,
@@ -19,6 +20,7 @@ defmodule Vmemo.AccountFixtures do
   def user_fixture(attrs \\ %{}) do
     # Always generate a completely fresh email to avoid conflicts
     password = valid_user_password()
+
     fresh_attrs =
       attrs
       |> Map.put_new(:email, unique_user_email())

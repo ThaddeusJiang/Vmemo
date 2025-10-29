@@ -7,45 +7,45 @@ defmodule Vmemo.AccountTest do
   import Vmemo.AccountFixtures
   alias Vmemo.Account.AshUser
 
-  describe "get_user_by_email/1" do
+  describe "get_ash_user_by_email/1" do
     test "does not return the user if the email does not exist" do
-      refute Account.get_user_by_email("unknown@vmemo.app")
+      refute Account.get_ash_user_by_email("unknown@vmemo.app")
     end
 
     test "returns the user if the email exists" do
       %{id: id} = user = user_fixture()
-      assert %AshUser{id: ^id} = Account.get_user_by_email(user.email)
+      assert %AshUser{id: ^id} = Account.get_ash_user_by_email(user.email)
     end
   end
 
-  describe "get_user_by_email_and_password/2" do
+  describe "get_ash_user_by_email_and_password/2" do
     test "does not return the user if the email does not exist" do
-      refute Account.get_user_by_email_and_password("unknown@vmemo.app", "hello world!")
+      refute Account.get_ash_user_by_email_and_password("unknown@vmemo.app", "hello world!")
     end
 
     test "does not return the user if the password is not valid" do
       user = user_fixture()
-      refute Account.get_user_by_email_and_password(user.email, "invalid")
+      refute Account.get_ash_user_by_email_and_password(user.email, "invalid")
     end
 
     test "returns the user if the email and password are valid" do
       %{id: id} = user = user_fixture()
 
       assert %AshUser{id: ^id} =
-               Account.get_user_by_email_and_password(user.email, valid_user_password())
+               Account.get_ash_user_by_email_and_password(user.email, valid_user_password())
     end
   end
 
-  describe "get_user!/1" do
+  describe "get_ash_user!/1" do
     test "raises if id is invalid" do
       assert_raise Ash.Error.Invalid, fn ->
-        Account.get_user!(-1)
+        Account.get_ash_user!(-1)
       end
     end
 
     test "returns the user with the given id" do
       %{id: id} = user = user_fixture()
-      assert %AshUser{id: ^id} = Account.get_user!(user.id)
+      assert %AshUser{id: ^id} = Account.get_ash_user!(user.id)
     end
   end
 
@@ -76,19 +76,20 @@ defmodule Vmemo.AccountTest do
       email = unique_user_email()
       password = valid_user_password()
 
-      {:ok, user} = Account.register_user(%{
-        email: email,
-        password: password
-      })
+      {:ok, user} =
+        Account.register_user(%{
+          email: email,
+          password: password
+        })
 
       assert user.email == email
       assert user.id
     end
   end
 
-  describe "change_user_email/2" do
+  describe "change_ash_user_email/2" do
     test "returns a user changeset" do
-      changeset = Account.change_user_email(%AshUser{}, %{})
+      changeset = Account.change_ash_user_email(%AshUser{}, %{})
       assert %Ash.Changeset{} = changeset
       # Ash changesets don't have a :required field like Ecto
       # They use the action's accept list instead
@@ -125,7 +126,7 @@ defmodule Vmemo.AccountTest do
     end
   end
 
-  describe "deliver_user_update_email_instructions/3" do
+  describe "deliver_ash_user_update_email_instructions/3" do
     setup do
       %{user: user_fixture()}
     end
@@ -133,12 +134,12 @@ defmodule Vmemo.AccountTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_user_update_email_instructions(user, "current@vmemo.app", url)
+          Account.deliver_ash_user_update_email_instructions(user, "current@vmemo.app", url)
         end)
 
-      {:ok, token} = Base.url_decode64(token, padding: false)
-      # JWT tokens are stateless, can't verify database records
+      # Phoenix.Token tokens are already encoded and ready to use
       assert is_binary(token)
+      assert String.length(token) > 0
     end
   end
 
@@ -149,7 +150,11 @@ defmodule Vmemo.AccountTest do
 
       token =
         extract_user_token(fn url ->
-          Account.deliver_user_update_email_instructions(%{user | email: email}, user.email, url)
+          Account.deliver_ash_user_update_email_instructions(
+            %{user | email: email},
+            user.email,
+            url
+          )
         end)
 
       %{user: user, token: token, email: email}
@@ -172,9 +177,9 @@ defmodule Vmemo.AccountTest do
     end
   end
 
-  describe "change_user_password/2" do
+  describe "change_ash_user_password/2" do
     test "returns a user changeset" do
-      changeset = Account.change_user_password(%AshUser{}, %{})
+      changeset = Account.change_ash_user_password(%AshUser{}, %{})
       assert %Ash.Changeset{} = changeset
       # Ash changesets don't have a :required field like Ecto
       # They use the action's accept list instead
@@ -250,7 +255,7 @@ defmodule Vmemo.AccountTest do
     end
   end
 
-  describe "deliver_user_confirmation_instructions/2" do
+  describe "deliver_ash_user_confirmation_instructions/2" do
     setup do
       %{user: user_fixture()}
     end
@@ -258,12 +263,12 @@ defmodule Vmemo.AccountTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_user_confirmation_instructions(user, url)
+          Account.deliver_ash_user_confirmation_instructions(user, url)
         end)
 
-      {:ok, token} = Base.url_decode64(token, padding: false)
-      # JWT tokens are stateless, can't verify database records
+      # Phoenix.Token tokens are already encoded and ready to use
       assert is_binary(token)
+      assert String.length(token) > 0
     end
   end
 
@@ -273,7 +278,7 @@ defmodule Vmemo.AccountTest do
 
       token =
         extract_user_token(fn url ->
-          Account.deliver_user_confirmation_instructions(user, url)
+          Account.deliver_ash_user_confirmation_instructions(user, url)
         end)
 
       %{user: user, token: token}
@@ -292,7 +297,7 @@ defmodule Vmemo.AccountTest do
     end
   end
 
-  describe "deliver_user_reset_password_instructions/2" do
+  describe "deliver_ash_user_reset_password_instructions/2" do
     setup do
       %{user: user_fixture()}
     end
@@ -300,7 +305,7 @@ defmodule Vmemo.AccountTest do
     test "sends token through notification", %{user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_user_reset_password_instructions(user, url)
+          Account.deliver_ash_user_reset_password_instructions(user, url)
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
@@ -309,13 +314,13 @@ defmodule Vmemo.AccountTest do
     end
   end
 
-  describe "get_user_by_reset_password_token/1" do
+  describe "get_ash_user_by_reset_password_token/1" do
     setup do
       user = user_fixture()
 
       token =
         extract_user_token(fn url ->
-          Account.deliver_user_reset_password_instructions(user, url)
+          Account.deliver_ash_user_reset_password_instructions(user, url)
         end)
 
       %{user: user, token: token}
@@ -326,8 +331,8 @@ defmodule Vmemo.AccountTest do
     end
 
     test "does not return the user with invalid token", %{user: user} do
-      refute Account.get_user_by_reset_password_token("oops")
-            # assert Repo.get_by(AshUserToken, ash_user_id: user.id)
+      refute Account.get_ash_user_by_reset_password_token("oops")
+      # assert Repo.get_by(AshUserToken, ash_user_id: user.id)
     end
 
     test "does not return the user if token expired", %{user: user, token: token} do

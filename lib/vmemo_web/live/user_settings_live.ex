@@ -46,12 +46,13 @@ defmodule VmemoWeb.UserSettingsLive do
           <.simple_form
             for={@password_form}
             id="password_form"
-            action={~p"/users/log_in?_action=password_updated"}
+            action={~p"/users/update-password"}
             method="post"
             phx-change="validate_password"
             phx-submit="update_password"
             phx-trigger-action={@trigger_submit}
           >
+            <input name="action" type="hidden" value="update_password" />
             <input
               name={@password_form[:email].name}
               type="hidden"
@@ -85,7 +86,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Account.update_user_email(socket.assigns.current_ash_user, token) do
+      case Account.update_ash_user_email(socket.assigns.current_ash_user, token) do
         {:ok, _user} ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -113,8 +114,16 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def handle_event("validate_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_ash_user
 
-    email_form = to_form(user_params, as: :user)
+    email_form =
+      case Account.apply_ash_user_email(user, password, user_params) do
+        {:ok, _applied_user} ->
+          to_form(user_params, as: :user)
+
+        {:error, error_map} ->
+          to_form(user_params, as: :user, errors: Map.get(error_map, :errors, []))
+      end
 
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
@@ -123,9 +132,9 @@ defmodule VmemoWeb.UserSettingsLive do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_ash_user
 
-    case Account.apply_user_email(user, password, user_params) do
+    case Account.apply_ash_user_email(user, password, user_params) do
       {:ok, applied_user} ->
-        Account.deliver_user_update_email_instructions(
+        Account.deliver_ash_user_update_email_instructions(
           applied_user,
           user.email,
           &url(~p"/users/settings/confirm_email/#{&1}")
@@ -134,15 +143,26 @@ defmodule VmemoWeb.UserSettingsLive do
         info = "A link to confirm your email change has been sent to the new address."
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-      {:error, _changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(user_params, as: :user))}
+      {:error, error_map} ->
+        # Include current_password in form data so errors can be displayed
+        form_data = Map.put(user_params, "current_password", password)
+        email_form = to_form(form_data, as: :user, errors: Map.get(error_map, :errors, []))
+        {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
     end
   end
 
   def handle_event("validate_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_ash_user
 
-    password_form = to_form(user_params, as: :user)
+    password_form =
+      case Account.update_ash_user_password(user, password, user_params) do
+        {:ok, _user} ->
+          to_form(user_params, as: :user)
+
+        {:error, error_map} ->
+          to_form(user_params, as: :user, errors: Map.get(error_map, :errors, []))
+      end
 
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
@@ -151,14 +171,17 @@ defmodule VmemoWeb.UserSettingsLive do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_ash_user
 
-    case Account.update_user_password(user, password, user_params) do
+    case Account.update_ash_user_password(user, password, user_params) do
       {:ok, _user} ->
         password_form = to_form(user_params, as: :user)
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
-      {:error, _changeset} ->
-        {:noreply, assign(socket, password_form: to_form(user_params, as: :user))}
+      {:error, error_map} ->
+        # Include current_password in form data so errors can be displayed
+        form_data = Map.put(user_params, "current_password", password)
+        password_form = to_form(form_data, as: :user, errors: Map.get(error_map, :errors, []))
+        {:noreply, assign(socket, password_form: password_form, current_password: password)}
     end
   end
 end

@@ -61,7 +61,10 @@ defmodule VmemoWeb.ConnCase do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
-    |> Plug.Conn.put_session(:live_socket_id, "users_sessions:#{System.unique_integer([:positive])}")
+    |> Plug.Conn.put_session(
+      :live_socket_id,
+      "users_sessions:#{System.unique_integer([:positive])}"
+    )
     |> Plug.Conn.assign(:current_ash_user, user)
   end
 end

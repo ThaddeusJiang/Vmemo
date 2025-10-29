@@ -139,6 +139,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
       :crypto.strong_rand_bytes(16)
       |> Base.encode16(case: :lower)
       |> String.replace(~r/(.{8})(.{4})(.{4})(.{4})(.{12})/, "\\1-\\2-\\3-\\4-\\5")
+
     extension = Path.extname(original_filename)
     "#{uuid}#{extension}"
   end

@@ -97,6 +97,8 @@ defmodule VmemoWeb.Router do
 
       live "/ui", Live.UiPlayground
     end
+
+    post "/users/update-password", AshUserSettingsController, :update
   end
 
   scope "/", VmemoWeb do

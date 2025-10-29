@@ -53,9 +53,14 @@ defmodule Vmemo.DataCase do
       %Ash.Changeset{errors: errors} ->
         errors
         |> Enum.flat_map(fn
-          {field, error} -> [{field, format_ash_error(error)}]
-          error when is_struct(error, Ash.Error) -> [{error.field || :base, format_ash_error(error)}]
-          _ -> []
+          {field, error} ->
+            [{field, format_ash_error(error)}]
+
+          error when is_struct(error, Ash.Error) ->
+            [{error.field || :base, format_ash_error(error)}]
+
+          _ ->
+            []
         end)
         |> Map.new()
 
@@ -66,7 +71,9 @@ defmodule Vmemo.DataCase do
             field = Map.get(error, :field) || Map.get(error, :input) || :base
             msg = format_ash_error(error)
             [{field, [msg]}]
-          _ -> []
+
+          _ ->
+            []
         end)
         |> Map.new()
 

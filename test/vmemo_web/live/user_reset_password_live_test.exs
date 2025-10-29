@@ -11,7 +11,7 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
 
     token =
       extract_user_token(fn url ->
-        Account.deliver_user_reset_password_instructions(user, url)
+        Account.deliver_ash_user_reset_password_instructions(user, url)
       end)
 
     %{token: token, user: user}

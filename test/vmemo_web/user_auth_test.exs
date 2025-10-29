@@ -31,6 +31,7 @@ defmodule VmemoWeb.AshUserAuthTest do
         conn
         |> put_session(:to_be_removed, "value")
         |> AshUserAuth.log_in_ash_user(user)
+
       refute get_session(conn, :to_be_removed)
     end
 
@@ -39,6 +40,7 @@ defmodule VmemoWeb.AshUserAuthTest do
         conn
         |> put_session(:user_return_to, "/hello")
         |> AshUserAuth.log_in_ash_user(user)
+
       assert redirected_to(conn) == "/hello"
     end
 
@@ -47,6 +49,7 @@ defmodule VmemoWeb.AshUserAuthTest do
         conn
         |> fetch_cookies()
         |> AshUserAuth.log_in_ash_user(user, %{"remember_me" => "true"})
+
       assert get_session(conn, :user_token) == conn.cookies[@remember_me_cookie]
 
       assert %{value: signed_token, max_age: max_age} = conn.resp_cookies[@remember_me_cookie]
@@ -96,7 +99,10 @@ defmodule VmemoWeb.AshUserAuthTest do
   describe "fetch_current_ash_user/2" do
     test "authenticates user from session", %{conn: conn, user: user} do
       user_token = Account.generate_user_session_token(user)
-      conn = conn |> put_session(:user_token, user_token) |> AshUserAuth.fetch_current_ash_user([])
+
+      conn =
+        conn |> put_session(:user_token, user_token) |> AshUserAuth.fetch_current_ash_user([])
+
       assert conn.assigns.current_ash_user.id == user.id
     end
 
@@ -180,7 +186,9 @@ defmodule VmemoWeb.AshUserAuthTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
-      {:halt, updated_socket} = AshUserAuth.on_mount(:ensure_authenticated_ash_user, %{}, session, socket)
+      {:halt, updated_socket} =
+        AshUserAuth.on_mount(:ensure_authenticated_ash_user, %{}, session, socket)
+
       assert updated_socket.assigns.current_ash_user == nil
     end
 
@@ -192,7 +200,9 @@ defmodule VmemoWeb.AshUserAuthTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
-      {:halt, updated_socket} = AshUserAuth.on_mount(:ensure_authenticated_ash_user, %{}, session, socket)
+      {:halt, updated_socket} =
+        AshUserAuth.on_mount(:ensure_authenticated_ash_user, %{}, session, socket)
+
       assert updated_socket.assigns.current_ash_user == nil
     end
   end
@@ -226,7 +236,11 @@ defmodule VmemoWeb.AshUserAuthTest do
 
   describe "redirect_if_ash_user_is_authenticated/2" do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> AshUserAuth.redirect_if_ash_user_is_authenticated([])
+      conn =
+        conn
+        |> assign(:current_ash_user, user)
+        |> AshUserAuth.redirect_if_ash_user_is_authenticated([])
+
       assert conn.halted
       assert redirected_to(conn) == ~p"/home"
     end
@@ -276,7 +290,9 @@ defmodule VmemoWeb.AshUserAuthTest do
     end
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> AshUserAuth.require_authenticated_ash_user([])
+      conn =
+        conn |> assign(:current_ash_user, user) |> AshUserAuth.require_authenticated_ash_user([])
+
       refute conn.halted
       refute conn.status
     end

@@ -58,6 +58,7 @@ defmodule Vmemo.Account.AshUser do
 
     update :update_profile do
       accept [:email, :confirmed_at]
+      require_atomic? false
     end
 
     update :change_password do
@@ -67,6 +68,7 @@ defmodule Vmemo.Account.AshUser do
 
       validate confirm(:password, :password_confirmation),
         message: "does not match password"
+
       change &hash_password/2
       require_atomic? false
     end
@@ -78,6 +80,7 @@ defmodule Vmemo.Account.AshUser do
 
       validate confirm(:password, :password_confirmation),
         message: "does not match password"
+
       change &hash_password/2
       require_atomic? false
     end
@@ -85,10 +88,14 @@ defmodule Vmemo.Account.AshUser do
 
   validations do
     validate present(:email), on: [:create, :update]
-    validate match(:email, ~r/@/)
-    validate string_length(:password, min: 12), where: [present(:password)],
+    validate match(:email, ~r/@/), message: "must have the @ sign and no spaces"
+
+    validate string_length(:password, min: 12),
+      where: [present(:password)],
       message: "should be at least 12 character(s)"
-    validate string_length(:password, max: 72), where: [present(:password)],
+
+    validate string_length(:password, max: 72),
+      where: [present(:password)],
       message: "should be at most 72 character(s)"
   end
 

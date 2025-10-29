@@ -28,7 +28,10 @@ defmodule Vmemo.Photos.Photo do
 
   defp valid_uuid?(id) when is_binary(id) do
     # Simple UUID validation (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    Regex.match?(~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, String.downcase(id))
+    Regex.match?(
+      ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      String.downcase(id)
+    )
   end
 
   defp valid_uuid?(_), do: false
