@@ -39,6 +39,8 @@ defmodule Vmemo.Account.AshUser do
     create :register do
       accept [:email, :password]
 
+      argument :password_confirmation, :string, allow_nil?: true
+
       change fn changeset, _context ->
         # 如果没有提供 ID，生成一个 UUID 字符串
         case Ash.Changeset.get_attribute(changeset, :id) do
@@ -60,9 +62,34 @@ defmodule Vmemo.Account.AshUser do
 
     update :change_password do
       accept [:password]
+
+      argument :password_confirmation, :string, allow_nil?: true
+
+      validate confirm(:password, :password_confirmation),
+        message: "does not match password"
       change &hash_password/2
       require_atomic? false
     end
+
+    update :reset_password do
+      accept [:password]
+
+      argument :password_confirmation, :string, allow_nil?: true
+
+      validate confirm(:password, :password_confirmation),
+        message: "does not match password"
+      change &hash_password/2
+      require_atomic? false
+    end
+  end
+
+  validations do
+    validate present(:email), on: [:create, :update]
+    validate match(:email, ~r/@/)
+    validate string_length(:password, min: 12), where: [present(:password)],
+      message: "should be at least 12 character(s)"
+    validate string_length(:password, max: 72), where: [present(:password)],
+      message: "should be at most 72 character(s)"
   end
 
   attributes do

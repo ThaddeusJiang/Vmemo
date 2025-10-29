@@ -8,18 +8,22 @@ defmodule Vmemo.AccountFixtures do
   def valid_user_password, do: "hello world!"
 
   def valid_user_attributes(attrs \\ %{}) do
+    password = valid_user_password()
     Enum.into(attrs, %{
       email: unique_user_email(),
-      password: valid_user_password()
+      password: password,
+      password_confirmation: password
     })
   end
 
   def user_fixture(attrs \\ %{}) do
     # Always generate a completely fresh email to avoid conflicts
+    password = valid_user_password()
     fresh_attrs =
       attrs
       |> Map.put_new(:email, unique_user_email())
-      |> Map.put_new(:password, valid_user_password())
+      |> Map.put_new(:password, password)
+      |> Map.put_new(:password_confirmation, password)
 
     case Vmemo.Account.register_user(fresh_attrs) do
       {:ok, user} ->
@@ -52,7 +56,30 @@ defmodule Vmemo.AccountFixtures do
         true -> inspect(body)
       end
 
-    [_, token | _] = String.split(email_content, "[TOKEN]")
-    token
+    # Extract token from URL format
+    # For JWT tokens used with ash_authentication, they might be in the URL directly
+    if String.contains?(email_content, "[TOKEN]") do
+      [_, token | _] = String.split(email_content, "[TOKEN]")
+      token
+    else
+      # If no [TOKEN] markers, try to extract from URL query param or fragment
+      # The token might be the last part of the URL
+      url_parts = URI.parse(email_content)
+      # Extract token from path or query
+      token =
+        if url_parts.path && String.contains?(url_parts.path, "/") do
+          String.split(url_parts.path, "/") |> List.last()
+        else
+          email_content
+        end
+
+      # For JWT tokens, they start with "ey" (base64url encoded)
+      if String.starts_with?(token, "ey") do
+        token
+      else
+        # Fallback: try to find JWT-like token in the content
+        email_content
+      end
+    end
   end
 end

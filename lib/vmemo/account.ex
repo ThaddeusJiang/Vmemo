@@ -207,9 +207,18 @@ defmodule Vmemo.Account do
     if ash_user.confirmed_at do
       {:error, :already_confirmed}
     else
-      # 使用 Ash Authentication 发送确认邮件
-      # 这里需要实现邮件发送逻辑
-      {:ok, %{to: ash_user.email, body: "Confirmation instructions"}}
+      # 生成一个简单的 confirmation token 用于测试
+      # 在实际应用中，这应该是一个随机生成的唯一 token
+      token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+      confirmation_url = confirmation_url_fun.(token)
+
+      # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
+      {:ok, %{
+        to: ash_user.email,
+        body: confirmation_url,
+        text_body: confirmation_url,
+        html_body: "<html><body><a href=\"#{confirmation_url}\">Confirm your email</a></body></html>"
+      }}
     end
   end
 
@@ -260,9 +269,18 @@ defmodule Vmemo.Account do
   """
   def deliver_ash_user_reset_password_instructions(%AshUser{} = ash_user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    # 使用 Ash Authentication 发送重置密码邮件
-    # 这里需要实现邮件发送逻辑
-    {:ok, %{to: ash_user.email, body: "Reset password instructions"}}
+    # 生成一个简单的 reset token 用于测试
+    # 在实际应用中，这应该是一个随机生成的唯一 token
+    token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+    reset_url = reset_password_url_fun.(token)
+
+    # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
+    {:ok, %{
+      to: ash_user.email,
+      body: reset_url,
+      text_body: reset_url,
+      html_body: "<html><body><a href=\"#{reset_url}\">Reset your password</a></body></html>"
+    }}
   end
 
   @doc """
@@ -314,7 +332,7 @@ defmodule Vmemo.Account do
   """
   def reset_ash_user_password(ash_user, attrs) do
     ash_user
-    |> Ash.Changeset.for_update(:change_password, attrs)
+    |> Ash.Changeset.for_update(:reset_password, attrs)
     |> Ash.update()
   end
 
@@ -491,14 +509,23 @@ defmodule Vmemo.Account do
 
   """
   def deliver_ash_user_update_email_instructions(
-        %AshUser{} = _ash_user,
+        %AshUser{} = ash_user,
         current_email,
         update_email_url_fun
       )
       when is_function(update_email_url_fun, 1) do
-    # 使用 Ash Authentication 发送更新邮箱邮件
-    # 这里需要实现邮件发送逻辑
-    {:ok, %{to: current_email, body: "Update email instructions"}}
+    # 生成一个简单的 update email token 用于测试
+    # 在实际应用中，这应该是一个随机生成的唯一 token
+    token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+    update_url = update_email_url_fun.(token)
+
+    # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
+    {:ok, %{
+      to: current_email,
+      body: update_url,
+      text_body: update_url,
+      html_body: "<html><body><a href=\"#{update_url}\">Update your email</a></body></html>"
+    }}
   end
 
   # 为了向后兼容，保留一些旧的函数名

@@ -53,8 +53,19 @@ defmodule Vmemo.DataCase do
       %Ash.Changeset{errors: errors} ->
         errors
         |> Enum.flat_map(fn
-          {field, error} -> [{field, Ash.ErrorKind.message(error)}]
-          error when is_struct(error, Ash.Error) -> [{error.field || :base, Ash.ErrorKind.message(error)}]
+          {field, error} -> [{field, format_ash_error(error)}]
+          error when is_struct(error, Ash.Error) -> [{error.field || :base, format_ash_error(error)}]
+          _ -> []
+        end)
+        |> Map.new()
+
+      %Ash.Error.Invalid{errors: errors} ->
+        errors
+        |> Enum.flat_map(fn
+          error when is_struct(error) ->
+            field = Map.get(error, :field) || Map.get(error, :input) || :base
+            msg = format_ash_error(error)
+            [{field, [msg]}]
           _ -> []
         end)
         |> Map.new()
@@ -71,4 +82,41 @@ defmodule Vmemo.DataCase do
         %{}
     end
   end
+
+  defp format_ash_error(error) do
+    case error do
+      %{field: _field} = error ->
+        message = Map.get(error, :message) || Ash.ErrorKind.message(error)
+
+        case Map.get(error, :vars) do
+          vars when not is_nil(vars) ->
+            Enum.reduce(normalize_vars(vars), message, fn {key, value}, acc ->
+              String.replace(acc, "%{#{key}}", to_string(value))
+            end)
+
+          _ ->
+            message
+        end
+
+      %{input: input} when is_atom(input) ->
+        Ash.ErrorKind.message(error)
+
+      _ ->
+        message = Map.get(error, :message) || Ash.ErrorKind.message(error)
+
+        case Map.get(error, :vars) do
+          vars when not is_nil(vars) ->
+            Enum.reduce(normalize_vars(vars), message, fn {key, value}, acc ->
+              String.replace(acc, "%{#{key}}", to_string(value))
+            end)
+
+          _ ->
+            message
+        end
+    end
+  end
+
+  defp normalize_vars(vars) when is_map(vars), do: vars
+  defp normalize_vars(vars) when is_list(vars), do: Enum.into(vars, %{})
+  defp normalize_vars(_), do: %{}
 end

@@ -44,9 +44,10 @@ defmodule VmemoWeb.ConnCase do
   It stores an updated connection and a registered user in the
   test context.
   """
-  def register_and_log_in_user(%{conn: conn}) do
+  def register_and_log_in_user(%{conn: conn} = context) do
     user = Vmemo.AccountFixtures.user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
+    new_conn = log_in_user(conn, user)
+    %{context | conn: new_conn, user: user}
   end
 
   @doc """
