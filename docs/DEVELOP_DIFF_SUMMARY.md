@@ -637,7 +637,7 @@ Public API 的完整参考文档。
 **状态**: ✅ 已完成
 
 **已完成的工作**:
-- ✅ Seed 优化：简化 `priv/repo/seeds/test_users.exs`，只创建 test@mail.com
+- ✅ Seed 优化：简化 `priv/repo/seeds/test_users.exs`，只创建 test@example.com
 - ✅ 自动创建 API token 逻辑：使用固定 token `test123456`，有效期 180 天
 - ✅ 测试文件创建：`test/support/api_fixtures.ex`、`test/vmemo_web/api/auth_test.exs`、`test/vmemo_web/api/photo_controller_test.exs`
 

@@ -15,7 +15,7 @@ defmodule Vmemo.Seeds.TestUsers do
   end
 
   defp create_test_user do
-    email = "test@mail.com"
+    email = "test@example.com"
     password = "password123456"
 
     case Account.get_ash_user_by_email(email) do
@@ -24,13 +24,13 @@ defmodule Vmemo.Seeds.TestUsers do
           {:ok, user} ->
             # 确认用户 - 使用 raw SQL 更新 confirmed_at
             now = DateTime.utc_now() |> DateTime.truncate(:second)
-            
+
             case AshRepo.query("UPDATE ash_users SET confirmed_at = $1 WHERE id = $2", [now, user.id]) do
               {:ok, _} ->
                 IO.puts("✓ Created and confirmed user: #{email}")
                 # 重新加载用户以获取更新后的 confirmed_at
                 Account.get_ash_user_by_email(email)
-              
+
               {:error, error} ->
                 IO.puts("⚠ User created but confirmation failed: #{inspect(error)}")
                 user

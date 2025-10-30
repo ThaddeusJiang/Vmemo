@@ -78,7 +78,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
   "status": "success",
   "data": {
     "id": "01JKQM8X9Y7Z6W5V4U3T2S1R0P",
-    "url": "/storage/v1/user_abc123/photos/20250126_103045_image.jpg",
+    "url": "/storage/v1/<user_id>/photos/20250126_103045_image.jpg",
     "note": "My vacation photo",
     "inserted_at": "2025-01-26T10:30:45Z"
   }
@@ -272,7 +272,7 @@ curl -X DELETE https://your-domain.com/api/v1/photos/01JKQM8X9Y7Z6W5V4U3T2S1R0P 
 
 **当前状态**: 未实施速率限制
 
-**未来计划**: 
+**未来计划**:
 - 每个 Token 每分钟最多 60 个请求
 - 每个 Token 每小时最多 1000 个请求
 - 超过限制将返回 `429 Too Many Requests`
@@ -389,16 +389,16 @@ async function uploadWithRetry(file, note, maxRetries = 3) {
     try {
       const result = await uploadPhoto(file, note);
       if (result) return result;
-      
+
       // 如果是客户端错误（4xx），不重试
       if (result.error && result.error.code.startsWith('4')) {
         return null;
       }
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      
+
       // 指数退避
-      await new Promise(resolve => 
+      await new Promise(resolve =>
         setTimeout(resolve, Math.pow(2, i) * 1000)
       );
     }
@@ -413,7 +413,7 @@ async function uploadWithRetry(file, note, maxRetries = 3) {
 ```javascript
 async function uploadMultiple(files, concurrency = 3) {
   const results = [];
-  
+
   for (let i = 0; i < files.length; i += concurrency) {
     const batch = files.slice(i, i + concurrency);
     const batchResults = await Promise.all(
@@ -421,7 +421,7 @@ async function uploadMultiple(files, concurrency = 3) {
     );
     results.push(...batchResults);
   }
-  
+
   return results;
 }
 ```
@@ -442,18 +442,18 @@ def upload_photo(file_path, note=None):
     headers = {
         'Authorization': f'Bearer {VMEMO_TOKEN}'
     }
-    
+
     with open(file_path, 'rb') as f:
         files = {'file': f}
         data = {'note': note} if note else {}
-        
+
         response = requests.post(
             f'{BASE_URL}/photos',
             headers=headers,
             files=files,
             data=data
         )
-    
+
     return response.json()
 
 def get_photo(photo_id):
@@ -461,12 +461,12 @@ def get_photo(photo_id):
     headers = {
         'Authorization': f'Bearer {VMEMO_TOKEN}'
     }
-    
+
     response = requests.get(
         f'{BASE_URL}/photos/{photo_id}',
         headers=headers
     )
-    
+
     return response.json()
 
 def delete_photo(photo_id):
@@ -474,12 +474,12 @@ def delete_photo(photo_id):
     headers = {
         'Authorization': f'Bearer {VMEMO_TOKEN}'
     }
-    
+
     response = requests.delete(
         f'{BASE_URL}/photos/{photo_id}',
         headers=headers
     )
-    
+
     return response.json()
 
 # 使用示例
@@ -489,11 +489,11 @@ if __name__ == '__main__':
     if result['status'] == 'success':
         photo_id = result['data']['id']
         print(f"Photo uploaded: {photo_id}")
-        
+
         # 获取照片信息
         photo = get_photo(photo_id)
         print(f"Photo info: {photo}")
-        
+
         # 删除照片
         # delete_result = delete_photo(photo_id)
         # print(f"Delete result: {delete_result}")
@@ -577,7 +577,7 @@ BASE_URL="https://your-domain.com/api/v1"
 upload_photo() {
   local file_path=$1
   local note=$2
-  
+
   curl -X POST "${BASE_URL}/photos" \
     -H "Authorization: Bearer ${VMEMO_TOKEN}" \
     -F "file=@${file_path}" \
@@ -587,7 +587,7 @@ upload_photo() {
 # 获取照片信息
 get_photo() {
   local photo_id=$1
-  
+
   curl -X GET "${BASE_URL}/photos/${photo_id}" \
     -H "Authorization: Bearer ${VMEMO_TOKEN}"
 }
@@ -595,7 +595,7 @@ get_photo() {
 # 删除照片
 delete_photo() {
   local photo_id=$1
-  
+
   curl -X DELETE "${BASE_URL}/photos/${photo_id}" \
     -H "Authorization: Bearer ${VMEMO_TOKEN}"
 }

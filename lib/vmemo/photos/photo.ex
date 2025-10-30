@@ -40,7 +40,7 @@ defmodule Vmemo.Photos.Photo do
     defaults [:read, :destroy]
 
     create :create_with_sync do
-      accept [:url, :note, :file_id, :image, :user_id]
+      accept [:url, :note, :file_id, :user_id]
 
       change after_action(fn _changeset, record, _context ->
                %{photo_id: record.id}
@@ -52,7 +52,7 @@ defmodule Vmemo.Photos.Photo do
     end
 
     update :update do
-      accept [:note, :url, :image]
+      accept [:note, :url]
       require_atomic? false
 
       change after_action(fn _changeset, record, _context ->
@@ -99,7 +99,18 @@ defmodule Vmemo.Photos.Photo do
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)
 
-        Ash.Query.filter(query, id: [in: photo_ids])
+        # If Typesense returns no results, fall back to database query for this user
+        if photo_ids == [] do
+          per_page = 10
+          offset = (page - 1) * per_page
+
+          Ash.Query.filter(query, user_id == ^user_id)
+          |> Ash.Query.sort(inserted_at: :desc)
+          |> Ash.Query.offset(offset)
+          |> Ash.Query.limit(per_page)
+        else
+          Ash.Query.filter(query, id: [in: photo_ids])
+        end
       end
     end
 
@@ -151,8 +162,7 @@ defmodule Vmemo.Photos.Photo do
 
     attribute :note, :string
     attribute :file_id, :string
-    attribute :image, :string
-    attribute :user_id, :string
+    attribute :user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

@@ -1,7 +1,6 @@
 defmodule VmemoWeb.HomePageLive do
   require Logger
 
-  alias SmallSdk.FileSystem
   use VmemoWeb, :live_view
 
   alias Vmemo.PhotoService
@@ -62,37 +61,39 @@ defmodule VmemoWeb.HomePageLive do
     user_id = socket.assigns.current_ash_user.id
 
     if entry.done? do
-      uploaded_file =
+      result =
         consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
           filename = entry.uuid <> Path.extname(entry.client_name)
 
           {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_ash_user.id, filename)
 
-          image_base64 = FileSystem.read_image_base64(dest)
-
-          if image_base64 == nil do
-            {:error, "Failed to read image file"}
-          else
-            {:ok, photo} =
-              Photo.create_with_sync(
-                %{
-                  image: image_base64,
-                  note: "",
-                  url: Path.join("/", dest),
-                  file_id: filename,
-                  user_id: user_id
-                },
-                actor: socket.assigns.current_ash_user
-              )
-
-            {:ok, photo}
+          case Photo.create_with_sync(
+                 %{
+                   # store only file path; skip inline base64 to avoid DB encoding issues
+                   image: nil,
+                   note: "",
+                   url: Path.join("/", dest),
+                   file_id: filename,
+                   user_id: user_id
+                 },
+                 actor: socket.assigns.current_ash_user
+               ) do
+            {:ok, photo} -> {:ok, {:ok, photo}}
+            {:error, reason} -> {:ok, {:error, reason}}
           end
         end)
 
-      photo_id = if is_map(uploaded_file), do: uploaded_file.id, else: nil
+      case result do
+        {:ok, {:ok, photo}} ->
+          {:noreply,
+           socket |> push_navigate(to: ~p"/photos/#{photo.id}?action=search", replace: true)}
 
-      {:noreply,
-       socket |> push_navigate(to: ~p"/photos/#{photo_id}?action=search", replace: true)}
+        {:ok, {:error, reason}} ->
+          {:noreply, socket |> put_flash(:error, "Failed to upload photo: #{inspect(reason)}")}
+
+        other ->
+          {:noreply, socket |> put_flash(:error, "Unexpected upload result: #{inspect(other)}")}
+      end
     else
       {:noreply, socket}
     end

@@ -9,7 +9,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
 
   alias Vmemo.Photos.Photo
   alias Vmemo.PhotoService
-  alias SmallSdk.FileSystem
+  # alias removed: SmallSdk.FileSystem
 
   require Logger
 
@@ -150,37 +150,29 @@ defmodule VmemoWeb.Api.V1.PhotoController do
     # 复制文件到存储目录
     {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
-    # 读取图片 base64
-    image_base64 = FileSystem.read_image_base64(dest)
+    # 创建照片记录（不写入 base64）
+    note = Map.get(params, "note", "")
 
-    if image_base64 == nil do
-      error_response(conn, 500, "FILE_READ_ERROR", "Failed to read image file")
-    else
-      # 创建照片记录
-      note = Map.get(params, "note", "")
+    case Photo.create_with_sync(
+           %{
+             note: note,
+             url: Path.join("/", dest),
+             file_id: filename,
+             user_id: user_id
+           },
+           actor: current_user
+         ) do
+      {:ok, photo} ->
+        success_response(conn, %{
+          id: photo.id,
+          url: photo.url,
+          note: photo.note,
+          inserted_at: photo.inserted_at
+        })
 
-      case Photo.create_with_sync(
-             %{
-               image: image_base64,
-               note: note,
-               url: Path.join("/", dest),
-               file_id: filename,
-               user_id: user_id
-             },
-             actor: current_user
-           ) do
-        {:ok, photo} ->
-          success_response(conn, %{
-            id: photo.id,
-            url: photo.url,
-            note: photo.note,
-            inserted_at: photo.inserted_at
-          })
-
-        {:error, changeset} ->
-          Logger.error("Failed to create photo: #{inspect(changeset.errors)}")
-          error_response(conn, 500, "CREATE_FAILED", "Failed to create photo")
-      end
+      {:error, changeset} ->
+        Logger.error("Failed to create photo: #{inspect(changeset.errors)}")
+        error_response(conn, 500, "CREATE_FAILED", "Failed to create photo")
     end
   end
 

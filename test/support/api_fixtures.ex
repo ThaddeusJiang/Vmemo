@@ -10,11 +10,11 @@ defmodule VmemoWeb.ApiFixtures do
   创建测试用户并返回
   """
   def test_user do
-    case Account.get_ash_user_by_email("test@mail.com") do
+    case Account.get_ash_user_by_email("test@example.com") do
       nil ->
         {:ok, user} =
           Account.register_user(%{
-            email: "test@mail.com",
+            email: "test@example.com",
             password: "password123456"
           })
 

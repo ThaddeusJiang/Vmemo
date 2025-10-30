@@ -1,7 +1,7 @@
 # Release Notes - API Tokens & Public API
 
-**版本**: v1.0.0  
-**发布日期**: 2025-01-26  
+**版本**: v1.0.0
+**发布日期**: 2025-01-26
 **类型**: 主要功能更新
 
 ## 概述
@@ -56,7 +56,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
   "status": "success",
   "data": {
     "id": "photo-uuid",
-    "url": "/storage/v1/user_id/photos/filename.jpg",
+    "url": "/storage/v1/<user_id>/photos/filename.jpg",
     "note": "My photo",
     "inserted_at": "2025-01-26T10:30:00Z"
   }
@@ -147,7 +147,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
 # Public API
 scope "/api/v1", VmemoWeb.Api.V1 do
   pipe_through [:api, :api_auth]
-  
+
   post "/photos", PhotoController, :create
   get "/photos/:id", PhotoController, :show
   delete "/photos/:id", PhotoController, :delete
@@ -156,7 +156,7 @@ end
 # Token 管理 UI
 scope "/", VmemoWeb do
   pipe_through [:browser, :require_authenticated_user]
-  
+
   live "/tokens", TokenLive.Index
   live "/tokens/new", TokenLive.New
 end
@@ -265,7 +265,7 @@ config :vmemo,
    ```bash
    # 生成随机密钥
    export JWT_SIGNING_SECRET=$(openssl rand -base64 32)
-   
+
    # 添加到生产环境配置
    echo "JWT_SIGNING_SECRET=$JWT_SIGNING_SECRET" >> .env
    ```
@@ -280,7 +280,7 @@ config :vmemo,
    # 检查新表是否创建
    psql vmemo_prod -c "\dt ash_users"
    psql vmemo_prod -c "\dt api_tokens"
-   
+
    # 检查数据是否迁移
    psql vmemo_prod -c "SELECT COUNT(*) FROM ash_users"
    ```
@@ -289,7 +289,7 @@ config :vmemo,
    ```bash
    # 如果使用 systemd
    sudo systemctl restart vmemo
-   
+
    # 如果使用 Docker
    docker-compose restart
    ```
@@ -441,6 +441,6 @@ mix test test/vmemo_web/api/auth_test.exs
 
 ---
 
-**发布日期**: 2025-01-26  
-**版本**: v1.0.0  
+**发布日期**: 2025-01-26
+**版本**: v1.0.0
 **PR**: [#40](https://github.com/ThaddeusJiang/Vmemo/pull/40)

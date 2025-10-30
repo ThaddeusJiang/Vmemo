@@ -7,15 +7,14 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
     # 使用字符串查询避免 UUID 转换问题
     query =
-      "SELECT id::text, image, note, url, file_id, inserted_at, user_id FROM photos WHERE id::text = $1"
+      "SELECT id::text, note, url, file_id, inserted_at, user_id FROM photos WHERE id::text = $1"
 
     case Vmemo.AshRepo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
-        [id, image, note, url, file_id, inserted_at, user_id] = row
+        [id, note, url, file_id, inserted_at, user_id] = row
 
         photo = %{
           id: id,
-          image: image,
           note: note,
           url: url,
           file_id: file_id,
@@ -51,7 +50,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
     typesense_data = %{
       id: photo.id,
-      image: photo.image,
+      image: photo.url,
       note: photo.note,
       note_ids: [],
       url: photo.url,

@@ -7,7 +7,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.PhotoNote
-  alias SmallSdk.FileSystem
+
 
   @impl true
   def mount(socket) do
@@ -210,33 +210,54 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
               {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
-              image_base64 = FileSystem.read_image_base64(dest)
-
-              if image_base64 == nil do
-                {:error, "Failed to read image file"}
-              else
-                case Photo.create_with_sync(
-                       %{
-                         image: image_base64,
-                         note: note_text,
-                         url: Path.join("/", dest),
-                         file_id: filename,
-                         user_id: user_id
-                       },
-                       actor: socket.assigns.current_user
-                     ) do
-                  {:ok, photo} -> {:ok, photo}
-                  {:error, reason} -> {:error, reason}
-                end
+              case Photo.create_with_sync(
+                     %{
+                       note: note_text,
+                       url: Path.join("/", dest),
+                       file_id: filename,
+                       user_id: user_id
+                     },
+                     actor: socket.assigns.current_user
+                   ) do
+                {:ok, photo} -> {:ok, {:ok, photo}}
+                {:error, reason} -> {:ok, {:error, reason}}
               end
             end)
           end
 
+        # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
+        results =
+          results
+          |> Enum.map(fn
+            {:ok, r} -> r
+            {:error, reason} -> {:error, reason}
+            other -> {:error, inspect(other)}
+          end)
+
         case Enum.find(results, fn result -> match?({:error, _}, result) end) do
-          {:error, reason} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to upload photo: #{reason}")}
+          {:error, %Ash.Error.Unknown{} = ash_error} ->
+            error_msg =
+              ash_error.errors
+              |> List.first()
+              |> case do
+                %Ash.Error.Unknown.UnknownError{error: msg} when is_binary(msg) ->
+                  # Extract the actual error message from the nested error
+                  msg
+
+                %{error: msg} when is_binary(msg) ->
+                  msg
+
+                _ ->
+                  "Database error occurred"
+              end
+
+            {:noreply, socket |> put_flash(:error, error_msg)}
+
+          {:error, reason} when is_binary(reason) ->
+            {:noreply, socket |> put_flash(:error, reason)}
+
+          {:error, _reason} ->
+            {:noreply, socket |> put_flash(:error, "Upload error occurred")}
 
           nil ->
             photos =

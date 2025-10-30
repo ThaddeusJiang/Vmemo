@@ -3,28 +3,27 @@
 This is a web application written using **Ash** and **Phoenix**
 
 - alway response in **Chinese**, write code(includes UI) in **English**
-
-- 文档资料
-
-  - **PDCA driven development**: Plan 保存在 `docs/tasks`
-
 - use **Ash** instead of **Ecto**
 
-## Elixir 生态
+## Elixir Rules
 
-- elixir 使用 **pattern matching**
+- Elixir has **pattern matching**
+
+**mix guidelines**
 
 - get routes by `mix phx.routes`
-- alway use `iex` `mix` run scripts
+- alway use `mix` run scripts
 
+**Phoenix guidelines**
 
+- **Never** create `.heex` for LiveView, write HTML in **render()**
 
-# PostgreSQL rules
+**PostgreSQL rules**
 
 - Do **not** use `LIKE` operators! use Postgres built-in `Full Text Search` Queries.
-- Do **not** use the Postgres `UUID` type, use `String` type ID instead.
+- **Alway** use `uuidv7`
 
-## Do
+**git guidelines**
 
 - **short** git message, use `feat:` `fix:` `chore:` as prefix
 - fetches up-to-date code examples and documentation use **Context7**
@@ -33,7 +32,6 @@ This is a web application written using **Ash** and **Phoenix**
 
 ## Don't
 
-- do **not** create `.heex` for LiveView, alway write HTML in **render()**
 - **No** need too many comments, keep the code simple and easy to understand
 - do **not** run build and start commands when development
 - do **not** commit MCP debug content, like: .playwright-mcp/*
