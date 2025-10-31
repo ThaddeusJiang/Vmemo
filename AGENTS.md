@@ -44,7 +44,7 @@ This is a web application written using **Ash** and **Phoenix**
 - `Tidewave` is the coding agent for full-stack web app development, deeply integrated with Phoenix, from the database to the UI.
 - `Context7` MCP pulls up-to-date, version-specific documentation and code examples
 - `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
-- **Never** use `python` run scripts, you can use `jq` `curl` etc.
+- **Never** use `python` run scripts, you can use `jq` `curl` `gh` etc.
 
 **Test guidelines**
 
