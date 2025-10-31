@@ -21,12 +21,3 @@ services:
     volumes:
       - ./_data/ts-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
-
-  typesense-health:
-    image: curlimages/curl:8.7.1
-    depends_on:
-      - typesense
-    command: sh -c "while true; do
-      curl -sf http://typesense:8108/health >/dev/null && echo '✅ healthy' || echo '❌ unhealthy';
-      sleep 30;
-      done"
