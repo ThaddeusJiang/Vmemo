@@ -2,12 +2,19 @@
 
 This is a web application written using **Ash** and **Phoenix**
 
-- alway response in **Chinese**, write code(includes UI) in **English**
-- use **Ash** instead of **Ecto**
+## Personal
 
-## Elixir Rules
+- alway response in **Chinese**, write code(includes UI) in **English**
+- **No** need too many comments, keep the code simple and easy to understand
+- **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
+
+## Elixir guidelines
 
 - Elixir has **pattern matching**
+
+## Ash guidelines
+
+- use **Ash** instead of **Ecto**
 
 **mix guidelines**
 
@@ -25,17 +32,24 @@ This is a web application written using **Ash** and **Phoenix**
 
 **git guidelines**
 
-- **short** git message, use `feat:` `fix:` `chore:` as prefix
-- fetches up-to-date code examples and documentation use **Context7**
-- debug in browser use **Playwright**, take screen image for UI
-- `Tidewave` is a coding agent that runs in the browser alongside your web application, deeply integrated with your web framework.
+- **Alway** generate Simple git message, use `feat(scope):` `fix(scope):` `chore(scope):` as prefix
+- **Never** commit `.playwright-mcp/*`
 
-## Don't
+**Code format**
 
-- **No** need too many comments, keep the code simple and easy to understand
-- do **not** run build and start commands when development
-- do **not** commit MCP debug content, like: .playwright-mcp/*
-- do **not** remove the space inside of **HTML class**
+- Never remove the **space** inside of HTML class
+
+**Tools**
+
+- `Tidewave` is the coding agent for full-stack web app development, deeply integrated with Phoenix, from the database to the UI.
+- `Context7` MCP pulls up-to-date, version-specific documentation and code examples
+- `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
+- **Never** use `python` run scripts, you can use `jq` `curl` etc.
+
+**Test guidelines**
+
+- **Prefer** use **real data** and **UI** for testing
+- **Alway** use real files in `test/testdata_files` for `Upload` testing
 
 ## Project guidelines
 
