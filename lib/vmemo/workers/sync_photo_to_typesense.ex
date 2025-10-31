@@ -1,13 +1,13 @@
 defmodule Vmemo.Workers.SyncPhotoToTypesense do
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
+  require Logger
   alias Vmemo.PhotoService.TsPhoto
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
-    # 使用字符串查询避免 UUID 转换问题
     query =
-      "SELECT id::text, note, url, file_id, inserted_at, user_id FROM photos WHERE id::text = $1"
+      "SELECT id::text, note, url, file_id, inserted_at, user_id::text FROM photos WHERE id::text = $1"
 
     case Vmemo.AshRepo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
@@ -25,7 +25,8 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
         sync_to_typesense(photo)
 
       {:ok, %{rows: []}} ->
-        {:error, :photo_not_found}
+        Logger.warning("Photo #{photo_id} not found in database")
+        {:discard, :photo_not_found}
 
       {:error, error} ->
         {:error, error}
@@ -33,7 +34,6 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   end
 
   defp sync_to_typesense(photo) do
-    # 将 NaiveDateTime 转换为 DateTime 然后转换为 unix 时间戳
     inserted_at_unix =
       case photo.inserted_at do
         %NaiveDateTime{} = naive_dt ->
@@ -48,10 +48,9 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
           :os.system_time(:second)
       end
 
-    typesense_data = %{
+    base_data = %{
       id: photo.id,
-      image: photo.url,
-      note: photo.note,
+      note: photo.note || "",
       note_ids: [],
       url: photo.url,
       file_id: photo.file_id,
@@ -59,12 +58,67 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
       inserted_by: photo.user_id
     }
 
-    case TsPhoto.get_photo(photo.id) do
-      nil ->
-        TsPhoto.create(typesense_data)
+    typesense_data =
+      case read_image_as_base64(photo.url) do
+        {:ok, image} ->
+          Map.put(base_data, :image, image)
 
-      _existing ->
-        TsPhoto.update_photo(typesense_data)
+        {:error, :file_not_found} ->
+          Logger.warning(
+            "Photo #{photo.id}: Image file not found at #{photo.url}, syncing without image"
+          )
+
+          base_data
+
+        {:error, reason} ->
+          Logger.warning(
+            "Photo #{photo.id}: Failed to read image (#{inspect(reason)}), syncing without image"
+          )
+
+          base_data
+      end
+
+    result =
+      case TsPhoto.get_photo(photo.id) do
+        nil ->
+          TsPhoto.create(typesense_data)
+
+        _existing ->
+          TsPhoto.update_photo(typesense_data)
+      end
+
+    case result do
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to sync photo #{photo.id} to Typesense: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp read_image_as_base64(url) do
+    relative_path =
+      url
+      |> String.trim_leading("/")
+      |> String.trim_leading("storage/v1/")
+
+    file_path =
+      if Mix.env() == :prod do
+        Path.join([Application.app_dir(:vmemo, "priv"), "storage", "v1", relative_path])
+      else
+        Path.join(["storage", "v1", relative_path])
+      end
+
+    case File.read(file_path) do
+      {:ok, binary} ->
+        {:ok, Base.encode64(binary)}
+
+      {:error, :enoent} ->
+        {:error, :file_not_found}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end
