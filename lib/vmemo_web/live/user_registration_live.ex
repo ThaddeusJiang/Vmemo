@@ -15,10 +15,19 @@ defmodule VmemoWeb.UserRegistrationLive do
            },
            action: :register
          ) do
-      {:ok, _user} ->
+      {:ok, user} ->
+        # 发送确认邮件
+        Vmemo.Account.deliver_ash_user_confirmation_instructions(
+          user,
+          &url(~p"/users/confirm/#{&1}")
+        )
+
         socket =
           socket
-          |> put_flash(:info, "Account created successfully")
+          |> put_flash(
+            :info,
+            "Account created successfully! Please check your email to confirm your account."
+          )
           |> redirect(to: ~p"/signin")
 
         {:noreply, socket}
