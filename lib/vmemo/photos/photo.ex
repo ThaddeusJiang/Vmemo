@@ -109,7 +109,20 @@ defmodule Vmemo.Photos.Photo do
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
         else
-          Ash.Query.filter(query, id: [in: photo_ids])
+          # Load all matching photos then sort by the order from Typesense
+          query
+          |> Ash.Query.filter(id: [in: photo_ids])
+          |> Ash.Query.after_action(fn _query, records ->
+            # Sort records by the order of photo_ids from Typesense
+            sorted_records =
+              photo_ids
+              |> Enum.map(fn id ->
+                Enum.find(records, fn record -> record.id == id end)
+              end)
+              |> Enum.reject(&is_nil/1)
+
+            {:ok, sorted_records}
+          end)
         end
       end
     end
@@ -129,7 +142,20 @@ defmodule Vmemo.Photos.Photo do
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)
 
-        Ash.Query.filter(query, id: [in: photo_ids])
+        # Load all matching photos then sort by the order from Typesense
+        query
+        |> Ash.Query.filter(id: [in: photo_ids])
+        |> Ash.Query.after_action(fn _query, records ->
+          # Sort records by the order of photo_ids from Typesense
+          sorted_records =
+            photo_ids
+            |> Enum.map(fn id ->
+              Enum.find(records, fn record -> record.id == id end)
+            end)
+            |> Enum.reject(&is_nil/1)
+
+          {:ok, sorted_records}
+        end)
       end
     end
 
