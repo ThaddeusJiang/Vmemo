@@ -20,8 +20,7 @@ defmodule VmemoWeb.UserForgotPasswordLive do
         </:actions>
       </.simple_form>
       <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Sign in</.link>
+        <.link href={~p"/signup"}>Register</.link> | <.link href={~p"/signin"}>Sign in</.link>
       </p>
     </div>
     """
@@ -35,7 +34,7 @@ defmodule VmemoWeb.UserForgotPasswordLive do
     if user = Account.get_ash_user_by_email(email) do
       Account.deliver_ash_user_reset_password_instructions(
         user,
-        &url(~p"/users/reset_password/#{&1}")
+        &url(~p"/reset-password/#{&1}")
       )
     end
 

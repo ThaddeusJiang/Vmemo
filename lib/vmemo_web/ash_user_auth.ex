@@ -181,7 +181,7 @@ defmodule VmemoWeb.AshUserAuth do
       |> Phoenix.Controller.fetch_flash()
       |> put_flash(:error, "You must sign in to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
+      |> redirect(to: ~p"/signin")
       |> halt()
     end
   end
@@ -221,7 +221,7 @@ defmodule VmemoWeb.AshUserAuth do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(:error, "You must sign in to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+        |> Phoenix.LiveView.redirect(to: ~p"/signin")
 
       {:halt, socket}
     end

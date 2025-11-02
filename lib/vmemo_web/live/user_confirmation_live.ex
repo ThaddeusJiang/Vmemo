@@ -16,8 +16,7 @@ defmodule VmemoWeb.UserConfirmationLive do
       </.simple_form>
 
       <p class="text-center mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Sign in</.link>
+        <.link href={~p"/signup"}>Register</.link> | <.link href={~p"/signin"}>Sign in</.link>
       </p>
     </div>
     """

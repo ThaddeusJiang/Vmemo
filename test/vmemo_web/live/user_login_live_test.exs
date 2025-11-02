@@ -6,7 +6,7 @@ defmodule VmemoWeb.UserLoginLiveTest do
 
   describe "Sign in page" do
     test "renders sign in page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/users/log_in")
+      {:ok, _lv, html} = live(conn, ~p"/signin")
 
       assert html =~ "Sign in"
       assert html =~ "Sign up"
@@ -17,7 +17,7 @@ defmodule VmemoWeb.UserLoginLiveTest do
       result =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/users/log_in")
+        |> live(~p"/signin")
         |> follow_redirect(conn, "/home")
 
       assert {:ok, _conn} = result
@@ -29,7 +29,7 @@ defmodule VmemoWeb.UserLoginLiveTest do
       password = "123456789abcd"
       user = user_fixture(%{password: password})
 
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/signin")
 
       form =
         form(lv, "#login_form", user: %{email: user.email, password: password, remember_me: true})
@@ -54,13 +54,13 @@ defmodule VmemoWeb.UserLoginLiveTest do
     test "redirects to forgot password page when the Forgot Password button is clicked", %{
       conn: conn
     } do
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/signin")
 
       {:ok, conn} =
         lv
         |> element("main a", "Forgot your password?")
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/reset_password")
+        |> follow_redirect(conn, ~p"/reset-password")
 
       assert conn.resp_body =~ "Forgot your password?"
     end

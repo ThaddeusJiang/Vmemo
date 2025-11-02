@@ -22,7 +22,7 @@ defmodule VmemoWeb.AshUserSessionController do
         # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
         conn
         |> put_flash(:error, "Invalid email or password")
-        |> redirect(to: ~p"/users/log_in")
+        |> redirect(to: ~p"/signin")
     end
   end
 

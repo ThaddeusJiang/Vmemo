@@ -10,13 +10,13 @@ defmodule VmemoWeb.UserLoginLive do
             Sign in to your account
           </h2>
 
-          <.simple_form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore">
+          <.simple_form for={@form} id="login_form" action={~p"/signin"} phx-update="ignore">
             <.input field={@form[:email]} type="email" label="Email address" required />
             <.input field={@form[:password]} type="password" label="Password" required />
 
             <:actions>
               <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-              <.link href={~p"/users/reset_password"} class="link link-primary text-sm font-semibold">
+              <.link href={~p"/reset-password"} class="link link-primary text-sm font-semibold">
                 Forgot your password?
               </.link>
             </:actions>
@@ -33,7 +33,7 @@ defmodule VmemoWeb.UserLoginLive do
             <span class="text-sm text-base-content/70">
               Don't have an account?
             </span>
-            <.link navigate={~p"/users/register"} class="link link-primary font-semibold ml-1">
+            <.link navigate={~p"/signup"} class="link link-primary font-semibold ml-1">
               Sign up
             </.link>
             <span class="text-sm text-base-content/70 ml-1">

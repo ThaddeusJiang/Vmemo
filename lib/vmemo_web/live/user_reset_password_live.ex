@@ -31,8 +31,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
       </.simple_form>
 
       <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Sign in</.link>
+        <.link href={~p"/signup"}>Register</.link> | <.link href={~p"/signin"}>Sign in</.link>
       </p>
     </div>
     """
@@ -61,7 +60,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully.")
-         |> redirect(to: ~p"/users/log_in")}
+         |> redirect(to: ~p"/signin")}
 
       {:error, changeset} ->
         {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}

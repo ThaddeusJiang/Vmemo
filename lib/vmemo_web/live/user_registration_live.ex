@@ -19,7 +19,7 @@ defmodule VmemoWeb.UserRegistrationLive do
         socket =
           socket
           |> put_flash(:info, "Account created successfully")
-          |> redirect(to: ~p"/users/log_in")
+          |> redirect(to: ~p"/signin")
 
         {:noreply, socket}
 
@@ -58,7 +58,7 @@ defmodule VmemoWeb.UserRegistrationLive do
             <span class="text-sm text-base-content/70">
               Already have an account?
             </span>
-            <.link navigate={~p"/users/log_in"} class="link link-primary font-semibold ml-1">
+            <.link navigate={~p"/signin"} class="link link-primary font-semibold ml-1">
               Sign in
             </.link>
           </div>

@@ -64,13 +64,13 @@ defmodule VmemoWeb.Router do
 
     live_session :redirect_if_ash_user_is_authenticated,
       on_mount: [{VmemoWeb.AshUserAuth, :redirect_if_ash_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserSessionLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live "/signup", UserRegistrationLive, :new
+      live "/signin", UserSessionLive, :new
+      live "/reset-password", UserForgotPasswordLive, :new
+      live "/reset-password/:token", UserResetPasswordLive, :edit
     end
 
-    post "/users/log_in", AshUserSessionController, :create
+    post "/signin", AshUserSessionController, :create
   end
 
   scope "/", VmemoWeb do

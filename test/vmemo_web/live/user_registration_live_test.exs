@@ -13,7 +13,7 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
       result =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/users/register")
+        |> live(~p"/signup")
         |> follow_redirect(conn, "/home")
 
       assert {:ok, _conn} = result
@@ -30,7 +30,7 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/register")
+      {:ok, lv, _html} = live(conn, ~p"/signup")
 
       user = user_fixture(%{email: "test@email.com"})
 
@@ -47,13 +47,13 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
 
   describe "registration navigation" do
     test "redirects to login page when the Sign in button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/register")
+      {:ok, lv, _html} = live(conn, ~p"/signup")
 
       {:ok, _login_live, login_html} =
         lv
         |> element("main a", "Sign in")
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/log_in")
+        |> follow_redirect(conn, ~p"/signin")
 
       assert login_html =~ "Sign in"
     end

@@ -23,7 +23,7 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
     end
 
     test "does not render reset password with invalid token", %{conn: conn} do
-      {:error, {:redirect, to}} = live(conn, ~p"/users/reset_password/invalid")
+      {:error, {:redirect, to}} = live(conn, ~p"/reset-password/invalid")
 
       assert to == %{
                flash: %{"error" => "Reset password link is invalid or it has expired."},
