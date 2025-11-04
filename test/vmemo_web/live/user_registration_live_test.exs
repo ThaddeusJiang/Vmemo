@@ -9,14 +9,17 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
       # TODO: 今后编写
     end
 
-    test "redirects if already logged in", %{conn: conn} do
-      result =
-        conn
-        |> log_in_user(user_fixture())
-        |> live(~p"/signup")
-        |> follow_redirect(conn, "/home")
+    test "shows warning if already logged in", %{conn: conn} do
+      user = user_fixture()
 
-      assert {:ok, _conn} = result
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/register")
+
+      assert html =~ "You are currently logged in"
+      assert html =~ user.email
+      assert html =~ "Sign Out and Continue"
     end
 
     test "renders errors for invalid data", %{conn: conn} do
@@ -30,7 +33,7 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/signup")
+      {:ok, lv, _html} = live(conn, ~p"/register")
 
       user = user_fixture(%{email: "test@email.com"})
 
@@ -46,16 +49,16 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
   end
 
   describe "registration navigation" do
-    test "redirects to login page when the Sign in button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/signup")
+    test "redirects to login page when the Login button is clicked", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/register")
 
       {:ok, _login_live, login_html} =
         lv
-        |> element("main a", "Sign in")
+        |> element("main a", "Login")
         |> render_click()
-        |> follow_redirect(conn, ~p"/signin")
+        |> follow_redirect(conn, ~p"/login")
 
-      assert login_html =~ "Sign in"
+      assert login_html =~ "Login"
     end
   end
 end

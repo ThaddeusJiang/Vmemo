@@ -22,7 +22,7 @@ defmodule VmemoWeb.AshUserSessionController do
         # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
         conn
         |> put_flash(:error, "Invalid email or password")
-        |> redirect(to: ~p"/signin")
+        |> redirect(to: ~p"/login")
     end
   end
 
@@ -54,9 +54,12 @@ defmodule VmemoWeb.AshUserSessionController do
 
   defp maybe_put_action_flash(conn, _), do: conn
 
-  def delete(conn, _params) do
+  def delete(conn, params) do
+    # 支持 return_to 参数，退出后返回指定页面
+    return_to = params["return_to"] || conn.query_params["return_to"] || ~p"/"
+
     conn
     |> put_flash(:info, "Logged out successfully.")
-    |> AshUserAuth.log_out_ash_user()
+    |> AshUserAuth.log_out_ash_user(return_to)
   end
 end

@@ -24,6 +24,8 @@ This is a web application written using **Ash** and **Phoenix**
 **Phoenix guidelines**
 
 - **Never** create `.heex` for LiveView, write HTML in **render()**
+- When you need to trigger server functions, you can directly use the `<.link method="delete">` component instead of complex JavaScript
+
 
 **PostgreSQL rules**
 

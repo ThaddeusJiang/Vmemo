@@ -89,7 +89,7 @@ defmodule VmemoWeb.AshUserAuth do
   @doc """
   Logs the Ash user out.
   """
-  def log_out_ash_user(conn) do
+  def log_out_ash_user(conn, return_to \\ ~p"/") do
     user_token = get_session(conn, :user_token)
     user_token && delete_ash_user_session_token(user_token)
 
@@ -101,7 +101,7 @@ defmodule VmemoWeb.AshUserAuth do
     |> renew_session()
     |> delete_session(:user_token)
     |> delete_resp_cookie("_vmemo_web_user_remember_me")
-    |> redirect(to: ~p"/")
+    |> redirect(to: return_to)
   end
 
   defp delete_ash_user_session_token(token) do
@@ -179,9 +179,9 @@ defmodule VmemoWeb.AshUserAuth do
     else
       conn
       |> Phoenix.Controller.fetch_flash()
-      |> put_flash(:error, "You must sign in to access this page.")
+      |> put_flash(:error, "You must login to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/signin")
+      |> redirect(to: ~p"/login")
       |> halt()
     end
   end
@@ -220,8 +220,8 @@ defmodule VmemoWeb.AshUserAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "You must sign in to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/signin")
+        |> Phoenix.LiveView.put_flash(:error, "You must login to access this page.")
+        |> Phoenix.LiveView.redirect(to: ~p"/login")
 
       {:halt, socket}
     end

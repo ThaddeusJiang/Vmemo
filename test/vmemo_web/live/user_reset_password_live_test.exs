@@ -47,7 +47,7 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
   end
 
   describe "Reset password navigation" do
-    test "redirects to login page when the Sign in button is clicked", %{conn: conn, token: token} do
+    test "redirects to login page when the Login button is clicked", %{conn: conn, token: token} do
       # TODO: 今后编写
     end
 

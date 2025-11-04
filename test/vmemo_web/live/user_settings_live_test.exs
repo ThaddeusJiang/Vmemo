@@ -20,8 +20,8 @@ defmodule VmemoWeb.UserSettingsLiveTest do
       assert {:error, redirect} = live(conn, ~p"/users/settings")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/signin"
-      assert %{"error" => "You must sign in to access this page."} = flash
+      assert path == ~p"/login"
+      assert %{"error" => "You must login to access this page."} = flash
     end
   end
 
@@ -206,9 +206,9 @@ defmodule VmemoWeb.UserSettingsLiveTest do
       conn = build_conn()
       {:error, redirect} = live(conn, ~p"/users/settings/confirm_email/#{token}")
       assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/signin"
+      assert path == ~p"/login"
       assert %{"error" => message} = flash
-      assert message == "You must sign in to access this page."
+      assert message == "You must login to access this page."
     end
   end
 end

@@ -7,10 +7,10 @@ defmodule VmemoWeb.UserLoginLive do
       <div class="card w-full max-w-md bg-base-100 shadow-xl">
         <div class="card-body">
           <h2 class="card-title text-center text-3xl font-bold text-base-content mb-6">
-            Sign in to your account
+            Login to your account
           </h2>
 
-          <.simple_form for={@form} id="login_form" action={~p"/signin"} phx-update="ignore">
+          <.simple_form for={@form} id="login_form" action={~p"/login"} phx-update="ignore">
             <.input field={@form[:email]} type="email" label="Email address" required />
             <.input field={@form[:password]} type="password" label="Password" required />
 
@@ -22,7 +22,7 @@ defmodule VmemoWeb.UserLoginLive do
             </:actions>
             <:actions>
               <.button phx-disable-with="Logging in..." class="w-full">
-                Sign in <span aria-hidden="true">→</span>
+                Login <span aria-hidden="true">→</span>
               </.button>
             </:actions>
           </.simple_form>
@@ -33,8 +33,8 @@ defmodule VmemoWeb.UserLoginLive do
             <span class="text-sm text-base-content/70">
               Don't have an account?
             </span>
-            <.link navigate={~p"/signup"} class="link link-primary font-semibold ml-1">
-              Sign up
+            <.link navigate={~p"/register"} class="link link-primary font-semibold ml-1">
+              Register
             </.link>
             <span class="text-sm text-base-content/70 ml-1">
               for an account now.
