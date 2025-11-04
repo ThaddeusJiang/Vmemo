@@ -7,7 +7,6 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.PhotoNote
-  alias SmallSdk.FileSystem
 
   @impl true
   def mount(socket) do
@@ -40,19 +39,19 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       phx-target={@myself}
       phx-submit="save"
       phx-change="validate"
-      class=" w-full mx-auto max-w-md lg:max-w-lg"
+      class="w-full mx-auto max-w-md lg:max-w-lg"
       phx-hook="ClipboardMediaFetcher"
       phx-drop-target={@uploads.photos.ref}
     >
       <label for={@uploads.photos.ref} class="relative h-auto">
-        <section class=" aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 ">
+        <section class="aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200">
           <.live_component
             id="waterfall-upload-photos"
             module={Waterfall}
             items={@uploads.photos.entries}
           >
             <:empty>
-              <div class="  w-full h-full flex flex-col justify-center items-center">
+              <div class="w-full h-full flex flex-col justify-center items-center">
                 <img src="/images/undraw_images.svg" alt="Upload photos" class="w-1/2 h-auto" />
               </div>
             </:empty>
@@ -76,9 +75,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                       &times;
                     </.button>
                   <% 100 -> %>
-                    <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm ">
+                    <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm">
                       <div
-                        class=" radial-progress text-white"
+                        class="radial-progress text-white"
                         style="--value:100; --size:2rem; --thickness: 2px;"
                         role="progressbar"
                       >
@@ -99,9 +98,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                       </div>
                     </div>
                   <% _ -> %>
-                    <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm ">
+                    <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm">
                       <div
-                        class=" radial-progress text-white "
+                        class="radial-progress text-white"
                         style={"--value:#{entry.progress}; --size:2rem; --thickness: 2px;"}
                         role="progressbar"
                       >
@@ -210,33 +209,54 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
               {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
-              image_base64 = FileSystem.read_image_base64(dest)
-
-              if image_base64 == nil do
-                {:error, "Failed to read image file"}
-              else
-                case Photo.create_with_sync(
-                       %{
-                         image: image_base64,
-                         note: note_text,
-                         url: Path.join("/", dest),
-                         file_id: filename,
-                         user_id: user_id
-                       },
-                       actor: socket.assigns.current_user
-                     ) do
-                  {:ok, photo} -> {:ok, photo}
-                  {:error, reason} -> {:error, reason}
-                end
+              case Photo.create_with_sync(
+                     %{
+                       note: note_text,
+                       url: Path.join("/", dest),
+                       file_id: filename,
+                       user_id: user_id
+                     },
+                     actor: socket.assigns.current_user
+                   ) do
+                {:ok, photo} -> {:ok, {:ok, photo}}
+                {:error, reason} -> {:ok, {:error, reason}}
               end
             end)
           end
 
+        # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
+        results =
+          results
+          |> Enum.map(fn
+            {:ok, r} -> r
+            {:error, reason} -> {:error, reason}
+            other -> {:error, inspect(other)}
+          end)
+
         case Enum.find(results, fn result -> match?({:error, _}, result) end) do
-          {:error, reason} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to upload photo: #{reason}")}
+          {:error, %Ash.Error.Unknown{} = ash_error} ->
+            error_msg =
+              ash_error.errors
+              |> List.first()
+              |> case do
+                %Ash.Error.Unknown.UnknownError{error: msg} when is_binary(msg) ->
+                  # Extract the actual error message from the nested error
+                  msg
+
+                %{error: msg} when is_binary(msg) ->
+                  msg
+
+                _ ->
+                  "Database error occurred"
+              end
+
+            {:noreply, socket |> put_flash(:error, error_msg)}
+
+          {:error, reason} when is_binary(reason) ->
+            {:noreply, socket |> put_flash(:error, reason)}
+
+          {:error, _reason} ->
+            {:noreply, socket |> put_flash(:error, "Upload error occurred")}
 
           nil ->
             photos =

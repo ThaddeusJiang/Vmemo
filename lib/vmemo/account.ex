@@ -254,15 +254,8 @@ defmodule Vmemo.Account do
 
       confirmation_url = confirmation_url_fun.(token)
 
-      # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
-      {:ok,
-       %{
-         to: ash_user.email,
-         body: confirmation_url,
-         text_body: confirmation_url,
-         html_body:
-           "<html><body><a href=\"#{confirmation_url}\">Confirm your email</a></body></html>"
-       }}
+      # 使用 UserNotifier 实际发送邮件
+      Vmemo.Account.UserNotifier.deliver_confirmation_instructions(ash_user, confirmation_url)
     end
   end
 
@@ -314,14 +307,8 @@ defmodule Vmemo.Account do
     token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
     reset_url = reset_password_url_fun.(token)
 
-    # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
-    {:ok,
-     %{
-       to: ash_user.email,
-       body: reset_url,
-       text_body: reset_url,
-       html_body: "<html><body><a href=\"#{reset_url}\">Reset your password</a></body></html>"
-     }}
+    # 使用 UserNotifier 实际发送邮件
+    Vmemo.Account.UserNotifier.deliver_reset_password_instructions(ash_user, reset_url)
   end
 
   @doc """
@@ -594,13 +581,7 @@ defmodule Vmemo.Account do
 
     update_url = update_email_url_fun.(token)
 
-    # 发送邮件（这里只做基本的邮件数据准备，实际发送在 UserNotifier）
-    {:ok,
-     %{
-       to: ash_user.email,
-       body: update_url,
-       text_body: update_url,
-       html_body: "<html><body><a href=\"#{update_url}\">Update your email</a></body></html>"
-     }}
+    # 使用 UserNotifier 实际发送邮件
+    Vmemo.Account.UserNotifier.deliver_update_email_instructions(ash_user, update_url)
   end
 end

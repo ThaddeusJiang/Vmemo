@@ -60,17 +60,27 @@ defmodule VmemoWeb.Router do
   ## Authentication routes
 
   scope "/", VmemoWeb do
-    pipe_through [:browser, :redirect_if_ash_user_is_authenticated]
+    pipe_through [:browser]
 
-    live_session :redirect_if_ash_user_is_authenticated,
-      on_mount: [{VmemoWeb.AshUserAuth, :redirect_if_ash_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserSessionLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+    # 注册和登录页面允许已登录用户访问（会显示提示信息）
+    live_session :auth_pages,
+      on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do
+      live "/register", UserRegistrationLive, :new
+      live "/login", UserSessionLive, :new
     end
 
-    post "/users/log_in", AshUserSessionController, :create
+    post "/login", AshUserSessionController, :create
+  end
+
+  scope "/", VmemoWeb do
+    pipe_through [:browser, :redirect_if_ash_user_is_authenticated]
+
+    # 密码重置页面不允许已登录用户访问
+    live_session :redirect_if_ash_user_is_authenticated,
+      on_mount: [{VmemoWeb.AshUserAuth, :redirect_if_ash_user_is_authenticated}] do
+      live "/reset-password", UserForgotPasswordLive, :new
+      live "/reset-password/:token", UserResetPasswordLive, :edit
+    end
   end
 
   scope "/", VmemoWeb do
@@ -104,7 +114,7 @@ defmodule VmemoWeb.Router do
   scope "/", VmemoWeb do
     pipe_through [:browser]
 
-    delete "/users/log_out", AshUserSessionController, :delete
+    delete "/users/logout", AshUserSessionController, :delete
 
     live_session :current_ash_user,
       on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do

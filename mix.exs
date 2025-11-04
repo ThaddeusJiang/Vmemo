@@ -74,6 +74,7 @@ defmodule Vmemo.MixProject do
       {:ash_authentication, "~> 4.0"},
       {:oban, "~> 2.17"},
       {:oban_web, "~> 2.0"},
+      {:appsignal_phoenix, "~> 2.0"},
       {:igniter, "~> 0.5", only: [:dev]}
     ]
   end

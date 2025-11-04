@@ -40,7 +40,7 @@ defmodule Vmemo.Photos.Photo do
     defaults [:read, :destroy]
 
     create :create_with_sync do
-      accept [:url, :note, :file_id, :image, :user_id]
+      accept [:url, :note, :file_id, :user_id]
 
       change after_action(fn _changeset, record, _context ->
                %{photo_id: record.id}
@@ -52,7 +52,7 @@ defmodule Vmemo.Photos.Photo do
     end
 
     update :update do
-      accept [:note, :url, :image]
+      accept [:note, :url]
       require_atomic? false
 
       change after_action(fn _changeset, record, _context ->
@@ -99,7 +99,31 @@ defmodule Vmemo.Photos.Photo do
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)
 
-        Ash.Query.filter(query, id: [in: photo_ids])
+        # If Typesense returns no results, fall back to database query for this user
+        if photo_ids == [] do
+          per_page = 10
+          offset = (page - 1) * per_page
+
+          Ash.Query.filter(query, user_id == ^user_id)
+          |> Ash.Query.sort(inserted_at: :desc)
+          |> Ash.Query.offset(offset)
+          |> Ash.Query.limit(per_page)
+        else
+          # Load all matching photos then sort by the order from Typesense
+          query
+          |> Ash.Query.filter(id: [in: photo_ids])
+          |> Ash.Query.after_action(fn _query, records ->
+            # Sort records by the order of photo_ids from Typesense
+            sorted_records =
+              photo_ids
+              |> Enum.map(fn id ->
+                Enum.find(records, fn record -> record.id == id end)
+              end)
+              |> Enum.reject(&is_nil/1)
+
+            {:ok, sorted_records}
+          end)
+        end
       end
     end
 
@@ -118,7 +142,20 @@ defmodule Vmemo.Photos.Photo do
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)
 
-        Ash.Query.filter(query, id: [in: photo_ids])
+        # Load all matching photos then sort by the order from Typesense
+        query
+        |> Ash.Query.filter(id: [in: photo_ids])
+        |> Ash.Query.after_action(fn _query, records ->
+          # Sort records by the order of photo_ids from Typesense
+          sorted_records =
+            photo_ids
+            |> Enum.map(fn id ->
+              Enum.find(records, fn record -> record.id == id end)
+            end)
+            |> Enum.reject(&is_nil/1)
+
+          {:ok, sorted_records}
+        end)
       end
     end
 
@@ -151,8 +188,7 @@ defmodule Vmemo.Photos.Photo do
 
     attribute :note, :string
     attribute :file_id, :string
-    attribute :image, :string
-    attribute :user_id, :string
+    attribute :user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

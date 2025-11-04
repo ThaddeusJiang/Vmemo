@@ -73,7 +73,7 @@ curl -X POST http://localhost:4000/api/v1/photos \
   "status": "success",
   "data": {
     "id": "photo-uuid",
-    "url": "/storage/v1/user_id/photos/filename.jpg",
+    "url": "/storage/v1/<user_id>/photos/filename.jpg",
     "note": "My photo description",
     "inserted_at": "2025-01-26T10:30:00Z"
   }

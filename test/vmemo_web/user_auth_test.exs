@@ -257,10 +257,10 @@ defmodule VmemoWeb.AshUserAuthTest do
       conn = conn |> fetch_flash() |> AshUserAuth.require_authenticated_ash_user([])
       assert conn.halted
 
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert redirected_to(conn) == ~p"/login"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-               "You must sign in to access this page."
+               "You must login to access this page."
     end
 
     test "stores the path to redirect to on GET", %{conn: conn} do

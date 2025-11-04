@@ -2,42 +2,56 @@
 
 This is a web application written using **Ash** and **Phoenix**
 
+## Personal
+
 - alway response in **Chinese**, write code(includes UI) in **English**
+- **No** need too many comments, keep the code simple and easy to understand
+- **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
-- 文档资料
+## Elixir guidelines
 
-  - **PDCA driven development**: Plan 保存在 `docs/tasks`
+- Elixir has **pattern matching**
+
+## Ash guidelines
 
 - use **Ash** instead of **Ecto**
 
-## Elixir 生态
-
-- elixir 使用 **pattern matching**
+**mix guidelines**
 
 - get routes by `mix phx.routes`
-- alway use `iex` `mix` run scripts
+- alway use `mix` run scripts
+
+**Phoenix guidelines**
+
+- **Never** create `.heex` for LiveView, write HTML in **render()**
+- When you need to trigger server functions, you can directly use the `<.link method="delete">` component instead of complex JavaScript
 
 
-
-# PostgreSQL rules
+**PostgreSQL rules**
 
 - Do **not** use `LIKE` operators! use Postgres built-in `Full Text Search` Queries.
-- Do **not** use the Postgres `UUID` type, use `String` type ID instead.
+- **Alway** use `uuidv7`
 
-## Do
+**git guidelines**
 
-- **short** git message, use `feat:` `fix:` `chore:` as prefix
-- fetches up-to-date code examples and documentation use **Context7**
-- debug in browser use **Playwright**, take screen image for UI
-- `Tidewave` is a coding agent that runs in the browser alongside your web application, deeply integrated with your web framework.
+- **Alway** generate Simple git message, use `feat(scope):` `fix(scope):` `chore(scope):` as prefix
+- **Never** commit `.playwright-mcp/*`
 
-## Don't
+**Code format**
 
-- do **not** create `.heex` for LiveView, alway write HTML in **render()**
-- **No** need too many comments, keep the code simple and easy to understand
-- do **not** run build and start commands when development
-- do **not** commit MCP debug content, like: .playwright-mcp/*
-- do **not** remove the space inside of **HTML class**
+- Never remove the **space** inside of HTML class
+
+**Tools**
+
+- `Tidewave` is the coding agent for full-stack web app development, deeply integrated with Phoenix, from the database to the UI.
+- `Context7` MCP pulls up-to-date, version-specific documentation and code examples
+- `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
+- **Never** use `python` run scripts, you can use `jq` `curl` `gh` etc.
+
+**Test guidelines**
+
+- **Prefer** use **real data** and **UI** for testing
+- **Alway** use real files in `test/testdata_files` for `Upload` testing
 
 ## Project guidelines
 
@@ -129,6 +143,16 @@ custom classes must fully style the input
 - Read the docs and options before using tasks (by using `mix help task_name`)
 - To debug test failures, run tests in a specific file with `mix test test/my_test.exs` or run all previously failed tests with `mix test --failed`
 - `mix deps.clean --all` is **almost never needed**. **Avoid** using it unless you have good reason
+
+## Config guidelines
+
+- Elixir ecosystem uses `dev.exs`, `test.exs`, and `runtime.exs` to manage environment variables
+  - `config/dev.exs` - development environment configuration
+  - `config/test.exs` - test environment configuration
+  - `config/runtime.exs` - runtime configuration that reads from system environment variables
+- **Always** use `runtime.exs` for configuration that depends on environment variables (e.g., database URLs, API keys)
+- Use `System.get_env/1` or `System.get_env/2` in `runtime.exs` to read environment variables
+- For development and test, use hardcoded values in `dev.exs` and `test.exs` respectively
 <!-- phoenix:elixir-end -->
 
 <!-- phoenix:phoenix-start -->
