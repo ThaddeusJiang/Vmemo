@@ -143,6 +143,16 @@ custom classes must fully style the input
 - Read the docs and options before using tasks (by using `mix help task_name`)
 - To debug test failures, run tests in a specific file with `mix test test/my_test.exs` or run all previously failed tests with `mix test --failed`
 - `mix deps.clean --all` is **almost never needed**. **Avoid** using it unless you have good reason
+
+## Config guidelines
+
+- Elixir ecosystem uses `dev.exs`, `test.exs`, and `runtime.exs` to manage environment variables
+  - `config/dev.exs` - development environment configuration
+  - `config/test.exs` - test environment configuration
+  - `config/runtime.exs` - runtime configuration that reads from system environment variables
+- **Always** use `runtime.exs` for configuration that depends on environment variables (e.g., database URLs, API keys)
+- Use `System.get_env/1` or `System.get_env/2` in `runtime.exs` to read environment variables
+- For development and test, use hardcoded values in `dev.exs` and `test.exs` respectively
 <!-- phoenix:elixir-end -->
 
 <!-- phoenix:phoenix-start -->
