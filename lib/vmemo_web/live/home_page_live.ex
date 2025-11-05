@@ -129,21 +129,64 @@ defmodule VmemoWeb.HomePageLive do
   def render(assigns) do
     ~H"""
     <section class="p-4 sm:p-4 lg:p-4 grow">
-      <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
-        <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
-          <:empty>
-            <.live_component id="upload-form" module={UploadForm} current_user={@current_ash_user} />
-          </:empty>
+      <%= if @q == "" && Enum.empty?(@photos) do %>
+        <div class="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] gap-8">
+          <div class="flex flex-col items-center gap-6 w-full max-w-2xl px-4">
+            <img src={~p"/images/logo.svg"} class="h-24 w-24" alt="Vmemo Logo" />
 
-          <:card :let={photo}>
-            <.link navigate={~p"/photos/#{photo.id}"} class="link link-hover block">
-              <.img src={photo.url} alt={photo.note} id={photo.id} />
-            </.link>
-          </:card>
-        </.live_component>
+            <form action="/home" method="get" class="w-full max-w-xl">
+              <label class="input input-bordered flex items-center rounded-3xl w-full shadow-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-5 opacity-70"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                  />
+                </svg>
+                <input
+                  type="search"
+                  name="q"
+                  class="grow ml-2"
+                  placeholder="Just anything..."
+                  autofocus
+                />
+              </label>
+            </form>
 
-        <div phx-hook="InfiniteScroll" id="infinite-scroll"></div>
-      </div>
+            <p class="text-sm text-gray-500">Add idea or files</p>
+
+            <div class="flex flex-wrap gap-3 justify-center">
+              <button class="btn btn-outline btn-sm rounded-full">写周报</button>
+              <button class="btn btn-outline btn-sm rounded-full">文案润色</button>
+              <button class="btn btn-outline btn-sm rounded-full">提炼日程</button>
+              <button class="btn btn-outline btn-sm rounded-full">写文章</button>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
+          <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
+            <:empty>
+              <.live_component id="upload-form" module={UploadForm} current_user={@current_ash_user} />
+            </:empty>
+
+            <:card :let={photo}>
+              <.link navigate={~p"/photos/#{photo.id}"} class="link link-hover block">
+                <.img src={photo.url} alt={photo.note} id={photo.id} />
+              </.link>
+            </:card>
+          </.live_component>
+
+          <div phx-hook="InfiniteScroll" id="infinite-scroll"></div>
+        </div>
+      <% end %>
     </section>
     """
   end
