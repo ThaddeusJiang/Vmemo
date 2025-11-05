@@ -89,7 +89,7 @@ defmodule VmemoWeb.Router do
     live_session :require_authenticated_ash_user,
       on_mount: [{VmemoWeb.AshUserAuth, :ensure_authenticated_ash_user}] do
       live "/home", HomePageLive, :index
-      live "/photos", HomePageLive, :index
+      live "/photos", PhotosIndexLive, :index
       live "/photos/:id", PhotoIdLive
       # live "/home/upload", HomePageLive, :upload
 

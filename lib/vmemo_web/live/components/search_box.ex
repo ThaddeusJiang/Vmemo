@@ -94,7 +94,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   def render(assigns) do
     ~H"""
     <div class="grow container max-w-md dropdown dropdown-open place-self-start">
-      <form :if={!@show_expanded} action="/home" method="get" class="form-control container">
+      <form :if={!@show_expanded} action="/photos" method="get" class="form-control container">
         <label class="input input-bordered flex items-center rounded-3xl w-full">
           <input type="search" name="q" class=" grow" placeholder="Search" value={@q} />
 
