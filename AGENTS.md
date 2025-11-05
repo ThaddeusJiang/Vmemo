@@ -4,7 +4,7 @@ This is a web application written using **Ash** and **Phoenix**
 
 ## Personal
 
-- alway response in **Chinese**, write code(includes UI) in **English**
+- Alway response in **Chinese**, write code(includes UI) in only **English**
 - **No** need too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
@@ -60,6 +60,7 @@ This is a web application written using **Ash** and **Phoenix**
 
 ### Phoenix v1.8 guidelines
 
+- **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
 - The `MyAppWeb.Layouts` module is aliased in the `my_app_web.ex` file, so you can use it without needing to alias it again
 - Anytime you run into errors with no `current_scope` assign:
