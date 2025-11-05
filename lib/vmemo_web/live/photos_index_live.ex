@@ -5,7 +5,6 @@ defmodule VmemoWeb.PhotosIndexLive do
 
   alias Vmemo.Photos.Photo
   alias VmemoWeb.LiveComponents.Waterfall
-  alias VmemoWeb.LiveComponents.UploadForm
 
   @impl true
   def mount(_params, _session, socket) do
@@ -59,7 +58,13 @@ defmodule VmemoWeb.PhotosIndexLive do
       <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
         <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
           <:empty>
-            <.live_component id="upload-form" module={UploadForm} current_user={@current_ash_user} />
+            <div class="flex flex-col items-center justify-center min-h-[400px] gap-4">
+              <h2 class="text-2xl font-semibold text-gray-700">No results</h2>
+              <p class="text-gray-500 text-center">
+                Try a different search above or
+                <.link href="/upload" class="link link-primary">upload photos</.link>
+              </p>
+            </div>
           </:empty>
 
           <:card :let={photo}>
