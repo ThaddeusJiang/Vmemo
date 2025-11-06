@@ -223,6 +223,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           phx-submit="search_by_photo"
           phx-change="validate"
           phx-target={@myself}
+          phx-hook="ClipboardMediaFetcher"
         >
           <label for={@uploads.photo.ref} class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer">
             <div class=" w-full h-full flex flex-col justify-center items-center">

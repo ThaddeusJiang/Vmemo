@@ -2,7 +2,11 @@
 export const ClipboardMediaFetcher = {
     mounted() {
         const fileInput = this.el.querySelector('input[type="file"]');
-        
+
+        if (!fileInput) {
+            return;
+        }
+
         window.addEventListener('paste', async (event) => {
             const items = event.clipboardData?.items;
             if (!items?.length) {
@@ -16,7 +20,7 @@ export const ClipboardMediaFetcher = {
             Array.from(fileInput.files).forEach(file => {
                 dataTransfer.items.add(file);
             });
-            
+
             // 添加粘贴的图片
             Array.from(items).forEach(item => {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
