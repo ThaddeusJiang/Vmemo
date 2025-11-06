@@ -5,30 +5,8 @@
         <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
           <.link href="/home" class="flex gap-2 sm:gap-4 items-center font-bold ">
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" />
-            <span class="hidden md:block">Vmemo</span>
+            <span>Vmemo</span>
           </.link>
-          <%= unless assigns[:hide_header_search_upload] do %>
-            <.live_component
-              module={VmemoWeb.LiveComponents.SearchBox}
-              id="search-box"
-              q={assigns[:q] || ""}
-              current_user={assigns[:current_ash_user] || assigns[:current_user]}
-            />
-            <.link href="/photos/upload" class="hidden sm:flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="currentColor"
-                class="btn btn-neutral btn-square "
-                aria-hidden="true"
-                aria-label="Upload"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </.link>
-          <% end %>
         <% else %>
           <a href="/" class="flex gap-2 sm:gap-4 items-center font-bold">
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" /> Vmemo
@@ -38,6 +16,20 @@
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
+          <.link href="/photos/upload" class="flex items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="btn btn-neutral btn-square "
+              aria-hidden="true"
+              aria-label="Upload"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </.link>
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
@@ -55,27 +47,6 @@
               tabindex="0"
               class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border "
             >
-              <li>
-                <.link href="/photos/upload" class="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    class="size-6"
-                    aria-hidden="true"
-                    aria-label="Upload"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 4.5v15m7.5-7.5h-15"
-                    />
-                  </svg>
-                  Upload
-                </.link>
-              </li>
               <li>
                 <.link
                   href={~p"/settings"}
