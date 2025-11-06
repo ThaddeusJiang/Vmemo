@@ -47,6 +47,20 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   @impl true
   def handle_event("validate", _, socket) do
+    entries = socket.assigns.uploads.photo.entries
+
+    socket =
+      if length(entries) > 1 do
+        # Keep only the first entry, cancel the rest
+        entries
+        |> Enum.drop(1)
+        |> Enum.reduce(socket, fn entry, acc ->
+          cancel_upload(acc, :photo, entry.ref)
+        end)
+      else
+        socket
+      end
+
     {:noreply, socket}
   end
 
