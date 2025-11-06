@@ -20,6 +20,7 @@ import { InfiniteScroll } from "./hooks/infinite_scroll"
 import { ImageLoader } from "./hooks/image_loader"
 import { ClipboardMediaFetcher } from "./hooks/clipboard_media_fetcher"
 import { Toast } from "./hooks/toast"
+import { Focus } from "./hooks/focus"
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
@@ -35,7 +36,8 @@ let liveSocket = new LiveSocket("/live", Socket, {
     InfiniteScroll,
     ImageLoader,
     ClipboardMediaFetcher,
-    Toast
+    Toast,
+    Focus
   },
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken }

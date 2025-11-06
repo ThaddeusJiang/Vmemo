@@ -1,6 +1,8 @@
 defmodule VmemoWeb.LiveComponents.UploadForm do
   use VmemoWeb, :live_component
 
+  import VmemoWeb.Live.FocusHelpers
+
   alias VmemoWeb.LiveComponents.Waterfall
 
   alias Vmemo.PhotoService
@@ -173,6 +175,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             name={@form[:note].name}
             value={@form[:note].value}
             label="Note"
+            phx-hook="Focus"
           />
 
           <.input field={@form[:is_whole]} type="checkbox" label="Is whole" />
@@ -196,29 +199,48 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   @impl true
   def handle_event("validate", params, socket) do
-    # 检测文件变化并通知父组件
-    has_files = Enum.any?(socket.assigns.uploads.photos.entries)
+    current_file_count = length(socket.assigns.uploads.photos.entries)
+    previous_file_count = Map.get(socket.assigns, :previous_file_count, 0)
     upload_ref = socket.assigns.uploads.photos.ref
+    has_files = current_file_count > 0
+    file_count_changed = current_file_count != previous_file_count
+
+    # 通知父组件文件状态变化
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
       send(socket.parent_pid, {:upload_form_ref, upload_ref})
     end
 
-    # 合并现有表单数据和新传入的参数
+    # 合并表单数据
     current_form_data = socket.assigns.form.params || %{}
     new_form_data = Map.merge(current_form_data, params)
 
-    socket = assign(socket, form: to_form(new_form_data))
+    socket =
+      socket
+      |> assign(form: to_form(new_form_data))
+      |> assign(previous_file_count: current_file_count)
+      |> maybe_focus_note_field(file_count_changed and has_files)
 
     {:noreply, socket}
   end
 
-  @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :photos, ref)}
+    previous_file_count = length(socket.assigns.uploads.photos.entries)
+
+    socket = cancel_upload(socket, :photos, ref)
+
+    current_file_count = length(socket.assigns.uploads.photos.entries)
+    has_files = current_file_count > 0
+    file_count_changed = current_file_count != previous_file_count
+
+    socket =
+      socket
+      |> assign(previous_file_count: current_file_count)
+      |> maybe_focus_note_field(file_count_changed and has_files)
+
+    {:noreply, socket}
   end
 
-  @impl true
   def handle_event(
         "save",
         %{"note" => note_text, "is_whole" => is_whole},
@@ -337,4 +359,10 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       end
     end
   end
+
+  defp maybe_focus_note_field(socket, true) do
+    focus(socket, "#note")
+  end
+
+  defp maybe_focus_note_field(socket, false), do: socket
 end

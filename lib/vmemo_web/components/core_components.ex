@@ -432,7 +432,7 @@ defmodule VmemoWeb.CoreComponents do
     <div class="form-control w-full">
       <div class="space-y-2">
         <.label for={@id} class="label-text">{@label}</.label>
-        <.textarea id={@id} name={@name} value={@value} />
+        <.textarea id={@id} name={@name} value={@value} {@rest} />
       </div>
       <.error :for={msg <- @errors}>
         <span class="label-text-alt text-error">{msg}</span>
