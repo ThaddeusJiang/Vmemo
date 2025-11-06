@@ -248,7 +248,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           phx-change="validate"
           phx-target={@myself}
           phx-hook="ClipboardMediaFetcher"
-          data-phx-upload={@uploads.photo.ref}
+          phx-drop-target={@uploads.photo.ref}
         >
           <%!-- Always include the file input --%>
           <.live_file_input upload={@uploads.photo} class="hidden" />
