@@ -4,7 +4,7 @@ This is a web application written using **Ash** and **Phoenix**
 
 ## Personal
 
-- Alway response in **Chinese**, write code(includes UI) in only **English**
+- Alway response in **Chinese**, write code(includes UI) in only **English**, git message in **Chinese**
 - **No** need too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
