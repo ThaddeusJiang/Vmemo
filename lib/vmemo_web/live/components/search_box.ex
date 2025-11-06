@@ -22,11 +22,15 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @impl true
   def update(assigns, socket) do
     q = Map.get(assigns, :q, "")
+    prev_show_expanded = Map.get(socket.assigns, :show_expanded, false)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:q, q)}
+    result_socket =
+      socket
+      |> assign(assigns)
+      |> assign(:q, q)
+      |> assign(:show_expanded, prev_show_expanded)
+
+    {:ok, result_socket}
   end
 
   @impl true
@@ -50,21 +54,24 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   defp handle_progress(:photo, entry, socket) do
+    require Logger
     current_user = Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
-      {:noreply, socket |> put_flash(:error, "User not found")}
+      {:noreply, socket}
     else
       user_id = current_user.id
 
       if entry.done? do
-        result =
+        Logger.info("Photo upload completed: #{entry.client_name}")
+        
+        photo =
           consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
             filename = entry.uuid <> Path.extname(entry.client_name)
 
             {:ok, dest} = PhotoService.cp_file(path, current_user.id, filename)
 
-            case Photo.create_with_sync(
+            case Photo.create_immediate(
                    %{
                      note: "",
                      url: Path.join("/", dest),
@@ -73,25 +80,80 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                    },
                    actor: current_user
                  ) do
-              {:ok, photo} -> {:ok, {:ok, photo}}
-              {:error, reason} -> {:ok, {:error, reason}}
+              {:ok, photo} ->
+                Logger.info("Photo created in DB: #{photo.id}")
+                
+                case sync_photo_to_typesense(photo) do
+                  {:ok, _} -> 
+                    Logger.info("Photo synced to Typesense: #{photo.id}")
+                  {:error, reason} ->
+                    Logger.error("Failed to sync to Typesense: #{inspect(reason)}")
+                end
+                
+                {:ok, photo}
+
+              {:error, reason} ->
+                Logger.error("Failed to create photo: #{inspect(reason)}")
+                {:error, reason}
             end
           end)
 
-        case result do
-          {:ok, {:ok, photo}} ->
-            {:noreply,
-             socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
-
-          {:ok, {:error, reason}} ->
-            {:noreply, socket |> put_flash(:error, "Failed to upload photo: #{inspect(reason)}")}
-
-          other ->
-            {:noreply, socket |> put_flash(:error, "Unexpected upload result: #{inspect(other)}")}
-        end
+        Logger.info("Navigating to photos page with similar_photo_id=#{photo.id}")
+        {:noreply, socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
       else
         {:noreply, socket}
       end
+    end
+  end
+
+  defp sync_photo_to_typesense(photo) do
+    require Logger
+    alias Vmemo.PhotoService.TsPhoto
+
+    inserted_at_unix = DateTime.to_unix(photo.inserted_at)
+
+    base_data = %{
+      id: photo.id,
+      note: photo.note || "",
+      note_ids: [],
+      url: photo.url,
+      file_id: photo.file_id,
+      inserted_at: inserted_at_unix,
+      inserted_by: photo.user_id
+    }
+
+    typesense_data =
+      case read_image_as_base64(photo.url) do
+        {:ok, image} ->
+          Map.put(base_data, :image, image)
+
+        {:error, reason} ->
+          Logger.warning("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
+          base_data
+      end
+
+    case TsPhoto.get_photo(photo.id) do
+      nil -> TsPhoto.create(typesense_data)
+      _existing -> TsPhoto.update_photo(typesense_data)
+    end
+  end
+
+  defp read_image_as_base64(url) do
+    relative_path =
+      url
+      |> String.trim_leading("/")
+      |> String.trim_leading("storage/v1/")
+
+    file_path =
+      if Mix.env() == :prod do
+        Path.join([Application.app_dir(:vmemo, "priv"), "storage", "v1", relative_path])
+      else
+        Path.join(["storage", "v1", relative_path])
+      end
+
+    case File.read(file_path) do
+      {:ok, binary} -> {:ok, Base.encode64(binary)}
+      {:error, reason} -> {:error, reason}
     end
   end
 

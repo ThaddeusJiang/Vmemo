@@ -17,6 +17,7 @@ defmodule Vmemo.Photos.Photo do
 
   code_interface do
     define :create_with_sync
+    define :create_immediate
     define :read
     define :update
     define :destroy
@@ -38,6 +39,10 @@ defmodule Vmemo.Photos.Photo do
 
   actions do
     defaults [:read, :destroy]
+
+    create :create_immediate do
+      accept [:url, :note, :file_id, :user_id]
+    end
 
     create :create_with_sync do
       accept [:url, :note, :file_id, :user_id]

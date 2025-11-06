@@ -16,8 +16,8 @@ defmodule VmemoWeb.HomePageLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:p-4 lg:p-4 grow min-h-screen relative">
-      <div class="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] gap-8">
+    <section class="pt-12 px-4 pb-4 sm:pt-16 sm:px-4 sm:pb-4 lg:pt-20 lg:px-4 lg:pb-4 grow relative">
+      <div class="flex flex-col items-center justify-center h-full gap-8">
         <div class="flex flex-col items-center gap-6 w-full max-w-md px-4">
           <img src={~p"/images/logo.svg"} class="h-24 w-24" alt="Vmemo Logo" />
 
