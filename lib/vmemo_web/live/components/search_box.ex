@@ -37,7 +37,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   @impl true
   def handle_event("hide_expanded", _, socket) do
-    {:noreply, socket |> assign(show_expanded: false)}
+    socket =
+      socket.assigns.uploads.photo.entries
+      |> Enum.reduce(socket, fn entry, acc ->
+        cancel_upload(acc, :photo, entry.ref)
+      end)
+      |> assign(show_expanded: false)
+
+    {:noreply, socket}
   end
 
   @impl true
