@@ -93,7 +93,7 @@ defmodule Vmemo.Photos.Photo do
         user_id = Ash.Query.get_argument(query, :user_id)
         page = Ash.Query.get_argument(query, :page)
 
-        photos =
+        {photos, _found, _current_page} =
           Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
             user_id: user_id,
             page: page
@@ -104,7 +104,6 @@ defmodule Vmemo.Photos.Photo do
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)
 
-        # If Typesense returns no results, fall back to database query for this user
         if photo_ids == [] do
           per_page = 10
           offset = (page - 1) * per_page
@@ -114,11 +113,9 @@ defmodule Vmemo.Photos.Photo do
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
         else
-          # Load all matching photos then sort by the order from Typesense
           query
           |> Ash.Query.filter(id: [in: photo_ids])
           |> Ash.Query.after_action(fn _query, records ->
-            # Sort records by the order of photo_ids from Typesense
             sorted_records =
               photo_ids
               |> Enum.map(fn id ->

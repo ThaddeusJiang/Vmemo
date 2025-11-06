@@ -6,6 +6,15 @@ defmodule VmemoWeb.PhotosIndexLive do
   alias Vmemo.Photos.Photo
   alias VmemoWeb.LiveComponents.Waterfall
 
+  defp valid_uuid?(id) when is_binary(id) do
+    Regex.match?(
+      ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      String.downcase(id)
+    )
+  end
+
+  defp valid_uuid?(_), do: false
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -18,7 +27,7 @@ defmodule VmemoWeb.PhotosIndexLive do
     similar_photo_id = socket.assigns.similar_photo_id
 
     page = socket.assigns.page + 1
-    more_photos = load_photos(q, similar_photo_id, page, user)
+    {more_photos, _found} = load_photos_with_count(q, similar_photo_id, page, user)
 
     {:noreply,
      socket
@@ -26,11 +35,42 @@ defmodule VmemoWeb.PhotosIndexLive do
      |> assign(:page, page)}
   end
 
-  defp load_photos(q, similar_photo_id, page, user) do
-    case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
-      {:ok, photos} -> photos
-      _ -> []
-    end
+  defp load_photos_with_count(q, similar_photo_id, page, user) do
+    {ts_photos, found, _current_page} =
+      Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar_photo_id},
+        user_id: user.id,
+        page: page
+      )
+
+    photo_ids =
+      ts_photos
+      |> Enum.map(& &1.id)
+      |> Enum.filter(&valid_uuid?/1)
+
+    photos =
+      if photo_ids == [] do
+        []
+      else
+        require Ash.Query
+
+        query =
+          Photo
+          |> Ash.Query.filter(id in ^photo_ids)
+
+        case Ash.read(query, actor: user) do
+          {:ok, records} ->
+            photo_ids
+            |> Enum.map(fn id ->
+              Enum.find(records, fn record -> record.id == id end)
+            end)
+            |> Enum.reject(&is_nil/1)
+
+          _ ->
+            []
+        end
+      end
+
+    {photos, found}
   end
 
   @impl true
@@ -40,11 +80,11 @@ defmodule VmemoWeb.PhotosIndexLive do
     q = Map.get(params, "q", "")
     similar_photo_id = Map.get(params, "similar_photo_id")
 
-    photos = load_photos(q, similar_photo_id, 1, user)
+    {photos, total_count} = load_photos_with_count(q, similar_photo_id, 1, user)
     similar_photo = load_similar_photo(similar_photo_id, user)
 
     Logger.info(
-      "PhotosIndexLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}"
+      "PhotosIndexLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}, total=#{total_count}"
     )
 
     {:noreply,
@@ -53,7 +93,8 @@ defmodule VmemoWeb.PhotosIndexLive do
      |> assign(:page, 1)
      |> assign(:q, q)
      |> assign(:similar_photo_id, similar_photo_id)
-     |> assign(:similar_photo, similar_photo)}
+     |> assign(:similar_photo, similar_photo)
+     |> assign(:total_count, total_count)}
   end
 
   defp load_similar_photo(nil, _user), do: nil
@@ -76,12 +117,18 @@ defmodule VmemoWeb.PhotosIndexLive do
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-blue-500 shadow-md">
               <img src={@similar_photo.url} alt={@similar_photo.note} class="w-full h-full object-cover" />
             </div>
+            <div class="ml-auto text-sm text-gray-600">
+              <span class="font-semibold">{@total_count}</span> results
+            </div>
           </div>
         <% else %>
           <%= if @q != "" do %>
             <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
               <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
               <div class="flex-1 text-lg text-gray-900 font-semibold">{@q}</div>
+              <div class="text-sm text-gray-600">
+                <span class="font-semibold">{@total_count}</span> results
+              </div>
             </div>
           <% end %>
         <% end %>

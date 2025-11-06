@@ -5,10 +5,14 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns.current_ash_user
+    total_photos = Vmemo.PhotoService.TsPhoto.count_photos(user_id: user.id)
+
     socket =
       socket
       |> assign(:hide_header_search_upload, true)
       |> assign(:q, "")
+      |> assign(:total_photos, total_photos)
 
     {:ok, socket}
   end
@@ -20,6 +24,10 @@ defmodule VmemoWeb.HomePageLive do
       <div class="flex flex-col items-center justify-center h-full gap-8">
         <div class="flex flex-col items-center gap-6 w-full max-w-md px-4">
           <h1 class="text-4xl font-bold">Search</h1>
+
+          <div class="text-sm text-gray-600">
+            Total <span class="font-semibold">{@total_photos}</span> photos
+          </div>
 
           <.live_component
             module={SearchBox}

@@ -150,6 +150,26 @@ defmodule Vmemo.PhotoService.TsPhoto do
     photos
   end
 
+  def count_photos(opts \\ []) do
+    user_id = Keyword.get(opts, :user_id, "")
+    req = Typesense.build_request("/collections/#{@collection_name}/documents/search")
+
+    res =
+      Req.get(req,
+        params: [
+          q: "*",
+          query_by: "note",
+          filter_by: "inserted_by:#{user_id}",
+          per_page: 0
+        ]
+      )
+
+    case Typesense.handle_response(res) do
+      {:ok, data} -> data["found"] || 0
+      _ -> 0
+    end
+  end
+
   def hybird_search_photos({q, similar}, opts \\ []) do
     user_id = Keyword.get(opts, :user_id, "")
     page = Keyword.get(opts, :page, 1)
@@ -188,9 +208,9 @@ defmodule Vmemo.PhotoService.TsPhoto do
         }
       )
 
-    {:ok, photos} = Typesense.handle_multi_search_res(res)
+    {:ok, {photos, found, current_page}} = Typesense.handle_multi_search_res(res)
 
-    photos |> Enum.map(&parse/1)
+    {photos |> Enum.map(&parse/1), found, current_page}
   end
 
   def list_similar_photos(id, opts \\ []) do
@@ -212,7 +232,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
         }
       )
 
-    {:ok, photos} = Typesense.handle_multi_search_res(res)
+    {:ok, {photos, _found, _page}} = Typesense.handle_multi_search_res(res)
 
     photos |> Enum.map(&parse/1)
   end
