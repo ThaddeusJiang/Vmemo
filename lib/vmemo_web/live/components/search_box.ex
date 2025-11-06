@@ -3,7 +3,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   alias Vmemo.PhotoService
   alias Vmemo.Photos.Photo
-  # alias removed: SmallSdk.FileSystem
 
   @impl true
   def mount(socket) do
@@ -11,10 +10,8 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
      socket
      |> assign(show_expanded: false)
      |> assign(:q, "")
-     |> allow_upload(:photo,
+      |> allow_upload(:photo,
        accept: ~w(.png .jpg .jpeg .gif .webp),
-       progress: &handle_progress/3,
-       auto_upload: true,
        max_entries: 1
      )}
   end
@@ -39,8 +36,13 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
-  def handle_event("hide_extened", _, socket) do
+  def handle_event("hide_expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: false)}
+  end
+
+  @impl true
+  def handle_event("cancel_photo", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :photo, ref)}
   end
 
   @impl true
@@ -50,61 +52,84 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   @impl true
   def handle_event("search_by_photo", _, socket) do
-    {:noreply, socket}
-  end
-
-  defp handle_progress(:photo, entry, socket) do
-    require Logger
     current_user = Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket}
     else
-      user_id = current_user.id
+      case uploaded_entries(socket, :photo) do
+        {[_ | _] = entries, []} ->
+          handle_uploaded_photos(entries, socket, current_user)
 
-      if entry.done? do
-        Logger.info("Photo upload completed: #{entry.client_name}")
+        {[], []} ->
+          {:noreply, socket |> put_flash(:error, "Please wait for upload to complete")}
 
-        photo =
-          consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
-            filename = entry.uuid <> Path.extname(entry.client_name)
-
-            {:ok, dest} = PhotoService.cp_file(path, current_user.id, filename)
-
-            case Photo.create_immediate(
-                   %{
-                     note: "",
-                     url: Path.join("/", dest),
-                     file_id: filename,
-                     user_id: user_id
-                   },
-                   actor: current_user
-                 ) do
-              {:ok, photo} ->
-                Logger.info("Photo created in DB: #{photo.id}")
-
-                case sync_photo_to_typesense(photo) do
-                  {:ok, _} ->
-                    Logger.info("Photo synced to Typesense: #{photo.id}")
-                  {:error, reason} ->
-                    Logger.error("Failed to sync to Typesense: #{inspect(reason)}")
-                end
-
-                {:ok, photo}
-
-              {:error, reason} ->
-                Logger.error("Failed to create photo: #{inspect(reason)}")
-                {:error, reason}
-            end
-          end)
-
-        Logger.info("Navigating to photos page with similar_photo_id=#{photo.id}")
-        {:noreply, socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
-      else
-        {:noreply, socket}
+        {[], [_ | _] = errors} ->
+          error_msg = "Upload failed: #{inspect(errors)}"
+          {:noreply, socket |> put_flash(:error, error_msg)}
       end
     end
   end
+
+  defp handle_uploaded_photos(entries, socket, current_user) do
+    require Logger
+
+    results =
+      for entry <- entries do
+        consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
+          filename = entry.uuid <> Path.extname(entry.client_name)
+
+          {:ok, dest} = PhotoService.cp_file(path, current_user.id, filename)
+
+          case Photo.create_immediate(
+                 %{
+                   note: "",
+                   url: Path.join("/", dest),
+                   file_id: filename,
+                   user_id: current_user.id
+                 },
+                 actor: current_user
+               ) do
+            {:ok, photo} ->
+              case sync_photo_to_typesense(photo) do
+                {:ok, _} ->
+                  :ok
+                {:error, reason} ->
+                  Logger.error("Failed to sync to Typesense: #{inspect(reason)}")
+              end
+
+              {:ok, photo}
+
+            {:error, reason} ->
+              Logger.error("Failed to create photo: #{inspect(reason)}")
+              {:error, reason}
+          end
+        end)
+      end
+
+    results =
+      results
+      |> Enum.map(fn
+        %Vmemo.Photos.Photo{} = photo -> {:ok, photo}
+        {:error, reason} -> {:error, reason}
+        other -> {:error, inspect(other)}
+      end)
+
+    case Enum.find(results, fn result -> match?({:error, _}, result) end) do
+      nil ->
+        case Enum.find(results, fn result -> match?({:ok, _}, result) end) do
+          {:ok, photo} ->
+            {:noreply, socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
+
+          _ ->
+            {:noreply, socket |> put_flash(:error, "No photo created")}
+        end
+
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, "Upload failed: #{inspect(reason)}")}
+    end
+  end
+
 
   defp sync_photo_to_typesense(photo) do
     require Logger
@@ -199,7 +224,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
             </svg>
           </div>
         </label>
-        <%!-- TODO: search when typing --%>
       </form>
 
       <div
@@ -210,7 +234,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           <p class="text-gray-500 text-sm">Search by photo</p>
           <.button
             variant="ghost"
-            phx-click="hide_extened"
+            phx-click="hide_expanded"
             phx-target={@myself}
             class="btn-circle absolute top-2 right-2"
           >
@@ -224,17 +248,105 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           phx-change="validate"
           phx-target={@myself}
           phx-hook="ClipboardMediaFetcher"
+          data-phx-upload={@uploads.photo.ref}
         >
-          <label for={@uploads.photo.ref} class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer">
-            <div class=" w-full h-full flex flex-col justify-center items-center">
-              <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
-            </div>
-            <div class="text-xs text-gray-500 mt-4">
-              Drop an image or <span class="link">click here</span>
-            </div>
+          <%!-- Always include the file input --%>
+          <.live_file_input upload={@uploads.photo} class="hidden" />
 
-            <.live_file_input upload={@uploads.photo} class="hidden" />
-          </label>
+          <%= if Enum.any?(@uploads.photo.entries) do %>
+            <div class="w-full flex flex-col items-center gap-4 flex-1">
+              <%= for entry <- @uploads.photo.entries do %>
+                <article class="upload-entry relative w-full max-w-xs aspect-square">
+                  <figure class="w-full h-full">
+                    <.live_img_preview entry={entry} class="w-full h-full object-cover rounded-lg" />
+                  </figure>
+
+                  <%= case entry.progress do %>
+                    <% 0 -> %>
+                      <.button
+                        type="button"
+                        phx-click="cancel_photo"
+                        phx-target={@myself}
+                        phx-value-ref={entry.ref}
+                        aria-label="cancel"
+                        class="absolute top-1 right-1 btn btn-xs btn-circle btn-error"
+                      >
+                        &times;
+                      </.button>
+                    <% 100 -> %>
+                      <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm bg-black bg-opacity-30 rounded-lg">
+                        <div
+                          class="radial-progress text-white"
+                          style="--value:100; --size:2rem; --thickness: 2px;"
+                          role="progressbar"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            class="size-6"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="m4.5 12.75 6 6 9-13.5"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    <% _ -> %>
+                      <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm bg-black bg-opacity-30 rounded-lg">
+                        <div
+                          class="radial-progress text-white"
+                          style={"--value:#{entry.progress}; --size:2rem; --thickness: 2px;"}
+                          role="progressbar"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            class="size-6"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="m4.5 12.75 6 6 9-13.5"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                  <% end %>
+                </article>
+              <% end %>
+
+              <div class="flex gap-2 mt-auto">
+                <.button
+                  type="submit"
+                  class="btn btn-primary"
+                  disabled={Enum.any?(@uploads.photo.entries, fn entry -> entry.progress > 0 and entry.progress < 100 end)}
+                >
+                  <%= if Enum.any?(@uploads.photo.entries, fn entry -> entry.progress > 0 and entry.progress < 100 end) do %>
+                    Uploading...
+                  <% else %>
+                    Search
+                  <% end %>
+                </.button>
+              </div>
+            </div>
+          <% else %>
+            <label for={@uploads.photo.ref} class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer">
+              <div class=" w-full h-full flex flex-col justify-center items-center">
+                <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
+              </div>
+              <div class="text-xs text-gray-500 mt-4">
+                Drop an image or <span class="link">click here</span>
+              </div>
+            </label>
+          <% end %>
         </form>
       </div>
     </div>

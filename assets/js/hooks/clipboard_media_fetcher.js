@@ -16,12 +16,10 @@ export const ClipboardMediaFetcher = {
             const dataTransfer = new DataTransfer();
             let hasNewImages = false;
 
-            // 保留现有文件
             Array.from(fileInput.files).forEach(file => {
                 dataTransfer.items.add(file);
             });
 
-            // 添加粘贴的图片
             Array.from(items).forEach(item => {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
                     const file = item.getAsFile();
@@ -31,8 +29,6 @@ export const ClipboardMediaFetcher = {
                     }
                 }
             });
-
-            // 只在有新图片时更新
             if (hasNewImages) {
                 fileInput.files = dataTransfer.files;
                 fileInput.dispatchEvent(new Event('change', { bubbles: true }));
