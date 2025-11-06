@@ -61,7 +61,17 @@ defmodule VmemoWeb.PhotosIndexLive do
           {:ok, records} ->
             photo_ids
             |> Enum.map(fn id ->
-              Enum.find(records, fn record -> record.id == id end)
+              ash_photo = Enum.find(records, fn record -> record.id == id end)
+              ts_photo = Enum.find(ts_photos, fn ts -> ts.id == id end)
+              
+              if ash_photo && ts_photo do
+                Map.merge(ash_photo, %{
+                  _vector_distance: ts_photo._vector_distance,
+                  _text_match_info: ts_photo._text_match_info
+                })
+              else
+                ash_photo
+              end
             end)
             |> Enum.reject(&is_nil/1)
 
@@ -106,6 +116,13 @@ defmodule VmemoWeb.PhotosIndexLive do
     end
   end
 
+  defp similarity_score(%{_vector_distance: nil}), do: nil
+  defp similarity_score(%{_vector_distance: distance}) when is_number(distance) do
+    similarity = 1.0 - distance
+    max(0, similarity * 100) |> Float.round(1)
+  end
+  defp similarity_score(_), do: nil
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -145,9 +162,16 @@ defmodule VmemoWeb.PhotosIndexLive do
           </:empty>
 
           <:card :let={photo}>
-            <.link navigate={~p"/photos/#{photo.id}"} class="link link-hover block">
-              <.img src={photo.url} alt={photo.note} id={photo.id} />
-            </.link>
+            <div class="relative">
+              <.link navigate={~p"/photos/#{photo.id}"} class="link link-hover block">
+                <.img src={photo.url} alt={photo.note} id={photo.id} />
+              </.link>
+              <%= if @similar_photo_id && similarity_score(photo) do %>
+                <div class="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
+                  {similarity_score(photo)}%
+                </div>
+              <% end %>
+            </div>
           </:card>
         </.live_component>
 
