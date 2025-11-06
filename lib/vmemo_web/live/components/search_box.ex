@@ -64,7 +64,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       if entry.done? do
         Logger.info("Photo upload completed: #{entry.client_name}")
-        
+
         photo =
           consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
             filename = entry.uuid <> Path.extname(entry.client_name)
@@ -82,14 +82,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                  ) do
               {:ok, photo} ->
                 Logger.info("Photo created in DB: #{photo.id}")
-                
+
                 case sync_photo_to_typesense(photo) do
-                  {:ok, _} -> 
+                  {:ok, _} ->
                     Logger.info("Photo synced to Typesense: #{photo.id}")
                   {:error, reason} ->
                     Logger.error("Failed to sync to Typesense: #{inspect(reason)}")
                 end
-                
+
                 {:ok, photo}
 
               {:error, reason} ->
@@ -163,7 +163,20 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
     <div class="grow container max-w-md dropdown dropdown-open place-self-start">
       <form :if={!@show_expanded} action="/photos" method="get" class="form-control container">
         <label class="input input-bordered flex items-center rounded-3xl w-full">
-          <input type="search" name="q" class=" grow" placeholder="Search" value={@q} />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="size-6 text-gray-400"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input type="search" name="q" class="grow" placeholder="Search" value={@q} />
 
           <div class="flex items-center">
             <svg
@@ -194,7 +207,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-lg p-4 sm:p-4  container aspect-3/2 "
       >
         <header class="container flex items-center justify-center ">
-          <p class="text-gray-500">Search any image</p>
+          <p class="text-gray-500 text-sm">Search by photo</p>
           <.button
             variant="ghost"
             phx-click="hide_extened"
@@ -215,9 +228,9 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
             <div class=" w-full h-full flex flex-col justify-center items-center">
               <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
             </div>
-            <span class="text-xs text-gray-500 mt-4">
-              Drag and drop an image here or click to upload
-            </span>
+            <div class="text-xs text-gray-500 mt-4">
+              Drop an image or <span class="link">click here</span>
+            </div>
 
             <.live_file_input upload={@uploads.photo} class="hidden" />
           </label>
