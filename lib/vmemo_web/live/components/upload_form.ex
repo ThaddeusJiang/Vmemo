@@ -28,7 +28,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       |> assign_new(:form, fn ->
         to_form(%{
           "note" => "",
-          "is_whole" => false
+          "is_whole" => true
         })
       end)
       |> assign_new(:show_full_form, fn -> false end)
@@ -195,7 +195,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 
   @impl true
-  def handle_event("validate", _params, socket) do
+  def handle_event("validate", params, socket) do
     # 检测文件变化并通知父组件
     has_files = Enum.any?(socket.assigns.uploads.photos.entries)
     upload_ref = socket.assigns.uploads.photos.ref
@@ -203,6 +203,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
       send(socket.parent_pid, {:upload_form_ref, upload_ref})
     end
+
+    # 合并现有表单数据和新传入的参数
+    current_form_data = socket.assigns.form.params || %{}
+    new_form_data = Map.merge(current_form_data, params)
+
+    socket = assign(socket, form: to_form(new_form_data))
 
     {:noreply, socket}
   end
