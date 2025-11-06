@@ -48,11 +48,15 @@ defmodule VmemoWeb.Router do
     import Phoenix.LiveDashboard.Router
     import Oban.Web.Router
 
+    scope "/dev" do
+      pipe_through :browser
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+
     scope "/dev", VmemoWeb do
       pipe_through :browser
 
       live_dashboard "/dashboard", metrics: VmemoWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
       oban_dashboard("/oban")
 
       live_session :dev_ui,
@@ -97,6 +101,8 @@ defmodule VmemoWeb.Router do
       live "/photos", PhotosIndexLive, :index
       live "/photos/upload", PhotoUploadLive
       live "/photos/:id", PhotoIdLive
+
+      live "/notes/:id", NoteIdLive
 
       live "/settings", UserSettingsLive, :edit
       live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
