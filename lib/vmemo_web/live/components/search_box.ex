@@ -185,7 +185,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="grow container max-w-md dropdown dropdown-open place-self-start">
+    <div class="grow container dropdown dropdown-open place-self-start">
       <form :if={!@show_expanded} action="/photos" method="get" class="form-control container">
         <label class="input input-bordered flex items-center rounded-3xl w-full">
           <svg

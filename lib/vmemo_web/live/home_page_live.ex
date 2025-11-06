@@ -22,7 +22,7 @@ defmodule VmemoWeb.HomePageLive do
     ~H"""
     <section class="pt-12 px-4 pb-4 sm:pt-16 sm:px-4 sm:pb-4 lg:pt-20 lg:px-4 lg:pb-4 grow relative">
       <div class="flex flex-col items-center justify-center h-full gap-8">
-        <div class="flex flex-col items-center gap-6 w-full max-w-md px-4">
+        <div class="flex flex-col items-center gap-6 w-full max-w-3xl px-4">
           <h1 class="text-4xl font-bold">Search</h1>
 
           <div class="text-sm text-gray-600">
