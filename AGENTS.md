@@ -48,10 +48,17 @@ This is a web application written using **Ash** and **Phoenix**
 - `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
 - **Never** use `python` run scripts, you can use `jq` `curl` `gh` etc.
 
-**Test guidelines**
+**Local debug and test guidelines**
 
 - **Prefer** use **real data** and **UI** for testing
-- **Alway** use real files in `test/testdata_files` for `Upload` testing
+- **Alway** use real files in `test/testdata_files/**` for `Upload` testing
+
+You can use test account in Local
+
+```
+email = "test@example.com"
+password = "password123456"
+```
 
 ## Project guidelines
 

@@ -21,7 +21,7 @@ defmodule VmemoWeb.UserSessionControllerTest do
       conn = get(conn, ~p"/home")
       response = html_response(conn, 200)
       # assert response =~ user.display_name
-      assert response =~ ~p"/users/settings"
+      assert response =~ ~p"/settings"
       assert response =~ ~p"/users/logout"
     end
 
@@ -80,7 +80,7 @@ defmodule VmemoWeb.UserSessionControllerTest do
           }
         })
 
-      assert redirected_to(conn) == ~p"/users/settings"
+      assert redirected_to(conn) == ~p"/settings"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password updated successfully"
     end
 

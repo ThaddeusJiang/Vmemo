@@ -50,43 +50,48 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   defp handle_progress(:photo, entry, socket) do
-    user_id = socket.assigns.current_ash_user.id
+    current_user = Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
-    if entry.done? do
-      result =
-        consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
-          filename = entry.uuid <> Path.extname(entry.client_name)
-
-          {:ok, dest} = PhotoService.cp_file(path, socket.assigns.current_ash_user.id, filename)
-
-          case Photo.create_with_sync(
-                 %{
-                   image: nil,
-                   note: "",
-                   url: Path.join("/", dest),
-                   file_id: filename,
-                   user_id: user_id
-                 },
-                 actor: socket.assigns.current_ash_user
-               ) do
-            {:ok, photo} -> {:ok, {:ok, photo}}
-            {:error, reason} -> {:ok, {:error, reason}}
-          end
-        end)
-
-      case result do
-        {:ok, {:ok, photo}} ->
-          {:noreply,
-           socket |> push_navigate(to: ~p"/photos/#{photo.id}?action=search", replace: true)}
-
-        {:ok, {:error, reason}} ->
-          {:noreply, socket |> put_flash(:error, "Failed to upload photo: #{inspect(reason)}")}
-
-        other ->
-          {:noreply, socket |> put_flash(:error, "Unexpected upload result: #{inspect(other)}")}
-      end
+    if is_nil(current_user) do
+      {:noreply, socket |> put_flash(:error, "User not found")}
     else
-      {:noreply, socket}
+      user_id = current_user.id
+
+      if entry.done? do
+        result =
+          consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
+            filename = entry.uuid <> Path.extname(entry.client_name)
+
+            {:ok, dest} = PhotoService.cp_file(path, current_user.id, filename)
+
+            case Photo.create_with_sync(
+                   %{
+                     note: "",
+                     url: Path.join("/", dest),
+                     file_id: filename,
+                     user_id: user_id
+                   },
+                   actor: current_user
+                 ) do
+              {:ok, photo} -> {:ok, {:ok, photo}}
+              {:error, reason} -> {:ok, {:error, reason}}
+            end
+          end)
+
+        case result do
+          {:ok, {:ok, photo}} ->
+            {:noreply,
+             socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
+
+          {:ok, {:error, reason}} ->
+            {:noreply, socket |> put_flash(:error, "Failed to upload photo: #{inspect(reason)}")}
+
+          other ->
+            {:noreply, socket |> put_flash(:error, "Unexpected upload result: #{inspect(other)}")}
+        end
+      else
+        {:noreply, socket}
+      end
     end
   end
 
@@ -139,13 +144,12 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         </header>
         <form
           id="search-by-photo"
-          class="form-control flex flex-col items-center justify-center gap-4 "
+          class="form-control flex flex-col items-center justify-center gap-4 flex-1"
           phx-submit="search_by_photo"
           phx-change="validate"
           phx-target={@myself}
-          phx-drop-target={@uploads.photo.ref}
         >
-          <label for={@uploads.photo.ref} class="text-center ">
+          <label for={@uploads.photo.ref} class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer">
             <div class=" w-full h-full flex flex-col justify-center items-center">
               <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
             </div>

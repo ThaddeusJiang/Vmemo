@@ -14,7 +14,7 @@
               q={assigns[:q] || ""}
               current_user={assigns[:current_ash_user] || assigns[:current_user]}
             />
-            <.link href="/upload" class="hidden sm:flex items-center">
+            <.link href="/photos/upload" class="hidden sm:flex items-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -56,7 +56,7 @@
               class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border "
             >
               <li>
-                <.link href="/upload" class="flex items-center">
+                <.link href="/photos/upload" class="flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -78,7 +78,7 @@
               </li>
               <li>
                 <.link
-                  href={~p"/users/settings"}
+                  href={~p"/settings"}
                   class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
                 >
                   <svg

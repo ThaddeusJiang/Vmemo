@@ -15,9 +15,10 @@ defmodule VmemoWeb.PhotosIndexLive do
   def handle_event("load_more", _, socket) do
     user = socket.assigns.current_ash_user
     q = socket.assigns.q
+    similar_photo_id = socket.assigns.similar_photo_id
 
     page = socket.assigns.page + 1
-    more_photos = load_photos(q, page, user)
+    more_photos = load_photos(q, similar_photo_id, page, user)
 
     {:noreply,
      socket
@@ -25,8 +26,8 @@ defmodule VmemoWeb.PhotosIndexLive do
      |> assign(:page, page)}
   end
 
-  defp load_photos(q, page, user) do
-    case Photo.hybrid_search(q, nil, user.id, page, actor: user) do
+  defp load_photos(q, similar_photo_id, page, user) do
+    case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
       {:ok, photos} -> photos
       _ -> []
     end
@@ -37,8 +38,9 @@ defmodule VmemoWeb.PhotosIndexLive do
     user = socket.assigns.current_ash_user
 
     q = Map.get(params, "q", "")
+    similar_photo_id = Map.get(params, "similar_photo_id")
 
-    photos = load_photos(q, 1, user)
+    photos = load_photos(q, similar_photo_id, 1, user)
 
     Logger.info(
       "PhotosIndexLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}"
@@ -48,7 +50,8 @@ defmodule VmemoWeb.PhotosIndexLive do
      socket
      |> assign(:photos, photos)
      |> assign(:page, 1)
-     |> assign(:q, q)}
+     |> assign(:q, q)
+     |> assign(:similar_photo_id, similar_photo_id)}
   end
 
   @impl true
@@ -62,7 +65,7 @@ defmodule VmemoWeb.PhotosIndexLive do
               <h2 class="text-2xl font-semibold text-gray-700">No results</h2>
               <p class="text-gray-500 text-center">
                 Try a different search above or
-                <.link href="/upload" class="link link-primary">upload photos</.link>
+                <.link href="/photos/upload" class="link link-primary">upload photos</.link>
               </p>
             </div>
           </:empty>

@@ -14,13 +14,13 @@ defmodule VmemoWeb.AshUserSettingsController do
       {:ok, updated_user} ->
         conn
         |> put_flash(:info, "Password updated successfully.")
-        |> put_session(:user_return_to, ~p"/users/settings")
+        |> put_session(:user_return_to, ~p"/settings")
         |> AshUserAuth.log_in_ash_user(updated_user)
 
       {:error, _error_map} ->
         conn
         |> put_flash(:error, "Failed to update password.")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: ~p"/settings")
     end
   end
 
