@@ -12,7 +12,7 @@ defmodule VmemoWeb.CoreComponents do
   See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
   how to customize them or feel free to swap in another framework altogether.
 
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+  Icons are provided by [Lucide](https://lucide.dev). Use `<i data-lucide="icon-name"></i>` directly in templates.
   """
   use Phoenix.Component
 
@@ -80,7 +80,7 @@ defmodule VmemoWeb.CoreComponents do
                 class="absolute btn-circle top-2 right-2 btn-xs "
                 aria-label={gettext("close")}
               >
-                <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+                <i data-lucide="x" class="h-4 w-4"></i>
               </.button>
 
               <div id={"#{@id}-content"} class="h-full max-h-max flex flex-col">
@@ -138,13 +138,13 @@ defmodule VmemoWeb.CoreComponents do
       {@rest}
     >
       <div :if={@title} class="flex items-center gap-2">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
+        <i :if={@kind == :info} data-lucide="info" class="h-4 w-4"></i>
+        <i :if={@kind == :error} data-lucide="alert-circle" class="h-4 w-4"></i>
         <span class="font-semibold">{@title}</span>
       </div>
       <div class="text-sm">{msg}</div>
       <button type="button" class="btn btn-sm btn-circle" aria-label={gettext("close")}>
-        <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+        <i data-lucide="x" class="h-4 w-4"></i>
       </button>
     </div>
     """
@@ -485,7 +485,7 @@ defmodule VmemoWeb.CoreComponents do
   def error(assigns) do
     ~H"""
     <div class="alert alert-error">
-      <.icon name="hero-exclamation-circle-mini" class="h-4 w-4" />
+      <i data-lucide="alert-circle" class="h-4 w-4"></i>
       <span>{render_slot(@inner_block)}</span>
     </div>
     """
@@ -699,38 +699,12 @@ defmodule VmemoWeb.CoreComponents do
         navigate={@navigate}
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
-        <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> {render_slot(@inner_block)}
+        <i data-lucide="arrow-left" class="h-3 w-3"></i> {render_slot(@inner_block)}
       </.link>
     </div>
     """
   end
 
-  @doc """
-  Renders a [Heroicon](https://heroicons.com).
-
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
-
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in your `assets/tailwind.config.js`.
-
-  ## Examples
-
-      <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-2 w-3 h-3 animate-spin" />
-  """
-  attr :name, :string, required: true
-  attr :class, :string, default: nil
-
-  def icon(%{name: "hero-" <> _} = assigns) do
-    ~H"""
-    <span class={[@name, @class]} />
-    """
-  end
 
   def generate_id(length \\ 16) do
     :crypto.strong_rand_bytes(length)
