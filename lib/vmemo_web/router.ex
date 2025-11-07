@@ -50,10 +50,19 @@ defmodule VmemoWeb.Router do
 
     scope "/dev" do
       pipe_through :browser
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+
+    scope "/dev", VmemoWeb do
+      pipe_through :browser
 
       live_dashboard "/dashboard", metrics: VmemoWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
       oban_dashboard("/oban")
+
+      live_session :dev_ui,
+        on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do
+        live "/ui", Live.UiPlayground
+      end
     end
   end
 
@@ -89,23 +98,19 @@ defmodule VmemoWeb.Router do
     live_session :require_authenticated_ash_user,
       on_mount: [{VmemoWeb.AshUserAuth, :ensure_authenticated_ash_user}] do
       live "/home", HomePageLive, :index
-      live "/photos", HomePageLive, :index
+      live "/photos", PhotosIndexLive, :index
+      live "/photos/upload", PhotoUploadLive
       live "/photos/:id", PhotoIdLive
-      # live "/home/upload", HomePageLive, :upload
 
       live "/notes/:id", NoteIdLive
 
-      live "/upload", PhotoUploadLive
-
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/settings", UserSettingsLive, :edit
+      live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
       # API Token 管理路由
       live "/tokens", ApiTokenLive.Index, :index
       live "/tokens/new", ApiTokenLive.Form, :new
       live "/tokens/:id", ApiTokenLive.Show, :show
-
-      live "/ui", Live.UiPlayground
     end
 
     post "/users/update-password", AshUserSettingsController, :update

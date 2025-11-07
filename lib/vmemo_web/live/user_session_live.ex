@@ -87,11 +87,11 @@ defmodule VmemoWeb.UserSessionLive do
 
             <div class="text-center">
               <span class="text-sm text-base-content/70">
-              Don't have an account?
-            </span>
-            <.link navigate={~p"/register"} class="link link-primary font-semibold ml-1">
-              Register
-            </.link>
+                Don't have an account?
+              </span>
+              <.link navigate={~p"/register"} class="link link-primary font-semibold ml-1">
+                Register
+              </.link>
               <span class="text-sm text-base-content/70 ml-1">
                 for an account now.
               </span>

@@ -36,7 +36,7 @@ defmodule VmemoWeb.AshUserSessionController do
     # For password_updated, we need to redirect to settings page
     # Store the redirect path in session before calling log_in_ash_user
     conn
-    |> put_session(:user_return_to, ~p"/users/settings")
+    |> put_session(:user_return_to, ~p"/settings")
     |> AshUserAuth.log_in_ash_user(ash_user, user_params)
   end
 

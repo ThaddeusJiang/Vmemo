@@ -22,7 +22,9 @@ defmodule Vmemo.PhotoService.TsPhoto do
     :inserted_at,
     :inserted_by,
     :_gen_description,
-    :_gen_ocr
+    :_gen_ocr,
+    :_vector_distance,
+    :_text_match_info
   ]
 
   def parse(nil) do
@@ -40,8 +42,20 @@ defmodule Vmemo.PhotoService.TsPhoto do
       inserted_at: photo["inserted_at"],
       inserted_by: photo["inserted_by"],
       _gen_description: photo["_gen_description"],
-      _gen_ocr: photo["_gen_ocr"]
+      _gen_ocr: photo["_gen_ocr"],
+      _vector_distance: photo["_vector_distance"],
+      _text_match_info: photo["_text_match_info"]
     }
+  end
+
+  def similarity_percentage(photo) do
+    case photo._vector_distance do
+      nil -> nil
+      distance when is_number(distance) ->
+        similarity = 1.0 - distance
+        max(0, similarity * 100) |> Float.round(1)
+      _ -> nil
+    end
   end
 
   def create(photo) do
@@ -150,6 +164,28 @@ defmodule Vmemo.PhotoService.TsPhoto do
     photos
   end
 
+  def count_photos(opts \\ []) do
+    user_id = Keyword.get(opts, :user_id, "")
+    req = Typesense.build_request("/collections/#{@collection_name}/documents/search")
+
+    res =
+      Req.get(req,
+        params: [
+          q: "*",
+          query_by: "note",
+          filter_by: "inserted_by:#{user_id}",
+          per_page: 0
+        ]
+      )
+
+    case Typesense.handle_response(res) do
+      {:ok, data} -> data["found"] || 0
+      _ -> 0
+    end
+  end
+
+  @min_similarity_threshold 0.75
+
   def hybird_search_photos({q, similar}, opts \\ []) do
     user_id = Keyword.get(opts, :user_id, "")
     page = Keyword.get(opts, :page, 1)
@@ -161,10 +197,16 @@ defmodule Vmemo.PhotoService.TsPhoto do
         q -> q
       end
 
-    vector_query =
+    {vector_query, sort_by} =
       case similar do
-        nil -> "image_embedding:([], k: 200, distance_threshold: 0.79)"
-        _ -> "image_embedding:([], k: 200, distance_threshold: 0.79, id:#{similar})"
+        nil ->
+          {"image_embedding:([], k: 200, distance_threshold: 0.79)",
+           "_text_match:desc,inserted_at:desc"}
+
+        _ ->
+          distance_threshold = 1.0 - @min_similarity_threshold
+          {"image_embedding:([], k: 500, distance_threshold: #{distance_threshold}, id:#{similar})",
+           "_vector_distance:asc,_text_match:desc"}
       end
 
     req = Typesense.build_request("/multi_search")
@@ -180,7 +222,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
               "collection" => @collection_name,
               "filter_by" => "inserted_by:#{user_id}",
               "exclude_fields" => "image_embedding",
-              "sort_by" => "_text_match:desc,inserted_at:desc",
+              "sort_by" => sort_by,
               "per_page" => per_page,
               "page" => page
             }
@@ -188,13 +230,16 @@ defmodule Vmemo.PhotoService.TsPhoto do
         }
       )
 
-    {:ok, photos} = Typesense.handle_multi_search_res(res)
+    {:ok, {photos, found, current_page}} = Typesense.handle_multi_search_res(res)
 
-    photos |> Enum.map(&parse/1)
+    {photos |> Enum.map(&parse/1), found, current_page}
   end
 
   def list_similar_photos(id, opts \\ []) do
     user_id = Keyword.get(opts, :user_id, "")
+    limit = Keyword.get(opts, :limit, 50)
+    distance_threshold = 1.0 - @min_similarity_threshold
+
     req = Typesense.build_request("/multi_search")
 
     res =
@@ -204,15 +249,17 @@ defmodule Vmemo.PhotoService.TsPhoto do
             %{
               "collection" => @collection_name,
               "q" => "*",
-              "vector_query" => "image_embedding:([], id:#{id})",
+              "vector_query" => "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
               "filter_by" => "inserted_by:#{user_id}",
-              "exclude_fields" => "image_embedding"
+              "exclude_fields" => "image_embedding",
+              "sort_by" => "_vector_distance:asc",
+              "per_page" => limit
             }
           ]
         }
       )
 
-    {:ok, photos} = Typesense.handle_multi_search_res(res)
+    {:ok, {photos, _found, _page}} = Typesense.handle_multi_search_res(res)
 
     photos |> Enum.map(&parse/1)
   end

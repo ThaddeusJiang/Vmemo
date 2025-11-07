@@ -5,15 +5,18 @@
         <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
           <.link href="/home" class="flex gap-2 sm:gap-4 items-center font-bold ">
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" />
-            <span class="hidden md:block">Vmemo</span>
+            <span>Vmemo</span>
           </.link>
-          <.live_component
-            module={VmemoWeb.LiveComponents.SearchBox}
-            id="search-box"
-            q={assigns[:q] || ""}
-            current_user={assigns[:current_ash_user] || assigns[:current_user]}
-          />
-          <.link href="/upload" class="hidden sm:flex items-center">
+        <% else %>
+          <a href="/" class="flex gap-2 sm:gap-4 items-center font-bold">
+            <img src={~p"/images/logo.svg"} class="h-9 w-9 block" /> Vmemo
+          </a>
+        <% end %>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
+        <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
+          <.link href="/photos/upload" class="flex items-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -27,15 +30,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           </.link>
-        <% else %>
-          <a href="/" class="flex gap-2 sm:gap-4 items-center font-bold">
-            <img src={~p"/images/logo.svg"} class="h-9 w-9 block" /> Vmemo
-          </a>
-        <% end %>
-      </div>
-
-      <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
-        <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
@@ -54,29 +48,8 @@
               class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border "
             >
               <li>
-                <.link href="/upload" class="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    class="size-6"
-                    aria-hidden="true"
-                    aria-label="Upload"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M12 4.5v15m7.5-7.5h-15"
-                    />
-                  </svg>
-                  Upload
-                </.link>
-              </li>
-              <li>
                 <.link
-                  href={~p"/users/settings"}
+                  href={~p"/settings"}
                   class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
                 >
                   <svg

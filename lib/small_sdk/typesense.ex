@@ -174,32 +174,33 @@ defmodule SmallSdk.Typesense do
   def handle_multi_search_res(res) do
     case handle_response(res) do
       {:ok, data} ->
-        # data= %{
-        #   "results" => [
-        #     %{
-        #       "code" => 404,
-        #       "error" => "Could not find a field named `default_sorting_field` in the schema for sorting."
-        #     }
-        #   ]
-        # }
+        case data["results"] do
+          [%{"hits" => hits, "found" => found, "page" => page} | _] when is_list(hits) ->
+            documents = 
+              hits 
+              |> Enum.map(fn hit ->
+                document = Map.get(hit, "document")
+                
+                vector_distance = get_in(hit, ["vector_distance"]) 
+                text_match_info = get_in(hit, ["text_match_info"])
+                
+                document
+                |> Map.put("_vector_distance", vector_distance)
+                |> Map.put("_text_match_info", text_match_info)
+              end)
+              
+            {:ok, {documents, found, page}}
 
-        documents =
-          case data["results"] do
-            [%{"hits" => hits} | _] when is_list(hits) ->
-              hits |> Enum.map(&Map.get(&1, "document"))
-
-            _ ->
-              []
-          end
-
-        {:ok, documents}
+          _ ->
+            {:ok, {[], 0, 1}}
+        end
 
       {:error, "Not Found"} ->
-        {:ok, []}
+        {:ok, {[], 0, 1}}
 
       error ->
         Logger.warning("Typesense multi search failed: #{inspect(error)}")
-        {:ok, []}
+        {:ok, {[], 0, 1}}
     end
   end
 

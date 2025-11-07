@@ -11,8 +11,13 @@ defmodule VmemoWeb.PhotoUploadLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:py-6 lg:px-8">
-      <.live_component id="upload_form" module={UploadForm} current_user={@current_ash_user} />
+    <section class="pt-12 px-4 pb-4 sm:pt-16 sm:px-4 sm:pb-4 lg:pt-20 lg:px-4 lg:pb-4 grow">
+      <.live_component
+        id="upload_form"
+        module={UploadForm}
+        current_user={@current_ash_user}
+        show_full_form={true}
+      />
     </section>
     """
   end

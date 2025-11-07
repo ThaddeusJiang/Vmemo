@@ -4,7 +4,7 @@ This is a web application written using **Ash** and **Phoenix**
 
 ## Personal
 
-- alway response in **Chinese**, write code(includes UI) in **English**
+- Alway response in **Chinese**, write code(includes UI) in only **English**, git message in **Chinese**
 - **No** need too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
@@ -24,7 +24,8 @@ This is a web application written using **Ash** and **Phoenix**
 **Phoenix guidelines**
 
 - **Never** create `.heex` for LiveView, write HTML in **render()**
-- When you need to trigger server functions, you can directly use the `<.link method="delete">` component instead of complex JavaScript
+-Phoenix can use `<.link method="delete">` can server functions
+- LiveView can use `push_event` trigger client-side event
 
 
 **PostgreSQL rules**
@@ -48,10 +49,17 @@ This is a web application written using **Ash** and **Phoenix**
 - `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
 - **Never** use `python` run scripts, you can use `jq` `curl` `gh` etc.
 
-**Test guidelines**
+**Local debug and test guidelines**
 
 - **Prefer** use **real data** and **UI** for testing
-- **Alway** use real files in `test/testdata_files` for `Upload` testing
+- **Alway** use real files in `test/testdata_files/**` for `Upload` testing
+
+You can use test account in Local
+
+```
+email = "test@example.com"
+password = "password123456"
+```
 
 ## Project guidelines
 
@@ -60,6 +68,7 @@ This is a web application written using **Ash** and **Phoenix**
 
 ### Phoenix v1.8 guidelines
 
+- **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
 - The `MyAppWeb.Layouts` module is aliased in the `my_app_web.ex` file, so you can use it without needing to alias it again
 - Anytime you run into errors with no `current_scope` assign:

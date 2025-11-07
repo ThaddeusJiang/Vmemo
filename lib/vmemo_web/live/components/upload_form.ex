@@ -1,6 +1,8 @@
 defmodule VmemoWeb.LiveComponents.UploadForm do
   use VmemoWeb, :live_component
 
+  import VmemoWeb.Live.FocusHelpers
+
   alias VmemoWeb.LiveComponents.Waterfall
 
   alias Vmemo.PhotoService
@@ -10,41 +12,65 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   @impl true
   def mount(socket) do
-    {:ok,
-     socket
-     |> allow_upload(:photos,
-       accept: ~w(.png .jpg .jpeg .gif .webp),
-       max_entries: 100
-     )}
+    socket =
+      socket
+      |> allow_upload(:photos,
+        accept: ~w(.png .jpg .jpeg .gif .webp),
+        max_entries: 100
+      )
+
+    {:ok, socket}
   end
 
   @impl true
   def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign_new(:form, fn ->
-       to_form(%{
-         "note" => "",
-         "is_whole" => false
-       })
-     end)}
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_new(:form, fn ->
+        to_form(%{
+          "note" => "",
+          "is_whole" => true
+        })
+      end)
+      |> assign_new(:show_full_form, fn -> false end)
+
+    # 通知父组件文件状态变化和 upload ref
+    # 使用 socket.parent_pid 获取父 LiveView 的 PID
+    has_files = Enum.any?(socket.assigns.uploads.photos.entries)
+    upload_ref = socket.assigns.uploads.photos.ref
+    if socket.parent_pid do
+      send(socket.parent_pid, {:upload_form_has_files, has_files})
+      # 确保 ref 总是发送（可能在组件更新时 ref 变化）
+      send(socket.parent_pid, {:upload_form_ref, upload_ref})
+    end
+
+    {:ok, socket}
   end
 
   @impl true
   def render(assigns) do
+    has_files = Enum.any?(assigns.uploads.photos.entries)
+
+    assigns =
+      assigns
+      |> assign(:has_files, has_files)
+      |> assign(:form_class, if(has_files or assigns.show_full_form, do: "w-full mx-auto max-w-md lg:max-w-lg", else: "absolute inset-0 pointer-events-none z-0"))
+      |> assign(:label_class, if(has_files or assigns.show_full_form, do: "relative h-auto", else: "relative h-full pointer-events-auto"))
+      |> assign(:section_class, if(has_files or assigns.show_full_form, do: "aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200", else: "relative flex flex-col w-full h-full border-0 bg-transparent"))
+
     ~H"""
     <form
       id="upload-form"
       phx-target={@myself}
       phx-submit="save"
       phx-change="validate"
-      class="w-full mx-auto max-w-md lg:max-w-lg"
+      class={@form_class}
       phx-hook="ClipboardMediaFetcher"
       phx-drop-target={@uploads.photos.ref}
     >
-      <label for={@uploads.photos.ref} class="relative h-auto">
-        <section class="aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200">
+      <label for={@uploads.photos.ref} class={@label_class}>
+        <section class={@section_class}>
           <.live_component
             id="waterfall-upload-photos"
             module={Waterfall}
@@ -138,24 +164,31 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         </section>
       </label>
 
-      <p :for={err <- upload_errors(@uploads.photos)} class="alert alert-danger">
-        {error_to_string(err)}
-      </p>
+      <%= if @has_files or @show_full_form do %>
+        <p :for={err <- upload_errors(@uploads.photos)} class="alert alert-danger">
+          {error_to_string(err)}
+        </p>
 
-      <div :if={Enum.count(@uploads.photos.entries) > 0} class="mt-4 space-y-2">
-        <.textarea_field
-          id={@form[:note].id}
-          name={@form[:note].name}
-          value={@form[:note].value}
-          label="Note"
-        />
+        <div :if={@has_files} class="mt-4 space-y-2">
+          <.textarea_field
+            id={@form[:note].id}
+            name={@form[:note].name}
+            value={@form[:note].value}
+            label="Note"
+            phx-hook="Focus"
+          />
 
-        <.input field={@form[:is_whole]} type="checkbox" label="Is whole" />
-      </div>
+          <.input field={@form[:is_whole]} type="checkbox" label="Is whole" />
+        </div>
 
-      <footer :if={Enum.count(@uploads.photos.entries) > 0} class="flex justify-center mt-4">
-        <.button>Upload</.button>
-      </footer>
+        <footer :if={@has_files} class="flex justify-center mt-4">
+          <.button>Upload</.button>
+        </footer>
+      <% else %>
+        <p :for={err <- upload_errors(@uploads.photos)} class="hidden">
+          {error_to_string(err)}
+        </p>
+      <% end %>
     </form>
     """
   end
@@ -165,64 +198,102 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 
   @impl true
-  def handle_event("validate", _params, socket) do
+  def handle_event("validate", params, socket) do
+    current_file_count = length(socket.assigns.uploads.photos.entries)
+    previous_file_count = Map.get(socket.assigns, :previous_file_count, 0)
+    upload_ref = socket.assigns.uploads.photos.ref
+    has_files = current_file_count > 0
+    file_count_changed = current_file_count != previous_file_count
+
+    # 通知父组件文件状态变化
+    if socket.parent_pid do
+      send(socket.parent_pid, {:upload_form_has_files, has_files})
+      send(socket.parent_pid, {:upload_form_ref, upload_ref})
+    end
+
+    # 合并表单数据
+    current_form_data = socket.assigns.form.params || %{}
+    new_form_data = Map.merge(current_form_data, params)
+
+    socket =
+      socket
+      |> assign(form: to_form(new_form_data))
+      |> assign(previous_file_count: current_file_count)
+      |> maybe_focus_note_field(file_count_changed and has_files)
+
     {:noreply, socket}
   end
 
-  @impl true
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :photos, ref)}
+    previous_file_count = length(socket.assigns.uploads.photos.entries)
+
+    socket = cancel_upload(socket, :photos, ref)
+
+    current_file_count = length(socket.assigns.uploads.photos.entries)
+    has_files = current_file_count > 0
+    file_count_changed = current_file_count != previous_file_count
+
+    socket =
+      socket
+      |> assign(previous_file_count: current_file_count)
+      |> maybe_focus_note_field(file_count_changed and has_files)
+
+    {:noreply, socket}
   end
 
-  @impl true
   def handle_event(
         "save",
         %{"note" => note_text, "is_whole" => is_whole},
         socket
       ) do
-    user_id = socket.assigns.current_user.id
+    current_user = Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
-    note =
-      case is_whole do
-        "true" ->
-          case Note.create_with_sync(
-                 %{
-                   text: note_text,
-                   user_id: user_id
-                 },
-                 actor: socket.assigns.current_user
-               ) do
-            {:ok, note} -> note
-            {:error, _} -> nil
-          end
+    if is_nil(current_user) do
+      {:noreply, socket |> put_flash(:error, "User not found")}
+    else
+      user_id = current_user.id
 
-        _ ->
-          nil
-      end
+      note =
+        case is_whole do
+          "true" ->
+            case Note.create_with_sync(
+                   %{
+                     text: note_text,
+                     user_id: user_id
+                   },
+                   actor: current_user
+                 ) do
+              {:ok, note} -> note
+              {:error, _} -> nil
+            end
 
-    case uploaded_entries(socket, :photos) do
-      {[_ | _] = entries, []} ->
-        results =
-          for entry <- entries do
-            consume_uploaded_entry(socket, entry, fn %{path: path} ->
-              filename = entry.uuid <> Path.extname(entry.client_name)
+          _ ->
+            nil
+        end
 
-              {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
+      case uploaded_entries(socket, :photos) do
+        {[_ | _] = entries, []} ->
+          results =
+            for entry <- entries do
+              consume_uploaded_entry(socket, entry, fn %{path: path} ->
+                filename = entry.uuid <> Path.extname(entry.client_name)
 
-              case Photo.create_with_sync(
-                     %{
-                       note: note_text,
-                       url: Path.join("/", dest),
-                       file_id: filename,
-                       user_id: user_id
-                     },
-                     actor: socket.assigns.current_user
-                   ) do
-                {:ok, photo} -> {:ok, {:ok, photo}}
-                {:error, reason} -> {:ok, {:error, reason}}
-              end
-            end)
-          end
+                {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
+
+                case Photo.create_with_sync(
+                       %{
+                         note: note_text,
+                         url: Path.join("/", dest),
+                         file_id: filename,
+                         user_id: user_id
+                       },
+                       actor: current_user
+                     ) do
+                  {:ok, photo} -> {:ok, {:ok, photo}}
+                  {:error, reason} -> {:ok, {:error, reason}}
+                end
+              end)
+            end
 
         # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
         results =
@@ -273,14 +344,25 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               end
             end
 
+            # 通知父组件上传成功，传递图片列表
+            if socket.parent_pid do
+              send(socket.parent_pid, {:upload_success, photos})
+            end
+
             {:noreply,
              socket
-             |> put_flash(:info, "Photos uploaded successfully")
-             |> push_navigate(to: "/photos")}
-        end
+             |> put_flash(:info, "Photos uploaded successfully")}
+          end
 
-      _ ->
-        {:noreply, socket}
+        _ ->
+          {:noreply, socket}
+      end
     end
   end
+
+  defp maybe_focus_note_field(socket, true) do
+    focus(socket, "#note")
+  end
+
+  defp maybe_focus_note_field(socket, false), do: socket
 end

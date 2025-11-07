@@ -100,22 +100,22 @@ defmodule VmemoWeb.UserRegistrationLive do
               <.input field={@form[:email]} type="email" label="Email address" required />
               <.input field={@form[:password]} type="password" label="Password" required />
 
-            <:actions>
-              <.button class="w-full">
-                Register
-              </.button>
-            </:actions>
+              <:actions>
+                <.button class="w-full">
+                  Register
+                </.button>
+              </:actions>
             </.simple_form>
 
             <div class="divider">OR</div>
 
             <div class="text-center">
               <span class="text-sm text-base-content/70">
-              Already have an account?
-            </span>
-            <.link navigate={~p"/login"} class="link link-primary font-semibold ml-1">
-              Login
-            </.link>
+                Already have an account?
+              </span>
+              <.link navigate={~p"/login"} class="link link-primary font-semibold ml-1">
+                Login
+              </.link>
             </div>
           <% end %>
         </div>
