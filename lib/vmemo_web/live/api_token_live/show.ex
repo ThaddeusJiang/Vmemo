@@ -14,11 +14,11 @@ defmodule VmemoWeb.ApiTokenLive.Show do
       <div class="mt-8">
         <!-- Error message -->
         <div :if={@error_message} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <i data-lucide="alert-triangle" class="h-5 w-5"></i>
           <span>{@error_message}</span>
           <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
         </div>
-        
+
     <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -30,7 +30,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-primary">
-                <.icon name="hero-key" class="h-6 w-6" />
+                <i data-lucide="key" class="h-6 w-6"></i>
               </div>
               <div class="stat-title">Token Status</div>
               <div class="stat-value text-sm">
@@ -47,7 +47,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-info">
-                <.icon name="hero-calendar" class="h-6 w-6" />
+                <i data-lucide="calendar" class="h-6 w-6"></i>
               </div>
               <div class="stat-title">Created</div>
               <div class="stat-value text-sm">
@@ -57,7 +57,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-warning">
-                <.icon name="hero-clock" class="h-6 w-6" />
+                <i data-lucide="clock" class="h-6 w-6"></i>
               </div>
               <div class="stat-title">Expires</div>
               <div class="stat-value text-sm">
@@ -67,7 +67,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-          
+
     <!-- Token details -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Token Information</h3>
@@ -134,7 +134,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-          
+
     <!-- Usage statistics -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Usage Statistics</h3>
@@ -161,7 +161,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-          
+
     <!-- Action buttons -->
           <div class="flex flex-wrap gap-2 justify-center">
             <.button
@@ -169,20 +169,20 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               phx-click="toggle_token_status"
               class={if @api_token.is_active, do: "text-warning", else: "text-success"}
             >
-              <.icon
-                name={if @api_token.is_active, do: "hero-pause", else: "hero-play"}
+              <i
+                data-lucide={if @api_token.is_active, do: "pause", else: "play"}
                 class="h-4 w-4"
-              />
+              ></i>
               {if @api_token.is_active, do: "Disable", else: "Enable"}
             </.button>
 
             <.button variant="danger" phx-click="delete_token">
-              <.icon name="hero-trash" class="h-4 w-4" /> Delete Token
+              <i data-lucide="trash-2" class="h-4 w-4"></i> Delete Token
             </.button>
           </div>
         </div>
       </div>
-      
+
     <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>

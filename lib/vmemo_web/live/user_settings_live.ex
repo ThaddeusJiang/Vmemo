@@ -17,7 +17,7 @@ defmodule VmemoWeb.UserSettingsLive do
             href={~p"/tokens"}
             class="btn btn-outline btn-primary w-full"
           >
-            <.icon name="hero-key" class="h-4 w-4" />Tokens
+            <i data-lucide="key" class="h-4 w-4"></i>Tokens
           </.link>
         </div>
         <div>

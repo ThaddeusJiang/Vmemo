@@ -14,11 +14,11 @@ defmodule VmemoWeb.ApiTokenLive.Form do
       <div class="mt-8">
         <!-- Error message -->
         <div :if={@error_message} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <i data-lucide="alert-triangle" class="h-5 w-5"></i>
           <span>{@error_message}</span>
           <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
         </div>
-        
+
     <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -49,7 +49,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
               </:actions>
             </.simple_form>
           </div>
-          
+
     <!-- Help information -->
           <div class="bg-info/10 rounded-box p-4">
             <h4 class="font-semibold mb-2">Usage Instructions</h4>
@@ -64,7 +64,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           </div>
         </div>
       </div>
-      
+
     <!-- Token Created Successfully Modal -->
       <.modal
         id="token-created-modal"
@@ -77,7 +77,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
         <div class="space-y-4">
           <div class="alert alert-warning">
-            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+            <i data-lucide="alert-triangle" class="h-5 w-5"></i>
             <span>
               Please copy and save this token immediately. You won't be able to view the full content again after creation.
             </span>
@@ -101,7 +101,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
                 phx-value-token={@new_token}
                 class="btn-sm"
               >
-                <.icon name="hero-clipboard" class="h-4 w-4" />
+                <i data-lucide="clipboard" class="h-4 w-4"></i>
               </.button>
             </div>
           </div>

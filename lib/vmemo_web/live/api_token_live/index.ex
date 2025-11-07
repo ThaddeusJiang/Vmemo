@@ -14,7 +14,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
       <div class="mt-8">
         <!-- Expiration alerts -->
         <div :if={length(@expired_tokens) > 0} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <i data-lucide="alert-triangle" class="h-5 w-5"></i>
           <div>
             <div class="font-semibold">{length(@expired_tokens)} tokens have expired</div>
             <div class="text-sm">Please update or delete expired tokens promptly</div>
@@ -22,7 +22,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
         </div>
 
         <div :if={length(@expiring_tokens) > 0} class="alert alert-warning mb-4">
-          <.icon name="hero-clock" class="h-5 w-5" />
+          <i data-lucide="clock" class="h-5 w-5"></i>
           <div>
             <div class="font-semibold">
               {length(@expiring_tokens)} tokens will expire within 7 days
@@ -30,14 +30,14 @@ defmodule VmemoWeb.ApiTokenLive.Index do
             <div class="text-sm">It's recommended to update these tokens in advance</div>
           </div>
         </div>
-        
+
     <!-- Error message -->
         <div :if={@error_message} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <i data-lucide="alert-triangle" class="h-5 w-5"></i>
           <span>{@error_message}</span>
           <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
         </div>
-        
+
     <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -48,15 +48,15 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">My API Tokens</h2>
             <.link navigate={~p"/tokens/new"} class="btn btn-primary">
-              <.icon name="hero-plus" class="h-4 w-4" /> Create New Token
+              <i data-lucide="plus" class="h-4 w-4"></i> Create New Token
             </.link>
           </div>
-          
+
     <!-- Statistics cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-primary">
-                <.icon name="hero-key" class="h-6 w-6 sm:h-8 sm:w-8" />
+                <i data-lucide="key" class="h-6 w-6 sm:h-8 sm:w-8"></i>
               </div>
               <div class="stat-title text-sm sm:text-base">Total Tokens</div>
               <div class="stat-value text-primary text-lg sm:text-2xl">{length(@api_tokens)}</div>
@@ -64,7 +64,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-success">
-                <.icon name="hero-check-circle" class="h-6 w-6 sm:h-8 sm:w-8" />
+                <i data-lucide="check-circle-2" class="h-6 w-6 sm:h-8 sm:w-8"></i>
               </div>
               <div class="stat-title text-sm sm:text-base">Active Tokens</div>
               <div class="stat-value text-success text-lg sm:text-2xl">{@active_tokens_count}</div>
@@ -72,7 +72,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-error">
-                <.icon name="hero-exclamation-triangle" class="h-6 w-6 sm:h-8 sm:w-8" />
+                <i data-lucide="alert-triangle" class="h-6 w-6 sm:h-8 sm:w-8"></i>
               </div>
               <div class="stat-title text-sm sm:text-base">Expired Tokens</div>
               <div class="stat-value text-error text-lg sm:text-2xl">{@expired_tokens_count}</div>
@@ -80,13 +80,13 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
             <div class="stat bg-base-100 rounded-box shadow">
               <div class="stat-figure text-info">
-                <.icon name="hero-chart-bar" class="h-6 w-6 sm:h-8 sm:w-8" />
+                <i data-lucide="bar-chart-3" class="h-6 w-6 sm:h-8 sm:w-8"></i>
               </div>
               <div class="stat-title text-sm sm:text-base">Today's Usage</div>
               <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
             </div>
           </div>
-          
+
     <!-- Token list -->
           <div class="bg-base-100 rounded-box shadow overflow-x-auto">
             <.table id="api-tokens" rows={@api_tokens}>
@@ -133,10 +133,10 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     phx-value-id={token.id}
                     class={if token.is_active, do: "btn-sm text-warning", else: "btn-sm text-success"}
                   >
-                    <.icon
-                      name={if token.is_active, do: "hero-pause", else: "hero-play"}
+                    <i
+                      data-lucide={if token.is_active, do: "pause", else: "play"}
                       class="h-4 w-4"
-                    />
+                    ></i>
                   </.button>
                   <.button
                     variant="danger"
@@ -144,7 +144,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     phx-value-id={token.id}
                     class="btn-sm"
                   >
-                    <.icon name="hero-trash" class="h-4 w-4" />
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
                   </.button>
                 </div>
               </:action>
@@ -152,7 +152,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           </div>
         </div>
       </div>
-      
+
     <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>

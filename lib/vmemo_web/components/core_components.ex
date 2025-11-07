@@ -174,7 +174,7 @@ defmodule VmemoWeb.CoreComponents do
         hidden
       >
         {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-2 h-3 w-3 animate-spin" />
+        <i data-lucide="loader-2" class="ml-2 h-3 w-3 animate-spin"></i>
       </.flash>
 
       <.flash
@@ -186,7 +186,7 @@ defmodule VmemoWeb.CoreComponents do
         hidden
       >
         {gettext("Hang in there while we get back on track")}
-        <.icon name="hero-arrow-path" class="ml-2 h-3 w-3 animate-spin" />
+        <i data-lucide="loader-2" class="ml-2 h-3 w-3 animate-spin"></i>
       </.flash> --%>
     </div>
     """
