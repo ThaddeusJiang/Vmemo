@@ -206,7 +206,7 @@ mix format --check-formatted
 
 - **框架**: Elixir Phoenix + LiveView
 - **语言版本**: Elixir 1.19.2, Erlang/OTP 28
-- **版本管理**: mise (推荐) 或 asdf
+- **版本管理**: mise (推荐)
 - **数据库**: PostgreSQL
 - **搜索引擎**: Typesense (CLIP 模型)
 - **认证**: Ash Authentication
