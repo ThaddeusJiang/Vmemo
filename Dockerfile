@@ -1,4 +1,4 @@
-FROM elixir:1.17.3 AS builder
+FROM elixir:1.19.2 AS builder
 
 RUN apt-get update -y && \
   apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git \
@@ -17,7 +17,7 @@ RUN mix compile
 RUN mix assets.deploy
 
 # ------------------ runner ------------------
-FROM elixir:1.17.3 AS runner
+FROM elixir:1.19.2 AS runner
 
 RUN apt-get update -y && \
   apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git \

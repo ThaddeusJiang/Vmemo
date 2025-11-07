@@ -1017,7 +1017,7 @@ GitHub Actions 配置：
 ```yaml
 services:
   postgres:
-    image: postgres:16
+    image: postgres:18
     env:
       POSTGRES_PASSWORD: postgres
     options: >-
@@ -1075,5 +1075,5 @@ services:
 
 ---
 
-**最后更新**: 2025-01-26  
+**最后更新**: 2025-01-26
 **版本**: v1.0.0
