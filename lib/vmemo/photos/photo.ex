@@ -12,7 +12,7 @@ defmodule Vmemo.Photos.Photo do
   end
 
   admin do
-    table_columns([:id, :url, :note, :user_id, :inserted_at])
+    table_columns([:id, :url, :note, :ash_user_id, :inserted_at])
   end
 
   code_interface do
@@ -21,9 +21,9 @@ defmodule Vmemo.Photos.Photo do
     define :read
     define :update
     define :destroy
-    define :get_with_notes, args: [:id, :user_id]
-    define :hybrid_search, args: [:query, :similar_photo_id, :user_id, :page]
-    define :list_similar, args: [:photo_id, :user_id]
+    define :get_with_notes, args: [:id, :ash_user_id]
+    define :hybrid_search, args: [:query, :similar_photo_id, :ash_user_id, :page]
+    define :list_similar, args: [:photo_id, :ash_user_id]
     define :gen_description
   end
 
@@ -41,11 +41,11 @@ defmodule Vmemo.Photos.Photo do
     defaults [:read, :destroy]
 
     create :create_immediate do
-      accept [:url, :note, :file_id, :user_id]
+      accept [:url, :note, :file_id, :ash_user_id]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :file_id, :user_id]
+      accept [:url, :note, :file_id, :ash_user_id]
 
       change after_action(fn _changeset, record, _context ->
                %{photo_id: record.id}
@@ -72,9 +72,9 @@ defmodule Vmemo.Photos.Photo do
     read :get_with_notes do
       get? true
       argument :id, :string, allow_nil?: false
-      argument :user_id, :string, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
 
-      filter expr(id == ^arg(:id) and user_id == ^arg(:user_id))
+      filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
 
       prepare fn query, _context ->
         Ash.Query.load(query, :notes)
@@ -84,18 +84,18 @@ defmodule Vmemo.Photos.Photo do
     read :hybrid_search do
       argument :query, :string
       argument :similar_photo_id, :string
-      argument :user_id, :string, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
       argument :page, :integer, default: 1
 
       prepare fn query, _context ->
         q = Ash.Query.get_argument(query, :query) || ""
         similar = Ash.Query.get_argument(query, :similar_photo_id)
-        user_id = Ash.Query.get_argument(query, :user_id)
+        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
         page = Ash.Query.get_argument(query, :page)
 
         {photos, _found, _current_page} =
           Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
-            user_id: user_id,
+            user_id: ash_user_id,
             page: page
           )
 
@@ -108,7 +108,7 @@ defmodule Vmemo.Photos.Photo do
           per_page = 10
           offset = (page - 1) * per_page
 
-          Ash.Query.filter(query, user_id == ^user_id)
+          Ash.Query.filter(query, ash_user_id == ^ash_user_id)
           |> Ash.Query.sort(inserted_at: :desc)
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
@@ -131,13 +131,13 @@ defmodule Vmemo.Photos.Photo do
 
     read :list_similar do
       argument :photo_id, :uuid, allow_nil?: false
-      argument :user_id, :string, allow_nil?: false
+      argument :ash_user_id, :string, allow_nil?: false
 
       prepare fn query, _context ->
         photo_id = Ash.Query.get_argument(query, :photo_id)
-        user_id = Ash.Query.get_argument(query, :user_id)
+        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
 
-        photos = Vmemo.PhotoService.TsPhoto.list_similar_photos(photo_id, user_id: user_id)
+        photos = Vmemo.PhotoService.TsPhoto.list_similar_photos(photo_id, user_id: ash_user_id)
 
         photo_ids =
           photos
@@ -190,7 +190,7 @@ defmodule Vmemo.Photos.Photo do
 
     attribute :note, :string
     attribute :file_id, :string
-    attribute :user_id, :string
+    attribute :ash_user_id, :string
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

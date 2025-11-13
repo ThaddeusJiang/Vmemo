@@ -107,7 +107,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                    note: "",
                    url: Path.join("/", dest),
                    file_id: filename,
-                   user_id: current_user.id
+                   ash_user_id: current_user.id
                  },
                  actor: current_user
                ) do
@@ -165,7 +165,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       url: photo.url,
       file_id: photo.file_id,
       inserted_at: inserted_at_unix,
-      inserted_by: photo.user_id
+      inserted_by: photo.ash_user_id
     }
 
     typesense_data =

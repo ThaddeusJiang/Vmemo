@@ -19,7 +19,7 @@ defmodule Vmemo.Account.ApiToken do
       :is_active,
       :expires_at,
       :last_used_at,
-      :user_id,
+      :ash_user_id,
       :inserted_at
     ])
   end
@@ -30,12 +30,12 @@ defmodule Vmemo.Account.ApiToken do
     define :update
     define :destroy
     define :get_by_id, args: [:id]
-    define :get_by_user_and_id, args: [:id, :user_id]
-    define :list_by_user, args: [:user_id]
+    define :get_by_user_and_id, args: [:id, :ash_user_id]
+    define :list_by_user, args: [:ash_user_id]
     define :verify_token, args: [:token]
     define :toggle_status, args: [:id]
-    define :get_expiring_tokens, args: [:user_id, :days]
-    define :get_expired_tokens, args: [:user_id]
+    define :get_expiring_tokens, args: [:ash_user_id, :days]
+    define :get_expired_tokens, args: [:ash_user_id]
   end
 
   actions do
@@ -189,11 +189,6 @@ defmodule Vmemo.Account.ApiToken do
 
     attribute :created_at, :utc_datetime do
       allow_nil? false
-    end
-
-    # @deprecated "Use ash_user_id instead. This field is kept for migration compatibility."
-    attribute :user_id, :integer do
-      allow_nil? true
     end
 
     attribute :ash_user_id, :string do

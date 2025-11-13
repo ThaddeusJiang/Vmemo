@@ -29,7 +29,7 @@ defmodule Vmemo.Workers.SyncNoteToTypesense do
         typesense_data = %{
           id: note.id,
           text: note.text,
-          belongs_to: note.user_id,
+          belongs_to: note.ash_user_id,
           photo_ids: photo_ids,
           inserted_at: DateTime.to_unix(note.inserted_at),
           updated_at: DateTime.to_unix(note.updated_at)

@@ -67,10 +67,10 @@ defmodule Vmemo.Seeds.TestUsers do
     now_sec = DateTime.utc_now() |> DateTime.truncate(:second)
     now_usec = DateTime.utc_now()
 
-    # 使用 raw SQL 插入 - user_id 字段设置为 NULL（已经是 nullable）
+    # 使用 raw SQL 插入
     sql = """
-    INSERT INTO api_tokens (name, description, expires_at, token_hash, ash_user_id, user_id, created_at, inserted_at, updated_at, is_active)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    INSERT INTO api_tokens (name, description, expires_at, token_hash, ash_user_id, created_at, inserted_at, updated_at, is_active)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING id
     """
 
@@ -81,7 +81,6 @@ defmodule Vmemo.Seeds.TestUsers do
            expires_at,
            hash,
            user.id,  # 字符串 ID
-           nil,  # user_id 设置为 NULL（不再需要 account_users）
            now_sec,
            now_usec,
            now_usec,

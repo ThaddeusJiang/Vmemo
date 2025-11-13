@@ -10,7 +10,7 @@ defmodule Vmemo.Photos.Note do
   end
 
   admin do
-    table_columns([:id, :text, :user_id, :inserted_at, :updated_at])
+    table_columns([:id, :text, :ash_user_id, :inserted_at, :updated_at])
   end
 
   code_interface do
@@ -24,7 +24,7 @@ defmodule Vmemo.Photos.Note do
     defaults [:read, :destroy]
 
     create :create_with_sync do
-      accept [:text, :user_id]
+      accept [:text, :ash_user_id]
 
       change after_action(fn _changeset, record, _context ->
                %{note_id: record.id}
@@ -56,7 +56,7 @@ defmodule Vmemo.Photos.Note do
       allow_nil? false
     end
 
-    attribute :user_id, :string
+    attribute :ash_user_id, :string
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

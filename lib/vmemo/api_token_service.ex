@@ -208,7 +208,7 @@ defmodule Vmemo.ApiTokenService do
 
   defp log_token_usage(api_token, action, _conn, metadata) do
     Logger.info(
-      "API Token #{action}: token_id=#{api_token.id}, user_id=#{api_token.user_id}, metadata=#{inspect(metadata)}"
+      "API Token #{action}: token_id=#{api_token.id}, ash_user_id=#{api_token.ash_user_id}, metadata=#{inspect(metadata)}"
     )
   end
 end

@@ -7,11 +7,11 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
     query =
-      "SELECT id::text, note, url, file_id, inserted_at, user_id::text FROM photos WHERE id::text = $1"
+      "SELECT id::text, note, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
 
     case Vmemo.AshRepo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
-        [id, note, url, file_id, inserted_at, user_id] = row
+        [id, note, url, file_id, inserted_at, ash_user_id] = row
 
         photo = %{
           id: id,
@@ -19,7 +19,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
           url: url,
           file_id: file_id,
           inserted_at: inserted_at,
-          user_id: user_id
+          ash_user_id: ash_user_id
         }
 
         sync_to_typesense(photo)
@@ -55,7 +55,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
       url: photo.url,
       file_id: photo.file_id,
       inserted_at: inserted_at_unix,
-      inserted_by: photo.user_id
+      inserted_by: photo.ash_user_id
     }
 
     typesense_data =

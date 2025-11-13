@@ -37,8 +37,9 @@ defmodule Vmemo.Account.AshUser do
     defaults [:read, :destroy]
 
     create :register do
-      accept [:email, :password]
+      accept [:email]
 
+      argument :password, :string, allow_nil?: false
       argument :password_confirmation, :string, allow_nil?: true
 
       change fn changeset, _context ->
@@ -62,8 +63,7 @@ defmodule Vmemo.Account.AshUser do
     end
 
     update :change_password do
-      accept [:password]
-
+      argument :password, :string, allow_nil?: false
       argument :password_confirmation, :string, allow_nil?: true
 
       validate confirm(:password, :password_confirmation),
@@ -74,8 +74,7 @@ defmodule Vmemo.Account.AshUser do
     end
 
     update :reset_password do
-      accept [:password]
-
+      argument :password, :string, allow_nil?: false
       argument :password_confirmation, :string, allow_nil?: true
 
       validate confirm(:password, :password_confirmation),
@@ -90,13 +89,30 @@ defmodule Vmemo.Account.AshUser do
     validate present(:email), on: [:create, :update]
     validate match(:email, ~r/@/), message: "must have the @ sign and no spaces"
 
-    validate string_length(:password, min: 12),
-      where: [present(:password)],
-      message: "should be at least 12 character(s)"
+    validate fn changeset, _context ->
+      password = Ash.Changeset.get_argument(changeset, :password)
 
-    validate string_length(:password, max: 72),
-      where: [present(:password)],
-      message: "should be at most 72 character(s)"
+      cond do
+        is_nil(password) ->
+          changeset
+
+        String.length(password) < 12 ->
+          Ash.Changeset.add_error(changeset,
+            field: :password,
+            message: "should be at least 12 character(s)"
+          )
+
+        String.length(password) > 72 ->
+          Ash.Changeset.add_error(changeset,
+            field: :password,
+            message: "should be at most 72 character(s)"
+          )
+
+        true ->
+          changeset
+      end
+    end,
+    on: [:create, :update]
   end
 
   attributes do
@@ -106,7 +122,6 @@ defmodule Vmemo.Account.AshUser do
     end
 
     attribute :email, :string, allow_nil?: false, public?: true
-    attribute :password, :string, allow_nil?: true, sensitive?: true
     attribute :hashed_password, :string, allow_nil?: false, sensitive?: true
     attribute :confirmed_at, :utc_datetime, public?: true
     create_timestamp :inserted_at
@@ -123,7 +138,7 @@ defmodule Vmemo.Account.AshUser do
 
   # 密码哈希函数
   def hash_password(changeset, _context) do
-    case Ash.Changeset.get_attribute(changeset, :password) do
+    case Ash.Changeset.get_argument(changeset, :password) do
       nil ->
         changeset
 
