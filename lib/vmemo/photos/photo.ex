@@ -190,7 +190,7 @@ defmodule Vmemo.Photos.Photo do
 
     attribute :note, :string
     attribute :file_id, :string
-    attribute :user_id, :uuid
+    attribute :user_id, :string
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

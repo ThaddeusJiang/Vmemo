@@ -80,14 +80,14 @@ defmodule Vmemo.Account.ApiToken do
 
     read :get_by_id do
       get? true
-      argument :id, :integer, allow_nil?: false
+      argument :id, :uuid, allow_nil?: false
 
       filter expr(id == ^arg(:id))
     end
 
     read :get_by_user_and_id do
       get? true
-      argument :id, :integer, allow_nil?: false
+      argument :id, :uuid, allow_nil?: false
       argument :ash_user_id, :string, allow_nil?: false
 
       filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
@@ -112,7 +112,7 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     update :toggle_status do
-      argument :id, :integer, allow_nil?: false
+      argument :id, :uuid, allow_nil?: false
       require_atomic? false
 
       change fn changeset, _context ->
@@ -164,7 +164,7 @@ defmodule Vmemo.Account.ApiToken do
   end
 
   attributes do
-    integer_primary_key :id, generated?: true
+    uuid_primary_key :id
 
     attribute :token_hash, :string do
       allow_nil? false

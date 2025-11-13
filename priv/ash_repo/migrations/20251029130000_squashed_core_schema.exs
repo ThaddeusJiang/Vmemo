@@ -178,7 +178,7 @@ defmodule Vmemo.AshRepo.Migrations.SquashedCoreSchema do
     end
 
     create table(:api_tokens, primary_key: false) do
-      add :id, :bigserial, null: false, primary_key: true
+      add :id, :uuid, null: false, primary_key: true, default: fragment("uuid_generate_v7()")
       add :token_hash, :text, null: false
       add :name, :text, null: false
       add :description, :text
@@ -207,28 +207,42 @@ defmodule Vmemo.AshRepo.Migrations.SquashedCoreSchema do
     end
 
     create table(:photos, primary_key: false) do
-      add :id, :text, primary_key: true, null: false
+      add :id, :uuid, primary_key: true, null: false
       add :url, :text, null: false
       add :note, :text
       add :file_id, :text
       add :image, :text
-      add :user_id, :text
+
+      add :user_id,
+          references(:ash_users,
+            column: :id,
+            name: "photos_user_id_fkey",
+            type: :text,
+            prefix: "public"
+          )
 
       timestamps(type: :utc_datetime_usec)
     end
 
     create table(:notes, primary_key: false) do
-      add :id, :text, primary_key: true, null: false
+      add :id, :uuid, primary_key: true, null: false
       add :text, :text, null: false
-      add :user_id, :text
+
+      add :user_id,
+          references(:ash_users,
+            column: :id,
+            name: "notes_user_id_fkey",
+            type: :text,
+            prefix: "public"
+          )
 
       timestamps(type: :utc_datetime_usec)
     end
 
     create table(:photos_notes, primary_key: false) do
-      add :id, :text, primary_key: true, null: false
-      add :photo_id, references(:photos, type: :text, on_delete: :delete_all), null: false
-      add :note_id, references(:notes, type: :text, on_delete: :delete_all), null: false
+      add :id, :uuid, primary_key: true, null: false
+      add :photo_id, references(:photos, type: :uuid, on_delete: :delete_all), null: false
+      add :note_id, references(:notes, type: :uuid, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime_usec, updated_at: false)
     end
@@ -240,7 +254,9 @@ defmodule Vmemo.AshRepo.Migrations.SquashedCoreSchema do
 
   def down do
     drop table(:photos_notes)
+    drop constraint(:notes, "notes_user_id_fkey")
     drop table(:notes)
+    drop constraint(:photos, "photos_user_id_fkey")
     drop table(:photos)
     drop constraint(:api_tokens, "api_tokens_ash_user_id_fkey")
     drop table(:api_tokens)
