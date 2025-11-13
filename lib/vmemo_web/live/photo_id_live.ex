@@ -9,7 +9,7 @@ defmodule VmemoWeb.PhotoIdLive do
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
-  def mount(%{"id" => id, "action" => action}, _session, socket) do
+  def mount(%{"id" => id, "action" => _action}, _session, socket) do
     user = socket.assigns.current_ash_user
 
     case Photo.get_with_notes(id, user.id, actor: user) do
@@ -30,7 +30,6 @@ defmodule VmemoWeb.PhotoIdLive do
                   "_gen_description" => nil
                 })
               end)
-              |> assign(:action, action)
 
             {:ok, socket}
 
@@ -71,7 +70,6 @@ defmodule VmemoWeb.PhotoIdLive do
                   "_gen_description" => nil
                 })
               end)
-              |> assign(:action, "edit")
 
             {:ok, socket}
 
@@ -109,9 +107,14 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_ash_user
 
     case Photo.update(socket.assigns.photo, %{note: note}, actor: user) do
-      {:ok, _updated_photo} ->
+      {:ok, updated_photo} ->
         {:noreply,
          socket
+         |> assign(:photo, updated_photo)
+         |> assign(:form, to_form(%{
+             "note" => updated_photo.note,
+             "_gen_description" => nil
+           }))
          |> put_flash(:info, "Saved")}
 
       {:error, _} ->
@@ -285,14 +288,7 @@ defmodule VmemoWeb.PhotoIdLive do
             </div>
 
             <.form
-              class={[
-                " w-full flex flex-col gap-4 ",
-                if @action == "edit" do
-                  "block"
-                else
-                  "hidden"
-                end
-              ]}
+              class="w-full flex flex-col gap-4"
               for={@form}
               phx-submit="save"
             >
@@ -310,7 +306,9 @@ defmodule VmemoWeb.PhotoIdLive do
                 label="Description"
               />
 
-              <.button phx-disable-with="Saving">Save</.button>
+              <.button>
+                Save
+              </.button>
             </.form>
           </div>
 
