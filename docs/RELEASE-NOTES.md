@@ -240,7 +240,7 @@ config :vmemo,
 ### 前置条件
 
 - Elixir 1.19+
-- PostgreSQL 18+
+- PostgreSQL 16+
 - 现有 Vmemo 实例
 
 ### 升级步骤
