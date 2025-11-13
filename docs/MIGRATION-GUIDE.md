@@ -15,8 +15,8 @@
 
 ### 1. 环境要求
 
-- Elixir 1.17+
-- PostgreSQL 14+
+- Elixir 1.19+
+- PostgreSQL 16+
 - 磁盘空间: 至少 2GB 可用空间（用于备份）
 - 停机时间: 预计 5-30 分钟（取决于数据量）
 
@@ -168,7 +168,7 @@ mix ecto.migrate
 # [info] create index api_tokens_token_hash_index
 # [info] create index api_tokens_user_id_index
 # [info] == Migrated 20251025135540 in 0.1s
-# 
+#
 # [info] == Running 20251026000000 Vmemo.Repo.Migrations.MigrateAccountUsersToAshUsers.up/0 forward
 # [info] execute "INSERT INTO ash_users..."
 # [info] execute "UPDATE api_tokens SET ash_user_id..."
@@ -388,7 +388,7 @@ REFERENCES ash_users(id)
 ON DELETE CASCADE;
 ```
 
-**影响**: 
+**影响**:
 - 所有现有用户数据复制到 ash_users
 - api_tokens 表新增 ash_user_id 列并填充数据
 - 保留 account_users 表用于向后兼容
@@ -396,7 +396,7 @@ ON DELETE CASCADE;
 **数据完整性检查**:
 ```sql
 -- 检查所有用户都已迁移
-SELECT 
+SELECT
   (SELECT COUNT(*) FROM account_users) as old_users,
   (SELECT COUNT(*) FROM ash_users) as new_users;
 
@@ -451,7 +451,7 @@ REFERENCES ash_users(id)
 ON DELETE CASCADE;
 ```
 
-**影响**: 
+**影响**:
 - ash_users.id 从 UUID 类型改为 TEXT 类型
 - 所有关联表的外键同步更新
 - 数据值不变，只是类型改变
@@ -541,7 +541,7 @@ A: 不能。迁移需要停机，建议在低峰时段进行。
 
 ### Q: 如果迁移失败怎么办？
 
-A: 
+A:
 1. 不要惊慌，数据库已备份
 2. 查看错误日志确定问题
 3. 如果无法解决，执行回滚步骤
@@ -664,5 +664,5 @@ mix ecto.rollback --step 3
 
 ---
 
-**最后更新**: 2025-01-26  
+**最后更新**: 2025-01-26
 **版本**: v1.0.0

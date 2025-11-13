@@ -44,6 +44,7 @@ This is a web application written using **Ash** and **Phoenix**
 
 **Tools**
 
+- `mise` is used for version management (Elixir, Erlang). The project uses `.tool-versions` file to specify versions. **Always** use mise to manage Elixir/Erlang versions, not Homebrew or other package managers.
 - `Tidewave` is the coding agent for full-stack web app development, deeply integrated with Phoenix, from the database to the UI.
 - `Context7` MCP pulls up-to-date, version-specific documentation and code examples
 - `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
@@ -63,6 +64,7 @@ password = "password123456"
 
 ## Project guidelines
 
+- **Version Management**: This project uses `mise` for Elixir/Erlang version management. The `.tool-versions` file specifies the required versions. When setting up the project, run `mise install` to install the correct versions automatically.
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 
