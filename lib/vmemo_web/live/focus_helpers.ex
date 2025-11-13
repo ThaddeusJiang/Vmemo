@@ -21,7 +21,8 @@ defmodule VmemoWeb.Live.FocusHelpers do
   """
   def focus(socket, id_selector, opts \\ []) when is_binary(id_selector) do
     unless String.starts_with?(id_selector, "#") do
-      raise ArgumentError, "focus/3 only accepts ID selectors starting with '#', got: #{inspect(id_selector)}"
+      raise ArgumentError,
+            "focus/3 only accepts ID selectors starting with '#', got: #{inspect(id_selector)}"
     end
 
     delay = Keyword.get(opts, :delay, 100)

@@ -80,3 +80,8 @@ liveSocket.connect();
 # 模板挂载 Hook
 <div id="toast-root" phx-hook="Toast"></div>
 ```
+
+## Phoenix HTML
+
+- `body` 是自动生成的，不需要编写；我们能控制的最外部是 `main`
+- main `class="min-h-screen flex flex-col"` 下面只需要 `grow` 即可撑满，不需要编写 `height`

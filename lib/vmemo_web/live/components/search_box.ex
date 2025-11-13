@@ -10,7 +10,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
      socket
      |> assign(show_expanded: false)
      |> assign(:q, "")
-      |> allow_upload(:photo,
+     |> allow_upload(:photo,
        accept: ~w(.png .jpg .jpeg .gif .webp),
        max_entries: 1
      )}
@@ -73,7 +73,8 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   @impl true
   def handle_event("search_by_photo", _, socket) do
-    current_user = Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
+    current_user =
+      Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket}
@@ -115,6 +116,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
               case sync_photo_to_typesense(photo) do
                 {:ok, _} ->
                   :ok
+
                 {:error, reason} ->
                   Logger.error("Failed to sync to Typesense: #{inspect(reason)}")
               end
@@ -140,7 +142,8 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       nil ->
         case Enum.find(results, fn result -> match?({:ok, _}, result) end) do
           {:ok, photo} ->
-            {:noreply, socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
+            {:noreply,
+             socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
 
           _ ->
             {:noreply, socket |> put_flash(:error, "No photo created")}
@@ -150,7 +153,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         {:noreply, socket |> put_flash(:error, "Upload failed: #{inspect(reason)}")}
     end
   end
-
 
   defp sync_photo_to_typesense(photo) do
     require Logger
@@ -348,7 +350,11 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                 <.button
                   type="submit"
                   class="btn btn-primary"
-                  disabled={Enum.any?(@uploads.photo.entries, fn entry -> entry.progress > 0 and entry.progress < 100 end)}
+                  disabled={
+                    Enum.any?(@uploads.photo.entries, fn entry ->
+                      entry.progress > 0 and entry.progress < 100
+                    end)
+                  }
                 >
                   <%= if Enum.any?(@uploads.photo.entries, fn entry -> entry.progress > 0 and entry.progress < 100 end) do %>
                     Uploading...
@@ -359,7 +365,10 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
               </div>
             </div>
           <% else %>
-            <label for={@uploads.photo.ref} class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer">
+            <label
+              for={@uploads.photo.ref}
+              class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer"
+            >
               <div class=" w-full h-full flex flex-col justify-center items-center">
                 <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
               </div>

@@ -63,7 +63,7 @@ defmodule VmemoWeb.PhotosIndexLive do
             |> Enum.map(fn id ->
               ash_photo = Enum.find(records, fn record -> record.id == id end)
               ts_photo = Enum.find(ts_photos, fn ts -> ts.id == id end)
-              
+
               if ash_photo && ts_photo do
                 Map.merge(ash_photo, %{
                   _vector_distance: ts_photo._vector_distance,
@@ -117,10 +117,12 @@ defmodule VmemoWeb.PhotosIndexLive do
   end
 
   defp similarity_score(%{_vector_distance: nil}), do: nil
+
   defp similarity_score(%{_vector_distance: distance}) when is_number(distance) do
     similarity = 1.0 - distance
     max(0, similarity * 100) |> Float.round(1)
   end
+
   defp similarity_score(_), do: nil
 
   @impl true
@@ -132,7 +134,11 @@ defmodule VmemoWeb.PhotosIndexLive do
           <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-blue-500 shadow-md">
-              <img src={@similar_photo.url} alt={@similar_photo.note} class="w-full h-full object-cover" />
+              <img
+                src={@similar_photo.url}
+                alt={@similar_photo.note}
+                class="w-full h-full object-cover"
+              />
             </div>
             <div class="ml-auto text-sm text-gray-600">
               <span class="font-semibold">{@total_count}</span> results

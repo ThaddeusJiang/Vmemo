@@ -50,11 +50,15 @@ defmodule Vmemo.PhotoService.TsPhoto do
 
   def similarity_percentage(photo) do
     case photo._vector_distance do
-      nil -> nil
+      nil ->
+        nil
+
       distance when is_number(distance) ->
         similarity = 1.0 - distance
         max(0, similarity * 100) |> Float.round(1)
-      _ -> nil
+
+      _ ->
+        nil
     end
   end
 
@@ -205,6 +209,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
 
         _ ->
           distance_threshold = 1.0 - @min_similarity_threshold
+
           {"image_embedding:([], k: 500, distance_threshold: #{distance_threshold}, id:#{similar})",
            "_vector_distance:asc,_text_match:desc"}
       end
@@ -249,7 +254,8 @@ defmodule Vmemo.PhotoService.TsPhoto do
             %{
               "collection" => @collection_name,
               "q" => "*",
-              "vector_query" => "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
+              "vector_query" =>
+                "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
               "filter_by" => "inserted_by:#{user_id}",
               "exclude_fields" => "image_embedding",
               "sort_by" => "_vector_distance:asc",

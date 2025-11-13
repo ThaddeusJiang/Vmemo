@@ -1,4 +1,4 @@
-defmodule VmemoWeb.UserLoginLiveTest do
+defmodule VmemoWeb.UserSessionLiveTest do
   use VmemoWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest

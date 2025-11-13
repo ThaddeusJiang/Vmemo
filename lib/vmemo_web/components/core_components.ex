@@ -397,7 +397,7 @@ defmodule VmemoWeb.CoreComponents do
         />
       </div>
       <.error :for={msg <- @errors}>
-        <span class="label-text-alt text-error mt-2">{msg}</span>
+        {msg}
       </.error>
     </div>
     """
@@ -481,9 +481,8 @@ defmodule VmemoWeb.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <div class="alert alert-error">
-      <.icon name="hero-exclamation-circle-mini" class="h-4 w-4" />
-      <span>{render_slot(@inner_block)}</span>
+    <div class="label">
+      <span class="label-text-alt text-error">{render_slot(@inner_block)}</span>
     </div>
     """
   end
@@ -851,7 +850,7 @@ defmodule VmemoWeb.CoreComponents do
   """
   def not_found(assigns) do
     ~H"""
-    <div class="hero min-h-screen">
+    <div class="hero grow">
       <div class="hero-content text-center">
         <div class="max-w-md">
           <img src="/images/undraw_taken.svg" alt="not found" class="w-60 h-60 mx-auto" />

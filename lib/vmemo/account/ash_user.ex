@@ -90,29 +90,23 @@ defmodule Vmemo.Account.AshUser do
     validate match(:email, ~r/@/), message: "must have the @ sign and no spaces"
 
     validate fn changeset, _context ->
-      password = Ash.Changeset.get_argument(changeset, :password)
+               password = Ash.Changeset.get_argument(changeset, :password)
 
-      cond do
-        is_nil(password) ->
-          changeset
+               cond do
+                 is_nil(password) ->
+                   :ok
 
-        String.length(password) < 12 ->
-          Ash.Changeset.add_error(changeset,
-            field: :password,
-            message: "should be at least 12 character(s)"
-          )
+                 String.length(password) < 12 ->
+                   {:error, field: :password, message: "should be at least 12 character(s)"}
 
-        String.length(password) > 72 ->
-          Ash.Changeset.add_error(changeset,
-            field: :password,
-            message: "should be at most 72 character(s)"
-          )
+                 String.length(password) > 72 ->
+                   {:error, field: :password, message: "should be at most 72 character(s)"}
 
-        true ->
-          changeset
-      end
-    end,
-    on: [:create, :update]
+                 true ->
+                   :ok
+               end
+             end,
+             on: [:create, :update]
   end
 
   attributes do

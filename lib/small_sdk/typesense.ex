@@ -176,19 +176,19 @@ defmodule SmallSdk.Typesense do
       {:ok, data} ->
         case data["results"] do
           [%{"hits" => hits, "found" => found, "page" => page} | _] when is_list(hits) ->
-            documents = 
-              hits 
+            documents =
+              hits
               |> Enum.map(fn hit ->
                 document = Map.get(hit, "document")
-                
-                vector_distance = get_in(hit, ["vector_distance"]) 
+
+                vector_distance = get_in(hit, ["vector_distance"])
                 text_match_info = get_in(hit, ["text_match_info"])
-                
+
                 document
                 |> Map.put("_vector_distance", vector_distance)
                 |> Map.put("_text_match_info", text_match_info)
               end)
-              
+
             {:ok, {documents, found, page}}
 
           _ ->

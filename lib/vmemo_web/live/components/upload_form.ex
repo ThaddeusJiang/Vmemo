@@ -39,6 +39,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     # 使用 socket.parent_pid 获取父 LiveView 的 PID
     has_files = Enum.any?(socket.assigns.uploads.photos.entries)
     upload_ref = socket.assigns.uploads.photos.ref
+
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
       # 确保 ref 总是发送（可能在组件更新时 ref 变化）
@@ -55,9 +56,28 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     assigns =
       assigns
       |> assign(:has_files, has_files)
-      |> assign(:form_class, if(has_files or assigns.show_full_form, do: "w-full mx-auto max-w-md lg:max-w-lg", else: "absolute inset-0 pointer-events-none z-0"))
-      |> assign(:label_class, if(has_files or assigns.show_full_form, do: "relative h-auto", else: "relative h-full pointer-events-auto"))
-      |> assign(:section_class, if(has_files or assigns.show_full_form, do: "aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200", else: "relative flex flex-col w-full h-full border-0 bg-transparent"))
+      |> assign(
+        :form_class,
+        if(has_files or assigns.show_full_form,
+          do: "w-full mx-auto max-w-md lg:max-w-lg",
+          else: "absolute inset-0 pointer-events-none z-0"
+        )
+      )
+      |> assign(
+        :label_class,
+        if(has_files or assigns.show_full_form,
+          do: "relative h-auto",
+          else: "relative h-full pointer-events-auto"
+        )
+      )
+      |> assign(
+        :section_class,
+        if(has_files or assigns.show_full_form,
+          do:
+            "aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200",
+          else: "relative flex flex-col w-full h-full border-0 bg-transparent"
+        )
+      )
 
     ~H"""
     <form
@@ -246,7 +266,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         %{"note" => note_text, "is_whole" => is_whole},
         socket
       ) do
-    current_user = Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
+    current_user =
+      Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket |> put_flash(:error, "User not found")}
@@ -295,63 +316,63 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               end)
             end
 
-        # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
-        results =
-          results
-          |> Enum.map(fn
-            {:ok, r} -> r
-            {:error, reason} -> {:error, reason}
-            other -> {:error, inspect(other)}
-          end)
+          # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
+          results =
+            results
+            |> Enum.map(fn
+              {:ok, r} -> r
+              {:error, reason} -> {:error, reason}
+              other -> {:error, inspect(other)}
+            end)
 
-        case Enum.find(results, fn result -> match?({:error, _}, result) end) do
-          {:error, %Ash.Error.Unknown{} = ash_error} ->
-            error_msg =
-              ash_error.errors
-              |> List.first()
-              |> case do
-                %Ash.Error.Unknown.UnknownError{error: msg} when is_binary(msg) ->
-                  # Extract the actual error message from the nested error
-                  msg
+          case Enum.find(results, fn result -> match?({:error, _}, result) end) do
+            {:error, %Ash.Error.Unknown{} = ash_error} ->
+              error_msg =
+                ash_error.errors
+                |> List.first()
+                |> case do
+                  %Ash.Error.Unknown.UnknownError{error: msg} when is_binary(msg) ->
+                    # Extract the actual error message from the nested error
+                    msg
 
-                %{error: msg} when is_binary(msg) ->
-                  msg
+                  %{error: msg} when is_binary(msg) ->
+                    msg
 
-                _ ->
-                  "Database error occurred"
+                  _ ->
+                    "Database error occurred"
+                end
+
+              {:noreply, socket |> put_flash(:error, error_msg)}
+
+            {:error, reason} when is_binary(reason) ->
+              {:noreply, socket |> put_flash(:error, reason)}
+
+            {:error, _reason} ->
+              {:noreply, socket |> put_flash(:error, "Upload error occurred")}
+
+            nil ->
+              photos =
+                results
+                |> Enum.filter(fn result -> match?({:ok, _}, result) end)
+                |> Enum.map(fn {:ok, photo} -> photo end)
+
+              if note != nil do
+                for photo <- photos do
+                  Ash.create(PhotoNote, %{
+                    photo_id: photo.id,
+                    note_id: note.id
+                  })
+                end
               end
 
-            {:noreply, socket |> put_flash(:error, error_msg)}
-
-          {:error, reason} when is_binary(reason) ->
-            {:noreply, socket |> put_flash(:error, reason)}
-
-          {:error, _reason} ->
-            {:noreply, socket |> put_flash(:error, "Upload error occurred")}
-
-          nil ->
-            photos =
-              results
-              |> Enum.filter(fn result -> match?({:ok, _}, result) end)
-              |> Enum.map(fn {:ok, photo} -> photo end)
-
-            if note != nil do
-              for photo <- photos do
-                Ash.create(PhotoNote, %{
-                  photo_id: photo.id,
-                  note_id: note.id
-                })
+              # 通知父组件上传成功，传递图片列表
+              if socket.parent_pid do
+                send(socket.parent_pid, {:upload_success, photos})
               end
-            end
 
-            # 通知父组件上传成功，传递图片列表
-            if socket.parent_pid do
-              send(socket.parent_pid, {:upload_success, photos})
-            end
-
-            {:noreply,
-             socket
-             |> put_flash(:info, "Photos uploaded successfully")}
+              {:noreply,
+               socket
+               |> put_flash(:info, "Photos uploaded successfully")}
           end
 
         _ ->

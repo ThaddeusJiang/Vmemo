@@ -17,7 +17,7 @@ defmodule VmemoWeb.AdminLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen flex items-center justify-center bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div class="grow flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
       <div class="max-w-md w-full space-y-6">
         <div>
           <h2 class="mt-4 text-center text-3xl font-extrabold text-gray-900">

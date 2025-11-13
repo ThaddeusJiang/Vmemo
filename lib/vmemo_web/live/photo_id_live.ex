@@ -111,10 +111,13 @@ defmodule VmemoWeb.PhotoIdLive do
         {:noreply,
          socket
          |> assign(:photo, updated_photo)
-         |> assign(:form, to_form(%{
+         |> assign(
+           :form,
+           to_form(%{
              "note" => updated_photo.note,
              "_gen_description" => nil
-           }))
+           })
+         )
          |> put_flash(:info, "Saved")}
 
       {:error, _} ->

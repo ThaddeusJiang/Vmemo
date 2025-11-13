@@ -8,7 +8,7 @@ defmodule VmemoWeb.UserSettingsLive do
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
       <.header class="text-center">
         Account Settings
-        <:subtitle>Manage your account email address and password settings</:subtitle>
+        <:subtitle>Manage your account email and password settings</:subtitle>
       </.header>
 
       <div class="space-y-6 mx-auto w-full max-w-md ">
