@@ -233,11 +233,11 @@ defmodule VmemoWeb.CoreComponents do
 
   ## Examples
 
-      <.button Save</.button>
+      <.button>Save</.button>
       <.button variant="ghost">Cancel</.button>
       <.button variant="danger">Delete</.button>
-
       <.button variant="outline">Star</.button>
+
       <.button phx-click="go" class="ml-2">Send!</.button>
 
   """
@@ -252,7 +252,7 @@ defmodule VmemoWeb.CoreComponents do
     <button
       class={[
         "btn rounded-lg py-2",
-        "phx-submit-loading:opacity-75 phx-submit-loading:cursor-wait",
+        "phx-submit-loading:opacity-75 phx-submit-loading:cursor-wait phx-submit-loading:disabled",
         @variant == "submit" && "btn-neutral",
         @variant == "ghost" && "btn-ghost",
         @variant == "danger" && "btn-error",
@@ -261,10 +261,7 @@ defmodule VmemoWeb.CoreComponents do
       ]}
       {@rest}
     >
-      <span class="phx-submit-loading:hidden">{render_slot(@inner_block)}</span>
-      <span class="phx-submit-loading:inline hidden">
-        <span class="loading loading-spinner loading-sm"></span> Processing...
-      </span>
+      {render_slot(@inner_block)}
     </button>
     """
   end

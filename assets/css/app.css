@@ -95,6 +95,11 @@
 @layer components {
     .btn {
         @apply btn-sm;
+        @apply transition-transform duration-200;
+    }
+
+    .btn:hover:not(:disabled) {
+        transform: scale(1.01);
     }
 
     .btn-outline {
