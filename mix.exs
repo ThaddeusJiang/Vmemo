@@ -73,10 +73,11 @@ defmodule Vmemo.MixProject do
       {:ash_oban, "~> 0.2"},
       {:ash_admin, "~> 0.13.19"},
       {:ash_authentication, "~> 4.0"},
-      {:oban, "~> 2.17"},
+      {:oban, "~> 2.19"},
       {:oban_web, "~> 2.0"},
       {:appsignal_phoenix, "~> 2.0"},
-      {:igniter, "~> 0.5", only: [:dev]}
+      {:igniter, "~> 0.5", only: [:dev]},
+      {:spark, "~> 2.3"}
     ]
   end
 

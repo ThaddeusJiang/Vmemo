@@ -302,9 +302,20 @@ defmodule Vmemo.Account do
   """
   def deliver_ash_user_reset_password_instructions(%AshUser{} = ash_user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    # 生成一个简单的 reset token 用于测试
-    # 在实际应用中，这应该是一个随机生成的唯一 token
-    token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+    # 使用 Ash Authentication JWT 生成 reset password token
+    token =
+      case AshAuthentication.Jwt.token_for_user(ash_user) do
+        {:ok, token, _claims} ->
+          token
+
+        {:ok, token} ->
+          token
+
+        _ ->
+          # 如果失败，生成一个简单的 session token
+          :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+      end
+
     reset_url = reset_password_url_fun.(token)
 
     # 使用 UserNotifier 实际发送邮件
@@ -324,25 +335,78 @@ defmodule Vmemo.Account do
 
   """
   def get_ash_user_by_reset_password_token(token) do
+    case verify_reset_password_token(token) do
+      {:ok, user} -> user
+      {:error, _} -> nil
+    end
+  end
+
+  @doc """
+  Verifies a reset password token and returns the user or an error reason.
+
+  ## Examples
+
+      iex> verify_reset_password_token("validtoken")
+      {:ok, %AshUser{}}
+
+      iex> verify_reset_password_token("invalidtoken")
+      {:error, :invalid_token}
+
+      iex> verify_reset_password_token("expiredtoken")
+      {:error, :expired_token}
+
+  """
+  def verify_reset_password_token(token) do
+    # Step 1: Verify JWT token signature
     case AshAuthentication.Jwt.verify(token, AshUser) do
       {:ok, claims, _resource} ->
-        # 从 claims 中获取用户 ID
-        case Map.get(claims, "sub") do
-          nil ->
-            nil
+        # Step 2: Check if token exists in database (not revoked)
+        jti = Map.get(claims, "jti")
 
-          "ash_user?id=" <> user_id ->
-            case Ash.get(AshUser, user_id) do
-              {:ok, ash_user} -> ash_user
-              _ -> nil
-            end
+        if is_nil(jti) do
+          {:error, :invalid_token}
+        else
+          case Ash.get(Vmemo.Account.AshUserToken, jti) do
+            {:ok, _token_record} ->
+              # Step 3: Check if token is expired
+              exp = Map.get(claims, "exp")
 
-          _ ->
-            nil
+              if is_nil(exp) do
+                {:error, :invalid_token}
+              else
+                now = DateTime.utc_now() |> DateTime.to_unix()
+
+                if exp < now do
+                  {:error, :expired_token}
+                else
+                  # Step 4: Get user from token
+                  case Map.get(claims, "sub") do
+                    nil ->
+                      {:error, :invalid_token}
+
+                    "ash_user?id=" <> user_id ->
+                      case Ash.get(AshUser, user_id) do
+                        {:ok, ash_user} -> {:ok, ash_user}
+                        _ -> {:error, :user_not_found}
+                      end
+
+                    _ ->
+                      {:error, :invalid_token}
+                  end
+                end
+              end
+
+            _ ->
+              # Token not found in database (already revoked)
+              {:error, :token_not_found}
+          end
         end
 
+      {:error, :expired} ->
+        {:error, :expired_token}
+
       _ ->
-        nil
+        {:error, :invalid_token}
     end
   end
 

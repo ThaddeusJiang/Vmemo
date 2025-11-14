@@ -10,6 +10,10 @@ See `AGENTS-elixir-phoenix-liveview.md`
 - **Never** too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
+## Web Application
+
+- **Never** navigate when the form or action failed, should error message
+
 ## Elixir guidelines
 
 - Elixir has **pattern matching**
@@ -26,11 +30,10 @@ See `AGENTS-elixir-phoenix-liveview.md`
 **Phoenix guidelines**
 
 - **Never** create `.heex` for LiveView, write HTML in **render()**
--Phoenix can use `<.link method="delete">` can server functions
+  -Phoenix can use `<.link method="delete">` can server functions
 - LiveView can use `push_event` trigger client-side event
 
 - **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
-
 
 **PostgreSQL rules**
 
