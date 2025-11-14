@@ -1,4 +1,4 @@
-# 2025-01-27 将所有 user_id 改为 ash_user_id
+# 2025-10-27 将所有 user_id 改为 ash_user_id
 
 ## 任务目标
 
@@ -9,11 +9,13 @@
 ### 当前状态分析
 
 1. **数据库表结构**:
+
    - `photos` 表: `user_id` (TEXT, 外键到 ash_users.id)
    - `notes` 表: `user_id` (TEXT, 外键到 ash_users.id)
    - `api_tokens` 表: 已有 `ash_user_id` (TEXT, 外键到 ash_users.id)，`user_id` (BIGINT, 已废弃)
 
 2. **Ash 资源定义**:
+
    - `Photo`: `user_id` 属性 (:string)
    - `Note`: `user_id` 属性 (:string)
    - `ApiToken`: 已有 `ash_user_id` 属性，`user_id` 属性已废弃
@@ -25,16 +27,19 @@
 ### 技术方案
 
 1. **数据库迁移**:
+
    - 创建新迁移文件，将 `photos.user_id` 重命名为 `photos.ash_user_id`
    - 将 `notes.user_id` 重命名为 `notes.ash_user_id`
    - 更新外键约束名称
 
 2. **Ash 资源更新**:
+
    - `Photo`: `user_id` → `ash_user_id`
    - `Note`: `user_id` → `ash_user_id`
    - 更新所有相关的 actions、filters、code_interface
 
 3. **代码更新**:
+
    - 更新所有使用 `user_id` 的地方
    - 包括：LiveView、控制器、服务层、Workers 等
 
@@ -102,11 +107,13 @@
 ### 完成的修改
 
 1. ✅ **数据库迁移**：
+
    - 创建迁移文件重命名 `photos.user_id` → `photos.ash_user_id`
    - 创建迁移文件重命名 `notes.user_id` → `notes.ash_user_id`
    - 更新外键约束名称
 
 2. ✅ **Ash 资源更新**：
+
    - `Photo` 资源：所有 `user_id` 引用改为 `ash_user_id`
    - `Note` 资源：所有 `user_id` 引用改为 `ash_user_id`
 

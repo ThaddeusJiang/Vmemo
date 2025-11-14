@@ -1,4 +1,4 @@
-# 2025-01-15 Home Page 上传成功后瀑布流展示
+# 2025-10-15 Home Page 上传成功后瀑布流展示
 
 ## 任务目标
 
@@ -11,12 +11,14 @@
 ### 技术方案
 
 1. **HomePageLive 修改**：
+
    - 添加状态管理：`uploaded_photos`, `show_uploaded_photos`, `show_upload_form`
    - 添加 `handle_info` 处理组件消息
    - 集成 `UploadForm` 组件，条件渲染
    - 集成 `Waterfall` 组件展示上传成功的图片
 
 2. **UploadForm 修改**：
+
    - 上传成功后发送 `{:upload_success, photos}` 消息给父组件
    - 添加文件检测通知机制，发送 `{:upload_form_has_files, true/false}` 消息
 
@@ -102,17 +104,20 @@
 已成功实现 Home Page 上传成功后瀑布流展示功能：
 
 1. **UploadForm 组件修改**：
+
    - 添加文件检测通知机制
    - 上传成功后发送消息给父组件而非跳转
    - 支持 `current_ash_user` 和 `current_user` 两种用户字段
 
 2. **HomePageLive 修改**：
+
    - 添加状态管理：`show_upload_form`, `uploaded_photos`, `show_uploaded_photos`
    - 添加 `handle_info` 处理组件消息
    - 条件渲染 UploadForm 和瀑布流
    - UploadForm 始终挂载，确保可以接收拖拽事件
 
 3. **UI 切换逻辑**：
+
    - 无文件时：显示 SearchBox + Logo
    - 有文件时（上传中）：显示 UploadForm（隐藏 SearchBox）
    - 上传成功后：显示 SearchBox + Logo + 瀑布流（隐藏 UploadForm）

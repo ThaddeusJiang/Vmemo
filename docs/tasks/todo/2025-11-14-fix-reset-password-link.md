@@ -1,4 +1,4 @@
-# 2025-01-28 修复 Reset Password 链接问题
+# 2025-11-14 修复 Reset Password 链接问题
 
 ## 任务目标
 
@@ -9,6 +9,7 @@
 ### 发现的问题
 
 1. **Token 生成和验证不匹配**：
+
    - `deliver_ash_user_reset_password_instructions/2` 生成的是随机 base64 编码字符串
    - `get_ash_user_by_reset_password_token/1` 期望的是 JWT token，使用 `AshAuthentication.Jwt.verify` 验证
    - 两者不匹配导致 token 验证失败
@@ -59,6 +60,7 @@
 ### 注意事项
 
 用户提供的旧链接中的 token 是使用旧的随机 base64 生成方式创建的，无法被新的验证逻辑验证。用户需要：
+
 1. 重新发送 reset password 邮件
 2. 使用新邮件中的链接来重置密码
 
@@ -125,10 +127,12 @@
 ### 完成的功能
 
 1. ✅ **修复 Token 生成和验证不匹配问题**
+
    - 使用 `AshAuthentication.Jwt.token_for_user` 生成 JWT token
    - 确保 token 可以被正确验证
 
 2. ✅ **修复表单处理问题**
+
    - 从复杂的 `AshPhoenix.Form` 改为简单的 `to_form` 处理
    - 简化代码逻辑，提高可维护性
 
