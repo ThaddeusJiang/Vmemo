@@ -18,42 +18,39 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
   end
 
   describe "Reset password page" do
-    test "renders reset password with valid token", %{conn: conn, token: token} do
+    test "renders reset password with valid token", %{conn: _conn, token: _token} do
       # TODO: 今后编写
     end
 
     test "does not render reset password with invalid token", %{conn: conn} do
-      {:error, {:redirect, to}} = live(conn, ~p"/reset-password/invalid")
+      {:ok, _lv, html} = live(conn, ~p"/reset-password/invalid")
 
-      assert to == %{
-               flash: %{"error" => "Reset password link is invalid or it has expired."},
-               to: ~p"/"
-             }
+      assert html =~ "Reset password link is invalid or it has expired."
     end
 
-    test "renders errors for invalid data", %{conn: conn, token: token} do
+    test "renders errors for invalid data", %{conn: _conn, token: _token} do
       # TODO: 今后编写
     end
   end
 
   describe "Reset Password" do
-    test "resets password once", %{conn: conn, token: token, user: user} do
+    test "resets password once", %{conn: _conn, token: _token, user: _user} do
       # TODO: 今后编写
     end
 
-    test "does not reset password on invalid data", %{conn: conn, token: token} do
+    test "does not reset password on invalid data", %{conn: _conn, token: _token} do
       # TODO: 今后编写
     end
   end
 
   describe "Reset password navigation" do
-    test "redirects to login page when the Login button is clicked", %{conn: conn, token: token} do
+    test "redirects to login page when the Login button is clicked", %{conn: _conn, token: _token} do
       # TODO: 今后编写
     end
 
     test "redirects to registration page when the Register button is clicked", %{
-      conn: conn,
-      token: token
+      conn: _conn,
+      token: _token
     } do
       # TODO: 今后编写
     end

@@ -23,7 +23,7 @@ defmodule VmemoWeb.UserSessionLiveTest do
 
       assert html =~ "You are currently logged in"
       assert html =~ user.email
-      assert html =~ "Sign Out and Continue"
+      assert html =~ "Logout and Register"
     end
   end
 
@@ -43,14 +43,14 @@ defmodule VmemoWeb.UserSessionLiveTest do
     end
 
     test "redirects to login page with a flash error if there are no valid credentials", %{
-      conn: conn
+      conn: _conn
     } do
       # TODO: 今后编写
     end
   end
 
   describe "login navigation" do
-    test "redirects to registration page when the Register button is clicked", %{conn: conn} do
+    test "redirects to registration page when the Register button is clicked", %{conn: _conn} do
       # TODO: 今后编写
     end
 

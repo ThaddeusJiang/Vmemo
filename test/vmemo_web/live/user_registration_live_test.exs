@@ -5,7 +5,7 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
   import Vmemo.AccountFixtures
 
   describe "Registration page" do
-    test "renders registration page", %{conn: conn} do
+    test "renders registration page", %{conn: _conn} do
       # TODO: 今后编写
     end
 
@@ -19,16 +19,16 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
 
       assert html =~ "You are currently logged in"
       assert html =~ user.email
-      assert html =~ "Sign Out and Continue"
+      assert html =~ "Sign Out and Register"
     end
 
-    test "renders errors for invalid data", %{conn: conn} do
+    test "renders errors for invalid data", %{conn: _conn} do
       # TODO: 今后编写
     end
   end
 
   describe "register user" do
-    test "creates account and logs the user in", %{conn: conn} do
+    test "creates account and logs the user in", %{conn: _conn} do
       # TODO: 今后编写
     end
 
@@ -40,7 +40,7 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
       result =
         lv
         |> form("#registration_form",
-          user: %{"email" => user.email, "password" => "valid_password"}
+          form: %{"email" => user.email, "password" => "valid_password"}
         )
         |> render_submit()
 

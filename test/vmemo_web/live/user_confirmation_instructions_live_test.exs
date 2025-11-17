@@ -4,9 +4,6 @@ defmodule VmemoWeb.UserConfirmationInstructionsLiveTest do
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
 
-  alias Vmemo.Account
-  # alias Vmemo.Repo
-
   setup do
     %{user: user_fixture()}
   end
@@ -33,7 +30,7 @@ defmodule VmemoWeb.UserConfirmationInstructionsLiveTest do
       # assert Repo.get_by!(Account.UserToken, user_id: user.id).context == "confirm"
     end
 
-    test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
+    test "does not send confirmation token if user is confirmed", %{conn: _conn, user: _user} do
       # TODO: 今后编写
     end
 
