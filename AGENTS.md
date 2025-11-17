@@ -1,6 +1,6 @@
 # Vmemo is a web application written using **Phoenix** **LiveView** **Ash** **Oban**
 
-# Elixir Phoenix LiveView basic conventions
+## Elixir Phoenix LiveView basic conventions
 
 See `AGENTS-elixir-phoenix-liveview.md`
 
@@ -13,6 +13,10 @@ See `AGENTS-elixir-phoenix-liveview.md`
 ## Web Application
 
 - **Never** navigate when the form or action failed, should error message
+- **Never** lose or modify user's input when form validation failed
+- **Always** show message nearly action
+  - form error message should near form
+  - button error message should near button
 
 ## Elixir guidelines
 
