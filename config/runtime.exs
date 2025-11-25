@@ -42,6 +42,8 @@ if config_env() == :prod do
   config :vmemo, ollama_url: System.get_env("OLLAMA_URL")
   config :vmemo, ollama_api_key: System.get_env("OLLAMA_API_KEY")
 
+  config :vmemo, moondream_url: System.get_env("MOONDREAM_URL") || "http://moondream:2020/v1"
+
   # Admin token for production
   admin_token =
     System.get_env("ADMIN_TOKEN") ||

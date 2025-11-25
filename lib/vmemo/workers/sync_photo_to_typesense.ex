@@ -3,6 +3,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
   require Logger
   alias Vmemo.PhotoService.TsPhoto
+  alias SmallSdk.Moondream
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
@@ -89,11 +90,29 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
     case result do
       {:ok, _} ->
+        generate_caption(photo.id, typesense_data[:image])
         :ok
 
       {:error, reason} ->
         Logger.error("Failed to sync photo #{photo.id} to Typesense: #{inspect(reason)}")
         {:error, reason}
+    end
+  end
+
+  defp generate_caption(photo_id, nil) do
+    Logger.info("Photo #{photo_id}: No image data available, skipping caption generation")
+    :ok
+  end
+
+  defp generate_caption(photo_id, image_base64) do
+    case Moondream.caption(image_base64) do
+      {:ok, caption} ->
+        Logger.info("Photo #{photo_id}: Generated caption: #{String.slice(caption, 0, 50)}...")
+        TsPhoto.update_description(photo_id, caption)
+
+      {:error, reason} ->
+        Logger.warning("Photo #{photo_id}: Failed to generate caption: #{inspect(reason)}")
+        :ok
     end
   end
 
