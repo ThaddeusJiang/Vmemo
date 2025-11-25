@@ -21,16 +21,3 @@ services:
     volumes:
       - ./_data/ts-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
-
-  moondream:
-    build:
-      context: .
-      dockerfile: Dockerfile.moondream
-    restart: on-failure
-    hostname: moondream
-    ports:
-      - "2020:2020"
-    volumes:
-      - ./_data/moondream-data:/root/.moondream
-    environment:
-      - MOONDREAM_PORT=2020
