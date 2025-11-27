@@ -6,7 +6,8 @@ See `AGENTS-elixir-phoenix-liveview.md`
 
 ## Personal
 
-- Alway reply and git message in **Chinese**, write code(includes UI) in only **English**
+- **Alway** document-driven-development, create `docs/devlog/YYYYMMDD-title.md` and record the dev log.
+- **Alway** reply and git message in **Chinese**, write code(includes UI) in only **English**
 - **Never** too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
@@ -43,6 +44,11 @@ See `AGENTS-elixir-phoenix-liveview.md`
 
 - Do **not** use `LIKE` operators! use Postgres built-in `Full Text Search` Queries.
 - **Alway** use `uuidv7`
+
+**Data Synchronization**
+
+- **Database**: Update immediately (synchronous)
+- **Typesense**: Update asynchronously via Oban job
 
 **git guidelines**
 

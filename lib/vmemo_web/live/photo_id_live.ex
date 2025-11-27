@@ -27,7 +27,7 @@ defmodule VmemoWeb.PhotoIdLive do
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
-                  "_gen_description" => nil
+                  "caption" => photo.caption
                 })
               end)
 
@@ -67,7 +67,7 @@ defmodule VmemoWeb.PhotoIdLive do
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
-                  "_gen_description" => nil
+                  "caption" => photo.caption
                 })
               end)
 
@@ -103,10 +103,10 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_event("save", %{"note" => note, "_gen_description" => _gen_description}, socket) do
+  def handle_event("save", %{"note" => note, "caption" => caption}, socket) do
     user = socket.assigns.current_ash_user
 
-    case Photo.update(socket.assigns.photo, %{note: note}, actor: user) do
+    case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
@@ -115,7 +115,7 @@ defmodule VmemoWeb.PhotoIdLive do
            :form,
            to_form(%{
              "note" => updated_photo.note,
-             "_gen_description" => nil
+             "caption" => updated_photo.caption
            })
          )
          |> put_flash(:info, "Saved")}
@@ -132,14 +132,22 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_ash_user
 
     case Photo.gen_description(socket.assigns.photo, actor: user) do
-      {:ok, _} ->
+      {:ok, updated_photo} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Description generated")}
+         |> assign(:photo, updated_photo)
+         |> assign(
+           :form,
+           to_form(%{
+             "note" => updated_photo.note,
+             "caption" => updated_photo.caption
+           })
+         )
+         |> put_flash(:info, "Caption generated")}
 
       {:error, reason} ->
         {:noreply,
-         socket |> put_flash(:error, "Failed to generate description: #{inspect(reason)}")}
+         socket |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
     end
   end
 
@@ -168,11 +176,12 @@ defmodule VmemoWeb.PhotoIdLive do
                   <%= @photo.note %>
                 </figcaption> --%>
 
-                <%!-- <%= if @photo._gen_description do %>
+                <%= if @photo.caption && @photo.caption != "" do %>
                   <.button
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle text-green-500"
-                    aria-label={gettext("AI trained")}
+                    aria-label={gettext("Regenerate caption")}
+                    phx-click="gen_description"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +210,7 @@ defmodule VmemoWeb.PhotoIdLive do
                   <.button
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle btn-icon"
-                    aria-label={gettext("AI trained")}
+                    aria-label={gettext("Generate caption")}
                     phx-click="gen_description"
                   >
                     <svg
@@ -227,7 +236,7 @@ defmodule VmemoWeb.PhotoIdLive do
                       />
                     </svg>
                   </.button>
-                <% end %> --%>
+                <% end %>
 
                 <.img src={@photo.url} alt={@photo.note} />
                 <.button
@@ -303,10 +312,10 @@ defmodule VmemoWeb.PhotoIdLive do
               />
 
               <.textarea_field
-                id={@form[:_gen_description].id}
-                name={@form[:_gen_description].name}
-                value={@form[:_gen_description].value}
-                label="Description"
+                id={@form[:caption].id}
+                name={@form[:caption].name}
+                value={@form[:caption].value}
+                label="Caption"
               />
 
               <.button>

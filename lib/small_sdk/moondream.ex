@@ -38,7 +38,7 @@ defmodule SmallSdk.Moondream do
 
   def get_env() do
     url =
-      Application.get_env(:vmemo, :moondream_url, "http://localhost:2020/v1")
+      Application.fetch_env!(:vmemo, :moondream_url)
       |> Utils.validate_url!()
 
     {url}

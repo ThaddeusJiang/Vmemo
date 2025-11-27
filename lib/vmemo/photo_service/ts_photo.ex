@@ -21,7 +21,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
     :file_id,
     :inserted_at,
     :inserted_by,
-    :_gen_description,
+    :caption,
     :_gen_ocr,
     :_vector_distance,
     :_text_match_info
@@ -41,7 +41,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
       file_id: photo["file_id"],
       inserted_at: photo["inserted_at"],
       inserted_by: photo["inserted_by"],
-      _gen_description: photo["_gen_description"],
+      caption: photo["caption"] || photo["_gen_description"],
       _gen_ocr: photo["_gen_ocr"],
       _vector_distance: photo["_vector_distance"],
       _text_match_info: photo["_text_match_info"]
@@ -133,17 +133,20 @@ defmodule Vmemo.PhotoService.TsPhoto do
     })
   end
 
-  def update_description(id, description) do
+  def update_caption(id, caption) do
     update_photo(%{
       id: id,
-      _gen_description: description
+      caption: caption
     })
   end
 
   def gen_description(id) do
     photo = get_photo(id)
-    {:ok, description} = Ai.gen_description(photo.url)
-    update_description(id, description)
+    # 只调用 AI 生成，不更新 Typesense
+    case Ai.gen_description(photo.url) do
+      {:ok, description} -> {:ok, description}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def list_photos(opts \\ []) do
