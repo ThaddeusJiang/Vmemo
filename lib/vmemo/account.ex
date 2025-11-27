@@ -302,24 +302,32 @@ defmodule Vmemo.Account do
   """
   def deliver_ash_user_reset_password_instructions(%AshUser{} = ash_user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    # 使用 Ash Authentication JWT 生成 reset password token
-    token =
-      case AshAuthentication.Jwt.token_for_user(ash_user) do
-        {:ok, token, _claims} ->
-          token
+    case AshAuthentication.Jwt.token_for_user(ash_user) do
+      {:ok, token, _claims} ->
+        store_reset_password_token(ash_user, token)
+        reset_url = reset_password_url_fun.(token)
+        Vmemo.Account.UserNotifier.deliver_reset_password_instructions(ash_user, reset_url)
 
-        {:ok, token} ->
-          token
+      _ ->
+        {:error, :token_generation_failed}
+    end
+  end
 
-        _ ->
-          # 如果失败，生成一个简单的 session token
-          :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
-      end
+  defp store_reset_password_token(ash_user, token) do
+    context_patch = %{
+      private: %{ash_authentication?: true}
+    }
 
-    reset_url = reset_password_url_fun.(token)
-
-    # 使用 UserNotifier 实际发送邮件
-    Vmemo.Account.UserNotifier.deliver_reset_password_instructions(ash_user, reset_url)
+    with :ok <-
+           AshAuthentication.TokenResource.Actions.store_token(
+             Vmemo.Account.AshUserToken,
+             %{"token" => token, "purpose" => "reset_password"},
+             context: context_patch
+           ),
+         {:ok, %{"jti" => jti}} <- AshAuthentication.Jwt.peek(token),
+         {:ok, token_record} <- Ash.get(Vmemo.Account.AshUserToken, jti) do
+      Ash.update(token_record, %{ash_user_id: ash_user.id}, action: :update_user_id)
+    end
   end
 
   @doc """

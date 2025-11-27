@@ -14,6 +14,10 @@ defmodule Vmemo.Account.AshUserToken do
 
   actions do
     defaults [:read, :destroy, :create]
+
+    update :update_user_id do
+      accept [:ash_user_id]
+    end
   end
 
   attributes do
@@ -23,11 +27,12 @@ defmodule Vmemo.Account.AshUserToken do
       primary_key?: true,
       public?: true
 
-    attribute :aud, :string, allow_nil?: false
-    attribute :exp, :utc_datetime, allow_nil?: false
-    attribute :iss, :string, allow_nil?: false
-    attribute :sub, :string, allow_nil?: false
-    attribute :typ, :string, allow_nil?: false
+    attribute :aud, :string, allow_nil?: true, public?: true
+    attribute :exp, :utc_datetime, allow_nil?: true, public?: true
+    attribute :iss, :string, allow_nil?: true, public?: true
+    attribute :sub, :string, allow_nil?: true, public?: true
+    attribute :typ, :string, allow_nil?: true, public?: true
+    attribute :ash_user_id, :string, public?: true
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
