@@ -1,4 +1,5 @@
 defmodule VmemoWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :vmemo
 
   # The session will be stored in the cookie and signed,
@@ -54,4 +55,5 @@ defmodule VmemoWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug VmemoWeb.Router
+  plug Sentry.PlugContext
 end

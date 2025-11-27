@@ -63,7 +63,6 @@ defmodule Vmemo.MixProject do
       {:bandit, "~> 1.5"},
       {:resend, "~> 0.4.0"},
       {:req, "~> 0.5.10"},
-      {:hackney, "~> 1.21", override: true},
       {:mime, "~> 2.0"},
       {:tidewave, "~> 0.5", only: :dev},
       {:sourceror, "~> 1.7", only: [:dev, :test]},
@@ -75,7 +74,8 @@ defmodule Vmemo.MixProject do
       {:ash_authentication, "~> 4.0"},
       {:oban, "~> 2.19"},
       {:oban_web, "~> 2.0"},
-      {:appsignal_phoenix, "~> 2.0"},
+      {:sentry, "~> 10.2.0"},
+      {:hackney, "~> 1.21"},
       {:igniter, "~> 0.5", only: [:dev]},
       {:spark, "~> 2.3"}
     ]
