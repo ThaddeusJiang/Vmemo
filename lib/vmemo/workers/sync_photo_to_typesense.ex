@@ -95,6 +95,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
         if is_nil(photo.caption) or photo.caption == "" do
           generate_caption(photo.id, typesense_data[:image])
         end
+
         :ok
 
       {:error, reason} ->
@@ -113,12 +114,14 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
       {:ok, caption} ->
         Logger.info("Photo #{photo_id}: Generated caption: #{String.slice(caption, 0, 50)}...")
         TsPhoto.update_caption(photo_id, caption)
-        
+
         # Also update database
-        case Vmemo.Photos.Photo.get!(photo_id, actor: nil) do
+        case Ash.get(Vmemo.Photos.Photo, photo_id, actor: nil) do
           {:ok, photo} ->
             Vmemo.Photos.Photo.update(photo, %{caption: caption}, actor: nil)
-          _ -> :ok
+
+          _ ->
+            :ok
         end
 
       {:error, reason} ->
