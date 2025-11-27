@@ -304,6 +304,44 @@ docker run -p 4000:4000 \
 
 **注意**: 生产环境部署时，建议使用 `.env` 文件或 Docker secrets 来管理敏感信息，而不是直接在命令行中暴露。
 
+### 本地预览（Local Preview）
+
+用于验证 Docker 构建和运行的本地测试环境：
+
+```bash
+# 1. 构建镜像
+docker build -t vmemo:test .
+
+# 2. 启动依赖服务（如果尚未启动）
+docker compose up -d
+
+# 3. 运行容器进行本地预览
+docker run --rm \
+  -e PHX_SERVER=true \
+  -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev" \
+  -e SECRET_KEY_BASE="$(mix phx.gen.secret)" \
+  -e ADMIN_TOKEN="test_admin_token" \
+  -e SENTRY_DSN="https://test@test.ingest.sentry.io/123456" \
+  -e RESEND_API_KEY="test_resend_key" \
+  -e PHX_HOST="vmemo.orb.local" \
+  -e PORT=4000 \
+  -p 4000:4000 \
+  vmemo:test
+```
+
+**本地预览说明**：
+
+- 使用 `vmemo.orb.local` 作为 host（适用于 OrbStack 本地域名系统）
+- 数据库连接使用 `host.docker.internal:54321` 访问本地 Docker Compose 服务
+- 测试环境变量使用占位符值，仅用于验证构建和运行
+- 访问地址：`http://vmemo.orb.local:4000`（需要配置 hosts 或使用 OrbStack）
+
+**验证步骤**：
+
+1. ✅ **Docker Build**: 镜像构建成功，无错误
+2. ✅ **Docker Run**: 容器启动成功，应用正常运行
+3. ✅ **功能验证**: Phoenix LiveView 应用在容器中正常工作
+
 ## 安全注意事项
 
 1. **必需环境变量**: 生产环境必须设置所有必需的环境变量（见上方配置部分）
