@@ -113,9 +113,9 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
     case Moondream.caption(image_base64) do
       {:ok, caption} ->
         Logger.info("Photo #{photo_id}: Generated caption: #{String.slice(caption, 0, 50)}...")
-        TsPhoto.update_caption(photo_id, caption)
 
-        # Also update database
+        # Only update database, Photo.update's after_action will trigger
+        # a new SyncPhotoToTypesense job to sync caption to Typesense
         case Ash.get(Vmemo.Photos.Photo, photo_id, actor: nil) do
           {:ok, photo} ->
             Vmemo.Photos.Photo.update(photo, %{caption: caption}, actor: nil)
