@@ -86,6 +86,10 @@ if config_env() == :prod do
 
   config :vmemo, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # Store secret_key_base in application config for JWT signing
+  # JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
+  config :vmemo, :secret_key_base, secret_key_base
+
   config :vmemo, VmemoWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

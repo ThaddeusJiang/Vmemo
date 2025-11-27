@@ -56,7 +56,7 @@ defmodule Vmemo.Photos.Note do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :string
+    attribute :ash_user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

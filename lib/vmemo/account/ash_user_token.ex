@@ -32,14 +32,14 @@ defmodule Vmemo.Account.AshUserToken do
     attribute :iss, :string, allow_nil?: true, public?: true
     attribute :sub, :string, allow_nil?: true, public?: true
     attribute :typ, :string, allow_nil?: true, public?: true
-    attribute :ash_user_id, :string, public?: true
+    attribute :ash_user_id, :uuid, public?: true
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
 
   relationships do
     belongs_to :ash_user, Vmemo.Account.AshUser do
-      attribute_type :string
+      attribute_type :uuid
       attribute_writable? true
     end
   end

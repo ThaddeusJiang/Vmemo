@@ -29,6 +29,10 @@ config :vmemo, Oban,
   repo: Vmemo.AshRepo,
   testing: :inline
 
+# Store secret_key_base in application config for JWT signing
+# JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
+config :vmemo, :secret_key_base, "qcL8bHOhBq7jlQEGhUr0/fY2FJCoMWQZ/lfGYLr03lgXzx8bWSaBis3Zhx0ISBe7"
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :vmemo, VmemoWeb.Endpoint,

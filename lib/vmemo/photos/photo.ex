@@ -72,7 +72,7 @@ defmodule Vmemo.Photos.Photo do
     read :get_with_notes do
       get? true
       argument :id, :string, allow_nil?: false
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
 
       filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
 
@@ -84,7 +84,7 @@ defmodule Vmemo.Photos.Photo do
     read :hybrid_search do
       argument :query, :string
       argument :similar_photo_id, :string
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
       argument :page, :integer, default: 1
 
       prepare fn query, _context ->
@@ -131,7 +131,7 @@ defmodule Vmemo.Photos.Photo do
 
     read :list_similar do
       argument :photo_id, :uuid, allow_nil?: false
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
 
       prepare fn query, _context ->
         photo_id = Ash.Query.get_argument(query, :photo_id)
@@ -199,7 +199,7 @@ defmodule Vmemo.Photos.Photo do
     attribute :note, :string
     attribute :caption, :string
     attribute :file_id, :string
-    attribute :ash_user_id, :string
+    attribute :ash_user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

@@ -194,9 +194,8 @@ SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 # 邮件服务 Resend（必需）
 RESEND_API_KEY=your_resend_api_key
 
-# JWT 签名密钥（必需，用于 API Token）
-JWT_SIGNING_SECRET=your_jwt_signing_secret
-# 生成方式: openssl rand -base64 32
+# 注意: JWT_SIGNING_SECRET 已合并到 SECRET_KEY_BASE
+# JWT token 签名现在使用 SECRET_KEY_BASE，无需单独配置
 ```
 
 **可选环境变量**：
@@ -297,7 +296,6 @@ docker run -p 4000:4000 \
   -e ADMIN_TOKEN=your_secure_admin_token \
   -e SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id \
   -e RESEND_API_KEY=your_resend_api_key \
-  -e JWT_SIGNING_SECRET=your_jwt_signing_secret \
   -e TYPESENSE_URL=http://typesense-host:8108 \
   -e TYPESENSE_API_KEY=your_typesense_api_key \
   -e PHX_SERVER=true \
@@ -309,8 +307,7 @@ docker run -p 4000:4000 \
 ## 安全注意事项
 
 1. **必需环境变量**: 生产环境必须设置所有必需的环境变量（见上方配置部分）
-   - `SECRET_KEY_BASE`: 用于加密 cookies 和会话，使用 `mix phx.gen.secret` 生成
-   - `JWT_SIGNING_SECRET`: 用于签名 API Token，使用 `openssl rand -base64 32` 生成
+   - `SECRET_KEY_BASE`: 用于加密 cookies、会话和 JWT token 签名，使用 `mix phx.gen.secret` 生成
    - `ADMIN_TOKEN`: 管理员访问令牌，必须使用强随机值
    - `SENTRY_DSN`: 错误监控服务配置
    - `RESEND_API_KEY`: 邮件服务 API 密钥

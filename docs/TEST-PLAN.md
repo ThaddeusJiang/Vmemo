@@ -1007,7 +1007,7 @@ MIX_ENV=test
 DATABASE_URL=postgresql://postgres:postgres@localhost/vmemo_test
 TYPESENSE_URL=http://localhost:8108
 TYPESENSE_API_KEY=test_key
-JWT_SIGNING_SECRET=test_secret_key_for_development_only
+# JWT_SIGNING_SECRET 已合并到 SECRET_KEY_BASE，无需单独设置
 ```
 
 ### CI 环境

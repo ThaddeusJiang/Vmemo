@@ -33,6 +33,10 @@ config :vmemo, Oban,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
+# Store secret_key_base in application config for JWT signing
+# JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
+config :vmemo, :secret_key_base, "m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC"
+
 config :vmemo, VmemoWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
@@ -103,5 +107,3 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
-
-
