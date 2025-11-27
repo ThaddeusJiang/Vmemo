@@ -298,10 +298,10 @@ defmodule VmemoWeb.PhotoIdLive do
               <div class="grow" />
             </div>
 
-            <.form
-              class="w-full flex flex-col gap-4"
+            <.simple_form
               for={@form}
               phx-submit="save"
+              class="w-full flex flex-col gap-4"
             >
               <.textarea_field
                 id={@form[:note].id}
@@ -317,10 +317,10 @@ defmodule VmemoWeb.PhotoIdLive do
                 label="Caption"
               />
 
-              <.button>
-                Save
-              </.button>
-            </.form>
+              <:actions>
+                <.button>Save</.button>
+              </:actions>
+            </.simple_form>
           </div>
 
           <div class="grid gap-4 grid-cols-4">

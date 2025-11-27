@@ -28,36 +28,29 @@ defmodule VmemoWeb.AdminLoginLive do
           </p>
         </div>
 
-        <.form
+        <.simple_form
           for={@form}
           id="admin-login-form"
           phx-change="validate"
           action={~p"/admin/login"}
           method="post"
-          class="mt-6 space-y-2"
+          class="mt-6"
         >
-          <div>
-            <.input
-              field={@form[:token]}
-              type="password"
-              label="Admin Token"
-              placeholder="Enter admin token"
-              required
-            />
-            <div :if={@error_message} class="mt-2 text-sm text-red-600">
-              {@error_message}
-            </div>
+          <.input
+            field={@form[:token]}
+            type="password"
+            label="Admin Token"
+            placeholder="Enter admin token"
+            required
+          />
+          <div :if={@error_message} class="text-sm text-red-600">
+            {@error_message}
           </div>
 
-          <div>
-            <button
-              type="submit"
-              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-            >
-              Login
-            </button>
-          </div>
-        </.form>
+          <:actions>
+            <.button class="w-full">Login</.button>
+          </:actions>
+        </.simple_form>
       </div>
     </div>
     """
