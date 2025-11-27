@@ -32,7 +32,7 @@ config :sentry,
 
 **Endpoint 集成 (lib/vmemo_web/endpoint.ex):**
 - 添加 `use Sentry.PlugCapture` 捕获 Plug 错误
-- 添加 `plug Sentry.PlugContext` 收集请求上下文（放在 Router 之后）
+- 添加 `plug Sentry.PlugContext` 收集请求上下文（放在 Router 之前）
 
 **Logger Handler (lib/vmemo/application.ex):**
 ```elixir

@@ -54,6 +54,6 @@ defmodule VmemoWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug VmemoWeb.Router
   plug Sentry.PlugContext
+  plug VmemoWeb.Router
 end
