@@ -6,7 +6,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
-      <.header class="text-center">
+      <.header>
         API Token Details
         <:subtitle>{@api_token.name}</:subtitle>
       </.header>
@@ -72,7 +72,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Token Information</h3>
 
-            <div class="space-y-4">
+            <div class="space-y-2">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="label">
@@ -189,7 +189,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
           <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
         </:header>
 
-        <div class="space-y-4">
+        <div class="space-y-2">
           <p>
             Are you sure you want to delete the token "<span class="font-medium">{@api_token.name}</span>"?
           </p>

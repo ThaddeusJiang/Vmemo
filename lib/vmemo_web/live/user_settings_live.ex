@@ -6,20 +6,12 @@ defmodule VmemoWeb.UserSettingsLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header class="text-center">
+      <.header>
         Account Settings
         <:subtitle>Manage your account email and password settings</:subtitle>
       </.header>
 
       <div class="space-y-6 mx-auto w-full max-w-md ">
-        <div class="text-center">
-          <.link
-            href={~p"/tokens"}
-            class="btn btn-outline btn-primary w-full"
-          >
-            <.icon name="hero-key" class="h-4 w-4" />Tokens
-          </.link>
-        </div>
         <div>
           <.simple_form
             for={@email_form}

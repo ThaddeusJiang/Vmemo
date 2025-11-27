@@ -146,8 +146,7 @@ defmodule VmemoWeb.PhotoIdLive do
          |> put_flash(:info, "Caption generated")}
 
       {:error, reason} ->
-        {:noreply,
-         socket |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
+        {:noreply, socket |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
     end
   end
 
@@ -169,8 +168,8 @@ defmodule VmemoWeb.PhotoIdLive do
         <.not_found />
       <% else %>
         <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
-          <div class=" gap-4 space-y-4 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
-            <div class="space-y-4 flex flex-col justify-center relative">
+          <div class=" gap-2 space-y-2 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
+            <div class="space-y-2 flex flex-col justify-center relative">
               <figure class="w-auto h-auto group relative">
                 <%!-- <figcaption class="text-lg font-semibold text-gray-900">
                   <%= @photo.note %>

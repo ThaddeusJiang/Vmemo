@@ -6,7 +6,7 @@ defmodule VmemoWeb.UserConfirmationInstructionsLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header class="text-center">
+      <.header>
         No confirmation instructions received?
         <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
       </.header>

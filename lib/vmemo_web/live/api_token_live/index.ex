@@ -6,7 +6,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
-      <.header class="text-center">
+      <.header>
         API Token Management
         <:subtitle>Manage your API access tokens</:subtitle>
       </.header>
@@ -159,7 +159,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
         </:header>
 
-        <div class="space-y-4">
+        <div class="space-y-2">
           <p>
             Are you sure you want to delete the token "<span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
           </p>

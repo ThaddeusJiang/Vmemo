@@ -34,7 +34,7 @@ defmodule VmemoWeb.AdminLoginLive do
           phx-change="validate"
           action={~p"/admin/login"}
           method="post"
-          class="mt-6 space-y-4"
+          class="mt-6 space-y-2"
         >
           <div>
             <.input
