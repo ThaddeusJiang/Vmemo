@@ -39,6 +39,7 @@ mise install
 ```
 
 当前项目要求：
+
 - Elixir: 1.19.2-otp-28
 - Erlang: 28.1.1
 
@@ -97,6 +98,7 @@ curl -X POST http://localhost:4000/api/v1/photos \
 ```
 
 **响应示例**:
+
 ```json
 {
   "status": "success",
@@ -140,6 +142,7 @@ curl -X DELETE http://localhost:4000/api/v1/photos/photo-uuid \
 ```
 
 **常见错误码**:
+
 - `401`: 未认证或 Token 无效/过期
 - `404`: 资源不存在
 - `400`: 请求参数错误
@@ -154,23 +157,75 @@ curl -X DELETE http://localhost:4000/api/v1/photos/photo-uuid \
 
 ### 环境变量
 
+#### 开发环境 (dev)
+
+开发环境使用 `config/dev.exs` 中的默认配置，**无需设置环境变量**。
+
+#### 测试环境 (test)
+
+测试环境使用 `config/test.exs` 中的默认配置，大部分环境变量都有默认值：
+
 ```bash
-# 数据库
-DATABASE_URL=postgresql://user:pass@localhost/vmemo_dev
+# 可选：Typesense 配置（默认: http://localhost:8766 / xyz）
+TYPESENSE_URL=http://localhost:8766
+TYPESENSE_API_KEY=xyz
+```
+
+#### 生产环境 (prod)
+
+生产环境**必须**设置以下环境变量（通过 `config/runtime.exs` 加载）：
+
+**必需环境变量**：
+
+```bash
+# 数据库连接（必需）
+DATABASE_URL=postgresql://user:pass@host/database
+
+# 管理员 Token（必需）
+ADMIN_TOKEN=your_secure_admin_token
+
+# Phoenix 密钥（必需）
+SECRET_KEY_BASE=your_secret_key_base
+# 生成方式: mix phx.gen.secret
+
+# Sentry 错误监控（必需）
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+
+# 邮件服务 Resend（必需）
+RESEND_API_KEY=your_resend_api_key
+
+# JWT 签名密钥（必需，用于 API Token）
+JWT_SIGNING_SECRET=your_jwt_signing_secret
+# 生成方式: openssl rand -base64 32
+```
+
+**可选环境变量**：
+
+```bash
+# PostgreSQL 连接池大小（默认: 10）
+POOL_SIZE=10
+
+# 启用 IPv6（默认: false）
+ECTO_IPV6=false
 
 # Typesense 搜索引擎
-TYPESENSE_URL=http://localhost:8108
-TYPESENSE_API_KEY=your_typesense_key
+TYPESENSE_URL=http://typesense-host:8108
+TYPESENSE_API_KEY=your_typesense_api_key
 
-# 邮件服务（Resend）
-RESEND_API_KEY=your_resend_key
+# Moondream AI 服务
+MOONDREAM_URL=http://moondream-host:2020/v1
 
-# Phoenix
-SECRET_KEY_BASE=your_secret_key
-PHX_HOST=localhost
+# Phoenix 主机名（默认: vmemo.app）
+PHX_HOST=vmemo.app
 
-# JWT 签名密钥（重要：生产环境必须设置）
-JWT_SIGNING_SECRET=your_jwt_secret
+# 服务端口（默认: 4000）
+PORT=4000
+
+# DNS 集群查询（用于集群部署）
+DNS_CLUSTER_QUERY=
+
+# 启用 Phoenix 服务器（用于 release 模式）
+PHX_SERVER=true
 ```
 
 ### 可选配置
@@ -235,24 +290,36 @@ mix format --check-formatted
 # 构建镜像
 docker build -t vmemo:latest .
 
-# 运行容器
+# 运行容器（必需环境变量）
 docker run -p 4000:4000 \
-  -e SECRET_KEY_BASE=your_secret \
-  -e DATABASE_URL=postgresql://... \
-  -e TYPESENSE_URL=http://... \
-  -e TYPESENSE_API_KEY=your_key \
-  -e JWT_SIGNING_SECRET=your_jwt_secret \
-  -e RESEND_API_KEY=your_key \
+  -e SECRET_KEY_BASE=your_secret_key_base \
+  -e DATABASE_URL=postgresql://user:pass@host/database \
+  -e ADMIN_TOKEN=your_secure_admin_token \
+  -e SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id \
+  -e RESEND_API_KEY=your_resend_api_key \
+  -e JWT_SIGNING_SECRET=your_jwt_signing_secret \
+  -e TYPESENSE_URL=http://typesense-host:8108 \
+  -e TYPESENSE_API_KEY=your_typesense_api_key \
+  -e PHX_SERVER=true \
   vmemo:latest
 ```
 
+**注意**: 生产环境部署时，建议使用 `.env` 文件或 Docker secrets 来管理敏感信息，而不是直接在命令行中暴露。
+
 ## 安全注意事项
 
-1. **JWT_SIGNING_SECRET**: 生产环境必须设置强随机密钥
+1. **必需环境变量**: 生产环境必须设置所有必需的环境变量（见上方配置部分）
+   - `SECRET_KEY_BASE`: 用于加密 cookies 和会话，使用 `mix phx.gen.secret` 生成
+   - `JWT_SIGNING_SECRET`: 用于签名 API Token，使用 `openssl rand -base64 32` 生成
+   - `ADMIN_TOKEN`: 管理员访问令牌，必须使用强随机值
+   - `SENTRY_DSN`: 错误监控服务配置
+   - `RESEND_API_KEY`: 邮件服务 API 密钥
+   - `DATABASE_URL`: 数据库连接字符串
 2. **API Token**: 创建后立即保存，无法再次查看
 3. **Token 过期**: 建议设置合理的过期时间
 4. **速率限制**: 生产环境建议启用 API 速率限制
 5. **HTTPS**: 生产环境必须使用 HTTPS
+6. **环境变量管理**: 不要将敏感信息提交到版本控制系统，使用环境变量或密钥管理服务
 
 ## 贡献
 

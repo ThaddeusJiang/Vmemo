@@ -56,6 +56,19 @@ if config_env() == :prod do
     plugins: [Oban.Plugins.Pruner],
     queues: [default: 10, sync_typesense: 5]
 
+  sentry_dsn =
+    System.get_env("SENTRY_DSN") ||
+      raise """
+      environment variable SENTRY_DSN is missing.
+      Please set a valid Sentry DSN for production.
+      """
+
+  config :sentry,
+    dsn: sentry_dsn,
+    environment_name: config_env(),
+    enable_source_code_context: true,
+    root_source_code_paths: [File.cwd!()]
+
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
   # want to use a different value for prod and you most likely don't want
