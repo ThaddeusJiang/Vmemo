@@ -111,23 +111,23 @@ mix deps.tree | head -20
 
 ### 步骤 4: 设置环境变量
 
-**⚠️ 重要: 必须设置 JWT_SIGNING_SECRET 环境变量！**
+**⚠️ 重要: 必须设置 SECRET_KEY_BASE 环境变量！**
 
 ```bash
-# 生成强随机密钥
-JWT_SECRET=$(openssl rand -base64 32)
+# 生成强随机密钥（用于 cookies、会话和 JWT token 签名）
+SECRET_KEY_BASE=$(mix phx.gen.secret)
 
 # 添加到环境变量文件
-echo "JWT_SIGNING_SECRET=$JWT_SECRET" >> .env
+echo "SECRET_KEY_BASE=$SECRET_KEY_BASE" >> .env
 
 # 或者添加到 systemd 服务配置
 sudo systemctl edit vmemo
 # 添加:
 # [Service]
-# Environment="JWT_SIGNING_SECRET=your_secret_here"
+# Environment="SECRET_KEY_BASE=your_secret_here"
 
 # 验证环境变量
-grep JWT_SIGNING_SECRET .env
+grep SECRET_KEY_BASE .env
 ```
 
 **必需的环境变量**:
@@ -139,12 +139,9 @@ DATABASE_URL=postgresql://user:pass@localhost/vmemo_prod
 TYPESENSE_URL=http://localhost:8108
 TYPESENSE_API_KEY=your_typesense_key
 
-# Phoenix
+# Phoenix（JWT 签名已合并到 SECRET_KEY_BASE）
 SECRET_KEY_BASE=your_secret_key
 PHX_HOST=your-domain.com
-
-# JWT 签名密钥（新增）
-JWT_SIGNING_SECRET=your_jwt_secret
 
 # 邮件服务
 RESEND_API_KEY=your_resend_key
@@ -577,11 +574,11 @@ A: 检查以下几点：
 
 A: 不需要。Web UI 和 API 接口保持向后兼容。
 
-### Q: JWT_SIGNING_SECRET 可以后续修改吗？
+### Q: SECRET_KEY_BASE 可以后续修改吗？
 
-A: 可以，但会导致所有现有的 JWT Token 失效，用户需要重新登录。
+A: 可以，但会导致所有现有的 Web 会话和 JWT Token 失效，用户需要重新登录。JWT 签名现在使用 SECRET_KEY_BASE，不再需要单独的 JWT_SIGNING_SECRET。
 
-### Q: 如果忘记设置 JWT_SIGNING_SECRET 会怎样？
+### Q: 如果忘记设置 SECRET_KEY_BASE 会怎样？
 
 A: 应用会报错并拒绝启动。必须设置此环境变量。
 

@@ -88,13 +88,13 @@ defmodule Vmemo.Account.ApiToken do
     read :get_by_user_and_id do
       get? true
       argument :id, :uuid, allow_nil?: false
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
 
       filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
     end
 
     read :list_by_user do
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
 
       filter expr(ash_user_id == ^arg(:ash_user_id))
     end
@@ -130,7 +130,7 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_expiring_tokens do
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
       argument :days, :integer, default: 7
 
       prepare fn query, _context ->
@@ -148,7 +148,7 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_expired_tokens do
-      argument :ash_user_id, :string, allow_nil?: false
+      argument :ash_user_id, :uuid, allow_nil?: false
 
       prepare fn query, _context ->
         ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
@@ -191,7 +191,7 @@ defmodule Vmemo.Account.ApiToken do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :string do
+    attribute :ash_user_id, :uuid do
       allow_nil? false
     end
 

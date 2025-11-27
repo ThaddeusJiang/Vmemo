@@ -99,8 +99,10 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Disable Tesla deprecation warning
+# Tesla is a transitive dependency via resend, and we don't use it directly
+config :tesla, disable_deprecated_builder_warning: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
-
-import_config "appsignal.exs"

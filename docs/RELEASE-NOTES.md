@@ -15,6 +15,7 @@
 完整的 API Token CRUD 功能，支持通过 Web 界面管理 API 访问凭证。
 
 **主要特性**:
+
 - ✅ 创建 API Token（支持设置名称、描述、过期时间）
 - ✅ 查看 Token 列表（显示状态、最后使用时间等）
 - ✅ 启用/禁用 Token
@@ -26,6 +27,7 @@
 **访问路径**: `/tokens`
 
 **安全特性**:
+
 - Token 使用 SHA256 哈希存储，原始 Token 不保存
 - Token 前缀 `vmemo_` 便于识别和防止泄露
 - 支持手动禁用和自动过期
@@ -36,6 +38,7 @@
 RESTful API 端点，支持外部应用程序访问 Vmemo 功能。
 
 **端点**:
+
 - `POST /api/v1/photos` - 上传照片
 - `GET /api/v1/photos/:id` - 获取照片信息
 - `DELETE /api/v1/photos/:id` - 删除照片
@@ -43,6 +46,7 @@ RESTful API 端点，支持外部应用程序访问 Vmemo 功能。
 **认证方式**: Bearer Token
 
 **请求示例**:
+
 ```bash
 curl -X POST https://your-domain.com/api/v1/photos \
   -H "Authorization: Bearer vmemo_your_token" \
@@ -51,6 +55,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
 ```
 
 **响应格式**:
+
 ```json
 {
   "status": "success",
@@ -64,6 +69,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
 ```
 
 **文件限制**:
+
 - 支持格式: PNG, JPG, JPEG, GIF, WEBP
 - 建议大小: 不超过 10MB
 
@@ -72,12 +78,14 @@ curl -X POST https://your-domain.com/api/v1/photos \
 从自定义的 User/UserToken 系统迁移到 Ash Framework 的认证系统。
 
 **变更内容**:
+
 - 新增 `ash_users` 表（使用 UUID 字符串作为主键）
 - 新增 `ash_user_tokens` 表（用于 Ash Authentication）
 - 保留 `account_users` 表用于向后兼容
 - 数据迁移脚本自动迁移现有用户数据
 
 **优势**:
+
 - 标准化的认证流程
 - 更好的扩展性
 - 与 Ash Framework 生态系统集成
@@ -87,6 +95,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
 基于 Phoenix LiveView 的现代化 Token 管理界面。
 
 **功能**:
+
 - 实时状态更新
 - 响应式设计（支持移动端）
 - 直观的操作按钮
@@ -94,6 +103,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
 - 过期状态可视化
 
 **技术栈**:
+
 - Phoenix LiveView
 - Tailwind CSS
 - DaisyUI 组件
@@ -131,11 +141,13 @@ curl -X POST https://your-domain.com/api/v1/photos \
 ### 数据库变更
 
 **新增表**:
+
 - `ash_users` - Ash 用户表
 - `ash_user_tokens` - Ash 认证 Token 表
 - `api_tokens` - API Token 表
 
 **迁移脚本**:
+
 1. `20251025135540_create_tokens.exs` - 创建 api_tokens 表
 2. `20251026000000_migrate_account_users_to_ash_users.exs` - 迁移用户数据
 3. `20251026010000_change_uuid_to_string.exs` - UUID 转 String 类型
@@ -143,6 +155,7 @@ curl -X POST https://your-domain.com/api/v1/photos \
 ### API 路由变更
 
 **新增路由**:
+
 ```elixir
 # Public API
 scope "/api/v1", VmemoWeb.Api.V1 do
@@ -164,13 +177,16 @@ end
 
 ### 配置变更
 
-**新增环境变量**:
+**环境变量变更**:
+
 ```bash
-# JWT 签名密钥（重要：生产环境必须设置）
-JWT_SIGNING_SECRET=your_jwt_secret
+# JWT 签名密钥已合并到 SECRET_KEY_BASE
+# 现在只需设置 SECRET_KEY_BASE，JWT token 签名会自动使用它
+SECRET_KEY_BASE=your_secret_key_base
 ```
 
 **可选配置**:
+
 ```elixir
 # config/runtime.exs
 config :vmemo,
@@ -182,7 +198,7 @@ config :vmemo,
 
 ### ⚠️ 需要注意的变更
 
-1. **新增环境变量**: 生产环境必须设置 `JWT_SIGNING_SECRET`
+1. **环境变量变更**: JWT 签名密钥已合并到 `SECRET_KEY_BASE`，不再需要单独的 `JWT_SIGNING_SECRET`
 2. **数据库迁移**: 需要运行迁移脚本
 3. **用户 ID 类型**: 从 integer 迁移到 string (UUID)
 
@@ -198,16 +214,19 @@ config :vmemo,
 ### P0 - 关键问题（建议尽快修复）
 
 1. **ApiToken 的 user_id/ash_user_id 冲突**
+
    - 同时存在 integer 和 string 类型的用户 ID 字段
    - 可能导致数据一致性问题
    - 建议: 统一使用 ash_user_id
 
 2. **verify_token 未检查过期时间**
+
    - Ash 层面缺少过期时间检查
    - 虽然 Service 层有检查，但缺少深度防御
    - 建议: 在 Ash 动作中添加过期检查
 
 3. **AshUser 中硬编码的 signing_secret**
+
    - JWT 签名密钥硬编码在代码中
    - 生产环境安全风险
    - 建议: 改为从环境变量读取
@@ -220,6 +239,7 @@ config :vmemo,
 ### P1 - 重要问题（建议修复）
 
 1. **PhotoController 缺少文件大小限制**
+
    - 可能被大文件攻击
    - 建议: 添加文件大小检查
 
@@ -246,36 +266,42 @@ config :vmemo,
 ### 升级步骤
 
 1. **备份数据库**
+
    ```bash
    pg_dump vmemo_prod > backup_$(date +%Y%m%d).sql
    ```
 
 2. **拉取最新代码**
+
    ```bash
    git checkout main
    git pull origin main
    ```
 
 3. **安装依赖**
+
    ```bash
    mix deps.get
    ```
 
 4. **设置环境变量**
+
    ```bash
-   # 生成随机密钥
-   export JWT_SIGNING_SECRET=$(openssl rand -base64 32)
+   # 生成随机密钥（用于 cookies、会话和 JWT token 签名）
+   export SECRET_KEY_BASE=$(mix phx.gen.secret)
 
    # 添加到生产环境配置
-   echo "JWT_SIGNING_SECRET=$JWT_SIGNING_SECRET" >> .env
+   echo "SECRET_KEY_BASE=$SECRET_KEY_BASE" >> .env
    ```
 
 5. **运行数据库迁移**
+
    ```bash
    mix ecto.migrate
    ```
 
 6. **验证迁移**
+
    ```bash
    # 检查新表是否创建
    psql vmemo_prod -c "\dt ash_users"
@@ -286,6 +312,7 @@ config :vmemo,
    ```
 
 7. **重启应用**
+
    ```bash
    # 如果使用 systemd
    sudo systemctl restart vmemo
@@ -305,16 +332,19 @@ config :vmemo,
 如果升级出现问题：
 
 1. **停止应用**
+
    ```bash
    sudo systemctl stop vmemo
    ```
 
 2. **回滚数据库**
+
    ```bash
    mix ecto.rollback --step 3
    ```
 
 3. **恢复代码**
+
    ```bash
    git checkout <previous-version>
    ```
@@ -392,7 +422,7 @@ mix test test/vmemo_web/api/auth_test.exs
 
 ### 安全建议
 
-1. **生产环境必须设置 JWT_SIGNING_SECRET**
+1. **生产环境必须设置 SECRET_KEY_BASE**（JWT 签名已合并到此密钥）
 2. **定期轮换 API Token**
 3. **为不同应用创建不同 Token**
 4. **监控 Token 使用情况**
@@ -406,6 +436,7 @@ mix test test/vmemo_web/api/auth_test.exs
 ## 反馈
 
 如有问题或建议，请：
+
 1. 查看 [GitHub Issues](https://github.com/ThaddeusJiang/Vmemo/issues)
 2. 提交新的 Issue
 3. 联系技术支持

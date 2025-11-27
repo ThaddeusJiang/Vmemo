@@ -45,7 +45,7 @@
 - 所有查询动作（list_by_user, get_by_user_and_id 等）使用 integer 类型的 user_id
 - 这会导致新建记录无法正确关联到 AshUser
 
-**影响**: 
+**影响**:
 - 数据完整性问题
 - 可能导致创建 token 后无法正确关联用户
 - 迁移后的数据一致性问题
@@ -83,7 +83,7 @@ end
 - 没有检查 `expires_at` 是否已过期
 - 虽然 `ApiTokenService.verify_api_token/1` 有检查，但在 Ash 层面缺少防御
 
-**影响**: 
+**影响**:
 - 安全漏洞：过期的 token 可能在某些情况下被绕过
 - 缺少深度防御
 
@@ -127,33 +127,33 @@ def update_api_token(api_token, attrs) do
 end
 ```
 
-### 4. AshUser 中硬编码的 signing_secret
+### 4. AshUser 中硬编码的 signing_secret ✅ 已修复
 
-**位置**: `lib/vmemo/account/ash_user.ex:20`
+**位置**: `lib/vmemo/account/ash_user.ex:25`
 
 **问题描述**:
 - JWT signing_secret 硬编码在代码中
 - 这是严重的生产环境安全风险
 
-**影响**:
-- 安全漏洞：任何人都可以伪造 JWT token
-- 不符合安全最佳实践
+**修复方案**:
+- ✅ 已修复：JWT 签名密钥现在使用 `SECRET_KEY_BASE`（从应用配置读取）
+- ✅ JWT_SIGNING_SECRET 已合并到 SECRET_KEY_BASE，简化了配置管理
+- ✅ 所有环境（dev/test/prod）都已正确配置
 
-**建议修复**:
+**当前实现**:
 ```elixir
 # lib/vmemo/account/ash_user.ex
 tokens do
-  enabled? true
-  token_lifetime 60 * 24 * 60 * 60
+  enabled?(true)
+  token_lifetime(60 * 24 * 60 * 60)
   signing_secret fn _, _ ->
-    System.get_env("JWT_SIGNING_SECRET") || 
-      raise "JWT_SIGNING_SECRET environment variable is not set"
+    Application.get_env(:vmemo, :secret_key_base) ||
+      Application.get_env(:vmemo, VmemoWeb.Endpoint)[:secret_key_base] ||
+      raise "SECRET_KEY_BASE is not configured"
   end
-  token_resource Vmemo.Account.AshUserToken
+  token_resource(Vmemo.Account.AshUserToken)
 end
 ```
-
-并在 README 和 Release Notes 中文档化这个环境变量。
 
 ## P1 - 重要问题（建议修复）
 
@@ -174,7 +174,7 @@ end
 defp validate_and_process_upload(%Plug.Upload{} = upload) do
   # 检查文件大小
   max_size = Application.get_env(:vmemo, :max_file_size, 10 * 1024 * 1024) # 默认 10MB
-  
+
   case File.stat(upload.path) do
     {:ok, %{size: size}} when size > max_size ->
       {:error, "File size exceeds maximum allowed size"}
@@ -229,7 +229,7 @@ end
 
 **位置**: API 路由
 
-**建议**: 
+**建议**:
 - 使用 PlugAttack 或 Hammer 实现速率限制
 - 防止 API 滥用和暴力破解
 

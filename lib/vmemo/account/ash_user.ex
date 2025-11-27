@@ -22,7 +22,7 @@ defmodule Vmemo.Account.AshUser do
     tokens do
       enabled?(true)
       token_lifetime(60 * 24 * 60 * 60)
-      signing_secret("m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC")
+      signing_secret(&get_signing_secret/2)
       token_resource(Vmemo.Account.AshUserToken)
     end
   end
@@ -41,18 +41,6 @@ defmodule Vmemo.Account.AshUser do
 
       argument :password, :string, allow_nil?: false
       argument :password_confirmation, :string, allow_nil?: true
-
-      change fn changeset, _context ->
-        # 如果没有提供 ID，生成一个 UUID 字符串
-        case Ash.Changeset.get_attribute(changeset, :id) do
-          nil ->
-            id = generate_uuid()
-            Ash.Changeset.change_attribute(changeset, :id, id)
-
-          _existing_id ->
-            changeset
-        end
-      end
 
       change &hash_password/2
     end
@@ -110,10 +98,7 @@ defmodule Vmemo.Account.AshUser do
   end
 
   attributes do
-    attribute :id, :string do
-      allow_nil? false
-      primary_key? true
-    end
+    uuid_primary_key :id
 
     attribute :email, :string, allow_nil?: false, public?: true
     attribute :hashed_password, :string, allow_nil?: false, sensitive?: true
@@ -142,9 +127,10 @@ defmodule Vmemo.Account.AshUser do
     end
   end
 
-  defp generate_uuid do
-    :crypto.strong_rand_bytes(16)
-    |> Base.encode16(case: :lower)
-    |> String.replace(~r/(.{8})(.{4})(.{4})(.{4})(.{12})/, "\\1-\\2-\\3-\\4-\\5")
+  defp get_signing_secret(_resource, _opts) do
+    case Application.get_env(:vmemo, :secret_key_base) do
+      nil -> :error
+      secret -> {:ok, secret}
+    end
   end
 end
