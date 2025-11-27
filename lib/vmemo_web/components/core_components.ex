@@ -218,9 +218,9 @@ defmodule VmemoWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="space-y-4">
+      <div class="space-y-2">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions}>
+        <div :for={action <- @actions} class="py-2">
           {render_slot(action, f)}
         </div>
       </div>
@@ -357,7 +357,7 @@ defmodule VmemoWeb.CoreComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div class="form-control w-full">
-      <div class="space-y-2">
+      <div class="space-y-1">
         <.label for={@id} class="label-text">{@label}</.label>
         <select
           id={@id}
@@ -381,7 +381,7 @@ defmodule VmemoWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div class="form-control w-full">
-      <div class="space-y-2">
+      <div class="space-y-1">
         <.label for={@id} class="label-text">{@label}</.label>
         <input
           type={@type}
@@ -427,7 +427,7 @@ defmodule VmemoWeb.CoreComponents do
   def textarea_field(assigns) do
     ~H"""
     <div class="form-control w-full">
-      <div class="space-y-2">
+      <div class="space-y-1">
         <.label for={@id} class="label-text">{@label}</.label>
         <.textarea id={@id} name={@name} value={@value} {@rest} />
       </div>
@@ -498,12 +498,16 @@ defmodule VmemoWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
+    <header class={[
+      "text-center mt-4 mb-6",
+      @actions != [] && "flex items-center justify-between gap-6",
+      @class
+    ]}>
       <div>
-        <h1 class="text-2xl font-bold mt-4">
+        <h1 class="text-2xl font-bold ">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="text-base-content/70 mt-2">
+        <p :if={@subtitle != []} class="text-base-content/70">
           {render_slot(@subtitle)}
         </p>
       </div>

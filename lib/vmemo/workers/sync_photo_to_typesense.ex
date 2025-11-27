@@ -3,19 +3,21 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
   require Logger
   alias Vmemo.PhotoService.TsPhoto
+  alias SmallSdk.Moondream
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
     query =
-      "SELECT id::text, note, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
+      "SELECT id::text, note, caption, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
 
     case Vmemo.AshRepo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
-        [id, note, url, file_id, inserted_at, ash_user_id] = row
+        [id, note, caption, url, file_id, inserted_at, ash_user_id] = row
 
         photo = %{
           id: id,
           note: note,
+          caption: caption,
           url: url,
           file_id: file_id,
           inserted_at: inserted_at,
@@ -51,6 +53,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
     base_data = %{
       id: photo.id,
       note: photo.note || "",
+      caption: photo.caption || "",
       note_ids: [],
       url: photo.url,
       file_id: photo.file_id,
@@ -89,11 +92,41 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
     case result do
       {:ok, _} ->
+        if is_nil(photo.caption) or photo.caption == "" do
+          generate_caption(photo.id, typesense_data[:image])
+        end
+
         :ok
 
       {:error, reason} ->
         Logger.error("Failed to sync photo #{photo.id} to Typesense: #{inspect(reason)}")
         {:error, reason}
+    end
+  end
+
+  defp generate_caption(photo_id, nil) do
+    Logger.info("Photo #{photo_id}: No image data available, skipping caption generation")
+    :ok
+  end
+
+  defp generate_caption(photo_id, image_base64) do
+    case Moondream.caption(image_base64) do
+      {:ok, caption} ->
+        Logger.info("Photo #{photo_id}: Generated caption: #{String.slice(caption, 0, 50)}...")
+
+        # Only update database, Photo.update's after_action will trigger
+        # a new SyncPhotoToTypesense job to sync caption to Typesense
+        case Ash.get(Vmemo.Photos.Photo, photo_id, actor: nil) do
+          {:ok, photo} ->
+            Vmemo.Photos.Photo.update(photo, %{caption: caption}, actor: nil)
+
+          _ ->
+            :ok
+        end
+
+      {:error, reason} ->
+        Logger.warning("Photo #{photo_id}: Failed to generate caption: #{inspect(reason)}")
+        :ok
     end
   end
 

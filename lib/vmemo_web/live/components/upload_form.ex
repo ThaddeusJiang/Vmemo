@@ -189,7 +189,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
           {error_to_string(err)}
         </p>
 
-        <div :if={@has_files} class="mt-4 space-y-2">
+        <div :if={@has_files} class="mt-4 space-y-1">
           <.textarea_field
             id={@form[:note].id}
             name={@form[:note].name}

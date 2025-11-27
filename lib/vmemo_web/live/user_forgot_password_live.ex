@@ -6,7 +6,7 @@ defmodule VmemoWeb.UserForgotPasswordLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header class="text-center">
+      <.header>
         Forgot your password?
         <:subtitle>We'll send a password reset link to your email</:subtitle>
       </.header>

@@ -6,7 +6,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-2xl p-4 sm:p-6 lg:p-8">
-      <.header class="text-center">
+      <.header>
         Create API Token
         <:subtitle>Set up your API access token</:subtitle>
       </.header>
@@ -75,7 +75,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           <h3 class="text-lg font-semibold text-success">Token Created Successfully</h3>
         </:header>
 
-        <div class="space-y-4">
+        <div class="space-y-2">
           <div class="alert alert-warning">
             <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
             <span>

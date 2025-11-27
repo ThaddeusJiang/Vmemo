@@ -27,7 +27,7 @@ defmodule VmemoWeb.PhotoIdLive do
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
-                  "_gen_description" => nil
+                  "caption" => photo.caption
                 })
               end)
 
@@ -67,7 +67,7 @@ defmodule VmemoWeb.PhotoIdLive do
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
-                  "_gen_description" => nil
+                  "caption" => photo.caption
                 })
               end)
 
@@ -103,10 +103,10 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_event("save", %{"note" => note, "_gen_description" => _gen_description}, socket) do
+  def handle_event("save", %{"note" => note, "caption" => caption}, socket) do
     user = socket.assigns.current_ash_user
 
-    case Photo.update(socket.assigns.photo, %{note: note}, actor: user) do
+    case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
@@ -115,7 +115,7 @@ defmodule VmemoWeb.PhotoIdLive do
            :form,
            to_form(%{
              "note" => updated_photo.note,
-             "_gen_description" => nil
+             "caption" => updated_photo.caption
            })
          )
          |> put_flash(:info, "Saved")}
@@ -132,14 +132,21 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_ash_user
 
     case Photo.gen_description(socket.assigns.photo, actor: user) do
-      {:ok, _} ->
+      {:ok, updated_photo} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Description generated")}
+         |> assign(:photo, updated_photo)
+         |> assign(
+           :form,
+           to_form(%{
+             "note" => updated_photo.note,
+             "caption" => updated_photo.caption
+           })
+         )
+         |> put_flash(:info, "Caption generated")}
 
       {:error, reason} ->
-        {:noreply,
-         socket |> put_flash(:error, "Failed to generate description: #{inspect(reason)}")}
+        {:noreply, socket |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
     end
   end
 
@@ -161,18 +168,19 @@ defmodule VmemoWeb.PhotoIdLive do
         <.not_found />
       <% else %>
         <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
-          <div class=" gap-4 space-y-4 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
-            <div class="space-y-4 flex flex-col justify-center relative">
+          <div class=" gap-2 space-y-2 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
+            <div class="space-y-2 flex flex-col justify-center relative">
               <figure class="w-auto h-auto group relative">
                 <%!-- <figcaption class="text-lg font-semibold text-gray-900">
                   <%= @photo.note %>
                 </figcaption> --%>
 
-                <%!-- <%= if @photo._gen_description do %>
+                <%= if @photo.caption && @photo.caption != "" do %>
                   <.button
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle text-green-500"
-                    aria-label={gettext("AI trained")}
+                    aria-label={gettext("Regenerate caption")}
+                    phx-click="gen_description"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +209,7 @@ defmodule VmemoWeb.PhotoIdLive do
                   <.button
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle btn-icon"
-                    aria-label={gettext("AI trained")}
+                    aria-label={gettext("Generate caption")}
                     phx-click="gen_description"
                   >
                     <svg
@@ -227,7 +235,7 @@ defmodule VmemoWeb.PhotoIdLive do
                       />
                     </svg>
                   </.button>
-                <% end %> --%>
+                <% end %>
 
                 <.img src={@photo.url} alt={@photo.note} />
                 <.button
@@ -290,10 +298,10 @@ defmodule VmemoWeb.PhotoIdLive do
               <div class="grow" />
             </div>
 
-            <.form
-              class="w-full flex flex-col gap-4"
+            <.simple_form
               for={@form}
               phx-submit="save"
+              class="w-full flex flex-col gap-4"
             >
               <.textarea_field
                 id={@form[:note].id}
@@ -303,16 +311,16 @@ defmodule VmemoWeb.PhotoIdLive do
               />
 
               <.textarea_field
-                id={@form[:_gen_description].id}
-                name={@form[:_gen_description].name}
-                value={@form[:_gen_description].value}
-                label="Description"
+                id={@form[:caption].id}
+                name={@form[:caption].name}
+                value={@form[:caption].value}
+                label="Caption"
               />
 
-              <.button>
-                Save
-              </.button>
-            </.form>
+              <:actions>
+                <.button>Save</.button>
+              </:actions>
+            </.simple_form>
           </div>
 
           <div class="grid gap-4 grid-cols-4">

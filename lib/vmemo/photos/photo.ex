@@ -12,7 +12,7 @@ defmodule Vmemo.Photos.Photo do
   end
 
   admin do
-    table_columns([:id, :url, :note, :ash_user_id, :inserted_at])
+    table_columns([:id, :url, :note, :caption, :ash_user_id, :inserted_at])
   end
 
   code_interface do
@@ -41,11 +41,11 @@ defmodule Vmemo.Photos.Photo do
     defaults [:read, :destroy]
 
     create :create_immediate do
-      accept [:url, :note, :file_id, :ash_user_id]
+      accept [:url, :note, :caption, :file_id, :ash_user_id]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :file_id, :ash_user_id]
+      accept [:url, :note, :caption, :file_id, :ash_user_id]
 
       change after_action(fn _changeset, record, _context ->
                %{photo_id: record.id}
@@ -57,7 +57,7 @@ defmodule Vmemo.Photos.Photo do
     end
 
     update :update do
-      accept [:note, :url]
+      accept [:note, :caption, :url]
       require_atomic? false
 
       change after_action(fn _changeset, record, _context ->
@@ -164,20 +164,28 @@ defmodule Vmemo.Photos.Photo do
     update :gen_description do
       require_atomic? false
 
-      change fn changeset, _context ->
+      change fn changeset, context ->
         photo_id = Ash.Changeset.get_attribute(changeset, :id)
 
         case Vmemo.PhotoService.TsPhoto.gen_description(photo_id) do
-          {:ok, _} ->
-            changeset
+          {:ok, description} ->
+            Ash.Changeset.change_attribute(changeset, :caption, description)
 
           {:error, reason} ->
             Ash.Changeset.add_error(changeset,
               field: :base,
-              message: "Failed to generate description: #{reason}"
+              message: "Failed to generate description: #{inspect(reason)}"
             )
         end
       end
+
+      change after_action(fn _changeset, record, _context ->
+               %{photo_id: record.id}
+               |> Vmemo.Workers.SyncPhotoToTypesense.new()
+               |> Oban.insert()
+
+               {:ok, record}
+             end)
     end
   end
 
@@ -189,6 +197,7 @@ defmodule Vmemo.Photos.Photo do
     end
 
     attribute :note, :string
+    attribute :caption, :string
     attribute :file_id, :string
     attribute :ash_user_id, :string
 

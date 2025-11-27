@@ -20,7 +20,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   @impl true
   def render(assigns) do
     ~H"""
-    <form phx-submit="save" phx-target={@myself} class="flex flex-col space-y-4">
+    <form phx-submit="save" phx-target={@myself} class="flex flex-col space-y-2">
       <.live_component id="photos" module={Waterfall} items={@photos}>
         <:card :let={photo}>
           <.link navigate={~p"/photos/#{photo.id}"}>
@@ -29,7 +29,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
         </:card>
       </.live_component>
 
-      <div class="flex flex-col space-y-2">
+      <div class="flex flex-col space-y-1">
         <.textarea_field
           id={@form[:note].id}
           name={@form[:note].name}

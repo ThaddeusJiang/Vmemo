@@ -6,7 +6,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header class="text-center">Reset Password</.header>
+      <.header>Reset Password</.header>
 
       <%= if @token_error do %>
         <div class="text-error text-center mb-4">

@@ -1,9 +1,9 @@
-# IEx
-
-Elixir's interactive shell.
+# IEx - Elixir's interactive shell.
 
 ```sh
 iex -S mix
+
+iex -S mix phx.server
 ```
 
 ## Collections

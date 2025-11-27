@@ -22,9 +22,6 @@ config :vmemo, Vmemo.AshRepo,
 config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
-config :vmemo, ollama_url: System.get_env("OLLAMA_URL", "http://localhost:11434")
-config :vmemo, ollama_api_key: System.get_env("OLLAMA_API_KEY", "local")
-
 # Admin token for test
 config :vmemo, admin_token: "admin"
 
