@@ -61,7 +61,7 @@ defmodule Vmemo.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:resend, "~> 0.4.0"},
+      {:resend, "~> 0.4"},
       {:req, "~> 0.5.10"},
       {:mime, "~> 2.0"},
       {:tidewave, "~> 0.5", only: :dev},

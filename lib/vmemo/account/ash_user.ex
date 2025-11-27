@@ -128,7 +128,9 @@ defmodule Vmemo.Account.AshUser do
   end
 
   defp get_signing_secret(_resource, _opts) do
-    Application.get_env(:vmemo, :secret_key_base) ||
-      raise "SECRET_KEY_BASE is not configured"
+    case Application.get_env(:vmemo, :secret_key_base) do
+      nil -> :error
+      secret -> {:ok, secret}
+    end
   end
 end
