@@ -22,6 +22,8 @@ config :vmemo, Vmemo.AshRepo,
 config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
+config :vmemo, moondream_url: "http://m4-24:2020/v1"
+
 # Admin token for test
 config :vmemo, admin_token: "admin"
 
@@ -31,7 +33,9 @@ config :vmemo, Oban,
 
 # Store secret_key_base in application config for JWT signing
 # JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
-config :vmemo, :secret_key_base, "qcL8bHOhBq7jlQEGhUr0/fY2FJCoMWQZ/lfGYLr03lgXzx8bWSaBis3Zhx0ISBe7"
+config :vmemo,
+       :secret_key_base,
+       "qcL8bHOhBq7jlQEGhUr0/fY2FJCoMWQZ/lfGYLr03lgXzx8bWSaBis3Zhx0ISBe7"
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
