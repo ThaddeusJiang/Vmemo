@@ -26,6 +26,9 @@ See `AGENTS-elixir-phoenix-liveview.md`
 ## Ash guidelines
 
 - use **Ash** instead of **Ecto**
+- **Always** use `:string` + `validations` for enum/status fields in models
+  - Advantages: modifying enum values doesn't require database migration, no database locks needed
+  - Example: use `attribute :status, :string` with validation checking allowed values
 
 **mix guidelines**
 

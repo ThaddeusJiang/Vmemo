@@ -10,6 +10,7 @@ defmodule Vmemo.Photos do
     resource Vmemo.Photos.Photo
     resource Vmemo.Photos.Note
     resource Vmemo.Photos.PhotoNote
+    resource Vmemo.Photos.PhotoMoondreamRequest
   end
 
   authorization do
