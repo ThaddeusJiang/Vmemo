@@ -24,22 +24,16 @@ defmodule Vmemo.Workers.ProcessMoondreamRequest do
   end
 
   defp process_request(request) do
-    # Update status to processing
     case update_request_status(request, "processing") do
       {:ok, request} ->
-        # Get photo
         case Ash.get(Photo, request.photo_id, actor: nil) do
           {:ok, photo} ->
-            # Get image base64
             case read_image_as_base64(photo.url) do
               {:ok, image_base64} ->
-                # Call moondream API
                 call_moondream_api(request, image_base64)
 
               {:error, reason} ->
-                Logger.error(
-                  "Failed to read image for photo #{photo.id}: #{inspect(reason)}"
-                )
+                Logger.error("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
 
                 update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
             end
@@ -60,10 +54,21 @@ defmodule Vmemo.Workers.ProcessMoondreamRequest do
   end
 
   defp call_moondream_api(request, image_base64) do
-    function_type = String.to_atom(request.function_type)
+    function_type =
+      case request.function_type do
+        "query" -> :query
+        "caption" -> :caption
+        "point" -> :point
+        "detect" -> :detect
+        "segment" -> :segment
+        _ -> {:error, "Invalid function type: #{request.function_type}"}
+      end
 
     result =
       case function_type do
+        {:error, _} = error ->
+          error
+
         :caption ->
           Moondream.caption(image_base64)
 
@@ -94,9 +99,6 @@ defmodule Vmemo.Workers.ProcessMoondreamRequest do
           else
             Moondream.segment(image_base64, request.prompt)
           end
-
-        _ ->
-          {:error, "Unknown function type: #{request.function_type}"}
       end
 
     case result do
@@ -104,17 +106,19 @@ defmodule Vmemo.Workers.ProcessMoondreamRequest do
         update_request_with_result(request, api_result)
 
       {:error, reason} ->
-        error_msg = if is_binary(reason), do: reason, else: inspect(reason)
+        error_msg = format_error_message(reason)
         update_request_with_error(request, error_msg)
     end
   end
+
+  defp format_error_message(reason) when is_binary(reason), do: reason
+  defp format_error_message(reason), do: inspect(reason)
 
   defp update_request_status(request, status) do
     PhotoMoondreamRequest.update(request, %{status: status}, actor: nil)
   end
 
   defp update_request_with_result(request, result) do
-    # Convert result to map if needed
     result_map =
       case result do
         map when is_map(map) -> map

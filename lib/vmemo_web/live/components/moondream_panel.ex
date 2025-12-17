@@ -4,6 +4,10 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   alias Vmemo.Photos.PhotoMoondreamRequest
   alias Vmemo.Workers.ProcessMoondreamRequest
 
+  @function_types ["query", "caption", "point", "detect", "segment"]
+
+  defp function_types, do: @function_types
+
   @impl true
   def mount(socket) do
     {:ok,
@@ -16,35 +20,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
   @impl true
   def update(assigns, socket) do
-    socket =
-      if Map.has_key?(assigns, :photo) do
-        assign(socket, :photo, assigns.photo)
-      else
-        socket
-      end
-
-    socket =
-      if Map.has_key?(assigns, :current_user) do
-        assign(socket, :current_user, assigns.current_user)
-      else
-        socket
-      end
-
-    socket =
-      if Map.has_key?(assigns, :requests) do
-        assign(socket, :requests, assigns.requests)
-      else
-        socket
-      end
-
-    socket =
-      if Map.has_key?(assigns, :loading_requests) do
-        assign(socket, :loading_requests, assigns.loading_requests)
-      else
-        socket
-      end
-
-    {:ok, socket}
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign_new(:requests, fn -> [] end)
+     |> assign_new(:loading_requests, fn -> MapSet.new() end)}
   end
 
   @impl true
@@ -52,15 +32,14 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     prompt = Map.get(params, "prompt", socket.assigns.prompt)
     function = Map.get(params, "function", socket.assigns.function)
 
-    {:noreply,
-     socket
-     |> assign(:prompt, prompt)
-     |> assign(:function, function)}
-  end
-
-  @impl true
-  def handle_event("select_function", %{"function" => function}, socket) do
-    {:noreply, assign(socket, :function, function)}
+    if is_segment_disabled?(function) do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:prompt, prompt)
+       |> assign(:function, function)}
+    end
   end
 
   @impl true
@@ -76,44 +55,67 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     prompt = Map.get(params, "prompt", "") |> String.trim()
     prompt = if prompt == "", do: socket.assigns.prompt, else: prompt
 
-    case PhotoMoondreamRequest.create(
-           %{
-             photo_id: photo.id,
-             ash_user_id: user.id,
-             function_type: function,
-             prompt: prompt
-           },
-           actor: user
-         ) do
-      {:ok, request} ->
-        %{request_id: request.id}
-        |> ProcessMoondreamRequest.new()
-        |> Oban.insert()
+    if is_segment_disabled?(function) do
+      {:noreply, socket}
+    else
+      case PhotoMoondreamRequest.create(
+             %{
+               photo_id: photo.id,
+               ash_user_id: user.id,
+               function_type: function,
+               prompt: prompt
+             },
+             actor: user
+           ) do
+        {:ok, request} ->
+          %{request_id: request.id}
+          |> ProcessMoondreamRequest.new()
+          |> Oban.insert()
 
-        loading_requests = MapSet.put(socket.assigns.loading_requests, request.id)
+          loading_requests = MapSet.put(socket.assigns.loading_requests, request.id)
 
-        send(self(), {:moondream_request_submitted, request})
+          send(self(), {:moondream_request_submitted, request})
 
-        {:noreply,
-         socket
-         |> assign(:loading_requests, loading_requests)
-         |> assign(:prompt, "")}
+          {:noreply,
+           socket
+           |> assign(:loading_requests, loading_requests)
+           |> assign(:prompt, "")}
 
-      {:error, changeset} ->
-        error_msg =
-          case changeset.errors do
-            [] -> "Failed to create request"
-            [{field, {msg, _}} | _] -> "#{field}: #{msg}"
-            errors -> "Validation error: #{inspect(errors)}"
-          end
-
-        {:noreply, put_flash(socket, :error, error_msg)}
+        {:error, changeset} ->
+          error_msg = format_changeset_errors(changeset)
+          {:noreply, socket |> put_flash(:error, "Failed to create request: #{error_msg}")}
+      end
     end
   end
 
   @impl true
   def handle_event(_event, _params, socket) do
     {:noreply, socket}
+  end
+
+  defp is_segment_disabled?(function), do: function == "segment"
+
+  defp format_changeset_errors(changeset) do
+    case changeset do
+      %Ash.Error.Invalid{errors: errors} ->
+        errors
+        |> Enum.map(fn error ->
+          case error do
+            %Ash.Error.Changes.Required{field: field} ->
+              "#{field} is required"
+
+            %Ash.Error.Changes.InvalidAttribute{field: field, message: message} ->
+              "#{field}: #{message}"
+
+            _ ->
+              "Validation failed"
+          end
+        end)
+        |> Enum.join("; ")
+
+      _ ->
+        "Failed to create request"
+    end
   end
 
   defp has_detection_results?(requests) do
@@ -146,15 +148,13 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     |> Enum.uniq()
   end
 
-  defp is_loading?(loading_requests) do
-    MapSet.size(loading_requests) > 0
-  end
-
   defp format_request_datetime(datetime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
 
   defp format_result(result, _function_type) when is_binary(result), do: result
+
+  defp format_result(%{"text" => text}, _function_type) when is_binary(text), do: text
 
   defp format_result(result, function_type) when is_map(result) do
     case function_type do
@@ -185,6 +185,141 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
   defp format_point_result(result), do: Jason.encode!(result, pretty: true)
 
+  defp extract_point_coordinates(result) when is_map(result) do
+    cond do
+      Map.has_key?(result, "x") and Map.has_key?(result, "y") ->
+        x = normalize_coordinate(Map.get(result, "x"))
+        y = normalize_coordinate(Map.get(result, "y"))
+        if x != nil and y != nil, do: {x, y}, else: nil
+
+      Map.has_key?(result, "points") and is_list(result["points"]) ->
+        case result["points"] do
+          [point | _] when is_map(point) ->
+            x = normalize_coordinate(Map.get(point, "x"))
+            y = normalize_coordinate(Map.get(point, "y"))
+            if x != nil and y != nil, do: {x, y}, else: nil
+
+          _ ->
+            nil
+        end
+
+      Map.has_key?(result, "point") and is_map(result["point"]) ->
+        point = result["point"]
+        x = normalize_coordinate(Map.get(point, "x"))
+        y = normalize_coordinate(Map.get(point, "y"))
+        if x != nil and y != nil, do: {x, y}, else: nil
+
+      Map.has_key?(result, "coordinates") and is_map(result["coordinates"]) ->
+        coords = result["coordinates"]
+        x = normalize_coordinate(Map.get(coords, "x"))
+        y = normalize_coordinate(Map.get(coords, "y"))
+        if x != nil and y != nil, do: {x, y}, else: nil
+
+      true ->
+        nil
+    end
+  end
+
+  defp extract_point_coordinates(_), do: nil
+
+  defp normalize_coordinate(value) when is_number(value), do: value
+
+  defp normalize_coordinate(value) when is_binary(value) do
+    case Float.parse(value) do
+      {num, _} -> num
+      :error -> nil
+    end
+  end
+
+  defp normalize_coordinate(_), do: nil
+
+  defp extract_detection_boxes(result) when is_map(result) do
+    objects =
+      cond do
+        Map.has_key?(result, "data") and is_list(result["data"]) ->
+          result["data"]
+
+        Map.has_key?(result, "objects") and is_list(result["objects"]) ->
+          result["objects"]
+
+        Map.has_key?(result, "detections") and is_list(result["detections"]) ->
+          result["detections"]
+
+        Map.has_key?(result, "results") and is_list(result["results"]) ->
+          result["results"]
+
+        true ->
+          []
+      end
+
+    objects
+    |> Enum.filter(&is_map/1)
+    |> Enum.map(fn obj ->
+      label = Map.get(obj, "label") || Map.get(obj, "name") || ""
+
+      # Support x_min, x_max, y_min, y_max format (normalized coordinates 0-1)
+      cond do
+        Map.has_key?(obj, "x_min") and Map.has_key?(obj, "x_max") and
+          Map.has_key?(obj, "y_min") and Map.has_key?(obj, "y_max") ->
+          x_min = normalize_coordinate(Map.get(obj, "x_min"))
+          x_max = normalize_coordinate(Map.get(obj, "x_max"))
+          y_min = normalize_coordinate(Map.get(obj, "y_min"))
+          y_max = normalize_coordinate(Map.get(obj, "y_max"))
+
+          if x_min != nil and x_max != nil and y_min != nil and y_max != nil do
+            %{x1: x_min, y1: y_min, x2: x_max, y2: y_max, label: label}
+          else
+            nil
+          end
+
+        # Support bbox array format [x1, y1, x2, y2]
+        Map.has_key?(obj, "bbox") ->
+          bbox = Map.get(obj, "bbox")
+
+          if is_list(bbox) and length(bbox) >= 4 do
+            [x1, y1, x2, y2] = Enum.take(bbox, 4)
+            x1 = normalize_coordinate(x1)
+            y1 = normalize_coordinate(y1)
+            x2 = normalize_coordinate(x2)
+            y2 = normalize_coordinate(y2)
+
+            if x1 != nil and y1 != nil and x2 != nil and y2 != nil do
+              %{x1: x1, y1: y1, x2: x2, y2: y2, label: label}
+            else
+              nil
+            end
+          else
+            nil
+          end
+
+        Map.has_key?(obj, "bounding_box") ->
+          bbox = Map.get(obj, "bounding_box")
+
+          if is_list(bbox) and length(bbox) >= 4 do
+            [x1, y1, x2, y2] = Enum.take(bbox, 4)
+            x1 = normalize_coordinate(x1)
+            y1 = normalize_coordinate(y1)
+            x2 = normalize_coordinate(x2)
+            y2 = normalize_coordinate(y2)
+
+            if x1 != nil and y1 != nil and x2 != nil and y2 != nil do
+              %{x1: x1, y1: y1, x2: x2, y2: y2, label: label}
+            else
+              nil
+            end
+          else
+            nil
+          end
+
+        true ->
+          nil
+      end
+    end)
+    |> Enum.filter(&(!is_nil(&1)))
+  end
+
+  defp extract_detection_boxes(_), do: []
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -193,13 +328,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
       <.form for={%{}} as={:moondream} phx-change="change" phx-submit="submit" phx-target={@myself}>
         <div class="space-y-4">
-          <input type="hidden" name="moondream[function]" value={@function} />
-
           <div class="space-y-2">
             <textarea
               name="moondream[prompt]"
               placeholder="Enter prompt..."
-              class="textarea textarea-bordered w-full"
+              class="textarea textarea-bordered w-full disabled:border-base-300"
               rows="3"
               disabled={@function == "caption"}
             >{@prompt}</textarea>
@@ -221,28 +354,35 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
           <% end %>
 
           <div class="flex flex-wrap gap-2">
-            <button
-              :for={func <- ["query", "caption", "point", "detect", "segment"]}
-              type="button"
+            <label
+              :for={func <- function_types()}
               class={[
                 "btn btn-sm rounded-lg",
-                if(@function == func, do: "btn-primary", else: "btn-outline")
+                if(@function == func, do: "btn-primary", else: "btn-outline"),
+                if(is_segment_disabled?(func),
+                  do: "opacity-50 cursor-not-allowed",
+                  else: "cursor-pointer"
+                )
               ]}
-              phx-click="select_function"
-              phx-target={@myself}
-              phx-value-function={func}
+              title={
+                if(is_segment_disabled?(func), do: "Segment function is not available yet", else: "")
+              }
             >
+              <input
+                type="radio"
+                name="moondream[function]"
+                value={func}
+                class="hidden"
+                checked={@function == func}
+                disabled={is_segment_disabled?(func)}
+              />
               {String.capitalize(func)}
-            </button>
+            </label>
           </div>
 
           <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary" disabled={is_loading?(@loading_requests)}>
-              <%= if is_loading?(@loading_requests) do %>
-                <span class="loading loading-spinner loading-sm"></span> Processing...
-              <% else %>
-                Submit
-              <% end %>
+            <button type="submit" class="btn btn-primary">
+              Submit
             </button>
           </div>
         </div>
@@ -262,17 +402,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
                     {format_request_datetime(request.inserted_at)}
                   </span>
                 </div>
-                <span class={[
-                  "badge",
-                  case request.status do
-                    "completed" -> "badge-success"
-                    "failed" -> "badge-error"
-                    "processing" -> "badge-warning"
-                    _ -> "badge-info"
-                  end
-                ]}>
-                  {request.status}
-                </span>
+                <%= if request.status == "failed" do %>
+                  <span class="badge badge-error">
+                    {request.status}
+                  </span>
+                <% end %>
               </div>
 
               <%= if request.prompt && request.prompt != "" do %>
@@ -281,12 +415,35 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
                 </div>
               <% end %>
 
-              <%= if request.status == "completed" && request.result do %>
-                <div class="text-sm bg-base-200 rounded p-2">
-                  <pre class="whitespace-pre-wrap text-xs">
-                    {format_result(request.result, request.function_type)}
-                  </pre>
+              <%= if MapSet.member?(@loading_requests, request.id) || request.status == "processing" do %>
+                <div class="flex items-center gap-2 text-sm text-base-content/70 py-4">
+                  <span class="loading loading-spinner loading-sm"></span> Processing...
                 </div>
+              <% end %>
+
+              <%= if request.status == "completed" && request.result do %>
+                {cond do
+                  request.function_type == "point" ->
+                    case extract_point_coordinates(request.result) do
+                      {x, y} when is_number(x) and is_number(y) ->
+                        render_point_result(assigns, request, x, y)
+
+                      _ ->
+                        render_text_result(assigns, request)
+                    end
+
+                  request.function_type == "detect" ->
+                    boxes = extract_detection_boxes(request.result)
+
+                    if boxes != [] do
+                      render_detect_result(assigns, request, boxes)
+                    else
+                      render_text_result(assigns, request)
+                    end
+
+                  true ->
+                    render_text_result(assigns, request)
+                end}
               <% end %>
 
               <%= if request.status == "failed" && request.error_message do %>
@@ -294,16 +451,112 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
                   <span class="font-medium">Error:</span> {request.error_message}
                 </div>
               <% end %>
-
-              <%= if MapSet.member?(@loading_requests, request.id) do %>
-                <div class="flex items-center gap-2 text-sm text-base-content/70">
-                  <span class="loading loading-spinner loading-xs"></span> Processing...
-                </div>
-              <% end %>
             </div>
           </div>
         </div>
       <% end %>
+    </div>
+    """
+  end
+
+  defp render_text_result(assigns, request) do
+    text = format_result(request.result, request.function_type)
+
+    assigns =
+      assigns
+      |> assign(:text, text)
+      |> assign(:request, request)
+
+    ~H"""
+    <div class="text-sm bg-base-200 rounded p-2">
+      <div class="text-sm whitespace-pre-wrap">
+        {@text}
+      </div>
+    </div>
+    """
+  end
+
+  defp render_point_result(assigns, request, x, y) do
+    assigns =
+      assigns
+      |> assign(:request, request)
+      |> assign(:point_x, x)
+      |> assign(:point_y, y)
+
+    ~H"""
+    <div class="space-y-2">
+      <div
+        class="relative w-full max-w-md"
+        id={"moondream-point-#{@request.id}"}
+        phx-hook="MoondreamOverlay"
+      >
+        <.img src={@photo.url} alt={@photo.note || "Photo"} class="w-full h-auto rounded-lg" />
+        <span
+          class="absolute pointer-events-none z-10"
+          data-x={@point_x}
+          data-y={@point_y}
+          style="transform: translate(-50%, -50%);"
+        >
+          <span class="relative flex size-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75">
+            </span>
+            <span class="relative inline-flex size-2 rounded-full bg-primary"></span>
+          </span>
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  defp render_detect_result(assigns, request, boxes) do
+    assigns =
+      assigns
+      |> assign(:request, request)
+      |> assign(:boxes, boxes)
+
+    ~H"""
+    <div class="space-y-2">
+      <div class="text-sm">
+        <span class="font-medium">Detected:</span> {length(@boxes)} object(s)
+      </div>
+      <div
+        class="relative w-full max-w-md"
+        id={"moondream-detect-#{@request.id}"}
+        phx-hook="MoondreamOverlay"
+      >
+        <.img src={@photo.url} alt={@photo.note || "Photo"} class="w-full h-auto rounded-lg" />
+        <svg
+          class="absolute inset-0 pointer-events-none w-full h-full z-10"
+          preserveAspectRatio="xMidYMid meet"
+          style="position: absolute; top: 0; left: 0;"
+        >
+          <%= for box <- @boxes do %>
+            <rect
+              data-x1={box.x1}
+              data-y1={box.y1}
+              data-x2={box.x2}
+              data-y2={box.y2}
+              fill="none"
+              stroke="var(--color-primary)"
+              stroke-width="6"
+              opacity="0.9"
+            />
+            <%= if box.label != "" do %>
+              <text
+                data-x={box.x1}
+                data-y={box.y1}
+                font-size="14"
+                fill="var(--color-primary)"
+                font-weight="bold"
+                stroke="#ffffff"
+                stroke-width="0.5"
+              >
+                {box.label}
+              </text>
+            <% end %>
+          <% end %>
+        </svg>
+      </div>
     </div>
     """
   end

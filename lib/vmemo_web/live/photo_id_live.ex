@@ -191,8 +191,7 @@ defmodule VmemoWeb.PhotoIdLive do
     {:noreply,
      socket
      |> assign(moondream_requests: moondream_requests)
-     |> assign(moondream_loading_requests: loading_requests)
-     |> put_flash(:info, "Request submitted")}
+     |> assign(moondream_loading_requests: loading_requests)}
   end
 
   @impl true
