@@ -24,4 +24,10 @@ defmodule SmallSdk.FileSystem do
       {:error, _reason} -> nil
     end
   end
+
+  def read_image_base64!(file_path) do
+    file_path
+    |> File.read!()
+    |> Base.encode64()
+  end
 end

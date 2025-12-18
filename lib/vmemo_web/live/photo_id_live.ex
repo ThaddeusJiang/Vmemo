@@ -5,11 +5,21 @@ defmodule VmemoWeb.PhotoIdLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Photos.Photo
+  alias Vmemo.Photos.PhotoMoondreamRequest
 
   alias VmemoWeb.LiveComponents.Waterfall
+  alias VmemoWeb.LiveComponents.MoondreamPanel
 
   @impl true
   def mount(%{"id" => id, "action" => _action}, _session, socket) do
+    mount_photo(id, socket)
+  end
+
+  def mount(%{"id" => id}, _session, socket) do
+    mount_photo(id, socket)
+  end
+
+  defp mount_photo(id, socket) do
     user = socket.assigns.current_ash_user
 
     case Photo.get_with_notes(id, user.id, actor: user) do
@@ -18,18 +28,32 @@ defmodule VmemoWeb.PhotoIdLive do
 
         case Photo.list_similar(photo.id, user.id, actor: user) do
           {:ok, photos} ->
+            # Load moondream requests
+            moondream_requests =
+              case PhotoMoondreamRequest.list_by_photo(photo.id, actor: user) do
+                {:ok, requests} -> requests
+                _ -> []
+              end
+
             socket =
               socket
               |> assign(photo: photo)
               |> assign(notes: notes)
               |> assign(show_expanded: false)
               |> assign(photos: photos)
+              |> assign(moondream_requests: moondream_requests)
+              |> assign(moondream_loading_requests: MapSet.new())
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
                   "caption" => photo.caption
                 })
               end)
+
+            # Subscribe to PubSub
+            if connected?(socket) do
+              Phoenix.PubSub.subscribe(Vmemo.PubSub, "photo_moondream_request:#{photo.id}")
+            end
 
             {:ok, socket}
 
@@ -45,40 +69,6 @@ defmodule VmemoWeb.PhotoIdLive do
          socket
          |> assign(photo: nil)
          |> assign(notes: [])}
-    end
-  end
-
-  @impl true
-  def mount(%{"id" => id}, _session, socket) do
-    user = socket.assigns.current_ash_user
-
-    case Photo.get_with_notes(id, user.id, actor: user) do
-      {:ok, photo} ->
-        notes = photo.notes || []
-
-        case Photo.list_similar(photo.id, user.id, actor: user) do
-          {:ok, photos} ->
-            socket =
-              socket
-              |> assign(photo: photo)
-              |> assign(notes: notes)
-              |> assign(show_expanded: false)
-              |> assign(photos: photos)
-              |> assign_new(:form, fn ->
-                to_form(%{
-                  "note" => photo.note,
-                  "caption" => photo.caption
-                })
-              end)
-
-            {:ok, socket}
-
-          _ ->
-            {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
-        end
-
-      _ ->
-        {:ok, socket |> assign(photo: nil) |> assign(notes: [])}
     end
   end
 
@@ -158,6 +148,50 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def handle_event("hide_extened", _, socket) do
     {:noreply, socket |> assign(show_expanded: false)}
+  end
+
+  @impl true
+  def handle_info({:moondream_request_updated, payload}, socket) do
+    user = socket.assigns.current_ash_user
+
+    moondream_requests =
+      case PhotoMoondreamRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+        {:ok, requests} -> requests
+        _ -> socket.assigns.moondream_requests
+      end
+
+    loading_requests =
+      socket.assigns.moondream_loading_requests
+      |> MapSet.delete(payload.request_id)
+
+    send_update(MoondreamPanel,
+      id: "moondream-panel",
+      requests: moondream_requests,
+      loading_requests: loading_requests
+    )
+
+    {:noreply,
+     socket
+     |> assign(moondream_requests: moondream_requests)
+     |> assign(moondream_loading_requests: loading_requests)}
+  end
+
+  @impl true
+  def handle_info({:moondream_request_submitted, request}, socket) do
+    user = socket.assigns.current_ash_user
+
+    moondream_requests =
+      case PhotoMoondreamRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+        {:ok, requests} -> requests
+        _ -> socket.assigns.moondream_requests
+      end
+
+    loading_requests = MapSet.put(socket.assigns.moondream_loading_requests, request.id)
+
+    {:noreply,
+     socket
+     |> assign(moondream_requests: moondream_requests)
+     |> assign(moondream_loading_requests: loading_requests)}
   end
 
   @impl true
@@ -322,6 +356,15 @@ defmodule VmemoWeb.PhotoIdLive do
               </:actions>
             </.simple_form>
           </div>
+
+          <.live_component
+            id="moondream-panel"
+            module={MoondreamPanel}
+            photo={@photo}
+            current_user={@current_ash_user}
+            requests={@moondream_requests}
+            loading_requests={@moondream_loading_requests}
+          />
 
           <div class="grid gap-4 grid-cols-4">
             <div class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">

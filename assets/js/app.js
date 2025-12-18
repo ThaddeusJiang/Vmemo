@@ -21,6 +21,7 @@ import { ImageLoader } from "./hooks/image_loader"
 import { ClipboardMediaFetcher } from "./hooks/clipboard_media_fetcher"
 import { Toast } from "./hooks/toast"
 import { Focus } from "./hooks/focus"
+import { MoondreamOverlay } from "./hooks/moondream_overlay"
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
@@ -36,12 +37,12 @@ let liveSocket = new LiveSocket("/live", Socket, {
     ImageLoader,
     ClipboardMediaFetcher,
     Toast,
-    Focus
+    Focus,
+    MoondreamOverlay,
   },
   longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken }
+  params: { _csrf_token: csrfToken },
 })
-
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
