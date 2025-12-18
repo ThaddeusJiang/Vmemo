@@ -107,6 +107,10 @@ defmodule VmemoWeb.Router do
       live "/settings", UserSettingsLive, :edit
       live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
+      # Chat routes
+      live "/chat", ChatLive
+      live "/chat/:conversation_id", ChatLive
+
       # API Token 管理路由
       live "/tokens", ApiTokenLive.Index, :index
       live "/tokens/new", ApiTokenLive.Form, :new

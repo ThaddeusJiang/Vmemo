@@ -35,7 +35,9 @@ config :vmemo, Oban,
 # to bundle .js and .css sources.
 # Store secret_key_base in application config for JWT signing
 # JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
-config :vmemo, :secret_key_base, "m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC"
+config :vmemo,
+       :secret_key_base,
+       "m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC"
 
 config :vmemo, VmemoWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.

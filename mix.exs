@@ -34,6 +34,8 @@ defmodule Vmemo.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mdex, "~> 0.7"},
+      {:ash_ai, "~> 0.4"},
       {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8"},
       {:phoenix_live_view, "~> 1.1", override: true},

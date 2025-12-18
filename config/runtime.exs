@@ -1,5 +1,8 @@
 import Config
 
+# OpenRouter API Key for chat functionality
+config :vmemo, openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

@@ -41,7 +41,24 @@ mise install
 
 ## 快速开始
 
-### 1. 启动依赖服务
+### 1. 配置环境变量
+
+在启动项目之前，如果使用聊天功能，需要在项目根目录创建 `mise.local.toml` 文件来设置环境变量：
+
+```toml
+[env]
+OPENROUTER_API_KEY = "your-openrouter-api-key"
+# 可选：Moondream AI 服务地址（如果使用不同的服务地址）
+MOONDREAM_URL = "http://your-moondream-host:2020/v1"
+```
+
+**注意**：
+
+- 如果使用聊天功能，`OPENROUTER_API_KEY` 是必需的
+- `mise.local.toml` 文件会被 git 忽略，不会提交到版本控制
+- 进入项目目录时，mise 会自动加载这些环境变量
+
+### 2. 启动依赖服务
 
 使用 Docker Compose 启动 PostgreSQL 和 Typesense：
 
@@ -61,7 +78,7 @@ docker compose up -d
   - 默认配置：`http://m4-24:2020/v1`（根据实际情况调整）
   - 如果未部署 Moondream，照片上传仍可正常工作，但不会自动生成描述
 
-### 2. 安装依赖并初始化数据库
+### 3. 安装依赖并初始化数据库
 
 ```bash
 mix setup
@@ -74,7 +91,7 @@ mix setup
 - 创建数据库 (`mix ash_postgres.create`)
 - 运行数据库迁移 (`mix ash_postgres.migrate`)
 
-### 3. 启动 Phoenix 服务器
+### 4. 启动 Phoenix 服务器
 
 ```bash
 iex -S mix phx.server
@@ -84,17 +101,53 @@ iex -S mix phx.server
 
 ## 开发环境配置
 
+### 环境变量配置
+
+开发环境需要设置以下环境变量（如果使用相应功能）：
+
+#### 必需环境变量（如果使用聊天功能）
+
+```bash
+# OpenRouter API Key（必需，如果使用聊天功能）
+# 用于聊天功能的 AI 模型调用
+export OPENROUTER_API_KEY="your-openrouter-api-key"
+```
+
+#### 可选环境变量
+
+```bash
+# Moondream AI 服务地址（可选）
+# 如果使用不同的 Moondream 服务地址，可以覆盖默认配置
+export MOONDREAM_URL="http://your-moondream-host:2020/v1"
+```
+
+**设置环境变量的方式**：
+
+使用 `mise.local.toml` 文件（推荐）：
+
+在项目根目录创建 `mise.local.toml` 文件：
+
+```toml
+[env]
+OPENROUTER_API_KEY = "your-openrouter-api-key"
+MOONDREAM_URL = "http://your-moondream-host:2020/v1"  # 可选
+```
+
+**说明**：
+
+- `mise.local.toml` 文件会被 git 忽略（已在 `.gitignore` 中），不会提交到版本控制
+- 进入项目目录时，mise 会自动加载这些环境变量
+- 这是项目特定的配置，不会影响系统其他项目
+
 ### 开发环境默认配置
 
-开发环境使用 `config/dev.exs` 中的默认配置，**无需设置环境变量**。
+开发环境使用 `config/dev.exs` 中的默认配置，大部分配置都有默认值。
 
 默认配置包括：
 
 - 数据库连接：`localhost:54321/vmemo_dev`
 - Typesense：`http://localhost:8766` (API Key: `xyz`)
-- Moondream：`http://m4-24:2020/v1`（根据实际情况调整）
-  - 如果使用不同的 Moondream 服务地址，需要修改 `config/dev.exs` 中的 `moondream_url` 配置
-  - 或者设置环境变量 `MOONDREAM_URL`
+- Moondream：`http://m4-24:2020/v1`（可通过 `MOONDREAM_URL` 环境变量覆盖）
 - Admin Token：`admin`
 - Secret Key Base：已预配置
 
@@ -270,6 +323,31 @@ mix clean
 **注意**：测试时应该使用真实文件，而不是模拟数据。
 
 ## 常见问题
+
+### 环境变量缺失错误
+
+如果使用聊天功能时遇到以下错误：
+
+```
+OPENROUTER_API_KEY environment variable is required
+```
+
+**解决方法**：
+
+1. 确认已设置必需的环境变量：
+
+   ```bash
+   echo $OPENROUTER_API_KEY
+   ```
+
+2. 如果未设置，请在项目根目录创建或编辑 `mise.local.toml` 文件：
+
+   ```toml
+   [env]
+   OPENROUTER_API_KEY = "your-openrouter-api-key"
+   ```
+
+3. 确认 `mise.local.toml` 文件存在且格式正确，然后重新进入项目目录或执行 `mise env` 来加载环境变量。
 
 ### 数据库连接错误
 
