@@ -38,7 +38,8 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
       |> LLMChain.add_messages(message_chain)
       # add the names of tools you want available in your conversation here.
       # i.e tools: [:lookup_weather]
-      |> AshAi.setup_ash_ai(otp_app: :vmemo, tools: [], actor: context.actor)
+      |> AshAi.setup_ash_ai(otp_app: :vmemo, tools: [:search_photos], actor: context.actor)
+      |> patch_tool_schemas()
       |> LLMChain.add_callback(%{
         on_llm_new_delta: fn _chain, deltas ->
           deltas
@@ -184,4 +185,45 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
         [LangChain.Message.new_user!(text)]
     end)
   end
+
+  # Patch tool schemas to add additionalProperties: false for Azure OpenAI compatibility
+  defp patch_tool_schemas(chain) do
+    if chain.tools && length(chain.tools) > 0 do
+      patched_tools =
+        Enum.map(chain.tools, fn tool ->
+          if tool.parameters_schema do
+            patched_schema = patch_schema(tool.parameters_schema)
+            struct(tool, [parameters_schema: patched_schema])
+          else
+            tool
+          end
+        end)
+
+      struct(chain, [tools: patched_tools])
+    else
+      chain
+    end
+  end
+
+  defp patch_schema(%{"properties" => %{"input" => input_obj} = properties} = schema) do
+    # Add additionalProperties: false to input object for Azure OpenAI compatibility
+    # Azure OpenAI requires that required array includes all properties
+    input_properties = Map.get(input_obj, "properties", %{})
+
+    # Ensure all properties are in required array (Azure OpenAI requirement)
+    all_required =
+      input_properties
+      |> Map.keys()
+      |> Enum.uniq()
+
+    patched_input =
+      input_obj
+      |> Map.put("additionalProperties", false)
+      |> Map.put("required", all_required)
+
+    patched_properties = Map.put(properties, "input", patched_input)
+    Map.put(schema, "properties", patched_properties)
+  end
+
+  defp patch_schema(schema), do: schema
 end

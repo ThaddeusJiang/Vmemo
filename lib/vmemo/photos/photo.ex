@@ -129,6 +129,62 @@ defmodule Vmemo.Photos.Photo do
       end
     end
 
+    action :search_photos, :term do
+      description "Search photos by text query or find similar photos. Returns photos matching the search criteria."
+
+      argument :query, :string, default: ""
+      argument :similar_photo_id, :string, allow_nil?: true
+      argument :page, :integer, default: 1
+
+      run fn input, context ->
+        q = Ash.ActionInput.get_argument(input, :query) || ""
+        similar = Ash.ActionInput.get_argument(input, :similar_photo_id)
+        page = Ash.ActionInput.get_argument(input, :page) || 1
+
+        # Get actor from context
+        actor = Map.get(context, :actor)
+        ash_user_id = if actor, do: actor.id, else: nil
+
+        if is_nil(ash_user_id) do
+          {:error, "Actor is required for photo search"}
+        else
+          {photos, _found, _current_page} =
+            Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
+              user_id: ash_user_id,
+              page: page
+            )
+
+          photo_ids =
+            photos
+            |> Enum.map(& &1.id)
+            |> Enum.filter(&valid_uuid?/1)
+
+          if photo_ids == [] do
+            {:ok, []}
+          else
+            query =
+              __MODULE__
+              |> Ash.Query.filter(id: [in: photo_ids])
+
+            case Ash.read(query, actor: actor) do
+              {:ok, records} ->
+                sorted_records =
+                  photo_ids
+                  |> Enum.map(fn id ->
+                    Enum.find(records, fn record -> record.id == id end)
+                  end)
+                  |> Enum.reject(&is_nil/1)
+
+                {:ok, sorted_records}
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+          end
+        end
+      end
+    end
+
     read :list_similar do
       argument :photo_id, :uuid, allow_nil?: false
       argument :ash_user_id, :uuid, allow_nil?: false
