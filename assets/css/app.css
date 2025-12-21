@@ -150,4 +150,14 @@
         outline: none;
     }
 
+    .chat-bubble {
+        max-width: 65ch !important;
+    }
+
+    .chat-bubble img {
+        max-width: 420px;
+        width: auto;
+        height: auto;
+    }
+
 }
