@@ -2,6 +2,40 @@
 
 本地开发环境设置和开发工作流指南。
 
+## 配置变更说明
+
+### 环境变量管理方式更新
+
+**重要变更**：项目现在使用 `mise.local.toml` 文件来管理本地开发环境变量，不再需要修改 `~/.zshrc` 或 `~/.bashrc`。
+
+**变更内容**：
+
+1. **环境变量配置位置**：
+   - ✅ 使用项目根目录的 `mise.local.toml` 文件
+   - ❌ 不再使用 shell 配置文件（`~/.zshrc`、`~/.bashrc`）
+   - ❌ 不再使用 `.env` 文件
+
+2. **API Key 配置**：
+   - ✅ 使用 `OPENROUTER_API_KEY`（如果使用聊天功能）
+   - ❌ 已移除 `OPENAI_API_KEY`（不再需要）
+
+3. **配置方式**：
+   ```toml
+   # mise.local.toml（项目根目录）
+   [env]
+   OPENROUTER_API_KEY = "your-openrouter-api-key"
+   MOONDREAM_URL = "http://your-moondream-host:2020/v1"  # 可选
+   ```
+
+4. **代码变更**：
+   - `OPENROUTER_API_KEY` 配置已移至 `config/runtime.exs`
+   - 代码使用 `Application.get_env/3` 读取配置，而不是直接读取环境变量
+
+**优势**：
+- 项目特定的配置，不影响系统其他项目
+- 自动被 git 忽略，不会提交敏感信息
+- 进入项目目录时自动加载，无需手动 source
+
 ## 前置要求
 
 ### 必需工具

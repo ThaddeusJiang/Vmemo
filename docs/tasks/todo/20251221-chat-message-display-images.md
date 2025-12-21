@@ -42,10 +42,12 @@
 
 ### 任务分解
 
-- [ ] 分析 tool_results 数据结构，了解 search_photos 返回的格式
-- [ ] 在 ChatLive 中添加提取图片信息的函数
-- [ ] 修改消息渲染逻辑，在消息中显示图片
-- [ ] 测试图片显示功能
+- [x] 分析 tool_results 数据结构，了解 search_photos 返回的格式
+- [x] 在 ChatLive 中添加提取图片信息的函数
+- [x] 修改消息渲染逻辑，在消息中显示图片
+- [x] 测试图片显示功能
+- [x] 修复 tool_call_id 缺失错误
+- [x] 修复数据加载和广播问题
 
 ## 执行记录
 
@@ -152,25 +154,91 @@
 2. ✅ 实现了图片提取功能
 3. ✅ 实现了图片显示功能
 4. ✅ 修改了消息渲染逻辑
+5. ✅ 修复了 `tool_call_id` 缺失导致的错误
+6. ✅ 修复了数据加载和广播问题
+7. ✅ 通过 Playwright 测试验证了功能
 
 ### 关键代码变更
 
 1. **lib/vmemo_web/live/chat_live.ex**：
-   - 添加了 `extract_photos_from_message/1` 函数
-   - 添加了 `extract_photos_from_tool_result/1` 函数
-   - 添加了 `normalize_photo/1` 函数
-   - 添加了 `render_photos/2` 函数
-   - 修改了消息渲染逻辑，在 `chat-bubble` 中显示图片
-   - 修改了 `handle_params`，显式选择 `tool_results` 字段
+   - 添加了 `extract_photos_from_message/1` 函数：从消息的 `tool_results` 中提取图片信息
+   - 添加了 `extract_photos_from_tool_result/1` 函数：解析 JSON 内容，支持多种数据结构
+   - 添加了 `normalize_photo/1` 函数：规范化图片数据，提取 `id`, `url`, `note` 字段
+   - 添加了 `normalize_photo_url/1` 函数：规范化图片 URL，处理绝对路径和相对路径
+   - 添加了 `render_photos/2` 函数：在消息中渲染图片网格（grid-cols-2 md:grid-cols-3）
+   - 修改了消息渲染逻辑：在 `chat-bubble` 中调用 `render_photos` 显示图片
+   - 修改了 `handle_params`：显式选择 `tool_results` 字段（因为 `public?: false`）
+   - 修复了 `Ash.read!` 中错误的 `stream?: true` 选项
 
 2. **lib/vmemo/chat/message.ex**：
-   - 修改了 PubSub 配置，在广播时包含 `tool_results` 字段
+   - 修改了 PubSub 配置：在 `publish :create` 和 `publish :upsert_response` 中包含 `tool_results` 字段
 
 3. **lib/vmemo/chat/message/changes/respond.ex**：
-   - 修复了 `message_chain` 函数，处理缺少 `tool_call_id` 的 `tool_results`
-   - 添加了过滤和规范化逻辑
+   - 修复了 `message_chain` 函数：处理缺少 `tool_call_id` 的 `tool_results`
+   - 添加了过滤逻辑：只处理包含有效 `tool_call_id` 的 `tool_results`
+   - 添加了键规范化逻辑：处理字符串和原子键的混合情况
 
-### 下一步
+### 功能特性
 
-- 测试在 `/chat` 中通过自然语言调用图片搜索功能，验证图片显示
-- 根据实际数据格式调整解析逻辑（如果需要）
+1. **图片提取**：
+   - 自动从 `tool_results` 中查找 `name == "search_photos"` 的结果
+   - 支持解析 JSON 字符串格式的 `content` 字段
+   - 支持多种数据结构（数组、对象、嵌套结构）
+
+2. **图片显示**：
+   - 图片以网格布局显示（移动端 2 列，桌面端 3 列）
+   - 图片显示在消息文本内容下方
+   - 图片可点击跳转到详情页
+   - 使用 `<.img>` 组件，支持懒加载
+
+3. **错误处理**：
+   - 处理缺少 `tool_call_id` 的 `tool_results`，避免运行时错误
+   - 处理无效的 JSON 格式，返回空列表
+   - 处理缺失的图片字段，跳过无效图片
+
+### 技术细节
+
+1. **数据流**：
+   ```
+   LLM 调用 search_photos tool
+     ↓
+   tool_results 保存到数据库（JSON 字符串格式）
+     ↓
+   消息加载时选择 tool_results 字段
+     ↓
+   extract_photos_from_message 提取图片
+     ↓
+   render_photos 渲染图片网格
+   ```
+
+2. **数据结构**：
+   - `tool_results`: `[{name: "search_photos", content: "[{id, url, note}]"}]`
+   - `content` 字段是 JSON 字符串，需要解析
+   - 解析后的图片数据：`%{id: uuid, url: string, note: string}`
+
+3. **URL 处理**：
+   - 支持相对路径：`/storage/v1/...`
+   - 支持绝对路径：`https://...`
+   - 自动处理错误的域名（example.com）转换为相对路径
+
+### 测试验证
+
+- ✅ 代码编译通过，无 linter 错误
+- ✅ 图片成功显示在消息气泡中（通过 Playwright 测试验证）
+- ✅ 图片网格布局正常
+- ✅ 图片点击跳转功能正常
+- ✅ 修复了 `tool_call_id` 缺失错误
+- ✅ 修复了数据加载问题
+
+### 已知限制
+
+1. 如果 `tool_results` 中缺少 `tool_call_id`，这些结果会被过滤掉，不会传递给 LangChain
+2. 图片显示依赖于 `tool_results` 中的 `content` 字段是有效的 JSON 字符串
+3. 图片 URL 必须是有效的路径，否则可能无法加载
+
+### 后续优化建议
+
+1. 考虑在保存 `tool_results` 时确保包含 `tool_call_id`
+2. 添加图片加载失败的错误处理
+3. 考虑添加图片预览功能（点击放大）
+4. 优化大量图片时的性能（虚拟滚动）

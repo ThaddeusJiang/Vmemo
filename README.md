@@ -119,7 +119,14 @@ curl -X DELETE http://localhost:4000/api/v1/photos/photo-uuid \
 
 #### 开发环境 (dev)
 
-开发环境使用 `config/dev.exs` 中的默认配置，**无需设置环境变量**。
+开发环境使用 `config/dev.exs` 中的默认配置，大部分配置都有默认值。
+
+**如果使用聊天功能**，需要在项目根目录创建 `mise.local.toml` 文件设置环境变量：
+
+```toml
+[env]
+OPENROUTER_API_KEY = "your-openrouter-api-key"
+```
 
 详细的开发环境配置说明，请参阅 [本地开发文档](docs/development/readme.md)。
 
@@ -175,6 +182,9 @@ TYPESENSE_API_KEY=your_typesense_api_key
 
 # Moondream AI 服务
 MOONDREAM_URL=http://moondream-host:2020/v1
+
+# OpenRouter API Key（如果使用聊天功能）
+OPENROUTER_API_KEY=your_openrouter_api_key
 
 # Phoenix 主机名（默认: vmemo.app）
 PHX_HOST=vmemo.app

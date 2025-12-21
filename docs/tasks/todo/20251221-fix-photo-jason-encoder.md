@@ -125,7 +125,7 @@
 - [x] 在 `search_photos` action 中添加 URL 规范化逻辑
 - [x] 创建 `get_base_url` 辅助函数
 - [x] 创建 `normalize_photo_url_for_api` 辅助函数
-- [ ] 测试修复是否有效
+- [x] 测试修复是否有效
 
 ### 阶段四：修复图片 URL 域名问题
 
@@ -147,12 +147,51 @@
 
 ## 最终总结
 
-- ✅ 已为 `Vmemo.Photos.Photo` 添加 `Jason.Encoder` protocol 实现
-- ✅ 在 `search_photos` action 中添加了 URL 规范化逻辑
-- ✅ URL 会根据环境自动转换为正确的绝对 URL（dev: localhost:4000, prod: PHX_HOST）
-- ✅ 代码检查通过，修复完成
-- ✅ **修复已验证生效**：重新测试后，LLM 生成的文本中 URL 正确使用 `http://localhost:4000/storage/v1/...`
-- ✅ 不再出现错误的域名 `https://example.com`
+### 完成的工作
+
+1. **修复 Jason.Encoder 错误**
+
+   - ✅ 为 `Vmemo.Photos.Photo` 添加 `@derive {Jason.Encoder, only: [...]}` 实现
+   - ✅ 指定需要编码的字段，排除敏感信息（`#Ash.NotLoaded`、`#Ecto.Schema.Metadata`）
+   - ✅ 确保 Ash AI Tools 可以正确序列化 `Photo` 结构体为 JSON
+
+2. **修复图片 URL 域名问题**
+
+   - ✅ 在 `search_photos` action 中添加 URL 规范化逻辑
+   - ✅ 创建 `normalize_photo_url_for_api/1` 函数处理 URL 转换
+   - ✅ 创建 `get_base_url/0` 函数根据环境返回正确的 base URL
+   - ✅ URL 会根据环境自动转换为正确的绝对 URL：
+     - Dev 环境：`http://localhost:4000`
+     - Prod 环境：`https://{PHX_HOST}`
+
+3. **测试验证**
+   - ✅ 代码检查通过，无 linter 错误
+   - ✅ 功能测试通过，URL 规范化正常工作
+   - ✅ LLM 生成的文本中 URL 正确使用 `http://localhost:4000/storage/v1/...`
+   - ✅ 不再出现错误的域名 `https://example.com`
+
+### 技术细节
+
+**修改的文件**：
+
+- `lib/vmemo/photos/photo.ex`：
+  - 添加 `@derive {Jason.Encoder, only: [...]}`
+  - 添加 `normalize_photo_url_for_api/1` 函数
+  - 添加 `get_base_url/0` 函数
+  - 在 `search_photos` action 的 `run` 函数中调用 URL 规范化
+
+**关键代码位置**：
+
+- `@derive` 声明：第 2-3 行
+- `search_photos` action：第 132-189 行
+- URL 规范化函数：第 275-310 行
+
+### 影响范围
+
+- ✅ Ash AI Tools 的 `search_photos` 工具现在可以正常工作
+- ✅ LLM 接收到的图片 URL 使用正确的域名
+- ✅ LLM 生成的文本中包含正确的图片 URL
+- ✅ 前端可以正确显示图片（通过 `normalize_photo_url` 函数处理）
 
 ### 测试结果
 
@@ -173,3 +212,19 @@
   2. ✅ LLM 生成的文本中 URL 正确：`http://localhost:4000/storage/v1/...`
   3. ✅ 不再使用错误的域名 `https://example.com`
 - **结论**：修复已生效，URL 规范化功能正常工作
+
+### 验证数据
+
+**测试消息示例**：
+
+```
+这是您请求的与"机器人"相关的图片：
+
+![机器人图片](http://localhost:4000/storage/v1/9786e239-6355-d37c-ed9d-cf0d2a762e13/photos/1764254212_c9bc32d8-2c4c-414f-a5aa-f410791bf919.jpg)
+```
+
+**验证要点**：
+
+- ✅ URL 使用 `http://localhost:4000` 而不是 `https://example.com`
+- ✅ URL 是完整的绝对路径，不是相对路径
+- ✅ 图片可以在浏览器中正确加载和显示
