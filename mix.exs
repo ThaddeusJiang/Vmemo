@@ -8,6 +8,7 @@ defmodule Vmemo.MixProject do
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      consolidate_protocols: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       compilers: Mix.compilers() ++ [],

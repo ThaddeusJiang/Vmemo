@@ -44,6 +44,7 @@ defmodule VmemoWeb.ChatLive do
           >
             <%= for {id, message} <- @streams.messages do %>
               <% photos = extract_photos_from_message(message) %>
+              <% is_thinking = is_thinking?(message) %>
               <div
                 id={id}
                 class={[
@@ -67,6 +68,7 @@ defmodule VmemoWeb.ChatLive do
                 </div>
                 <div class="chat-bubble">
                   {to_markdown(message.text)}
+                  {render_thinking(assigns, is_thinking)}
                   {render_photos(assigns, photos)}
                 </div>
               </div>
@@ -180,7 +182,15 @@ defmodule VmemoWeb.ChatLive do
     messages =
       Vmemo.Chat.Message
       |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
-      |> Ash.Query.select([:id, :text, :source, :tool_calls, :tool_results, :inserted_at])
+      |> Ash.Query.select([
+        :id,
+        :text,
+        :source,
+        :tool_calls,
+        :tool_results,
+        :complete,
+        :inserted_at
+      ])
       |> Ash.read!()
 
     socket
@@ -352,6 +362,20 @@ defmodule VmemoWeb.ChatLive do
     end
   end
 
+  defp render_thinking(assigns, true) do
+    ~H"""
+    <div class="mt-2 flex items-center gap-2 text-sm text-base-content/70">
+      <span class="loading loading-spinner loading-sm"></span>
+      <span>Thinking...</span>
+    </div>
+    """
+  end
+
+  defp render_thinking(assigns, false) do
+    ~H"""
+    """
+  end
+
   defp render_photos(assigns, photos) do
     if Enum.empty?(photos) do
       Phoenix.HTML.raw("")
@@ -404,22 +428,27 @@ defmodule VmemoWeb.ChatLive do
   defp normalize_photo_url(url), do: url
 
   defp extract_photos_from_message(message) do
-    case Map.get(message, :tool_results) do
-      nil ->
-        []
+    # If message is not complete (still thinking), don't show photos
+    if is_thinking?(message) do
+      []
+    else
+      case Map.get(message, :tool_results) do
+        nil ->
+          []
 
-      tool_results when is_list(tool_results) ->
-        tool_results
-        |> Enum.filter(fn result ->
-          result_name = get_result_name(result)
-          result_name == "search_photos" || result_name == :search_photos
-        end)
-        |> Enum.flat_map(fn result ->
-          extract_photos_from_tool_result(result)
-        end)
+        tool_results when is_list(tool_results) ->
+          tool_results
+          |> Enum.filter(fn result ->
+            result_name = get_result_name(result)
+            result_name == "search_photos" || result_name == :search_photos
+          end)
+          |> Enum.flat_map(fn result ->
+            extract_photos_from_tool_result(result)
+          end)
 
-      _ ->
-        []
+        _ ->
+          []
+      end
     end
   end
 
@@ -487,4 +516,10 @@ defmodule VmemoWeb.ChatLive do
   end
 
   defp normalize_photo(_), do: nil
+
+  defp is_thinking?(message) do
+    # Message is thinking if it's not complete yet
+    complete = Map.get(message, :complete)
+    complete == false || is_nil(complete)
+  end
 end
