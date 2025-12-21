@@ -1,4 +1,6 @@
 defmodule Vmemo.Photos.Photo do
+  @derive {Jason.Encoder,
+           only: [:id, :url, :note, :caption, :file_id, :ash_user_id, :inserted_at, :updated_at]}
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
@@ -174,6 +176,7 @@ defmodule Vmemo.Photos.Photo do
                     Enum.find(records, fn record -> record.id == id end)
                   end)
                   |> Enum.reject(&is_nil/1)
+                  |> Enum.map(&normalize_photo_url_for_api/1)
 
                 {:ok, sorted_records}
 
@@ -266,6 +269,43 @@ defmodule Vmemo.Photos.Photo do
       through Vmemo.Photos.PhotoNote
       source_attribute_on_join_resource :photo_id
       destination_attribute_on_join_resource :note_id
+    end
+  end
+
+  # Normalize photo URL for API responses (used in search_photos action)
+  defp normalize_photo_url_for_api(photo) do
+    base_url = get_base_url()
+
+    normalized_url =
+      cond do
+        # If URL is already absolute with wrong domain, extract path and rebuild
+        String.starts_with?(photo.url, "https://example.com") ->
+          path = String.replace_prefix(photo.url, "https://example.com", "")
+          base_url <> path
+
+        String.starts_with?(photo.url, "http://example.com") ->
+          path = String.replace_prefix(photo.url, "http://example.com", "")
+          base_url <> path
+
+        # If URL is already absolute with correct domain, keep as is
+        String.starts_with?(photo.url, "http://") or String.starts_with?(photo.url, "https://") ->
+          photo.url
+
+        # Relative path, convert to absolute URL
+        true ->
+          base_url <> photo.url
+      end
+
+    # Update the photo struct with normalized URL
+    %{photo | url: normalized_url}
+  end
+
+  defp get_base_url do
+    if Mix.env() == :prod do
+      host = System.get_env("PHX_HOST") || "vmemo.app"
+      "https://#{host}"
+    else
+      "http://localhost:4000"
     end
   end
 end

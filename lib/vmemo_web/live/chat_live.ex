@@ -43,6 +43,7 @@ defmodule VmemoWeb.ChatLive do
             class="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse"
           >
             <%= for {id, message} <- @streams.messages do %>
+              <% photos = extract_photos_from_message(message) %>
               <div
                 id={id}
                 class={[
@@ -66,6 +67,7 @@ defmodule VmemoWeb.ChatLive do
                 </div>
                 <div class="chat-bubble">
                   {to_markdown(message.text)}
+                  {render_photos(assigns, photos)}
                 </div>
               </div>
             <% end %>
@@ -175,9 +177,15 @@ defmodule VmemoWeb.ChatLive do
         VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
     end
 
+    messages =
+      Vmemo.Chat.Message
+      |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
+      |> Ash.Query.select([:id, :text, :source, :tool_calls, :tool_results, :inserted_at])
+      |> Ash.read!()
+
     socket
     |> assign(:conversation, conversation)
-    |> stream(:messages, Vmemo.Chat.message_history!(conversation.id, stream?: true))
+    |> stream(:messages, messages)
     |> assign_message_form()
     |> then(&{:noreply, &1})
   end
@@ -221,7 +229,47 @@ defmodule VmemoWeb.ChatLive do
         socket
       ) do
     if socket.assigns.conversation && socket.assigns.conversation.id == conversation_id do
-      {:noreply, stream_insert(socket, :messages, message, at: 0)}
+      # Merge with existing message data to preserve tool_results and other fields
+      # when updating an existing message in the stream
+      updated_message =
+        case socket.assigns.streams.messages[message.id] do
+          nil ->
+            # New message, use as is
+            message
+
+          existing_message ->
+            # Existing message, merge to preserve tool_results and other fields
+            # Prefer new values for text and source, but preserve tool_results if new value is nil/empty
+            Map.merge(existing_message, message, fn
+              :tool_results, existing_tool_results, new_tool_results ->
+                # Preserve tool_results if new value is nil or empty
+                if is_nil(new_tool_results) ||
+                     (is_list(new_tool_results) && Enum.empty?(new_tool_results)) do
+                  existing_tool_results
+                else
+                  new_tool_results
+                end
+
+              :tool_calls, existing_tool_calls, new_tool_calls ->
+                # Preserve tool_calls if new value is nil or empty
+                if is_nil(new_tool_calls) ||
+                     (is_list(new_tool_calls) && Enum.empty?(new_tool_calls)) do
+                  existing_tool_calls
+                else
+                  new_tool_calls
+                end
+
+              _key, existing_value, new_value ->
+                # For other fields, use new value (or existing if new is nil)
+                if is_nil(new_value) do
+                  existing_value
+                else
+                  new_value
+                end
+            end)
+        end
+
+      {:noreply, stream_insert(socket, :messages, updated_message, at: 0)}
     else
       {:noreply, socket}
     end
@@ -303,4 +351,140 @@ defmodule VmemoWeb.ChatLive do
         text
     end
   end
+
+  defp render_photos(assigns, photos) do
+    if Enum.empty?(photos) do
+      Phoenix.HTML.raw("")
+    else
+      assigns = assign(assigns, :photos, photos)
+
+      ~H"""
+      <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
+        <%= for photo <- @photos do %>
+          <div class="relative">
+            <.link navigate={~p"/photos/#{photo.id}"} class="block">
+              <.img
+                src={normalize_photo_url(photo.url)}
+                alt={photo.note || "Photo"}
+                class="w-full h-auto rounded-lg"
+              />
+            </.link>
+          </div>
+        <% end %>
+      </div>
+      """
+    end
+  end
+
+  defp normalize_photo_url(url) when is_binary(url) do
+    url_lower = String.downcase(url)
+
+    cond do
+      # If URL is absolute with wrong domain (example.com), convert to relative path
+      # Handle case-insensitive matching
+      String.starts_with?(url_lower, "https://example.com") ->
+        # Extract path after domain (case-insensitive)
+        prefix_length = String.length("https://example.com")
+        String.slice(url, prefix_length..-1//1)
+
+      String.starts_with?(url_lower, "http://example.com") ->
+        prefix_length = String.length("http://example.com")
+        String.slice(url, prefix_length..-1//1)
+
+      # If URL is absolute with correct domain, keep as is
+      String.starts_with?(url, "http://") or String.starts_with?(url, "https://") ->
+        url
+
+      # Relative path, keep as is (browser will use current domain)
+      true ->
+        url
+    end
+  end
+
+  defp normalize_photo_url(url), do: url
+
+  defp extract_photos_from_message(message) do
+    case Map.get(message, :tool_results) do
+      nil ->
+        []
+
+      tool_results when is_list(tool_results) ->
+        tool_results
+        |> Enum.filter(fn result ->
+          result_name = get_result_name(result)
+          result_name == "search_photos" || result_name == :search_photos
+        end)
+        |> Enum.flat_map(fn result ->
+          extract_photos_from_tool_result(result)
+        end)
+
+      _ ->
+        []
+    end
+  end
+
+  defp get_result_name(result) when is_map(result) do
+    Map.get(result, "name") || Map.get(result, :name)
+  end
+
+  defp get_result_name(_), do: nil
+
+  defp extract_photos_from_tool_result(result) do
+    content = Map.get(result, "content") || Map.get(result, :content)
+
+    if is_binary(content) and content != "" do
+      case Jason.decode(content) do
+        {:ok, decoded} when is_list(decoded) ->
+          decoded
+          |> Enum.map(&normalize_photo/1)
+          |> Enum.reject(&is_nil/1)
+
+        {:ok, decoded} when is_map(decoded) ->
+          # Handle case where content is a single object or wrapped in a structure
+          case Map.get(decoded, "data") || Map.get(decoded, :data) do
+            nil ->
+              case normalize_photo(decoded) do
+                nil -> []
+                photo -> [photo]
+              end
+
+            data when is_list(data) ->
+              data
+              |> Enum.map(&normalize_photo/1)
+              |> Enum.reject(&is_nil/1)
+
+            data when is_map(data) ->
+              case normalize_photo(data) do
+                nil -> []
+                photo -> [photo]
+              end
+
+            _ ->
+              []
+          end
+
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  defp normalize_photo(data) when is_map(data) do
+    id = Map.get(data, "id") || Map.get(data, :id)
+    url = Map.get(data, "url") || Map.get(data, :url)
+
+    if id && url do
+      %{
+        id: id,
+        url: normalize_photo_url(url),
+        note: Map.get(data, "note") || Map.get(data, :note) || ""
+      }
+    else
+      nil
+    end
+  end
+
+  defp normalize_photo(_), do: nil
 end

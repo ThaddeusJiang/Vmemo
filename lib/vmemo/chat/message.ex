@@ -138,13 +138,23 @@ defmodule Vmemo.Chat.Message do
 
     publish :create, ["messages", :conversation_id] do
       transform fn %{data: message} ->
-        %{text: message.text, id: message.id, source: message.source}
+        %{
+          text: message.text,
+          id: message.id,
+          source: message.source,
+          tool_results: message.tool_results
+        }
       end
     end
 
     publish :upsert_response, ["messages", :conversation_id] do
       transform fn %{data: message} ->
-        %{text: message.text, id: message.id, source: message.source}
+        %{
+          text: message.text,
+          id: message.id,
+          source: message.source,
+          tool_results: message.tool_results
+        }
       end
     end
   end

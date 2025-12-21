@@ -157,26 +157,42 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
           })
 
         if message.tool_results && !Enum.empty?(message.tool_results) do
-          [
-            langchain_message,
-            LangChain.Message.new_tool_result!(%{
-              tool_results:
-                Enum.map(
-                  message.tool_results,
-                  &LangChain.Message.ToolResult.new!(
-                    Map.take(&1, [
-                      "type",
-                      "tool_call_id",
-                      "name",
-                      "content",
-                      "display_text",
-                      "is_error",
-                      "options"
-                    ])
-                  )
-                )
-            })
-          ]
+          # Filter and map tool_results, ensuring tool_call_id exists
+          valid_tool_results =
+            message.tool_results
+            |> Enum.filter(fn tr ->
+              tool_call_id = Map.get(tr, "tool_call_id") || Map.get(tr, :tool_call_id)
+              not is_nil(tool_call_id) && tool_call_id != ""
+            end)
+            |> Enum.map(fn tr ->
+              # Normalize keys (handle both string and atom keys)
+              tr
+              |> Map.new(fn
+                {k, v} when is_atom(k) -> {to_string(k), v}
+                {k, v} -> {k, v}
+              end)
+              |> Map.take([
+                "type",
+                "tool_call_id",
+                "name",
+                "content",
+                "display_text",
+                "is_error",
+                "options"
+              ])
+            end)
+
+          if Enum.empty?(valid_tool_results) do
+            [langchain_message]
+          else
+            [
+              langchain_message,
+              LangChain.Message.new_tool_result!(%{
+                tool_results:
+                  Enum.map(valid_tool_results, &LangChain.Message.ToolResult.new!/1)
+              })
+            ]
+          end
         else
           [langchain_message]
         end
