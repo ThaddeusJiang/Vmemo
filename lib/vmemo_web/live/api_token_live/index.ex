@@ -35,7 +35,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
+          <.button variant="ghost" phx-click="clear_error">Close</.button>
         </div>
         
     <!-- Loading state -->
@@ -131,7 +131,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     variant="ghost"
                     phx-click="toggle_token_status"
                     phx-value-id={token.id}
-                    class={if token.is_active, do: "btn-sm text-warning", else: "btn-sm text-success"}
+                    class={if token.is_active, do: "text-warning", else: "text-success"}
                   >
                     <.icon
                       name={if token.is_active, do: "hero-pause", else: "hero-play"}
@@ -142,7 +142,6 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     variant="danger"
                     phx-click="delete_token"
                     phx-value-id={token.id}
-                    class="btn-sm"
                   >
                     <.icon name="hero-trash" class="h-4 w-4" />
                   </.button>

@@ -16,7 +16,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
+          <.button variant="ghost" phx-click="clear_error">Close</.button>
         </div>
         
     <!-- Loading state -->

@@ -103,7 +103,7 @@ defmodule VmemoWeb.ChatLive do
             Conversations
           </div>
           <div class="mb-4">
-            <.link navigate={~p"/chat"} class="btn btn-primary btn-lg mb-2">
+            <.link navigate={~p"/chat"} class="btn btn-primary mb-2">
               <div class="rounded-full bg-primary-content text-primary w-6 h-6 flex items-center justify-center">
                 <.icon name="hero-plus" />
               </div>

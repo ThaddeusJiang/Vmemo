@@ -292,7 +292,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                         phx-target={@myself}
                         phx-value-ref={entry.ref}
                         aria-label="cancel"
-                        class="absolute top-1 right-1 btn btn-xs btn-circle btn-error"
+                        class="absolute top-1 right-1 btn btn-circle btn-error"
                       >
                         &times;
                       </.button>

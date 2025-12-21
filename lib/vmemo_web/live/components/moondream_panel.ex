@@ -343,7 +343,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
               <button
                 :for={tag <- get_detection_tags(@requests)}
                 type="button"
-                class="btn btn-sm btn-outline rounded-full"
+                class="btn btn-outline rounded-full"
                 phx-click="set_prompt"
                 phx-target={@myself}
                 phx-value-prompt={tag}
@@ -357,7 +357,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
             <label
               :for={func <- function_types()}
               class={[
-                "btn btn-sm rounded-lg",
+                "btn rounded-lg",
                 if(@function == func, do: "btn-primary", else: "btn-outline"),
                 if(is_segment_disabled?(func),
                   do: "opacity-50 cursor-not-allowed",
