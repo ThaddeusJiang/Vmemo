@@ -43,6 +43,15 @@ See `AGENTS-elixir-phoenix-liveview.md`
 
 - **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
 
+- **Component organization**:
+  - **Always** split complex UI logic into LiveComponents when:
+    - Single file exceeds ~500 lines
+    - UI section has independent state and event handling
+    - Component can be reused in multiple places
+  - **Keep components focused**: Each component should handle a single responsibility
+  - **Component communication**: Use `send(self(), {:event, data})` to notify parent LiveView when component needs to update parent state
+  - **File location**: Place components in `lib/vmemo_web/live/components/` directory
+
 **PostgreSQL rules**
 
 - Do **not** use `LIKE` operators! use Postgres built-in `Full Text Search` Queries.
