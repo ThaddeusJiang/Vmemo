@@ -32,6 +32,10 @@ defmodule Vmemo.Chat.Conversation do
       change relate_actor(:user)
     end
 
+    update :update do
+      accept [:title]
+    end
+
     update :generate_name do
       accept []
       transaction? false

@@ -5,6 +5,7 @@ defmodule Vmemo.Chat do
     resource Vmemo.Chat.Conversation do
       define :create_conversation, action: :create
       define :get_conversation, action: :read, get_by: [:id]
+      define :update_conversation, action: :update
       define :my_conversations
     end
 

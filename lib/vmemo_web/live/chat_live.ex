@@ -32,8 +32,46 @@ defmodule VmemoWeb.ChatLive do
             height="48"
           />
           <div class="mx-2 flex-1 px-2">
-            <p :if={@conversation}>{build_conversation_title_string(@conversation.title)}</p>
-            <p class="text-xs">AshAi</p>
+            <div :if={@conversation} class="flex items-center gap-2">
+              <div :if={@editing_title} class="flex-1 flex items-center gap-2">
+                <form
+                  phx-submit="save_title"
+                  class="flex-1 flex items-center gap-2"
+                >
+                  <input
+                    type="text"
+                    value={@conversation.title || ""}
+                    phx-keydown="handle_title_keydown"
+                    name="title"
+                    class="input input-sm input-bordered flex-1"
+                    autofocus
+                  />
+                  <button
+                    type="submit"
+                    class="btn btn-sm btn-ghost"
+                    aria-label="Save"
+                  >
+                    <.icon name="hero-check-circle" class="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    phx-click="cancel_edit_title"
+                    class="btn btn-sm btn-ghost"
+                    aria-label="Cancel"
+                  >
+                    <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
+              <div
+                :if={!@editing_title}
+                phx-click="start_edit_title"
+                class="cursor-pointer hover:opacity-70 flex-1"
+              >
+                {build_conversation_title_string(@conversation.title)}
+              </div>
+            </div>
+            <div class="text-xs">AshAi</div>
           </div>
         </div>
         <div class="flex-1 flex flex-col overflow-y-scroll bg-base-200 max-h-[calc(100dvh-8rem)]">
@@ -151,6 +189,7 @@ defmodule VmemoWeb.ChatLive do
       socket
       |> assign(:page_title, "Chat")
       |> assign(:conversation, nil)
+      |> assign(:editing_title, false)
       |> stream(
         :conversations,
         Vmemo.Chat.my_conversations!(actor: user)
@@ -195,6 +234,7 @@ defmodule VmemoWeb.ChatLive do
 
     socket
     |> assign(:conversation, conversation)
+    |> assign(:editing_title, false)
     |> stream(:messages, messages)
     |> assign_message_form()
     |> then(&{:noreply, &1})
@@ -207,6 +247,7 @@ defmodule VmemoWeb.ChatLive do
 
     socket
     |> assign(:conversation, nil)
+    |> assign(:editing_title, false)
     |> stream(:messages, [])
     |> assign_message_form()
     |> then(&{:noreply, &1})
@@ -300,6 +341,62 @@ defmodule VmemoWeb.ChatLive do
       end
 
     {:noreply, stream_insert(socket, :conversations, conversation)}
+  end
+
+  def handle_event("start_edit_title", _params, socket) do
+    {:noreply, assign(socket, :editing_title, true)}
+  end
+
+  def handle_event("cancel_edit_title", _params, socket) do
+    {:noreply, assign(socket, :editing_title, false)}
+  end
+
+  def handle_event("handle_title_keydown", %{"key" => "Escape"}, socket) do
+    {:noreply, assign(socket, :editing_title, false)}
+  end
+
+  def handle_event("handle_title_keydown", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("save_title", %{"title" => title}, socket) do
+    save_title(socket, title)
+  end
+
+  def handle_event("save_title", _params, socket) do
+    # Fallback if title is not in params
+    title =
+      if socket.assigns[:conversation], do: socket.assigns.conversation.title || "", else: ""
+
+    save_title(socket, title)
+  end
+
+  defp save_title(socket, title) do
+    if socket.assigns[:conversation] do
+      user = socket.assigns.current_ash_user
+      conversation = socket.assigns.conversation
+      trimmed_title = String.trim(title)
+
+      # Allow empty title (will be nil in database)
+      title_to_save = if trimmed_title == "", do: nil, else: trimmed_title
+
+      case Vmemo.Chat.update_conversation(
+             conversation,
+             %{title: title_to_save},
+             actor: user
+           ) do
+        {:ok, updated_conversation} ->
+          socket
+          |> assign(:conversation, updated_conversation)
+          |> assign(:editing_title, false)
+          |> then(&{:noreply, &1})
+
+        {:error, _error} ->
+          {:noreply, assign(socket, :editing_title, false)}
+      end
+    else
+      {:noreply, assign(socket, :editing_title, false)}
+    end
   end
 
   defp assign_message_form(socket) do
