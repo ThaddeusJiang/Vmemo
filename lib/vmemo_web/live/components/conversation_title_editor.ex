@@ -1,6 +1,7 @@
 defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
   use VmemoWeb, :live_component
 
+  alias Phoenix.LiveView.JS
   alias Vmemo.Chat
 
   @impl true
@@ -23,16 +24,16 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
         >
           <input
             type="text"
+            id={"title-input-#{@id}"}
             value={@conversation.title || ""}
             phx-keydown="handle_keydown"
             phx-target={@myself}
             name="title"
-            class="input input-sm input-bordered flex-1"
-            autofocus
+            class="input input-bordered flex-1"
           />
           <button
             type="submit"
-            class="btn btn-sm btn-ghost"
+            class="btn btn-sm btn-ghost btn-circle"
             aria-label="Save"
           >
             <.icon name="hero-check-circle" class="h-4 w-4" />
@@ -41,7 +42,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
             type="button"
             phx-click="cancel"
             phx-target={@myself}
-            class="btn btn-sm btn-ghost"
+            class="btn btn-sm btn-ghost btn-circle"
             aria-label="Cancel"
           >
             <.icon name="hero-x-mark-solid" class="h-4 w-4" />
@@ -52,7 +53,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
         :if={!@editing}
         phx-click="start_edit"
         phx-target={@myself}
-        class="cursor-pointer hover:opacity-70 flex-1"
+        class="cursor-pointer hover:opacity-70 flex-1 text-base"
       >
         {build_title_string(@conversation.title)}
       </div>
@@ -62,7 +63,16 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
 
   @impl true
   def handle_event("start_edit", _params, socket) do
-    {:noreply, assign(socket, :editing, true)}
+    socket = assign(socket, :editing, true)
+    # Push event to focus and select all text after a short delay
+    socket =
+      Phoenix.LiveView.push_event(socket, "focus", %{
+        selector: "#title-input-#{socket.assigns.id}",
+        delay: 50,
+        select_all: true
+      })
+
+    {:noreply, socket}
   end
 
   def handle_event("cancel", _params, socket) do

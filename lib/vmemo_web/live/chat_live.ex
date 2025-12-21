@@ -28,8 +28,7 @@ defmodule VmemoWeb.ChatLive do
           <img
             src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
             alt="Logo"
-            class="h-12"
-            height="48"
+            class="w-12 h-12"
           />
           <div class="mx-2 flex-1 px-2">
             <div :if={@conversation}>
@@ -40,7 +39,6 @@ defmodule VmemoWeb.ChatLive do
                 current_ash_user={@current_ash_user}
               />
             </div>
-            <div class="text-xs">AshAi</div>
           </div>
         </div>
         <div class="flex-1 flex flex-col overflow-y-scroll bg-base-200 max-h-[calc(100dvh-8rem)]">
