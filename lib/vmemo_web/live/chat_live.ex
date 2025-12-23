@@ -102,7 +102,12 @@ defmodule VmemoWeb.ChatLive do
                   </div>
                 </div>
                 <div class="chat-bubble">
-                  {to_markdown(message.text)}
+                  <.live_component
+                    id={"markdown-#{id}"}
+                    module={VmemoWeb.LiveComponents.MarkdownContent}
+                    text={message.text}
+                    current_ash_user={@current_ash_user}
+                  />
                   {render_thinking(assigns, is_thinking)}
                   {render_photos(assigns, photos)}
                 </div>
@@ -487,40 +492,6 @@ defmodule VmemoWeb.ChatLive do
     )
   end
 
-  defp to_markdown(text) do
-    # Note that you must pass the "unsafe: true" option to first generate the raw HTML
-    # in order to sanitize it. https://hexdocs.pm/mdex/MDEx.html#module-sanitize
-    MDEx.to_html(text,
-      extension: [
-        strikethrough: true,
-        tagfilter: true,
-        table: true,
-        autolink: true,
-        tasklist: true,
-        footnotes: true,
-        shortcodes: true
-      ],
-      parse: [
-        smart: true,
-        relaxed_tasklist_matching: true,
-        relaxed_autolinks: true
-      ],
-      render: [
-        github_pre_lang: true,
-        unsafe: true
-      ],
-      sanitize: MDEx.Document.default_sanitize_options()
-    )
-    |> case do
-      {:ok, html} ->
-        html
-        |> Phoenix.HTML.raw()
-
-      {:error, _} ->
-        text
-    end
-  end
-
   defp render_thinking(assigns, true) do
     ~H"""
     <div class="mt-2 flex items-center gap-2 text-sm text-base-content/70">
@@ -543,16 +514,12 @@ defmodule VmemoWeb.ChatLive do
 
       ~H"""
       <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
-        <%= for photo <- @photos do %>
-          <div class="relative">
-            <.link navigate={~p"/photos/#{photo.id}"} class="block">
-              <.img
-                src={normalize_photo_url(photo.url)}
-                alt={photo.note || "Photo"}
-                class="w-full h-auto rounded-lg"
-              />
-            </.link>
-          </div>
+        <%= for {photo, index} <- Enum.with_index(@photos) do %>
+          <.live_component
+            id={"photo-card-#{index}"}
+            module={VmemoWeb.LiveComponents.PhotoCard}
+            photo={photo}
+          />
         <% end %>
       </div>
       """
