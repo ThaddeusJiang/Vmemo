@@ -1,7 +1,6 @@
 defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
   use VmemoWeb, :live_component
 
-  alias Phoenix.LiveView.JS
   alias Vmemo.Chat
 
   @impl true

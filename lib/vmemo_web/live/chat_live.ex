@@ -40,6 +40,36 @@ defmodule VmemoWeb.ChatLive do
               />
             </div>
           </div>
+          <div :if={@conversation} class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-square">
+              <.icon name="hero-ellipsis-vertical" class="h-5 w-5" />
+            </div>
+            <ul
+              tabindex="0"
+              class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow border"
+            >
+              <li>
+                <button
+                  type="button"
+                  phx-click="archive_conversation"
+                  phx-value-id={@conversation.id}
+                  class="text-base-content"
+                >
+                  <.icon name="hero-archive-box" class="h-4 w-4" /> Archive
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  phx-click="delete_conversation"
+                  phx-value-id={@conversation.id}
+                  class="text-error"
+                >
+                  <.icon name="hero-trash" class="h-4 w-4" /> Delete
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
         <div class="flex-1 flex flex-col overflow-y-scroll bg-base-200 max-h-[calc(100dvh-8rem)]">
           <div
@@ -150,6 +180,7 @@ defmodule VmemoWeb.ChatLive do
       socket
       |> assign(:page_title, "Chat")
       |> assign(:conversation, nil)
+      |> stream_configure(:conversations, dom_id: &"conversation-#{&1.id}")
       |> stream(
         :conversations,
         Vmemo.Chat.my_conversations!(actor: user)
@@ -163,40 +194,44 @@ defmodule VmemoWeb.ChatLive do
   def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
     user = socket.assigns.current_ash_user
 
-    conversation =
-      Vmemo.Chat.get_conversation!(conversation_id, actor: user)
+    case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
+      {:ok, conversation} ->
+        cond do
+          socket.assigns[:conversation] && socket.assigns[:conversation].id == conversation.id ->
+            :ok
 
-    cond do
-      socket.assigns[:conversation] && socket.assigns[:conversation].id == conversation.id ->
-        :ok
+          socket.assigns[:conversation] ->
+            VmemoWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
+            VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
 
-      socket.assigns[:conversation] ->
-        VmemoWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
-        VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
+          true ->
+            VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
+        end
 
-      true ->
-        VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
+        messages =
+          Vmemo.Chat.Message
+          |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
+          |> Ash.Query.select([
+            :id,
+            :text,
+            :source,
+            :tool_calls,
+            :tool_results,
+            :complete,
+            :inserted_at
+          ])
+          |> Ash.read!()
+
+        socket
+        |> assign(:conversation, conversation)
+        |> stream(:messages, messages)
+        |> assign_message_form()
+        |> then(&{:noreply, &1})
+
+      {:error, _} ->
+        # Conversation not found (deleted or doesn't exist), redirect to chat list
+        {:noreply, push_navigate(socket, to: ~p"/chat")}
     end
-
-    messages =
-      Vmemo.Chat.Message
-      |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
-      |> Ash.Query.select([
-        :id,
-        :text,
-        :source,
-        :tool_calls,
-        :tool_results,
-        :complete,
-        :inserted_at
-      ])
-      |> Ash.read!()
-
-    socket
-    |> assign(:conversation, conversation)
-    |> stream(:messages, messages)
-    |> assign_message_form()
-    |> then(&{:noreply, &1})
   end
 
   def handle_params(_, _, socket) do
@@ -227,6 +262,112 @@ defmodule VmemoWeb.ChatLive do
 
       {:error, form} ->
         {:noreply, assign(socket, :message_form, form)}
+    end
+  end
+
+  def handle_event("archive_conversation", %{"id" => conversation_id}, socket) do
+    user = socket.assigns.current_ash_user
+
+    case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
+      {:ok, conversation} ->
+        case Vmemo.Chat.archive_conversation(conversation, actor: user) do
+          {:ok, _archived_conversation} ->
+            # Remove from stream and navigate away if it's the current conversation
+            socket =
+              socket
+              |> put_flash(:info, "Conversation archived")
+              |> stream_delete(:conversations, conversation)
+              |> then(fn s ->
+                if s.assigns[:conversation] && s.assigns.conversation.id == conversation_id do
+                  push_navigate(s, to: ~p"/chat")
+                else
+                  s
+                end
+              end)
+
+            {:noreply, socket}
+
+          {:error, _error} ->
+            {:noreply, put_flash(socket, :error, "Failed to archive conversation")}
+        end
+
+      {:error, _} ->
+        # Conversation not found, try to find it in stream and remove
+        conversation_in_stream =
+          Enum.find(socket.assigns.streams.conversations.inserts, fn {_id, conv} ->
+            conv.id == conversation_id
+          end)
+
+        socket =
+          if conversation_in_stream do
+            {_id, conv} = conversation_in_stream
+            stream_delete(socket, :conversations, conv)
+          else
+            socket
+          end
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("delete_conversation", %{"id" => conversation_id}, socket) do
+    user = socket.assigns.current_ash_user
+
+    case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
+      {:ok, conversation} ->
+        case Vmemo.Chat.delete_conversation(conversation, actor: user) do
+          :ok ->
+            # Remove from stream and navigate away if it's the current conversation
+            socket =
+              socket
+              |> put_flash(:info, "Conversation deleted")
+              |> stream_delete(:conversations, conversation)
+              |> then(fn s ->
+                if s.assigns[:conversation] && s.assigns.conversation.id == conversation_id do
+                  push_navigate(s, to: ~p"/chat")
+                else
+                  s
+                end
+              end)
+
+            {:noreply, socket}
+
+          {:ok, _} ->
+            # Same handling for {:ok, destroyed} case
+            socket =
+              socket
+              |> put_flash(:info, "Conversation deleted")
+              |> stream_delete(:conversations, conversation)
+              |> then(fn s ->
+                if s.assigns[:conversation] && s.assigns.conversation.id == conversation_id do
+                  push_navigate(s, to: ~p"/chat")
+                else
+                  s
+                end
+              end)
+
+            {:noreply, socket}
+
+          {:error, _error} ->
+            {:noreply, put_flash(socket, :error, "Failed to delete conversation")}
+        end
+
+      {:error, _} ->
+        # Conversation not found, try to find it in stream and remove
+        conversation_in_stream =
+          Enum.find(socket.assigns.streams.conversations.inserts, fn {_id, conv} ->
+            conv.id == conversation_id
+          end)
+
+        socket =
+          if conversation_in_stream do
+            {_id, conv} = conversation_in_stream
+            stream_delete(socket, :conversations, conv)
+          else
+            socket
+          end
+
+        {:noreply, socket}
     end
   end
 

@@ -25,7 +25,11 @@ defmodule Vmemo.Chat.Conversation do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      change Vmemo.Chat.Conversation.Changes.DeleteMessagesBeforeDestroy
+    end
 
     create :create do
       accept [:title]
@@ -43,8 +47,17 @@ defmodule Vmemo.Chat.Conversation do
       change Vmemo.Chat.Conversation.Changes.GenerateName
     end
 
+    update :archive do
+      accept []
+      require_atomic? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(changeset, :archived_at, DateTime.utc_now())
+      end
+    end
+
     read :my_conversations do
-      filter expr(user_id == ^actor(:id))
+      filter expr(user_id == ^actor(:id) and is_nil(archived_at))
     end
   end
 
@@ -65,6 +78,10 @@ defmodule Vmemo.Chat.Conversation do
     uuid_v7_primary_key :id
 
     attribute :title, :string do
+      public? true
+    end
+
+    attribute :archived_at, :utc_datetime do
       public? true
     end
 

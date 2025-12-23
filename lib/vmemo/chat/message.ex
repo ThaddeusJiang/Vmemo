@@ -24,6 +24,11 @@ defmodule Vmemo.Chat.Message do
   postgres do
     table "messages"
     repo Vmemo.AshRepo
+
+    references do
+      reference :conversation, on_delete: :delete
+      reference :response_to, on_delete: :delete
+    end
   end
 
   actions do
