@@ -253,6 +253,7 @@ defmodule VmemoWeb.ChatLive do
           socket
           |> assign_message_form()
           |> stream_insert(:messages, message, at: 0)
+          |> push_event("reset_form", %{form_id: "message-form"})
           |> then(&{:noreply, &1})
         else
           {:noreply,
