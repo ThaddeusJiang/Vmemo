@@ -381,8 +381,14 @@ defmodule VmemoWeb.ChatLive do
     if socket.assigns.conversation && socket.assigns.conversation.id == conversation_id do
       # Merge with existing message data to preserve tool_results and other fields
       # when updating an existing message in the stream
+      existing_message =
+        socket.assigns.streams.messages.inserts
+        |> Enum.find_value(fn {_id, msg} ->
+          if msg.id == message.id, do: msg
+        end)
+
       updated_message =
-        case socket.assigns.streams.messages[message.id] do
+        case existing_message do
           nil ->
             # New message, use as is
             message

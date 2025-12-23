@@ -147,6 +147,8 @@ defmodule Vmemo.Chat.Message do
           text: message.text,
           id: message.id,
           source: message.source,
+          complete: message.complete,
+          tool_calls: message.tool_calls,
           tool_results: message.tool_results
         }
       end
@@ -158,6 +160,8 @@ defmodule Vmemo.Chat.Message do
           text: message.text,
           id: message.id,
           source: message.source,
+          complete: message.complete,
+          tool_calls: message.tool_calls,
           tool_results: message.tool_results
         }
       end

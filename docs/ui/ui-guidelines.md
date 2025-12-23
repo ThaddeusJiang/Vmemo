@@ -41,3 +41,9 @@ shadcn/ui form cancel button is a ghost button.
 - **Never** use HTML `width` or `height` attributes
 - **Why**: Prevents layout shift and flickering when images load slowly
 - **Example**: Use `class="w-12 h-12"` instead of `class="h-12" height="48"`
+
+## List
+
+- **Always** sort lists by `inserted_at` (created time) by default, not `updated_at`
+- **Why**: Provides consistent and predictable ordering based on creation time
+- **Example**: Use `prepare build(default_sort: [inserted_at: :desc])` in Ash read actions

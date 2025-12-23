@@ -58,6 +58,8 @@ defmodule Vmemo.Chat.Conversation do
 
     read :my_conversations do
       filter expr(user_id == ^actor(:id) and is_nil(archived_at))
+
+      prepare build(default_sort: [inserted_at: :desc])
     end
   end
 
