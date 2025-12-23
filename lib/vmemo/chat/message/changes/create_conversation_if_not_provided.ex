@@ -11,7 +11,11 @@ defmodule Vmemo.Chat.Message.Changes.CreateConversationIfNotProvided do
       )
     else
       Ash.Changeset.before_action(changeset, fn changeset ->
-        conversation = Vmemo.Chat.create_conversation!(Ash.Context.to_opts(context))
+        conversation =
+          Vmemo.Chat.create_conversation!(
+            %{title: "untitled"},
+            Ash.Context.to_opts(context)
+          )
 
         Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation.id)
       end)
