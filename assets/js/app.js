@@ -48,7 +48,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
 liveSocket.connect()
 
 // Handle form reset events from LiveView
-window.addEventListener('phx:reset_form', (event) => {
+window.addEventListener("phx:reset_form", (event) => {
   const { form_id } = event.detail
   const form = document.getElementById(form_id)
   if (form) {
