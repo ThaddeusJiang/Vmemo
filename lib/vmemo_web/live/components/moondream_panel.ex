@@ -187,33 +187,41 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
   defp extract_point_coordinates(result) when is_map(result) do
     cond do
-      Map.has_key?(result, "x") and Map.has_key?(result, "y") ->
-        x = normalize_coordinate(Map.get(result, "x"))
-        y = normalize_coordinate(Map.get(result, "y"))
-        if x != nil and y != nil, do: {x, y}, else: nil
-
+      # Handle multiple points
       Map.has_key?(result, "points") and is_list(result["points"]) ->
-        case result["points"] do
-          [point | _] when is_map(point) ->
+        points =
+          result["points"]
+          |> Enum.filter(fn point ->
+            is_map(point) and Map.has_key?(point, "x") and Map.has_key?(point, "y")
+          end)
+          |> Enum.map(fn point ->
             x = normalize_coordinate(Map.get(point, "x"))
             y = normalize_coordinate(Map.get(point, "y"))
             if x != nil and y != nil, do: {x, y}, else: nil
+          end)
+          |> Enum.filter(&(&1 != nil))
 
-          _ ->
-            nil
-        end
+        if points != [], do: {:multiple, points}, else: nil
 
+      # Handle single point with x and y
+      Map.has_key?(result, "x") and Map.has_key?(result, "y") ->
+        x = normalize_coordinate(Map.get(result, "x"))
+        y = normalize_coordinate(Map.get(result, "y"))
+        if x != nil and y != nil, do: {:single, {x, y}}, else: nil
+
+      # Handle single point in "point" key
       Map.has_key?(result, "point") and is_map(result["point"]) ->
         point = result["point"]
         x = normalize_coordinate(Map.get(point, "x"))
         y = normalize_coordinate(Map.get(point, "y"))
-        if x != nil and y != nil, do: {x, y}, else: nil
+        if x != nil and y != nil, do: {:single, {x, y}}, else: nil
 
+      # Handle coordinates
       Map.has_key?(result, "coordinates") and is_map(result["coordinates"]) ->
         coords = result["coordinates"]
         x = normalize_coordinate(Map.get(coords, "x"))
         y = normalize_coordinate(Map.get(coords, "y"))
-        if x != nil and y != nil, do: {x, y}, else: nil
+        if x != nil and y != nil, do: {:single, {x, y}}, else: nil
 
       true ->
         nil
@@ -425,8 +433,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
                 {cond do
                   request.function_type == "point" ->
                     case extract_point_coordinates(request.result) do
-                      {x, y} when is_number(x) and is_number(y) ->
-                        render_point_result(assigns, request, x, y)
+                      {:single, {x, y}} when is_number(x) and is_number(y) ->
+                        render_point_result(assigns, request, [{x, y}])
+
+                      {:multiple, points} when is_list(points) and length(points) > 0 ->
+                        render_point_result(assigns, request, points)
 
                       _ ->
                         render_text_result(assigns, request)
@@ -476,12 +487,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     """
   end
 
-  defp render_point_result(assigns, request, x, y) do
+  defp render_point_result(assigns, request, points) when is_list(points) do
     assigns =
       assigns
       |> assign(:request, request)
-      |> assign(:point_x, x)
-      |> assign(:point_y, y)
+      |> assign(:points, points)
 
     ~H"""
     <div class="space-y-2">
@@ -491,18 +501,20 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         phx-hook="MoondreamOverlay"
       >
         <.img src={@photo.url} alt={@photo.note || "Photo"} class="w-full h-auto rounded-lg" />
-        <span
-          class="absolute pointer-events-none z-10"
-          data-x={@point_x}
-          data-y={@point_y}
-          style="transform: translate(-50%, -50%);"
-        >
-          <span class="relative flex size-2">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75">
+        <%= for {x, y} <- @points do %>
+          <span
+            class="absolute pointer-events-none z-10"
+            data-x={x}
+            data-y={y}
+            style="transform: translate(-50%, -50%);"
+          >
+            <span class="relative flex size-2">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75">
+              </span>
+              <span class="relative inline-flex size-2 rounded-full bg-primary"></span>
             </span>
-            <span class="relative inline-flex size-2 rounded-full bg-primary"></span>
           </span>
-        </span>
+        <% end %>
       </div>
     </div>
     """

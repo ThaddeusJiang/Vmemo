@@ -33,9 +33,9 @@ export const MoondreamOverlay = {
 
     if (naturalWidth === 0 || naturalHeight === 0) return
 
-    // Update point coordinates if present (HTML span element)
-    const pointMarker = this.el.querySelector("span[data-x][data-y]")
-    if (pointMarker) {
+    // Update point coordinates if present (HTML span elements)
+    const pointMarkers = this.el.querySelectorAll("span[data-x][data-y]")
+    pointMarkers.forEach((pointMarker) => {
       let x = parseFloat(pointMarker.getAttribute("data-x") || 0)
       let y = parseFloat(pointMarker.getAttribute("data-y") || 0)
 
@@ -53,7 +53,7 @@ export const MoondreamOverlay = {
       // Set position using CSS
       pointMarker.style.left = `${displayX}px`
       pointMarker.style.top = `${displayY}px`
-    }
+    })
 
     // Update SVG coordinates if present (for detect results)
     const svg = this.el.querySelector("svg")
