@@ -101,6 +101,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Register text/event-stream MIME type for MCP server SSE support
+config :mime, :types, %{
+  "text/event-stream" => ["event-stream"]
+}
+
 # Disable Tesla deprecation warning
 # Tesla is a transitive dependency via resend, and we don't use it directly
 config :tesla, disable_deprecated_builder_warning: true

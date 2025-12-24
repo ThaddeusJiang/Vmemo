@@ -28,6 +28,7 @@ defmodule Vmemo.Chat.Conversation do
     defaults [:read]
 
     destroy :destroy do
+      require_atomic? false
       change Vmemo.Chat.Conversation.Changes.DeleteMessagesBeforeDestroy
     end
 

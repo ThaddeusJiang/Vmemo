@@ -23,6 +23,14 @@ defmodule VmemoWeb.Router do
     plug VmemoWeb.ApiAuth
   end
 
+  # MCP pipeline - optional authentication for MCP server
+  # Allows unauthenticated access for public tools, but sets actor if API token is provided
+  # Accepts both json and text/event-stream formats for MCP protocol
+  pipeline :mcp do
+    plug :accepts, ["json", "event-stream"]
+    plug VmemoWeb.McpAuth
+  end
+
   scope "/", VmemoWeb do
     pipe_through :browser
 
@@ -157,5 +165,16 @@ defmodule VmemoWeb.Router do
     ash_admin("/")
 
     delete "/logout", VmemoWeb.AdminSessionController, :delete
+  end
+
+  # Production MCP Server routes
+  # According to https://hexdocs.pm/ash_ai/readme.html
+  # Note: MCP pipeline accepts both json and text/event-stream formats
+  scope "/mcp" do
+    pipe_through [:mcp]
+
+    forward "/", AshAi.Mcp.Router,
+      protocol_version_statement: "2024-11-05",
+      otp_app: :vmemo
   end
 end
