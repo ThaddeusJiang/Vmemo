@@ -503,49 +503,6 @@ defmodule Vmemo.Photos.Photo do
     %{photo | url: normalized_url}
   end
 
-  # Render multiple photos as HTML
-  defp render_photos_as_html(photos) when is_list(photos) do
-    base_url = get_base_url()
-
-    photo_htmls =
-      Enum.map(photos, fn photo ->
-        full_url =
-          if String.starts_with?(photo.url, "http"),
-            do: photo.url,
-            else: base_url <> photo.url
-
-        {:safe, alt_text} = Phoenix.HTML.html_escape(photo.caption || photo.note || "Photo")
-
-        caption_html =
-          if photo.caption do
-            {:safe, escaped_caption} = Phoenix.HTML.html_escape(photo.caption)
-            "<div class=\"photo-caption\">#{escaped_caption}</div>"
-          else
-            ""
-          end
-
-        note_html =
-          if photo.note do
-            {:safe, escaped_note} = Phoenix.HTML.html_escape(photo.note)
-            "<div class=\"photo-note\">#{escaped_note}</div>"
-          else
-            ""
-          end
-
-        """
-        <div class="photo-card">
-          <img src="#{full_url}" alt="#{alt_text}" class="photo-image" />
-          #{caption_html}
-          #{note_html}
-        </div>
-        """
-      end)
-
-    "<div class=\"photo-search-results\">#{Enum.join(photo_htmls, "")}</div>"
-  end
-
-  defp render_photos_as_html(_), do: "<div>No photos found.</div>"
-
   defp get_base_url do
     if Mix.env() == :prod do
       host = System.get_env("PHX_HOST") || "vmemo.app"
