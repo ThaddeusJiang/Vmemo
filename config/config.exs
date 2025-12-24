@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :vmemo, Oban, queues: [chat_responses: [limit: 10], conversations: [limit: 10]]
+
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,
   include_embedded_source_by_default?: false,
@@ -46,9 +48,9 @@ config :spark,
 config :vmemo,
   ecto_repos: [Vmemo.AshRepo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Vmemo.Photos, Vmemo.AccountDomain]
+  ash_domains: [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain]
 
-config :vmemo, :ash_domains, [Vmemo.Photos, Vmemo.AccountDomain]
+config :vmemo, :ash_domains, [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain]
 
 # Configures the endpoint
 config :vmemo, VmemoWeb.Endpoint,
@@ -98,6 +100,11 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Register text/event-stream MIME type for MCP server SSE support
+config :mime, :types, %{
+  "text/event-stream" => ["event-stream"]
+}
 
 # Disable Tesla deprecation warning
 # Tesla is a transitive dependency via resend, and we don't use it directly

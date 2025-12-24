@@ -77,7 +77,7 @@ defmodule VmemoWeb.CoreComponents do
               <.button
                 phx-click={JS.exec("data-cancel", to: "##{@id}")}
                 variant="ghost"
-                class="absolute btn-circle top-2 right-2 btn-xs "
+                class="absolute btn-circle top-2 right-2"
                 aria-label={gettext("close")}
               >
                 <.icon name="hero-x-mark-solid" class="h-4 w-4" />
@@ -143,7 +143,7 @@ defmodule VmemoWeb.CoreComponents do
         <span class="font-semibold">{@title}</span>
       </div>
       <div class="text-sm">{msg}</div>
-      <button type="button" class="btn btn-sm btn-circle" aria-label={gettext("close")}>
+      <button type="button" class="btn btn-circle" aria-label={gettext("close")}>
         <.icon name="hero-x-mark-solid" class="h-4 w-4" />
       </button>
     </div>

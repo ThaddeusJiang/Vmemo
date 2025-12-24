@@ -16,9 +16,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error" class="btn-sm">Close</.button>
+          <.button variant="ghost" phx-click="clear_error">Close</.button>
         </div>
-        
+
     <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -67,7 +67,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-          
+
     <!-- Token details -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Token Information</h3>
@@ -129,12 +129,12 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                   <label class="label">
                     <span class="label-text font-semibold">Usage Count</span>
                   </label>
-                  <div class="text-sm">0</div>
+                  <div class="text-sm">{@api_token.usage_count || 0}</div>
                 </div>
               </div>
             </div>
           </div>
-          
+
     <!-- Usage statistics -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Usage Statistics</h3>
@@ -161,7 +161,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-          
+
     <!-- Action buttons -->
           <div class="flex flex-wrap gap-2 justify-center">
             <.button
@@ -182,7 +182,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
           </div>
         </div>
       </div>
-      
+
     <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>

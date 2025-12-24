@@ -64,7 +64,7 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     update :update do
-      accept [:name, :description, :expires_at]
+      accept [:name, :description, :expires_at, :last_used_at, :usage_count]
       require_atomic? false
 
       validate fn changeset, _context ->
@@ -182,6 +182,11 @@ defmodule Vmemo.Account.ApiToken do
 
     attribute :expires_at, :utc_datetime
     attribute :last_used_at, :utc_datetime
+
+    attribute :usage_count, :integer do
+      default 0
+      allow_nil? false
+    end
 
     attribute :is_active, :boolean do
       default true

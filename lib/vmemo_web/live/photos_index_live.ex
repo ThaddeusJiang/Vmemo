@@ -35,6 +35,11 @@ defmodule VmemoWeb.PhotosIndexLive do
      |> assign(:page, page)}
   end
 
+  @impl true
+  def handle_event("clear_search", _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/home")}
+  end
+
   defp load_photos_with_count(q, similar_photo_id, page, user) do
     {ts_photos, found, _current_page} =
       Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar_photo_id},
@@ -148,10 +153,15 @@ defmodule VmemoWeb.PhotosIndexLive do
           <%= if @q != "" do %>
             <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
               <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
-              <div class="flex-1 text-lg text-gray-900 font-semibold">{@q}</div>
-              <div class="text-sm text-gray-600">
-                <span class="font-semibold">{@total_count}</span> results
-              </div>
+              <div class="text-lg text-gray-900 font-semibold">{@q}</div>
+              <.button
+                phx-click="clear_search"
+                variant="ghost"
+                class="btn-circle"
+                aria-label="Clear search"
+              >
+                <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+              </.button>
             </div>
           <% end %>
         <% end %>

@@ -34,6 +34,12 @@ defmodule VmemoWeb.Endpoint do
 
   if code_reloading? do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
+
+    plug AshAi.Mcp.Dev,
+      # see the note below on protocol versions below
+      protocol_version_statement: "2024-11-05",
+      otp_app: :vmemo
+
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :vmemo

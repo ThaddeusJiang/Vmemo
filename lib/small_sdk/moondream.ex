@@ -237,12 +237,18 @@ defmodule SmallSdk.Moondream do
   end
 
   defp extract_result(body, :point) do
-    # Point returns coordinates in points array
     case body do
-      %{"points" => [point | _]} -> point
-      %{"point" => point} -> point
-      %{"coordinates" => coords} -> coords
-      other -> other
+      %{"points" => points} when is_list(points) ->
+        %{"points" => points}
+
+      %{"point" => point} ->
+        point
+
+      %{"coordinates" => coords} ->
+        coords
+
+      other ->
+        other
     end
   end
 

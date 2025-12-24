@@ -116,7 +116,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                       phx-click="cancel-upload"
                       phx-value-ref={entry.ref}
                       aria-label="cancel"
-                      class="absolute top-1 right-1 btn btn-xs btn-circle btn-info"
+                      class="absolute top-1 right-1 btn btn-circle btn-info"
                     >
                       &times;
                     </.button>

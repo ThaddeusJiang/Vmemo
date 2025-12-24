@@ -34,3 +34,16 @@ style (color)
 shadcn/ui form cancel button is a ghost button.
 
 ![shadcn/ui form cancel button](./shadcn_ui_form_cancel_button.gif)
+
+## Image
+
+- **Always** specify both width and height using Tailwind CSS classes (e.g., `w-12 h-12` or `size-12`)
+- **Never** use HTML `width` or `height` attributes
+- **Why**: Prevents layout shift and flickering when images load slowly
+- **Example**: Use `class="w-12 h-12"` instead of `class="h-12" height="48"`
+
+## List
+
+- **Always** sort lists by `inserted_at` (created time) by default, not `updated_at`
+- **Why**: Provides consistent and predictable ordering based on creation time
+- **Example**: Use `prepare build(default_sort: [inserted_at: :desc])` in Ash read actions

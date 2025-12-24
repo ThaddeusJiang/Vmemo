@@ -56,3 +56,6 @@ e2e/playwright/.cache/
 
 # Ash Postgres resource snapshots (generated build artifacts)
 /priv/resource_snapshots/
+
+# mise local configuration (contains sensitive env vars)
+mise.local.toml

@@ -8,6 +8,7 @@ See `AGENTS-elixir-phoenix-liveview.md`
 
 - **Alway** document-driven-development, create `docs/devlog/YYYYMMDD-title.md` and record the dev log.
 - **Alway** reply and git message in **Chinese**, write code(includes UI) in only **English**
+- **Never** use i18n, always use English text directly in code
 - **Never** too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
 
@@ -42,6 +43,15 @@ See `AGENTS-elixir-phoenix-liveview.md`
 - LiveView can use `push_event` trigger client-side event
 
 - **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
+
+- **Component organization**:
+  - **Always** split complex UI logic into LiveComponents when:
+    - Single file exceeds ~500 lines
+    - UI section has independent state and event handling
+    - Component can be reused in multiple places
+  - **Keep components focused**: Each component should handle a single responsibility
+  - **Component communication**: Use `send(self(), {:event, data})` to notify parent LiveView when component needs to update parent state
+  - **File location**: Place components in `lib/vmemo_web/live/components/` directory
 
 **PostgreSQL rules**
 
