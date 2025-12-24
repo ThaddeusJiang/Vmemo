@@ -198,23 +198,49 @@ defmodule Vmemo.ApiTokenService do
     end
   end
 
+  @doc """
+  Gets tokens that were used today.
+  """
+  def get_today_used_tokens(user_id) do
+    case ApiToken.get_today_used_tokens(user_id, actor: %{id: user_id}) do
+      {:ok, tokens} -> tokens
+      {:error, _} -> []
+    end
+  end
+
+  @doc """
+  Counts total usage count for tokens that were used today.
+  Since usage_count is cumulative, we sum the usage_count of all tokens
+  that were used today as an approximation.
+  """
+  def count_today_usage(user_id) do
+    get_today_used_tokens(user_id)
+    |> Enum.map(&(&1.usage_count || 0))
+    |> Enum.sum()
+  end
+
   # Private functions
 
   defp update_token_usage(api_token) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     current_count = api_token.usage_count || 0
 
-    case ApiToken.update(api_token, %{
-           last_used_at: now,
-           usage_count: current_count + 1
-         },
+    case ApiToken.update(
+           api_token,
+           %{
+             last_used_at: now,
+             usage_count: current_count + 1
+           },
            actor: api_token
          ) do
       {:ok, _updated_token} ->
         :ok
 
       {:error, changeset} ->
-        Logger.error("Failed to update token usage for token #{api_token.id}: #{inspect(changeset.errors)}")
+        Logger.error(
+          "Failed to update token usage for token #{api_token.id}: #{inspect(changeset.errors)}"
+        )
+
         :error
     end
   end

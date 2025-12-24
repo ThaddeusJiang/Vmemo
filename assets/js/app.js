@@ -56,6 +56,45 @@ window.addEventListener("phx:reset_form", (event) => {
   }
 })
 
+// Handle copy to clipboard events from LiveView
+window.addEventListener("phx:copy_to_clipboard", (event) => {
+  const { text } = event.detail
+  if (!text) return
+
+  // Try modern Clipboard API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error("Failed to copy to clipboard:", err)
+      // Fallback to old method if modern API fails
+      copyToClipboardFallback(text)
+    })
+  } else {
+    // Fallback to old method if Clipboard API is not available
+    copyToClipboardFallback(text)
+  }
+})
+
+// Fallback method for copying to clipboard
+function copyToClipboardFallback(text) {
+  const textArea = document.createElement("textarea")
+  textArea.value = text
+  textArea.style.position = "fixed"
+  textArea.style.left = "-999999px"
+  textArea.style.top = "-999999px"
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
+  try {
+    const successful = document.execCommand("copy")
+    if (!successful) {
+      console.error("Fallback copy command failed")
+    }
+  } catch (err) {
+    console.error("Fallback copy failed:", err)
+  }
+  document.body.removeChild(textArea)
+}
+
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session

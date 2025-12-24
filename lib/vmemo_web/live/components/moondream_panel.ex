@@ -43,7 +43,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   end
 
   @impl true
-  def handle_event("set_prompt", %{"prompt" => prompt}, socket) do
+  def handle_event("set-prompt", %{"prompt" => prompt}, socket) do
     {:noreply, assign(socket, :prompt, prompt)}
   end
 
@@ -379,7 +379,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
                 :for={tag <- get_detection_tags(@requests)}
                 type="button"
                 class="btn btn-outline rounded-full"
-                phx-click="set_prompt"
+                phx-click="set-prompt"
                 phx-target={@myself}
                 phx-value-prompt={tag}
               >

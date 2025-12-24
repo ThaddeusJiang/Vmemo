@@ -17,7 +17,7 @@ export const Resizer = {
                     this.el.dataset.col = col;
                     console.debug("change_col", col);
 
-                    this.pushEventTo(this.el, "change_col", {
+                    this.pushEventTo(this.el, "change-col", {
                         col: col
                     })
                 }

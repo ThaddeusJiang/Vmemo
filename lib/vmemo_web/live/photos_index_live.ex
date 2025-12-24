@@ -21,7 +21,7 @@ defmodule VmemoWeb.PhotosIndexLive do
   end
 
   @impl true
-  def handle_event("load_more", _, socket) do
+  def handle_event("load-more", _, socket) do
     user = socket.assigns.current_ash_user
     q = socket.assigns.q
     similar_photo_id = socket.assigns.similar_photo_id
@@ -36,7 +36,7 @@ defmodule VmemoWeb.PhotosIndexLive do
   end
 
   @impl true
-  def handle_event("clear_search", _, socket) do
+  def handle_event("clear-search", _, socket) do
     {:noreply, push_navigate(socket, to: ~p"/home")}
   end
 
@@ -155,7 +155,7 @@ defmodule VmemoWeb.PhotosIndexLive do
               <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
               <div class="text-lg text-gray-900 font-semibold">{@q}</div>
               <.button
-                phx-click="clear_search"
+                phx-click="clear-search"
                 variant="ghost"
                 class="btn-circle"
                 aria-label="Clear search"

@@ -36,6 +36,7 @@ defmodule Vmemo.Account.ApiToken do
     define :toggle_status, args: [:id]
     define :get_expiring_tokens, args: [:ash_user_id, :days]
     define :get_expired_tokens, args: [:ash_user_id]
+    define :get_today_used_tokens, args: [:ash_user_id]
   end
 
   actions do
@@ -159,6 +160,28 @@ defmodule Vmemo.Account.ApiToken do
           expires_at: [less_than_or_equal_to: DateTime.utc_now()]
         )
         |> Ash.Query.sort(expires_at: :desc)
+      end
+    end
+
+    read :get_today_used_tokens do
+      argument :ash_user_id, :uuid, allow_nil?: false
+
+      prepare fn query, _context ->
+        require Ash.Query
+
+        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
+        today = Date.utc_today()
+        today_start = DateTime.new!(today, ~T[00:00:00], "Etc/UTC")
+        today_end = DateTime.new!(today, ~T[23:59:59.999999], "Etc/UTC")
+
+        query
+        |> Ash.Query.filter(ash_user_id == ^ash_user_id)
+        |> Ash.Query.filter(
+          expr(
+            not is_nil(last_used_at) and last_used_at >= ^today_start and
+              last_used_at <= ^today_end
+          )
+        )
       end
     end
   end

@@ -51,7 +51,7 @@ defmodule VmemoWeb.ChatLive do
               <li>
                 <button
                   type="button"
-                  phx-click="archive_conversation"
+                  phx-click="archive-conversation"
                   phx-value-id={@conversation.id}
                   class="text-base-content"
                 >
@@ -61,7 +61,7 @@ defmodule VmemoWeb.ChatLive do
               <li>
                 <button
                   type="button"
-                  phx-click="delete_conversation"
+                  phx-click="delete-conversation"
                   phx-value-id={@conversation.id}
                   class="text-error"
                 >
@@ -119,7 +119,7 @@ defmodule VmemoWeb.ChatLive do
           <.form
             for={@message_form}
             id="message-form"
-            phx-submit="send_message"
+            phx-submit="send-message"
             class="flex items-center gap-4"
           >
             <div class="flex-1 flex items-center [&_.form-control]:flex [&_.form-control]:items-center [&_.form-control>div]:flex [&_.form-control>div]:items-center [&_.form-control>div]:w-full">
@@ -157,7 +157,7 @@ defmodule VmemoWeb.ChatLive do
               <li id={id}>
                 <.link
                   navigate={~p"/chat/#{conversation.id}"}
-                  phx-click="select_conversation"
+                  phx-click="select-conversation"
                   phx-value-id={conversation.id}
                   class={"block py-2 px-3 transition border-l-4 pl-2 mb-2 #{if @conversation && @conversation.id == conversation.id, do: "border-primary font-medium", else: "border-transparent"}"}
                 >
@@ -251,7 +251,7 @@ defmodule VmemoWeb.ChatLive do
     |> then(&{:noreply, &1})
   end
 
-  def handle_event("send_message", %{"form" => params}, socket) do
+  def handle_event("send-message", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.message_form.source, params: params) do
       {:ok, message} ->
         if socket.assigns.conversation do
@@ -271,7 +271,7 @@ defmodule VmemoWeb.ChatLive do
     end
   end
 
-  def handle_event("archive_conversation", %{"id" => conversation_id}, socket) do
+  def handle_event("archive-conversation", %{"id" => conversation_id}, socket) do
     user = socket.assigns.current_ash_user
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
@@ -316,7 +316,7 @@ defmodule VmemoWeb.ChatLive do
     end
   end
 
-  def handle_event("delete_conversation", %{"id" => conversation_id}, socket) do
+  def handle_event("delete-conversation", %{"id" => conversation_id}, socket) do
     user = socket.assigns.current_ash_user
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do

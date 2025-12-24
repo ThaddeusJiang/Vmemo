@@ -7,7 +7,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     ~H"""
     <div class="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
       <.header>
-        API Token Management
+        Tokens
         <:subtitle>Manage your API access tokens</:subtitle>
       </.header>
 
@@ -30,14 +30,14 @@ defmodule VmemoWeb.ApiTokenLive.Index do
             <div class="text-sm">It's recommended to update these tokens in advance</div>
           </div>
         </div>
-
+        
     <!-- Error message -->
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error">Close</.button>
+          <.button variant="ghost" phx-click="clear-error">Close</.button>
         </div>
-
+        
     <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -46,15 +46,15 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
         <div :if={!@loading} class="space-y-6">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">My API Tokens</h2>
+            <h2 class="text-xl font-semibold">Tokens</h2>
             <.link navigate={~p"/tokens/new"} class="btn btn-primary">
               <.icon name="hero-plus" class="h-4 w-4" /> Create New Token
             </.link>
           </div>
-
+          
     <!-- Statistics cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat bg-base-100 rounded-box shadow border-r-0">
               <div class="stat-figure text-primary">
                 <.icon name="hero-key" class="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
@@ -62,7 +62,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               <div class="stat-value text-primary text-lg sm:text-2xl">{length(@api_tokens)}</div>
             </div>
 
-            <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat bg-base-100 rounded-box shadow border-r-0">
               <div class="stat-figure text-success">
                 <.icon name="hero-check-circle" class="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
@@ -70,7 +70,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               <div class="stat-value text-success text-lg sm:text-2xl">{@active_tokens_count}</div>
             </div>
 
-            <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat bg-base-100 rounded-box shadow border-r-0">
               <div class="stat-figure text-error">
                 <.icon name="hero-exclamation-triangle" class="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
@@ -78,7 +78,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               <div class="stat-value text-error text-lg sm:text-2xl">{@expired_tokens_count}</div>
             </div>
 
-            <div class="stat bg-base-100 rounded-box shadow">
+            <div class="stat bg-base-100 rounded-box shadow border-r-0">
               <div class="stat-figure text-info">
                 <.icon name="hero-chart-bar" class="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
@@ -86,7 +86,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
             </div>
           </div>
-
+          
     <!-- Token list -->
           <div class="bg-base-100 rounded-box shadow overflow-x-auto">
             <.table id="api-tokens" rows={@api_tokens}>
@@ -102,11 +102,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                   <code class="text-xs bg-base-200 px-2 py-1 rounded">
                     {display_token_preview(token)}
                   </code>
-                  <span class="text-xs text-gray-500">Only visible at creation</span>
                 </div>
-              </:col>
-              <:col :let={token} label="Created">
-                <.format_datetime datetime={token.inserted_at} format="datetime" class="text-sm" />
               </:col>
               <:col :let={token} label="Expires">
                 <span class="text-sm">
@@ -115,23 +111,20 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     else: "Never expires"}
                 </span>
               </:col>
-              <:col :let={token} label="Last Used">
-                <span class="text-sm">
-                  {if token.last_used_at,
-                    do: format_datetime_to_local(token.last_used_at),
-                    else: "Never used"}
-                </span>
-              </:col>
               <:col :let={token} label="Usage Count">
-                <span class="badge badge-info">{token.usage_count || 0}</span>
+                <span class="badge badge-info badge-ghost">{token.usage_count || 0}</span>
               </:col>
               <:action :let={token}>
                 <div class="flex gap-1">
                   <.button
-                    variant="ghost"
-                    phx-click="toggle_token_status"
+                    variant="outline"
+                    phx-click="toggle-token-status"
                     phx-value-id={token.id}
-                    class={if token.is_active, do: "text-warning", else: "text-success"}
+                    class={
+                      if token.is_active,
+                        do: "btn-square text-warning",
+                        else: "btn-square text-success"
+                    }
                   >
                     <.icon
                       name={if token.is_active, do: "hero-pause", else: "hero-play"}
@@ -139,9 +132,10 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                     />
                   </.button>
                   <.button
-                    variant="danger"
-                    phx-click="delete_token"
+                    variant="outline"
+                    phx-click="delete-token"
                     phx-value-id={token.id}
+                    class="btn-square text-error"
                   >
                     <.icon name="hero-trash" class="h-4 w-4" />
                   </.button>
@@ -151,7 +145,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           </div>
         </div>
       </div>
-
+      
     <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>
@@ -169,7 +163,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
         <:footer>
           <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
-          <.button variant="danger" phx-click="confirm_delete">Delete</.button>
+          <.button variant="danger" phx-click="confirm-delete">Delete</.button>
         </:footer>
       </.modal>
     </div>
@@ -181,6 +175,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     api_tokens = ApiTokenService.list_user_api_tokens(user)
     expiring_tokens = ApiTokenService.get_expiring_tokens(user.id)
     expired_tokens = ApiTokenService.get_expired_tokens(user.id)
+    today_usage_count = ApiTokenService.count_today_usage(user.id)
 
     {:ok,
      socket
@@ -189,14 +184,14 @@ defmodule VmemoWeb.ApiTokenLive.Index do
      |> assign(:token_to_delete, nil)
      |> assign(:active_tokens_count, count_active_tokens(api_tokens))
      |> assign(:expired_tokens_count, count_expired_tokens(api_tokens))
-     |> assign(:today_usage_count, 0)
+     |> assign(:today_usage_count, today_usage_count)
      |> assign(:loading, false)
      |> assign(:error_message, nil)
      |> assign(:expiring_tokens, expiring_tokens)
      |> assign(:expired_tokens, expired_tokens)}
   end
 
-  def handle_event("delete_token", %{"id" => id}, socket) do
+  def handle_event("delete-token", %{"id" => id}, socket) do
     user = socket.assigns.current_ash_user
     token = ApiTokenService.get_user_api_token!(user, id)
 
@@ -206,7 +201,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
      |> assign(:token_to_delete, token)}
   end
 
-  def handle_event("confirm_delete", _params, socket) do
+  def handle_event("confirm-delete", _params, socket) do
     token = socket.assigns.token_to_delete
 
     socket = assign(socket, :loading, true)
@@ -229,7 +224,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     end
   end
 
-  def handle_event("toggle_token_status", %{"id" => id}, socket) do
+  def handle_event("toggle-token-status", %{"id" => id}, socket) do
     user = socket.assigns.current_ash_user
 
     socket = assign(socket, :loading, true)
@@ -260,16 +255,17 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     end
   end
 
-  def handle_event("clear_error", _params, socket) do
+  def handle_event("clear-error", _params, socket) do
     {:noreply, assign(socket, :error_message, nil)}
   end
 
   # Helper functions
   defp display_token_preview(api_token) do
-    # 只显示创建时间和 hash 的前4位
-    created_date = format_datetime_to_local(api_token.inserted_at, "date")
-    hash_preview = String.slice(api_token.token_hash, 0, 4)
-    "#{created_date}_#{hash_preview}..."
+    # 显示 token 前缀格式：vmemo_ + hash 的前8位
+    # 注意：数据库中只存储 hash，不存储原始 token，所以无法显示真实的 token 前部分
+    # 这里显示的是基于 hash 的预览，格式类似真实 token：vmemo_xxxxxxxx...
+    hash_preview = String.slice(api_token.token_hash, 0, 8)
+    "vmemo_#{hash_preview}..."
   end
 
   defp format_datetime_to_local(datetime, format \\ "datetime")

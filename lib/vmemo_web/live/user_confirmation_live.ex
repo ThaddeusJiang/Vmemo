@@ -8,7 +8,7 @@ defmodule VmemoWeb.UserConfirmationLive do
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
       <.header>Confirm Account</.header>
 
-      <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
+      <.simple_form for={@form} id="confirmation_form" phx-submit="confirm-account">
         <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
         <:actions>
           <.button phx-disable-with="Confirming..." class="w-full">Confirm my account</.button>
@@ -29,7 +29,7 @@ defmodule VmemoWeb.UserConfirmationLive do
 
   # Do not sign in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
-  def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
+  def handle_event("confirm-account", %{"user" => %{"token" => token}}, socket) do
     case Account.confirm_ash_user(token) do
       {:ok, _} ->
         {:noreply,

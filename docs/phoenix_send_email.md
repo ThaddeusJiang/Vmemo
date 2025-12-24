@@ -1,3 +1,3 @@
-# phoenix send email
+# Phoenix 发送邮件
 
-![error: unsetup email](./un-setup-email.png)
+![错误：未设置邮件](./un-setup-email.png)

@@ -14,7 +14,7 @@ defmodule VmemoWeb.LiveComponents.Waterfall do
   end
 
   @impl true
-  def handle_event("change_col", %{"col" => col}, socket) do
+  def handle_event("change-col", %{"col" => col}, socket) do
     {:noreply,
      socket
      |> assign(:col, col)}

@@ -1,8 +1,13 @@
 # LiveView coding guidelines
 
+## live_file_input 要求必须在 form 中
+
+- [x] 思考：文件上传是否应该在 form 内部？htmx 好像就在提倡在任意位置提交数据。
+  - [x] LiveView `.live_file_input` 要求必须在 form 中
+
 ## LiveView Error Handling
 
-Phoenix LiveView 中，handle_event 无论成功失败都应该是 `{:noreply, socket}`，通过 socket |> assign(:key, value) 才控制UI。
+Phoenix LiveView 中，handle_event 无论成功失败都应该是 `{:noreply, socket}`，通过 socket |> assign(:key, value) 才控制 UI。
 
 ```elixir
 # data
@@ -66,14 +71,14 @@ let Hooks = {
   Toast: {
     mounted() {
       this.handleEvent("toast", ({ type, message }) => {
-        window.toast?.show({ type, message }); // 你的前端 Toast 组件
-      });
-    }
-  }
+        window.toast?.show({ type, message }) // 你的前端 Toast 组件
+      })
+    },
+  },
 }
 
-let liveSocket = new LiveSocket("/live", Socket, { hooks: Hooks });
-liveSocket.connect();
+let liveSocket = new LiveSocket("/live", Socket, { hooks: Hooks })
+liveSocket.connect()
 ```
 
 ```html

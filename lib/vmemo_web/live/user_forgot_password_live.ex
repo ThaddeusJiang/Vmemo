@@ -11,7 +11,7 @@ defmodule VmemoWeb.UserForgotPasswordLive do
         <:subtitle>We'll send a password reset link to your email</:subtitle>
       </.header>
 
-      <.simple_form for={@form} id="forgot_password_form" phx-submit="send_email">
+      <.simple_form for={@form} id="forgot_password_form" phx-submit="send-email">
         <.input field={@form[:email]} type="email" placeholder="name@example.com" required />
         <:actions>
           <.button phx-disable-with="Sending..." class="w-full">
@@ -31,7 +31,7 @@ defmodule VmemoWeb.UserForgotPasswordLive do
     {:ok, assign(socket, form: to_form(%{}, as: "user"))}
   end
 
-  def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
+  def handle_event("send-email", %{"user" => %{"email" => email}}, socket) do
     if user = Account.get_ash_user_by_email(email) do
       Account.deliver_ash_user_reset_password_instructions(
         user,

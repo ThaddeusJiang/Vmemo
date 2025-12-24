@@ -251,7 +251,7 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <button
       class={[
-        "btn rounded-lg py-2",
+        "btn py-2",
         "phx-submit-loading:opacity-75 phx-submit-loading:cursor-wait phx-submit-loading:disabled",
         @variant == "submit" && "btn-neutral",
         @variant == "ghost" && "btn-ghost",

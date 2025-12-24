@@ -21,7 +21,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
         <.simple_form
           for={@form}
           id="reset_password_form"
-          phx-submit="reset_password"
+          phx-submit="reset-password"
         >
           <.error :if={@form.errors != []}>
             Oops, something went wrong! Please check the errors below.
@@ -78,7 +78,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
 
   defp get_error_message(_reason), do: "Reset password link is invalid or it has expired."
 
-  def handle_event("reset_password", %{"user" => user_params}, socket) do
+  def handle_event("reset-password", %{"user" => user_params}, socket) do
     # 再次验证 token，确保在提交时 token 仍然有效
     case socket.assigns.token do
       nil ->

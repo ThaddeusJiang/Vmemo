@@ -12,14 +12,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
       </.header>
 
       <div class="mt-8">
-        <!-- Error message -->
-        <div :if={@error_message} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
-          <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error">Close</.button>
-        </div>
-
-    <!-- Loading state -->
+        <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
           <span class="ml-2 text-lg">Processing...</span>
@@ -28,7 +21,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         <div :if={!@loading} class="space-y-6">
           <!-- Form -->
           <div class="bg-base-100 rounded-box shadow p-6">
-            <.simple_form for={@form} phx-submit="save_token" phx-change="validate_token">
+            <.simple_form for={@form} phx-submit="save-token" phx-change="validate-token">
               <.input field={@form[:name]} label="Token Name" placeholder="e.g., Mobile App" />
 
               <.input
@@ -44,12 +37,12 @@ defmodule VmemoWeb.ApiTokenLive.Form do
               />
 
               <:actions>
-                <.link navigate={~p"/tokens"} class="btn btn-ghost">Cancel</.link>
+                <.link navigate={~p"/tokens"} class="btn btn-outline">Cancel</.link>
                 <.button>Save</.button>
               </:actions>
             </.simple_form>
           </div>
-
+          
     <!-- Help information -->
           <div class="bg-info/10 rounded-box p-4">
             <h4 class="font-semibold mb-2">Usage Instructions</h4>
@@ -64,7 +57,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           </div>
         </div>
       </div>
-
+      
     <!-- Token Created Successfully Modal -->
       <.modal
         id="token-created-modal"
@@ -76,14 +69,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         </:header>
 
         <div class="space-y-2">
-          <div class="alert alert-warning">
-            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
-            <span>
-              Please copy and save this token immediately. You won't be able to view the full content again after creation.
-            </span>
-          </div>
-
-          <div class="form-control">
+          <div class="form-control space-y-2">
             <label class="label">
               <span class="label-text">Your API Token</span>
             </label>
@@ -97,7 +83,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
               />
               <.button
                 variant="outline"
-                phx-click="copy_token"
+                phx-click="copy-token"
                 phx-value-token={@new_token}
               >
                 <.icon name="hero-clipboard" class="h-4 w-4" />
@@ -105,18 +91,9 @@ defmodule VmemoWeb.ApiTokenLive.Form do
             </div>
           </div>
 
-          <div class="text-sm text-gray-600">
-            <p>• Token format: vmemo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
-            <p>
-              • Expiration: {if @new_token_expires_at,
-                do: format_datetime_to_local(@new_token_expires_at, "datetime"),
-                else: "Never expires"}
-            </p>
-            <p>
-              • Usage: Authorization: Bearer {if @new_token,
-                do: String.slice(@new_token, 0, 20) <> "...",
-                else: "token"}
-            </p>
+          <div class="text-sm">
+            <div class="font-semibold mb-2">Usage Example:</div>
+            <pre class="bg-base-200 p-3 rounded text-xs overflow-x-auto"><code>{usage_example_code(@new_token)}</code></pre>
           </div>
         </div>
 
@@ -133,30 +110,34 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   end
 
   def mount(_params, _session, socket) do
+    form =
+      AshPhoenix.Form.for_create(Vmemo.Account.ApiToken, :create)
+      |> to_form()
+
     {:ok,
      socket
-     |> assign(:form, to_form(%{}))
+     |> assign(:form, form)
      |> assign(:show_token_created, false)
      |> assign(:new_token, nil)
      |> assign(:new_token_expires_at, nil)
-     |> assign(:loading, false)
-     |> assign(:error_message, nil)}
+     |> assign(:loading, false)}
   end
 
-  def handle_event("save_token", params, socket) do
+  def handle_event("save-token", params, socket) do
     user = socket.assigns.current_ash_user
 
     # 处理表单参数
-    token_params =
+    form_params =
       case params do
+        %{"form" => form_params} -> form_params
         %{"api_token" => token_params} -> token_params
         params -> params
       end
 
     socket = assign(socket, :loading, true)
 
-    # 创建新 token
-    case ApiTokenService.create_api_token(user, token_params) do
+    # 使用 ApiTokenService 创建 token（包含 token 生成逻辑）
+    case ApiTokenService.create_api_token(user, form_params) do
       {:ok, token, raw_token} ->
         {:noreply,
          socket
@@ -166,73 +147,57 @@ defmodule VmemoWeb.ApiTokenLive.Form do
          |> assign(:loading, false)
          |> put_flash(:info, "API Token 创建成功")}
 
-      {:error, changeset} ->
-        # 处理 Ash.Error.Invalid
-        error_message =
-          case changeset do
-            %Ash.Error.Invalid{errors: errors} ->
-              error_texts =
-                Enum.map(errors, fn error ->
-                  case error do
-                    %Ash.Error.Changes.Required{field: field} ->
-                      "#{field} 是必填字段"
-
-                    %Ash.Error.Changes.InvalidAttribute{field: field, message: message} ->
-                      "#{field}: #{message}"
-
-                    _ ->
-                      "验证失败"
-                  end
-                end)
-
-              Enum.join(error_texts, "; ")
-
-            _ ->
-              "创建失败，请检查输入信息"
-          end
+      {:error, _changeset} ->
+        # 使用 AshPhoenix.Form 验证表单以显示错误
+        # 错误信息会通过 validate 自动映射到字段
+        form =
+          AshPhoenix.Form.for_create(Vmemo.Account.ApiToken, :create)
+          |> AshPhoenix.Form.validate(form_params)
+          |> to_form()
 
         {:noreply,
          socket
-         |> assign(:form, to_form(token_params, as: :api_token))
-         |> assign(:loading, false)
-         |> assign(:error_message, error_message)}
+         |> assign(:form, form)
+         |> assign(:loading, false)}
     end
   end
 
-  def handle_event("validate_token", params, socket) do
-    # 处理表单验证参数
-    token_params =
+  def handle_event("validate-token", params, socket) do
+    form_params =
       case params do
+        %{"form" => form_params} -> form_params
         %{"api_token" => token_params} -> token_params
         params -> params
       end
 
-    form = to_form(token_params, as: :api_token)
+    form =
+      AshPhoenix.Form.validate(socket.assigns.form.source, form_params)
+      |> to_form()
+
     {:noreply, assign(socket, :form, form)}
   end
 
-  def handle_event("copy_token", %{"token" => _token}, socket) do
-    # 这里可以添加复制到剪贴板的功能
-    {:noreply, put_flash(socket, :info, "Token 已复制到剪贴板")}
-  end
-
-  def handle_event("clear_error", _params, socket) do
-    {:noreply, assign(socket, :error_message, nil)}
+  def handle_event("copy-token", %{"token" => token}, socket) do
+    {:noreply,
+     socket
+     |> push_event("copy_to_clipboard", %{text: token})
+     |> put_flash(:info, "Token 已复制到剪贴板")}
   end
 
   # Helper functions
-  defp format_datetime_to_local(datetime, format)
+  defp usage_example_code(nil), do: ""
+  defp usage_example_code(""), do: ""
 
-  defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
-    local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
-    Calendar.strftime(local_datetime, format_string(format))
+  defp usage_example_code(token) do
+    """
+    fetch('http://localhost:4000/api/v1/photos', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer #{token}',
+        'Content-Type': 'multipart/form-data'
+      },
+      body: formData
+    })
+    """
   end
-
-  defp format_datetime_to_local(_, _), do: ""
-
-  defp format_string("date"), do: "%Y-%m-%d"
-  defp format_string("time"), do: "%H:%M:%S"
-  defp format_string("datetime"), do: "%Y-%m-%d %H:%M"
-  defp format_string(custom), do: custom
 end
