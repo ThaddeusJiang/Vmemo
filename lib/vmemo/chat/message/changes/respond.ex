@@ -38,7 +38,7 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
       |> LLMChain.add_messages(message_chain)
       # add the names of tools you want available in your conversation here.
       # i.e tools: [:lookup_weather]
-      |> AshAi.setup_ash_ai(otp_app: :vmemo, tools: [:search_photos], actor: context.actor)
+      |> AshAi.setup_ash_ai(otp_app: :vmemo, tools: [:photo_search], actor: context.actor)
       |> patch_tool_schemas()
       |> LLMChain.add_callback(%{
         on_llm_new_delta: fn _chain, deltas ->
@@ -188,8 +188,7 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
             [
               langchain_message,
               LangChain.Message.new_tool_result!(%{
-                tool_results:
-                  Enum.map(valid_tool_results, &LangChain.Message.ToolResult.new!/1)
+                tool_results: Enum.map(valid_tool_results, &LangChain.Message.ToolResult.new!/1)
               })
             ]
           end
@@ -209,13 +208,13 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
         Enum.map(chain.tools, fn tool ->
           if tool.parameters_schema do
             patched_schema = patch_schema(tool.parameters_schema)
-            struct(tool, [parameters_schema: patched_schema])
+            struct(tool, parameters_schema: patched_schema)
           else
             tool
           end
         end)
 
-      struct(chain, [tools: patched_tools])
+      struct(chain, tools: patched_tools)
     else
       chain
     end

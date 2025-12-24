@@ -7,7 +7,7 @@ defmodule Vmemo.Photos do
   end
 
   tools do
-    tool :search_photos, Vmemo.Photos.Photo, :search_photos do
+    tool :photo_search, Vmemo.Photos.Photo, :search_photos do
       description "Search for photos by text query or find similar photos based on a photo ID. Use this when users ask to find, search, or browse their photos."
     end
   end
