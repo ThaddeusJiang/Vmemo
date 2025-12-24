@@ -272,32 +272,10 @@ defmodule VmemoWeb.PhotoIdLive do
                 <% end %>
 
                 <.img src={@photo.url} alt={@photo.note} />
-                <.button
-                  variant="danger"
-                  phx-click="delete_photo"
-                  phx-value-id={@photo.id}
-                  data-confirm="You can't undo this action. Are you sure?"
-                  class="absolute top-2 right-2 btn-circle hidden group-hover:block"
-                  aria-label={gettext("delete")}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    class="w-4 h-4 inline"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                    />
-                  </svg>
-                </.button>
 
                 <.link
                   href={@photo.url}
-                  class=" absolute bottom-2 right-2 btn btn-circle hidden group-hover:flex sm:group-hover:hidden"
+                  class="absolute bottom-2 right-2 btn btn-circle hidden group-hover:flex sm:group-hover:hidden items-center justify-center group-hover:bg-base-100"
                   aria-label={gettext("expand")}
                 >
                   <svg
@@ -315,13 +293,13 @@ defmodule VmemoWeb.PhotoIdLive do
                   variant="outline"
                   phx-click="show_expanded"
                   aria-label={gettext("expand")}
-                  class=" absolute bottom-2 right-2 btn-circle hidden group-hover:hidden sm:group-hover:block"
+                  class="absolute bottom-2 right-2 btn-circle hidden group-hover:hidden sm:group-hover:flex items-center justify-center group-hover:bg-base-100"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill="currentColor"
-                    class="h-4 w-4 inline"
+                    class="h-4 w-4"
                   >
                     <path d="M6.41421 5H10V3H3V10H5V6.41421L9.29289 10.7071L10.7071 9.29289L6.41421 5ZM21 14H19V17.5858L14.7071 13.2929L13.2929 14.7071L17.5858 19H14V21H21V14Z">
                     </path>
@@ -352,7 +330,19 @@ defmodule VmemoWeb.PhotoIdLive do
               />
 
               <:actions>
-                <.button>Save</.button>
+                <div class="flex items-center justify-between w-full">
+                  <.button>Save</.button>
+                  <.button
+                    variant="danger"
+                    phx-click="delete_photo"
+                    phx-value-id={@photo.id}
+                    data-confirm="You can't undo this action. Are you sure?"
+                    aria-label={gettext("delete")}
+                    class="btn-square"
+                  >
+                    <.icon name="hero-trash" class="h-4 w-4" />
+                  </.button>
+                </div>
               </:actions>
             </.simple_form>
           </div>

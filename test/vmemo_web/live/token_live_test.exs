@@ -16,7 +16,7 @@ defmodule VmemoWeb.TokenLiveTest do
     test "显示空的 Token 列表", %{conn: conn} do
       {:ok, _index_live, html} = live(conn, ~p"/tokens")
 
-      assert html =~ "API Token Management"
+      assert html =~ "Tokens"
       assert html =~ "Total Tokens"
       assert html =~ "0"
     end

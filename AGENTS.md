@@ -1,3 +1,5 @@
+- **Alway** reply and generate git message in **Chinese**, write code(includes UI) in only **English**
+
 # Vmemo is a web application written using **Phoenix** **LiveView** **Ash** **Oban**
 
 ## Elixir Phoenix LiveView basic conventions
@@ -7,7 +9,6 @@ See `AGENTS-elixir-phoenix-liveview.md`
 ## Personal
 
 - **Alway** document-driven-development, create `docs/devlog/YYYYMMDD-title.md` and record the dev log.
-- **Alway** reply and git message in **Chinese**, write code(includes UI) in only **English**
 - **Never** use i18n, always use English text directly in code
 - **Never** too many comments, keep the code simple and easy to understand
 - **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
