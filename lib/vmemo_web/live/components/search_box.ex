@@ -286,16 +286,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
                   <%= case entry.progress do %>
                     <% 0 -> %>
-                      <.button
-                        type="button"
-                        phx-click="cancel_photo"
-                        phx-target={@myself}
-                        phx-value-ref={entry.ref}
-                        aria-label="cancel"
-                        class="absolute top-1 right-1 btn btn-circle btn-error"
-                      >
-                        &times;
-                      </.button>
                     <% 100 -> %>
                       <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm bg-black bg-opacity-30 rounded-lg">
                         <div
