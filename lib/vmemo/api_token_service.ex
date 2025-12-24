@@ -166,8 +166,8 @@ defmodule Vmemo.ApiTokenService do
              DateTime.compare(DateTime.utc_now(), api_token.expires_at) == :gt do
           {:error, "Token expired"}
         else
-          # 更新最后使用时间
-          update_last_used_at(api_token)
+          # 更新最后使用时间和使用计数
+          update_token_usage(api_token)
           # 加载 ash_user
           api_token = Ash.load!(api_token, :ash_user)
           {:ok, api_token}
@@ -200,10 +200,23 @@ defmodule Vmemo.ApiTokenService do
 
   # Private functions
 
-  defp update_last_used_at(api_token) do
-    ApiToken.update(api_token, %{last_used_at: DateTime.utc_now() |> DateTime.truncate(:second)},
-      actor: api_token
-    )
+  defp update_token_usage(api_token) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    current_count = api_token.usage_count || 0
+
+    case ApiToken.update(api_token, %{
+           last_used_at: now,
+           usage_count: current_count + 1
+         },
+           actor: api_token
+         ) do
+      {:ok, _updated_token} ->
+        :ok
+
+      {:error, changeset} ->
+        Logger.error("Failed to update token usage for token #{api_token.id}: #{inspect(changeset.errors)}")
+        :error
+    end
   end
 
   defp log_token_usage(api_token, action, _conn, metadata) do
