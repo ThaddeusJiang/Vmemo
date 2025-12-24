@@ -25,6 +25,15 @@ defmodule Vmemo.Photos do
       description:
         "Get a photo as HTML. Returns an HTML img tag with the photo URL, caption, and note.",
       mime_type: "text/html"
+
+    # Photo Image resource - returns the photo as base64-encoded image data
+    # Note: mime_type is a default/hint value. The actual image type is detected
+    # from file content and included in the returned data URL (e.g., data:image/png;base64,...)
+    mcp_resource :photo_image, "vmemo://photo/:id/image", Vmemo.Photos.Photo, :get_photo_image,
+      title: "Photo Image",
+      description:
+        "Get a photo as base64-encoded image data. Returns the image data in data URL format. The actual MIME type (JPEG, PNG, GIF, WEBP) is auto-detected from file content and included in the data URL.",
+      mime_type: "image/png"
   end
 
   resources do

@@ -131,8 +131,8 @@ defmodule Vmemo.Photos.Photo do
       end
     end
 
-    action :search_photos, :term do
-      description "Search photos by text query or find similar photos. Returns HTML with photos matching the search criteria."
+    action :search_photos, :string do
+      description "Search photos by text query or find similar photos. Returns JSON array of image data URLs (data:image/{type};base64,...) for direct image display."
 
       argument :query, :string, default: ""
       argument :similar_photo_id, :string, allow_nil?: true
@@ -162,7 +162,7 @@ defmodule Vmemo.Photos.Photo do
             |> Enum.filter(&valid_uuid?/1)
 
           if photo_ids == [] do
-            {:ok, "<div>No photos found.</div>"}
+            {:ok, Jason.encode!([])}
           else
             query =
               __MODULE__
@@ -178,8 +178,20 @@ defmodule Vmemo.Photos.Photo do
                   |> Enum.reject(&is_nil/1)
                   |> Enum.map(&normalize_photo_url_for_api/1)
 
-                html = render_photos_as_html(sorted_records)
-                {:ok, html}
+                image_data_urls =
+                  sorted_records
+                  |> Enum.map(fn photo ->
+                    case read_image_as_base64(photo.url) do
+                      {:ok, {base64_data, mime_type}} ->
+                        "data:#{mime_type};base64,#{base64_data}"
+
+                      {:error, _reason} ->
+                        # Fallback to URL if image read fails
+                        photo.url
+                    end
+                  end)
+
+                {:ok, Jason.encode!(image_data_urls)}
 
               {:error, reason} ->
                 {:error, reason}
@@ -285,17 +297,99 @@ defmodule Vmemo.Photos.Photo do
       end
     end
 
+    # MCP Resource action: Return photo as image (base64 encoded)
+    # URI format: vmemo://photo/{id}/image
+    # The id will be extracted from the URI and passed as a parameter
+    action :get_photo_image, :string do
+      description "Get a photo as base64-encoded image data. Returns the image data in data URL format (data:image/{type};base64,...). The MIME type is auto-detected from file content (supports JPEG, PNG, GIF, WEBP)."
+
+      argument :uri, :string, allow_nil?: false
+
+      run fn input, context ->
+        uri = Ash.ActionInput.get_argument(input, :uri)
+        actor = Map.get(context, :actor)
+
+        # Extract photo ID from URI: vmemo://photo/{id}/image
+        id = extract_photo_id_from_uri(uri)
+
+        if is_nil(id) do
+          {:error, "Invalid URI format. Expected: vmemo://photo/{id}/image"}
+        else
+          case Ash.get(__MODULE__, id, actor: actor) do
+            {:ok, photo} ->
+              normalized_photo = normalize_photo_url_for_api(photo)
+
+              case read_image_as_base64(normalized_photo.url) do
+                {:ok, {base64_data, mime_type}} ->
+                  # Return data URL format: data:image/jpeg;base64,<base64_data>
+                  {:ok, "data:#{mime_type};base64,#{base64_data}"}
+
+                {:error, reason} ->
+                  {:error, "Failed to read image: #{inspect(reason)}"}
+              end
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
+      end
+    end
+
     # Helper function to extract photo ID from URI
     defp extract_photo_id_from_uri(uri) do
-      # Match pattern: vmemo://photo/{uuid}/url or vmemo://photo/{uuid}/html
+      # Match pattern: vmemo://photo/{uuid}/url or vmemo://photo/{uuid}/html or vmemo://photo/{uuid}/image
       regex =
-        ~r/vmemo:\/\/photo\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(url|html)/
+        ~r/vmemo:\/\/photo\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(url|html|image)/
 
       case Regex.run(regex, uri) do
         [_, id, _] -> id
         _ -> nil
       end
     end
+
+    # Helper function to read image file as base64 with MIME type detection
+    defp read_image_as_base64(url) do
+      relative_path =
+        url
+        |> String.trim_leading("/")
+        |> String.trim_leading("storage/v1/")
+
+      file_path =
+        if Mix.env() == :prod do
+          Path.join([Application.app_dir(:vmemo, "priv"), "storage", "v1", relative_path])
+        else
+          Path.join(["storage", "v1", relative_path])
+        end
+
+      case File.read(file_path) do
+        {:ok, binary} ->
+          mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
+          base64_data = Base.encode64(binary)
+          {:ok, {base64_data, mime_type}}
+
+        {:error, :enoent} ->
+          {:error, :file_not_found}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+
+    # Helper function to detect MIME type from binary image data
+    defp detect_mime_type_from_binary(<<0xFF, 0xD8, 0xFF, _::binary>>), do: "image/jpeg"
+
+    defp detect_mime_type_from_binary(
+           <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>
+         ),
+         do: "image/png"
+
+    defp detect_mime_type_from_binary(<<"GIF87a", _::binary>>), do: "image/gif"
+    defp detect_mime_type_from_binary(<<"GIF89a", _::binary>>), do: "image/gif"
+
+    defp detect_mime_type_from_binary(<<"RIFF", _::binary-size(4), "WEBP", _::binary>>),
+      do: "image/webp"
+
+    defp detect_mime_type_from_binary(_), do: nil
 
     read :list_similar do
       argument :photo_id, :uuid, allow_nil?: false
