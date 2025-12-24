@@ -335,32 +335,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
       <h2 class="text-lg font-semibold">Moondream AI</h2>
 
       <.form for={%{}} as={:moondream} phx-change="change" phx-submit="submit" phx-target={@myself}>
-        <div class="space-y-4">
-          <div class="space-y-2">
-            <textarea
-              name="moondream[prompt]"
-              placeholder="Enter prompt..."
-              class="textarea textarea-bordered w-full disabled:border-base-300"
-              rows="3"
-              disabled={@function == "caption"}
-            >{@prompt}</textarea>
-          </div>
-
-          <%= if has_detection_results?(@requests) do %>
-            <div class="flex flex-wrap gap-2">
-              <button
-                :for={tag <- get_detection_tags(@requests)}
-                type="button"
-                class="btn btn-outline rounded-full"
-                phx-click="set_prompt"
-                phx-target={@myself}
-                phx-value-prompt={tag}
-              >
-                {tag}
-              </button>
-            </div>
-          <% end %>
-
+        <div class="space-y-2">
           <div class="flex flex-wrap gap-2">
             <label
               :for={func <- function_types()}
@@ -387,6 +362,31 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
               {String.capitalize(func)}
             </label>
           </div>
+
+          <div class="space-y-2">
+            <textarea
+              name="moondream[prompt]"
+              placeholder="Enter prompt..."
+              class="textarea textarea-bordered w-full disabled:border-base-300"
+              rows="3"
+              disabled={@function == "caption"}
+            >{@prompt}</textarea>
+          </div>
+
+          <%= if has_detection_results?(@requests) do %>
+            <div class="flex flex-wrap gap-2">
+              <button
+                :for={tag <- get_detection_tags(@requests)}
+                type="button"
+                class="btn btn-outline rounded-full"
+                phx-click="set_prompt"
+                phx-target={@myself}
+                phx-value-prompt={tag}
+              >
+                {tag}
+              </button>
+            </div>
+          <% end %>
 
           <div class="flex justify-end">
             <button type="submit" class="btn btn-primary">
