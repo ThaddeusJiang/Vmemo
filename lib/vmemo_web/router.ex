@@ -25,7 +25,7 @@ defmodule VmemoWeb.Router do
 
   # MCP pipeline - optional authentication for MCP server
   # Allows unauthenticated access for public tools, but sets actor if API token is provided
-  # Accepts both json and text/event-stream formats for MCP protocol
+  # Only supports StreamableHttp (POST requests), not SSE (GET requests)
   pipeline :mcp do
     plug :accepts, ["json", "event-stream"]
     plug VmemoWeb.McpAuth

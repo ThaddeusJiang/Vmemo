@@ -12,6 +12,21 @@ defmodule Vmemo.Photos do
     end
   end
 
+  mcp_resources do
+    # Photo URL resource - returns the photo URL as a string
+    mcp_resource :photo_url, "vmemo://photo/:id/url", Vmemo.Photos.Photo, :get_photo_url,
+      title: "Photo URL",
+      description: "Get the URL of a photo by ID. Returns the photo URL as a string.",
+      mime_type: "text/plain"
+
+    # Photo HTML resource - returns the photo as HTML
+    mcp_resource :photo_html, "vmemo://photo/:id/html", Vmemo.Photos.Photo, :get_photo_html,
+      title: "Photo HTML",
+      description:
+        "Get a photo as HTML. Returns an HTML img tag with the photo URL, caption, and note.",
+      mime_type: "text/html"
+  end
+
   resources do
     resource Vmemo.Photos.Photo
     resource Vmemo.Photos.Note

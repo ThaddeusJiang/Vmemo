@@ -13,13 +13,33 @@ defmodule VmemoWeb.McpAuth do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    case get_req_header(conn, "authorization") do
-      ["Bearer " <> token] when token != "" ->
-        verify_token(conn, token)
+    # Only support StreamableHttp (POST requests), reject GET requests
+    # GET requests are used for SSE endpoint discovery, but we only support StreamableHttp
+    if conn.method == "GET" do
+      Logger.warning(
+        "MCP GET request rejected: This server only supports StreamableHttp (POST requests). path=#{conn.request_path}, remote_ip=#{inspect(conn.remote_ip)}"
+      )
 
-      _ ->
-        # Allow unauthenticated access for public tools
-        conn
+      conn
+      |> put_resp_header("content-type", "application/json")
+      |> send_resp(
+        405,
+        Jason.encode!(%{
+          error: "Method Not Allowed",
+          message:
+            "This MCP server only supports StreamableHttp transport. Please use POST requests instead of GET."
+        })
+      )
+      |> halt()
+    else
+      case get_req_header(conn, "authorization") do
+        ["Bearer " <> token] when token != "" ->
+          verify_token(conn, token)
+
+        _ ->
+          # Allow unauthenticated access for public tools
+          conn
+      end
     end
   end
 
@@ -27,11 +47,11 @@ defmodule VmemoWeb.McpAuth do
     case Vmemo.ApiTokenService.verify_api_token(token) do
       {:ok, api_token} ->
         # Set actor if token is valid
-        # Ash.PlugHelpers.get_actor looks for conn.assigns[:actor]
+        # Use Ash.PlugHelpers.set_actor/2 to store actor in conn.private[:ash][:actor]
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_ash_user, api_token.ash_user)
-        |> assign(:actor, api_token.ash_user)
+        |> Ash.PlugHelpers.set_actor(api_token.ash_user)
 
       {:error, reason} ->
         Logger.warning("MCP API token verification failed: #{reason}")

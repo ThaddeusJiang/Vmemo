@@ -132,7 +132,7 @@ defmodule Vmemo.Photos.Photo do
     end
 
     action :search_photos, :term do
-      description "Search photos by text query or find similar photos. Returns photos matching the search criteria."
+      description "Search photos by text query or find similar photos. Returns HTML with photos matching the search criteria."
 
       argument :query, :string, default: ""
       argument :similar_photo_id, :string, allow_nil?: true
@@ -162,7 +162,7 @@ defmodule Vmemo.Photos.Photo do
             |> Enum.filter(&valid_uuid?/1)
 
           if photo_ids == [] do
-            {:ok, []}
+            {:ok, "<div>No photos found.</div>"}
           else
             query =
               __MODULE__
@@ -178,13 +178,122 @@ defmodule Vmemo.Photos.Photo do
                   |> Enum.reject(&is_nil/1)
                   |> Enum.map(&normalize_photo_url_for_api/1)
 
-                {:ok, sorted_records}
+                html = render_photos_as_html(sorted_records)
+                {:ok, html}
 
               {:error, reason} ->
                 {:error, reason}
             end
           end
         end
+      end
+    end
+
+    # MCP Resource action: Return photo URL as string
+    # URI format: vmemo://photo/{id}/url
+    # The id will be extracted from the URI and passed as a parameter
+    action :get_photo_url, :string do
+      description "Get the URL of a photo by ID. Returns the photo URL as a string."
+
+      argument :uri, :string, allow_nil?: false
+
+      run fn input, context ->
+        uri = Ash.ActionInput.get_argument(input, :uri)
+        actor = Map.get(context, :actor)
+
+        # Extract photo ID from URI: vmemo://photo/{id}/url
+        id = extract_photo_id_from_uri(uri)
+
+        if is_nil(id) do
+          {:error, "Invalid URI format. Expected: vmemo://photo/{id}/url"}
+        else
+          case Ash.get(__MODULE__, id, actor: actor) do
+            {:ok, photo} ->
+              normalized_photo = normalize_photo_url_for_api(photo)
+              {:ok, normalized_photo.url}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
+      end
+    end
+
+    # MCP Resource action: Return photo as HTML
+    # URI format: vmemo://photo/{id}/html
+    # The id will be extracted from the URI and passed as a parameter
+    action :get_photo_html, :string do
+      description "Get a photo as HTML. Returns an HTML img tag with the photo URL, caption, and note."
+
+      argument :uri, :string, allow_nil?: false
+
+      run fn input, context ->
+        uri = Ash.ActionInput.get_argument(input, :uri)
+        actor = Map.get(context, :actor)
+
+        # Extract photo ID from URI: vmemo://photo/{id}/html
+        id = extract_photo_id_from_uri(uri)
+
+        if is_nil(id) do
+          {:error, "Invalid URI format. Expected: vmemo://photo/{id}/html"}
+        else
+          case Ash.get(__MODULE__, id, actor: actor) do
+            {:ok, photo} ->
+              normalized_photo = normalize_photo_url_for_api(photo)
+              base_url = get_base_url()
+
+              full_url =
+                if String.starts_with?(normalized_photo.url, "http"),
+                  do: normalized_photo.url,
+                  else: base_url <> normalized_photo.url
+
+              {:safe, alt_text} =
+                Phoenix.HTML.html_escape(
+                  normalized_photo.caption || normalized_photo.note || "Photo"
+                )
+
+              caption_html =
+                if normalized_photo.caption do
+                  {:safe, escaped_caption} = Phoenix.HTML.html_escape(normalized_photo.caption)
+                  "<p class=\"photo-caption\">#{escaped_caption}</p>"
+                else
+                  ""
+                end
+
+              note_html =
+                if normalized_photo.note do
+                  {:safe, escaped_note} = Phoenix.HTML.html_escape(normalized_photo.note)
+                  "<p class=\"photo-note\">#{escaped_note}</p>"
+                else
+                  ""
+                end
+
+              html = """
+              <div class="photo-card">
+                <img src="#{full_url}" alt="#{alt_text}" class="photo-image" />
+                #{caption_html}
+                #{note_html}
+              </div>
+              """
+
+              {:ok, html}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
+      end
+    end
+
+    # Helper function to extract photo ID from URI
+    defp extract_photo_id_from_uri(uri) do
+      # Match pattern: vmemo://photo/{uuid}/url or vmemo://photo/{uuid}/html
+      regex =
+        ~r/vmemo:\/\/photo\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(url|html)/
+
+      case Regex.run(regex, uri) do
+        [_, id, _] -> id
+        _ -> nil
       end
     end
 
@@ -299,6 +408,49 @@ defmodule Vmemo.Photos.Photo do
     # Update the photo struct with normalized URL
     %{photo | url: normalized_url}
   end
+
+  # Render multiple photos as HTML
+  defp render_photos_as_html(photos) when is_list(photos) do
+    base_url = get_base_url()
+
+    photo_htmls =
+      Enum.map(photos, fn photo ->
+        full_url =
+          if String.starts_with?(photo.url, "http"),
+            do: photo.url,
+            else: base_url <> photo.url
+
+        {:safe, alt_text} = Phoenix.HTML.html_escape(photo.caption || photo.note || "Photo")
+
+        caption_html =
+          if photo.caption do
+            {:safe, escaped_caption} = Phoenix.HTML.html_escape(photo.caption)
+            "<div class=\"photo-caption\">#{escaped_caption}</div>"
+          else
+            ""
+          end
+
+        note_html =
+          if photo.note do
+            {:safe, escaped_note} = Phoenix.HTML.html_escape(photo.note)
+            "<div class=\"photo-note\">#{escaped_note}</div>"
+          else
+            ""
+          end
+
+        """
+        <div class="photo-card">
+          <img src="#{full_url}" alt="#{alt_text}" class="photo-image" />
+          #{caption_html}
+          #{note_html}
+        </div>
+        """
+      end)
+
+    "<div class=\"photo-search-results\">#{Enum.join(photo_htmls, "")}</div>"
+  end
+
+  defp render_photos_as_html(_), do: "<div>No photos found.</div>"
 
   defp get_base_url do
     if Mix.env() == :prod do
