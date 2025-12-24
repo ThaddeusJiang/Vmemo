@@ -11,8 +11,8 @@ defmodule VmemoWeb.LiveComponents.MarkdownContent do
     # Get user from assigns (passed from parent) or socket.assigns
     user =
       Map.get(assigns, :current_ash_user) ||
-      Map.get(socket.assigns, :current_ash_user) ||
-      socket.assigns[:current_ash_user]
+        Map.get(socket.assigns, :current_ash_user) ||
+        socket.assigns[:current_ash_user]
 
     processed_html = process_images_in_html(html, user)
 
@@ -62,20 +62,17 @@ defmodule VmemoWeb.LiveComponents.MarkdownContent do
   defp process_images_in_html(html, user) when is_binary(html) do
     # Extract all image URLs from HTML
     regex = ~r{<img([^>]*src=["']([^"']*\/storage\/v1\/[^"']*\/photos\/[^"']*)["'][^>]*)>}i
-    urls = Regex.scan(regex, html) |> Enum.map(fn [_match, _attrs, url] -> normalize_url_for_extraction(url) end) |> Enum.uniq()
+
+    urls =
+      Regex.scan(regex, html)
+      |> Enum.map(fn [_match, _attrs, url] -> normalize_url_for_extraction(url) end)
+      |> Enum.uniq()
 
     # Query database to find photo ids by URLs
     url_to_id_map =
       if user && urls != [] do
         build_url_to_id_map(urls, user)
       else
-        require Logger
-        if is_nil(user) do
-          Logger.warning("MarkdownContent: user is nil, cannot query photos")
-        end
-        if urls == [] do
-          Logger.debug("MarkdownContent: no photo URLs found in HTML")
-        end
         %{}
       end
 
@@ -141,5 +138,4 @@ defmodule VmemoWeb.LiveComponents.MarkdownContent do
   end
 
   defp normalize_url_for_extraction(_), do: ""
-
 end

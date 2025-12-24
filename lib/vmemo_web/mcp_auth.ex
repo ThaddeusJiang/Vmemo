@@ -16,10 +16,6 @@ defmodule VmemoWeb.McpAuth do
     # Only support StreamableHttp (POST requests), reject GET requests
     # GET requests are used for SSE endpoint discovery, but we only support StreamableHttp
     if conn.method == "GET" do
-      Logger.warning(
-        "MCP GET request rejected: This server only supports StreamableHttp (POST requests). path=#{conn.request_path}, remote_ip=#{inspect(conn.remote_ip)}"
-      )
-
       conn
       |> put_resp_header("content-type", "application/json")
       |> send_resp(

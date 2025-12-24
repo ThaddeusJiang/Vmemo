@@ -8,6 +8,7 @@ defmodule Vmemo.AshRepo.Migrations.CreateConversationsAndMessages do
       id uuid NOT NULL DEFAULT uuid_generate_v7() PRIMARY KEY,
       title text,
       user_id uuid NOT NULL REFERENCES ash_users(id) ON DELETE CASCADE,
+      archived_at timestamp(6),
       inserted_at timestamp(6) NOT NULL,
       updated_at timestamp(6) NOT NULL
     );
