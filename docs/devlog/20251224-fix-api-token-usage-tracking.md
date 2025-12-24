@@ -1,12 +1,12 @@
-# Fix API Token Usage Tracking
+# 修复 API Token 使用追踪
 
-## Problem
+## 问题
 
 发现 API Token 的 `last_used_at` 和 `usage_count` 显示不准确：
 - `last_used_at` 显示为 "Never used"，但实际可能已经使用过
 - `usage_count` 硬编码为 0，完全没有统计功能
 
-## Root Cause
+## 根本原因
 
 1. **last_used_at 更新问题**：
    - `update_last_used_at` 函数没有检查返回值，如果更新失败也不会报错
@@ -17,7 +17,7 @@
    - 数据库表中也没有该字段
    - UI 中硬编码为 0
 
-## Solution
+## 解决方案
 
 ### 1. 修复 last_used_at 更新逻辑
 
@@ -36,9 +36,9 @@
 
 - 修改 `index.ex` 和 `show.ex` 中的 Usage Count 显示，从硬编码的 0 改为显示 `token.usage_count || 0`
 
-## Changes
+## 变更
 
-### Files Modified
+### 修改的文件
 
 1. `lib/vmemo/api_token_service.ex`
    - 修复 `update_token_usage` 函数，添加错误处理
@@ -54,12 +54,12 @@
 4. `lib/vmemo_web/live/api_token_live/show.ex`
    - 更新 Usage Count 显示真实数据
 
-### Files Created
+### 创建的文件
 
 1. `priv/ash_repo/migrations/20251224121701_add_usage_count_to_api_tokens.exs`
    - 添加 `usage_count` 字段到 `api_tokens` 表
 
-## Testing
+## 测试
 
 迁移已成功运行，数据库字段已正确添加：
 - `usage_count`: bigint, default 0
@@ -67,7 +67,7 @@
 
 所有现有 token 的 `usage_count` 初始化为 0，这是正确的。
 
-## Next Steps
+## 后续步骤
 
 当 API token 被使用时（通过 `verify_api_token`），系统会：
 1. 更新 `last_used_at` 为当前时间

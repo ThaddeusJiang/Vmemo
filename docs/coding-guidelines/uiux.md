@@ -1,4 +1,4 @@
-# UI
+# UIUX Guidelines
 
 - 设计参考 shadcn/ui 并进行风格微调
 - library 使用 daisyUI

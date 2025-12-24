@@ -1,3 +1,3 @@
-# Building and Running
+# 构建和运行
 
-I am using elixir runtime image, keep simple, just use `Mix` like local development.
+我使用 Elixir 运行时镜像，保持简单，就像本地开发一样使用 `Mix`。

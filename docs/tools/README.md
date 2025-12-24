@@ -1,3 +1,3 @@
-# Tools
+# 工具
 
-- Monitor: https://sentry.io (Sentry 错误监控)
+- 监控：https://sentry.io (Sentry 错误监控)

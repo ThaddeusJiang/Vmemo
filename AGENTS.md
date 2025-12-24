@@ -1,103 +1,103 @@
-- **Alway** reply and generate git message in **Chinese**, write code(includes UI) in only **English**
+- **总是**用**中文**回复和生成 git 提交信息，代码（包括 UI）只用**英文**编写
 
-# Vmemo is a web application written using **Phoenix** **LiveView** **Ash** **Oban**
+# Vmemo 是一个使用 **Phoenix** **LiveView** **Ash** **Oban** 编写的 Web 应用
 
-## Elixir Phoenix LiveView basic conventions
+## Elixir Phoenix LiveView 基本约定
 
-See `AGENTS-elixir-phoenix-liveview.md`
+参见 `docs/coding-guidelines/elixir-phoenix-liveview.md`
 
-## Personal
+## 个人规范
 
-- **Alway** document-driven-development, create `docs/devlog/YYYYMMDD-title.md` and record the dev log.
-- **Never** use i18n, always use English text directly in code
-- **Never** too many comments, keep the code simple and easy to understand
-- **Never** run `build` and `start` commands until I request, most time the code has `hot replace`
+- **总是**采用文档驱动开发，创建 `docs/devlog/YYYYMMDD-title.md` 并记录开发日志
+- **绝不**使用 i18n，代码中始终直接使用英文文本
+- **绝不**写过多注释，保持代码简洁易懂
+- **绝不**运行 `build` 和 `start` 命令，除非我要求，大多数情况下代码支持热替换
 
-## Web Application
+## Web 应用规范
 
-- **Never** navigate when the form or action failed, should error message
-- **Never** lose or modify user's input when form validation failed
-- **Always** show message nearly action
-  - form error message should near form
-  - button error message should near button
+- **绝不**在表单或操作失败时导航，应该显示错误消息
+- **绝不**在表单验证失败时丢失或修改用户输入
+- **总是**在操作附近显示消息
+  - 表单错误消息应该在表单附近
+  - 按钮错误消息应该在按钮附近
 
-## Elixir guidelines
+## Elixir 规范
 
-- Elixir has **pattern matching**
+- Elixir 具有**模式匹配**特性
 
-## Ash guidelines
+## Ash 规范
 
-- use **Ash** instead of **Ecto**
-- **Always** use `:string` + `validations` for enum/status fields in models
-  - Advantages: modifying enum values doesn't require database migration, no database locks needed
-  - Example: use `attribute :status, :string` with validation checking allowed values
+- 使用 **Ash** 而不是 **Ecto**
+- **总是**对模型中的枚举/状态字段使用 `:string` + `validations`
+  - 优势：修改枚举值不需要数据库迁移，不需要数据库锁
+  - 示例：使用 `attribute :status, :string` 并验证允许的值
 
-**mix guidelines**
+**mix 规范**
 
-- get routes by `mix phx.routes`
-- alway use `mix` run scripts
+- 通过 `mix phx.routes` 获取路由
+- 总是使用 `mix` 运行脚本
 
-**Phoenix guidelines**
+**Phoenix 规范**
 
-- **Never** create `.heex` for LiveView, write HTML in **render()**
-  -Phoenix can use `<.link method="delete">` can server functions
-- LiveView can use `push_event` trigger client-side event
+- **绝不**为 LiveView 创建 `.heex` 文件，在 **render()** 中编写 HTML
+  - Phoenix 可以使用 `<.link method="delete">` 调用服务器函数
+- LiveView 可以使用 `push_event` 触发客户端事件
 
-- **Always** use **kebab-case** for LiveView event names (both in `handle_event` and `phx-*` attributes)
+- **总是**对 LiveView 事件名称使用 **kebab-case**（在 `handle_event` 和 `phx-*` 属性中都是如此）
 
-  - Example: `handle_event("send-message", ...)` and `phx-submit="send-message"`
-  - This provides consistency with HTML attribute naming conventions
+  - 示例：`handle_event("send-message", ...)` 和 `phx-submit="send-message"`
+  - 这提供了与 HTML 属性命名约定的一致性
 
-- **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
+- **总是**使用 [LiveView 内置上传功能](https://hexdocs.pm/phoenix_live_view/uploads.html) 进行文件上传
 
-- **Component organization**:
-  - **Always** split complex UI logic into LiveComponents when:
-    - Single file exceeds ~500 lines
-    - UI section has independent state and event handling
-    - Component can be reused in multiple places
-  - **Keep components focused**: Each component should handle a single responsibility
-  - **Component communication**: Use `send(self(), {:event, data})` to notify parent LiveView when component needs to update parent state
-  - **File location**: Place components in `lib/vmemo_web/live/components/` directory
+- **组件组织**：
+  - **总是**在以下情况下将复杂的 UI 逻辑拆分为 LiveComponents：
+    - 单个文件超过约 500 行
+    - UI 部分具有独立的状态和事件处理
+    - 组件可以在多个地方重用
+  - **保持组件专注**：每个组件应该处理单一职责
+  - **组件通信**：当组件需要更新父级状态时，使用 `send(self(), {:event, data})` 通知父级 LiveView
+  - **文件位置**：将组件放在 `lib/vmemo_web/live/components/` 目录中
 
-**PostgreSQL rules**
+**PostgreSQL 规范**
 
-- Do **not** use `LIKE` operators! use Postgres built-in `Full Text Search` Queries.
-- **Alway** use `uuidv7`
+- **不要**使用 `LIKE` 操作符！使用 Postgres 内置的**全文搜索**查询
+- **总是**使用 `uuidv7`
 
-**Data Synchronization**
+**数据同步**
 
-- **Database**: Update immediately (synchronous)
-- **Typesense**: Update asynchronously via Oban job
+- **数据库**：立即更新（同步）
+- **Typesense**：通过 Oban 作业异步更新
 
-**git guidelines**
+**git 规范**
 
-- **Alway** generate Simple git message, use `feat(scope):` `fix(scope):` `chore(scope):` as prefix
-- **Never** commit `.playwright-mcp/*`
+- **总是**生成简单的 git 提交信息，使用 `feat(scope):` `fix(scope):` `chore(scope):` 作为前缀
+- **绝不**提交 `.playwright-mcp/*`
 
-**Code format**
+**代码格式**
 
-- Never remove the **space** inside of HTML class
+- 永远不要删除 HTML class 中的**空格**
 
-**Tools**
+**工具**
 
-- `mise` is used for version management (Elixir, Erlang). The project uses `.tool-versions` file to specify versions. **Always** use mise to manage Elixir/Erlang versions, not Homebrew or other package managers.
-- `Tidewave` is the coding agent for full-stack web app development, deeply integrated with Phoenix, from the database to the UI.
-- `Context7` MCP pulls up-to-date, version-specific documentation and code examples
-- `Playwright` interact with web pages, I prefer to take **ScreenShots** not snapshots
-- **Never** use `python` run scripts, you can use `jq` `curl` `gh` etc.
+- `mise` 用于版本管理（Elixir, Erlang）。项目使用 `.tool-versions` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
+- `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
+- `Context7` MCP 拉取最新的、特定版本的文档和代码示例
+- `Playwright` 与网页交互，我更喜欢使用**截图**而不是快照
+- **绝不**使用 `python` 运行脚本，可以使用 `jq` `curl` `gh` 等
 
-**Local debug and test guidelines**
+**本地调试和测试规范**
 
-- **Prefer** use **real data** and **UI** for testing
-- **Alway** use real files in `test/testdata_files/**` for `Upload` testing
+- **优先**使用**真实数据**和**UI**进行测试
+- **总是**在 `Upload` 测试中使用 `test/testdata_files/**` 中的真实文件
 
-You can use test account in Local
+你可以在本地使用测试账号
 
 ```
 email = "test@example.com"
 password = "password123456"
 ```
 
-## Project guidelines
+## 项目规范
 
-- **Version Management**: This project uses `mise` for Elixir/Erlang version management. The `.tool-versions` file specifies the required versions. When setting up the project, run `mise install` to install the correct versions automatically.
+- **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`.tool-versions` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
