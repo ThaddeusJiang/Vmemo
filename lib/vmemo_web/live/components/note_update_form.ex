@@ -45,7 +45,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
           type="button"
           variant="danger"
           data-confirm="You can't undo this action. Are you sure?"
-          phx-click="delete_note"
+          phx-click="delete-note"
           phx-value-id={@note.id}
           phx-target={@myself}
         >
@@ -72,7 +72,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   end
 
   @impl true
-  def handle_event("delete_note", %{"id" => id}, socket) do
+  def handle_event("delete-note", %{"id" => id}, socket) do
     TsNote.delete(id)
 
     {:noreply, socket |> put_flash(:info, "Deleted") |> push_navigate(to: ~p"/home")}

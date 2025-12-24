@@ -21,7 +21,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         <div :if={!@loading} class="space-y-6">
           <!-- Form -->
           <div class="bg-base-100 rounded-box shadow p-6">
-            <.simple_form for={@form} phx-submit="save_token" phx-change="validate_token">
+            <.simple_form for={@form} phx-submit="save-token" phx-change="validate-token">
               <.input field={@form[:name]} label="Token Name" placeholder="e.g., Mobile App" />
 
               <.input
@@ -83,7 +83,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
               />
               <.button
                 variant="outline"
-                phx-click="copy_token"
+                phx-click="copy-token"
                 phx-value-token={@new_token}
               >
                 <.icon name="hero-clipboard" class="h-4 w-4" />
@@ -123,7 +123,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
      |> assign(:loading, false)}
   end
 
-  def handle_event("save_token", params, socket) do
+  def handle_event("save-token", params, socket) do
     user = socket.assigns.current_ash_user
 
     # 处理表单参数
@@ -162,7 +162,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     end
   end
 
-  def handle_event("validate_token", params, socket) do
+  def handle_event("validate-token", params, socket) do
     form_params =
       case params do
         %{"form" => form_params} -> form_params
@@ -177,7 +177,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     {:noreply, assign(socket, :form, form)}
   end
 
-  def handle_event("copy_token", %{"token" => token}, socket) do
+  def handle_event("copy-token", %{"token" => token}, socket) do
     {:noreply,
      socket
      |> push_event("copy_to_clipboard", %{text: token})

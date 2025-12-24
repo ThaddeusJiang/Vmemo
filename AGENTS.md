@@ -43,6 +43,11 @@ See `AGENTS-elixir-phoenix-liveview.md`
   -Phoenix can use `<.link method="delete">` can server functions
 - LiveView can use `push_event` trigger client-side event
 
+- **Always** use **kebab-case** for LiveView event names (both in `handle_event` and `phx-*` attributes)
+
+  - Example: `handle_event("send-message", ...)` and `phx-submit="send-message"`
+  - This provides consistency with HTML attribute naming conventions
+
 - **Alway** use [LiveView built-in Uploads](https://hexdocs.pm/phoenix_live_view/uploads.html) for file uploads
 
 - **Component organization**:

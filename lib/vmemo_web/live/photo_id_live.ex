@@ -73,7 +73,7 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_event("delete_photo", %{"id" => id}, socket) do
+  def handle_event("delete-photo", %{"id" => id}, socket) do
     user = socket.assigns.current_ash_user
 
     case Ash.get(Photo, id, actor: user) do
@@ -118,7 +118,7 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_event("gen_description", _, socket) do
+  def handle_event("gen-description", _, socket) do
     user = socket.assigns.current_ash_user
 
     case Photo.gen_description(socket.assigns.photo, actor: user) do
@@ -141,12 +141,12 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_event("show_expanded", _, socket) do
+  def handle_event("show-expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: true)}
   end
 
   @impl true
-  def handle_event("hide_extened", _, socket) do
+  def handle_event("hide-expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: false)}
   end
 
@@ -214,7 +214,7 @@ defmodule VmemoWeb.PhotoIdLive do
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle text-green-500"
                     aria-label={gettext("Regenerate caption")}
-                    phx-click="gen_description"
+                    phx-click="gen-description"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -244,7 +244,7 @@ defmodule VmemoWeb.PhotoIdLive do
                     variant="outline"
                     class=" absolute top-2 left-2 btn-circle btn-icon"
                     aria-label={gettext("Generate caption")}
-                    phx-click="gen_description"
+                    phx-click="gen-description"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -291,7 +291,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
                 <.button
                   variant="outline"
-                  phx-click="show_expanded"
+                  phx-click="show-expanded"
                   aria-label={gettext("expand")}
                   class="absolute bottom-2 right-2 btn-circle hidden group-hover:hidden sm:group-hover:flex items-center justify-center group-hover:bg-base-100"
                 >
@@ -334,7 +334,7 @@ defmodule VmemoWeb.PhotoIdLive do
                   <.button>Save</.button>
                   <.button
                     variant="danger"
-                    phx-click="delete_photo"
+                    phx-click="delete-photo"
                     phx-value-id={@photo.id}
                     data-confirm="You can't undo this action. Are you sure?"
                     aria-label={gettext("delete")}
@@ -404,7 +404,7 @@ defmodule VmemoWeb.PhotoIdLive do
           </div>
         </div>
 
-        <.modal :if={@show_expanded} id="expanded_photo" show on_cancel={JS.push("hide_extened")}>
+        <.modal :if={@show_expanded} id="expanded_photo" show on_cancel={JS.push("hide-expanded")}>
           <.img src={@photo.url} alt={@photo.note} />
         </.modal>
       <% end %>

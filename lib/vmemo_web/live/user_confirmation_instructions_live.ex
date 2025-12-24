@@ -11,7 +11,7 @@ defmodule VmemoWeb.UserConfirmationInstructionsLive do
         <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
       </.header>
 
-      <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send_instructions">
+      <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send-instructions">
         <.input field={@form[:email]} type="email" placeholder="Email" required />
         <:actions>
           <.button phx-disable-with="Sending..." class="w-full">
@@ -31,7 +31,7 @@ defmodule VmemoWeb.UserConfirmationInstructionsLive do
     {:ok, assign(socket, form: to_form(%{}, as: "user"))}
   end
 
-  def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
+  def handle_event("send-instructions", %{"user" => %{"email" => email}}, socket) do
     if user = Account.get_ash_user_by_email(email) do
       Account.deliver_ash_user_confirmation_instructions(
         user,

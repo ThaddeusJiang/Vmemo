@@ -16,8 +16,8 @@ defmodule VmemoWeb.UserSettingsLive do
           <.simple_form
             for={@email_form}
             id="email_form"
-            phx-submit="update_email"
-            phx-change="validate_email"
+            phx-submit="update-email"
+            phx-change="validate-email"
           >
             <.input field={@email_form[:email]} type="email" label="Email" required />
             <.input
@@ -40,8 +40,8 @@ defmodule VmemoWeb.UserSettingsLive do
             id="password_form"
             action={~p"/users/update-password"}
             method="post"
-            phx-change="validate_password"
-            phx-submit="update_password"
+            phx-change="validate-password"
+            phx-submit="update-password"
             phx-trigger-action={@trigger_submit}
           >
             <input name="action" type="hidden" value="update_password" />
@@ -104,7 +104,7 @@ defmodule VmemoWeb.UserSettingsLive do
     {:ok, socket}
   end
 
-  def handle_event("validate_email", params, socket) do
+  def handle_event("validate-email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_ash_user
 
@@ -120,7 +120,7 @@ defmodule VmemoWeb.UserSettingsLive do
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
 
-  def handle_event("update_email", params, socket) do
+  def handle_event("update-email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_ash_user
 
@@ -143,7 +143,7 @@ defmodule VmemoWeb.UserSettingsLive do
     end
   end
 
-  def handle_event("validate_password", params, socket) do
+  def handle_event("validate-password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_ash_user
 
@@ -159,7 +159,7 @@ defmodule VmemoWeb.UserSettingsLive do
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
 
-  def handle_event("update_password", params, socket) do
+  def handle_event("update-password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_ash_user
 

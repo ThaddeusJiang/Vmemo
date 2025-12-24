@@ -31,12 +31,12 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
-  def handle_event("show_expanded", _, socket) do
+  def handle_event("show-expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: true)}
   end
 
   @impl true
-  def handle_event("hide_expanded", _, socket) do
+  def handle_event("hide-expanded", _, socket) do
     socket =
       socket.assigns.uploads.photo.entries
       |> Enum.reduce(socket, fn entry, acc ->
@@ -48,7 +48,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
-  def handle_event("cancel_photo", %{"ref" => ref}, socket) do
+  def handle_event("cancel-photo", %{"ref" => ref}, socket) do
     {:noreply, cancel_upload(socket, :photo, ref)}
   end
 
@@ -72,7 +72,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
-  def handle_event("search_by_photo", _, socket) do
+  def handle_event("search-by-photo", _, socket) do
     current_user =
       Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
 
@@ -234,7 +234,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
               stroke-width="1.5"
               stroke="currentColor"
               class="size-6 hover:cursor-pointer hover:opacity-80"
-              phx-click="show_expanded"
+              phx-click="show-expanded"
               phx-target={@myself}
               tabIndex={0}
               role="button"
@@ -257,7 +257,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           <p class="text-gray-500 text-sm">Search by photo</p>
           <.button
             variant="ghost"
-            phx-click="hide_expanded"
+            phx-click="hide-expanded"
             phx-target={@myself}
             class="btn-circle absolute top-2 right-2"
           >
@@ -267,7 +267,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         <form
           id="search-by-photo"
           class="form-control flex flex-col items-center justify-center gap-4 flex-1"
-          phx-submit="search_by_photo"
+          phx-submit="search-by-photo"
           phx-change="validate"
           phx-target={@myself}
           phx-hook="ClipboardMediaFetcher"

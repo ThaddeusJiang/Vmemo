@@ -25,7 +25,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
             type="text"
             id={"title-input-#{@id}"}
             value={@conversation.title || ""}
-            phx-keydown="handle_keydown"
+            phx-keydown="handle-keydown"
             phx-target={@myself}
             name="title"
             class="input input-bordered flex-1"
@@ -50,7 +50,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
       </div>
       <div
         :if={!@editing}
-        phx-click="start_edit"
+        phx-click="start-edit"
         phx-target={@myself}
         class="cursor-pointer hover:opacity-70 flex-1 text-base"
       >
@@ -61,7 +61,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
   end
 
   @impl true
-  def handle_event("start_edit", _params, socket) do
+  def handle_event("start-edit", _params, socket) do
     socket = assign(socket, :editing, true)
     # Push event to focus and select all text after a short delay
     socket =
@@ -78,11 +78,11 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
     {:noreply, assign(socket, :editing, false)}
   end
 
-  def handle_event("handle_keydown", %{"key" => "Escape"}, socket) do
+  def handle_event("handle-keydown", %{"key" => "Escape"}, socket) do
     {:noreply, assign(socket, :editing, false)}
   end
 
-  def handle_event("handle_keydown", _params, socket) do
+  def handle_event("handle-keydown", _params, socket) do
     {:noreply, socket}
   end
 

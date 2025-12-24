@@ -16,9 +16,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error">Close</.button>
+          <.button variant="ghost" phx-click="clear-error">Close</.button>
         </div>
-
+        
     <!-- Loading state -->
         <div :if={@loading} class="flex justify-center items-center py-8">
           <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -67,7 +67,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-
+          
     <!-- Token details -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Token Information</h3>
@@ -134,7 +134,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-
+          
     <!-- Usage statistics -->
           <div class="bg-base-100 rounded-box shadow p-6">
             <h3 class="text-lg font-semibold mb-4">Usage Statistics</h3>
@@ -161,12 +161,12 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               </div>
             </div>
           </div>
-
+          
     <!-- Action buttons -->
           <div class="flex flex-wrap gap-2 justify-center">
             <.button
               variant="outline"
-              phx-click="toggle_token_status"
+              phx-click="toggle-token-status"
               class={if @api_token.is_active, do: "text-warning", else: "text-success"}
             >
               <.icon
@@ -176,13 +176,13 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               {if @api_token.is_active, do: "Disable", else: "Enable"}
             </.button>
 
-            <.button variant="danger" phx-click="delete_token">
+            <.button variant="danger" phx-click="delete-token">
               <.icon name="hero-trash" class="h-4 w-4" /> Delete Token
             </.button>
           </div>
         </div>
       </div>
-
+      
     <!-- Delete confirmation Modal -->
       <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
         <:header>
@@ -200,7 +200,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
         <:footer>
           <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
-          <.button variant="danger" phx-click="confirm_delete">Delete</.button>
+          <.button variant="danger" phx-click="confirm-delete">Delete</.button>
         </:footer>
       </.modal>
     </div>
@@ -221,13 +221,13 @@ defmodule VmemoWeb.ApiTokenLive.Show do
     end
   end
 
-  def handle_event("delete_token", _params, socket) do
+  def handle_event("delete-token", _params, socket) do
     {:noreply,
      socket
      |> assign(:show_delete_modal, true)}
   end
 
-  def handle_event("confirm_delete", _params, socket) do
+  def handle_event("confirm-delete", _params, socket) do
     token = socket.assigns.api_token
 
     socket = assign(socket, :loading, true)
@@ -248,7 +248,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
     end
   end
 
-  def handle_event("toggle_token_status", _params, socket) do
+  def handle_event("toggle-token-status", _params, socket) do
     token = socket.assigns.api_token
 
     socket = assign(socket, :loading, true)
@@ -271,7 +271,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
     end
   end
 
-  def handle_event("clear_error", _params, socket) do
+  def handle_event("clear-error", _params, socket) do
     {:noreply, assign(socket, :error_message, nil)}
   end
 

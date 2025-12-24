@@ -35,7 +35,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
         <div :if={@error_message} class="alert alert-error mb-4">
           <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
           <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear_error">Close</.button>
+          <.button variant="ghost" phx-click="clear-error">Close</.button>
         </div>
         
     <!-- Loading state -->
@@ -118,7 +118,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="flex gap-1">
                   <.button
                     variant="outline"
-                    phx-click="toggle_token_status"
+                    phx-click="toggle-token-status"
                     phx-value-id={token.id}
                     class={
                       if token.is_active,
@@ -133,7 +133,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                   </.button>
                   <.button
                     variant="outline"
-                    phx-click="delete_token"
+                    phx-click="delete-token"
                     phx-value-id={token.id}
                     class="btn-square text-error"
                   >
@@ -163,7 +163,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
         <:footer>
           <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
-          <.button variant="danger" phx-click="confirm_delete">Delete</.button>
+          <.button variant="danger" phx-click="confirm-delete">Delete</.button>
         </:footer>
       </.modal>
     </div>
@@ -191,7 +191,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
      |> assign(:expired_tokens, expired_tokens)}
   end
 
-  def handle_event("delete_token", %{"id" => id}, socket) do
+  def handle_event("delete-token", %{"id" => id}, socket) do
     user = socket.assigns.current_ash_user
     token = ApiTokenService.get_user_api_token!(user, id)
 
@@ -201,7 +201,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
      |> assign(:token_to_delete, token)}
   end
 
-  def handle_event("confirm_delete", _params, socket) do
+  def handle_event("confirm-delete", _params, socket) do
     token = socket.assigns.token_to_delete
 
     socket = assign(socket, :loading, true)
@@ -224,7 +224,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     end
   end
 
-  def handle_event("toggle_token_status", %{"id" => id}, socket) do
+  def handle_event("toggle-token-status", %{"id" => id}, socket) do
     user = socket.assigns.current_ash_user
 
     socket = assign(socket, :loading, true)
@@ -255,7 +255,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     end
   end
 
-  def handle_event("clear_error", _params, socket) do
+  def handle_event("clear-error", _params, socket) do
     {:noreply, assign(socket, :error_message, nil)}
   end
 
