@@ -150,6 +150,25 @@
         outline: none;
     }
 
+    /* Disable hover and focus effects on inputs when form is submitting */
+    .phx-submit-loading .input:hover,
+    .phx-submit-loading .textarea:hover,
+    .phx-submit-loading .input input:hover,
+    .phx-submit-loading .textarea textarea:hover,
+    .phx-submit-loading .input:focus,
+    .phx-submit-loading .textarea:focus,
+    .phx-submit-loading .input:focus-within,
+    .phx-submit-loading .textarea:focus-within,
+    .phx-submit-loading input:hover,
+    .phx-submit-loading textarea:hover,
+    .phx-submit-loading input:focus,
+    .phx-submit-loading textarea:focus {
+        --input-color: color-mix(in oklab, var(--color-base-content) 20%, #0000) !important;
+        border-color: var(--input-color) !important;
+        box-shadow: 0 1px color-mix(in oklab, var(--input-color) calc(var(--depth) * 10%), #0000) inset, 0 -1px oklch(100% 0 0 / calc(var(--depth) * 0.1)) inset !important;
+        outline: none !important;
+    }
+
     .chat-bubble {
         max-width: 65ch !important;
     }
