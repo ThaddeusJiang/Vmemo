@@ -284,18 +284,13 @@ defmodule VmemoWeb.PhotoIdLive do
                 </div>
                 <ul
                   tabindex="0"
-                  class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow border border-base-300"
+                  class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
                 >
                   <li>
                     <button
                       type="button"
                       phx-click="gen-description"
                       disabled={@gen_description_loading}
-                      class={
-                        if @photo.caption && @photo.caption != "",
-                          do: "text-green-500",
-                          else: "text-base-content"
-                      }
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -307,7 +302,13 @@ defmodule VmemoWeb.PhotoIdLive do
                         stroke-width="2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        class="lucide lucide-brain-circuit h-4 w-4"
+                        class={
+                          "lucide lucide-brain-circuit h-4 w-4 " <>
+                            if(@photo.caption && @photo.caption != "",
+                              do: "text-green-500",
+                              else: "text-base-content"
+                            )
+                        }
                       >
                         <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" /><path d="M9 13a4.5 4.5 0 0 0 3-4" /><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" /><path d="M3.477 10.896a4 4 0 0 1 .585-.396" /><path d="M6 18a4 4 0 0 1-1.967-.516" /><path d="M12 13h4" /><path d="M12 18h6a2 2 0 0 1 2 2v1" /><path d="M12 8h8" /><path d="M16 8V5a2 2 0 0 1 2-2" /><circle
                           cx="16"
@@ -326,15 +327,15 @@ defmodule VmemoWeb.PhotoIdLive do
                       </span>
                     </button>
                   </li>
+                  <li class="border-t border-base-300 my-1"></li>
                   <li>
                     <button
                       type="button"
                       phx-click="delete-photo"
                       phx-value-id={@photo.id}
                       data-confirm="You can't undo this action. Are you sure?"
-                      class="text-error"
                     >
-                      <.icon name="hero-trash" class="h-4 w-4" />
+                      <.icon name="hero-trash" class="h-4 w-4 text-error" />
                       <span>{gettext("Delete")}</span>
                     </button>
                   </li>
@@ -358,7 +359,7 @@ defmodule VmemoWeb.PhotoIdLive do
                     <div class="flex items-center gap-2">
                       <.label for={@form[:caption].id}>Caption</.label>
                       <%= if @gen_description_loading do %>
-                        <.icon name="hero-arrow-path" class="h-4 w-4 animate-spin text-primary" />
+                        <span class="text-sm text-success animate-pulse">thinking</span>
                       <% end %>
                     </div>
                     <textarea

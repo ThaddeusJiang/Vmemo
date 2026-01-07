@@ -35,6 +35,19 @@ shadcn/ui form cancel button is a ghost button.
 
 ![shadcn/ui form cancel button](./shadcn_ui_form_cancel_button.gif)
 
+## Dropdown Menu
+
+- **Always** use `shadow-lg` for dropdown menu shadow
+
+  - **Why**: Provides clear visual separation and depth, making the dropdown appear elevated above the page content
+  - **Example**: `class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"`
+
+- **Always** use divider to separate menu groups
+  - **When**: Group related menu items and separate destructive actions (e.g., logout, delete) from other actions
+  - **Implementation**: Use `<li class="border-t border-base-300 my-1"></li>` as divider
+  - **Why**: Provides clear visual grouping and prevents menu items' shadows from overlapping with the divider
+  - **Example**: Place divider between "Settings/Tokens" and "Logout" in user menu
+
 ## Image
 
 - **Always** specify both width and height using Tailwind CSS classes (e.g., `w-12 h-12` or `size-12`)
@@ -45,10 +58,12 @@ shadcn/ui form cancel button is a ghost button.
 ## Spacing
 
 - **Form fields spacing**: Use `space-y-2` (8px) between form fields
+
   - **Why**: Provides consistent and compact spacing between related form elements
   - **Example**: `simple_form` component uses `space-y-2` internally
 
 - **Form fields to button spacing**: Use 16px spacing between form fields and action buttons
+
   - **Implementation**: `simple_form` component uses `space-y-2` (8px) + actions div `py-2` (8px padding top) = 16px total
   - **Why**: Provides clear visual separation between input fields and actions
 
