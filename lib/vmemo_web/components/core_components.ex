@@ -237,11 +237,14 @@ defmodule VmemoWeb.CoreComponents do
       <.button variant="ghost">Cancel</.button>
       <.button variant="danger">Delete</.button>
       <.button variant="outline">Star</.button>
+      <.button size="sm">Small</.button>
+      <.button size="lg">Large</.button>
 
       <.button phx-click="go" class="ml-2">Send!</.button>
 
   """
   attr :variant, :string, default: "submit", values: ~w(submit ghost danger outline)
+  attr :size, :string, default: nil, values: [nil | ~w(xs sm lg)]
   attr :class, :string, default: nil
   attr :rest, :global, include: ~w(disabled form name value type  )
 
@@ -251,7 +254,11 @@ defmodule VmemoWeb.CoreComponents do
     ~H"""
     <button
       class={[
-        "btn py-2",
+        "btn",
+        @size == "xs" && "btn-xs",
+        @size == "sm" && "btn-sm",
+        @size == "lg" && "btn-lg",
+        @size == nil && "py-2",
         "phx-submit-loading:opacity-75 phx-submit-loading:cursor-wait phx-submit-loading:disabled",
         @variant == "submit" && "btn-neutral",
         @variant == "ghost" && "btn-ghost",

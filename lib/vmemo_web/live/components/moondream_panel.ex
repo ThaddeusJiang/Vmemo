@@ -89,6 +89,51 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   end
 
   @impl true
+  def handle_event("retry-request", %{"request_id" => request_id}, socket) do
+    user = socket.assigns.current_user
+
+    case Ash.get(PhotoMoondreamRequest, request_id, actor: user) do
+      {:ok, request} ->
+        if request.status == "failed" do
+          # Reset status to pending
+          case PhotoMoondreamRequest.update(request, %{status: "pending", error_message: nil},
+                 actor: user
+               ) do
+            {:ok, updated_request} ->
+              # Create new Oban job
+              %{request_id: updated_request.id}
+              |> ProcessMoondreamRequest.new()
+              |> Oban.insert()
+
+              loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)
+
+              # Immediately update the requests list in the component to hide error message
+              updated_requests =
+                Enum.map(socket.assigns.requests, fn req ->
+                  if req.id == updated_request.id do
+                    Map.merge(req, %{status: "pending", error_message: nil})
+                  else
+                    req
+                  end
+                end)
+
+              send(self(), {:moondream_request_submitted, updated_request})
+
+              {:noreply,
+               socket
+               |> assign(:loading_requests, loading_requests)
+               |> assign(:requests, updated_requests)}
+          end
+        else
+          {:noreply, socket}
+        end
+
+      {:error, _} ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event(_event, _params, socket) do
     {:noreply, socket}
   end
@@ -117,6 +162,56 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         "Failed to create request"
     end
   end
+
+  defp format_error_message(error_message) when is_binary(error_message) do
+    # Try to parse common error patterns from inspect output
+    cond do
+      # Handle Req.TransportError with timeout
+      String.contains?(error_message, "Req.TransportError") and
+          String.contains?(error_message, "timeout") ->
+        "Request timeout. Please try again."
+
+      # Handle Req.TransportError with other reasons
+      String.contains?(error_message, "Req.TransportError") ->
+        # Extract reason from pattern like %Req.TransportError{reason: :connection_refused}
+        case Regex.run(~r/reason:\s*:(\w+)/, error_message) do
+          [_, reason] ->
+            reason_formatted = reason |> String.replace("_", " ") |> String.capitalize()
+            "Connection error: #{reason_formatted}"
+
+          _ ->
+            "Network error occurred"
+        end
+
+      # Handle Req.Error
+      String.contains?(error_message, "Req.Error") ->
+        "Request failed. Please try again."
+
+      # Handle generic timeout messages
+      String.contains?(String.downcase(error_message), "timeout") ->
+        "Request timeout. Please try again."
+
+      # Handle generic connection errors
+      String.contains?(String.downcase(error_message), "connection") ->
+        "Connection error. Please check your network and try again."
+
+      # Handle generic network errors
+      String.contains?(String.downcase(error_message), "network") ->
+        "Network error. Please check your connection and try again."
+
+      true ->
+        # If it's a simple string without error struct patterns, return as is
+        # Otherwise try to clean up inspect output
+        if String.contains?(error_message, "%") or String.contains?(error_message, "{") do
+          # It looks like inspect output, provide generic message
+          "An error occurred. Please try again."
+        else
+          error_message
+        end
+    end
+  end
+
+  defp format_error_message(_), do: "An error occurred. Please try again."
 
   defp has_detection_results?(requests) do
     Enum.any?(requests, fn req ->
@@ -428,7 +523,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
               <%= if MapSet.member?(@loading_requests, request.id) || request.status == "processing" do %>
                 <div class="flex items-center gap-2 text-sm text-base-content/70 py-4">
-                  <span class="loading loading-spinner loading-sm"></span> Processing...
+                  <span class="loading loading-spinner loading-sm"></span> thinking
                 </div>
               <% end %>
 
@@ -461,8 +556,23 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
               <% end %>
 
               <%= if request.status == "failed" && request.error_message do %>
-                <div class="text-sm text-error">
-                  <span class="font-medium">Error:</span> {request.error_message}
+                <div class="text-sm text-error space-y-2">
+                  <div>
+                    <span class="font-medium">Error:</span> {format_error_message(
+                      request.error_message
+                    )}
+                  </div>
+                  <div>
+                    <.button
+                      variant="outline"
+                      size="sm"
+                      phx-click="retry-request"
+                      phx-target={@myself}
+                      phx-value-request_id={request.id}
+                    >
+                      Retry
+                    </.button>
+                  </div>
                 </div>
               <% end %>
             </div>
