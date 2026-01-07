@@ -77,7 +77,6 @@
     textarea {
         field-sizing: content;
         min-height: 3lh;
-        height: 3lh;
 
         @apply px-3 py-2 w-full;
     }
@@ -141,7 +140,6 @@
     .textarea {
         font-size: 1rem;
         min-height: 3lh;
-        height: 3lh;
 
         @apply px-3 py-2 w-full rounded-lg;
     }

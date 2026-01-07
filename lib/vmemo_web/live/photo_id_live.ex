@@ -43,6 +43,7 @@ defmodule VmemoWeb.PhotoIdLive do
               |> assign(photos: photos)
               |> assign(moondream_requests: moondream_requests)
               |> assign(moondream_loading_requests: MapSet.new())
+              |> assign(gen_description_loading: false)
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
@@ -93,8 +94,10 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_event("save", %{"note" => note, "caption" => caption}, socket) do
+  def handle_event("save", params, socket) do
     user = socket.assigns.current_ash_user
+    note = Map.get(params, "note", socket.assigns.photo.note)
+    caption = Map.get(params, "caption", socket.assigns.photo.caption)
 
     case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
@@ -119,25 +122,19 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("gen-description", _, socket) do
+    socket = socket |> assign(gen_description_loading: true)
+
     user = socket.assigns.current_ash_user
+    photo = socket.assigns.photo
 
-    case Photo.gen_description(socket.assigns.photo, actor: user) do
-      {:ok, updated_photo} ->
-        {:noreply,
-         socket
-         |> assign(:photo, updated_photo)
-         |> assign(
-           :form,
-           to_form(%{
-             "note" => updated_photo.note,
-             "caption" => updated_photo.caption
-           })
-         )
-         |> put_flash(:info, "Caption generated")}
+    pid = self()
 
-      {:error, reason} ->
-        {:noreply, socket |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
-    end
+    Task.start(fn ->
+      result = Photo.gen_description(photo, actor: user)
+      send(pid, {:gen_description_result, result, photo.id})
+    end)
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -148,6 +145,38 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def handle_event("hide-expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: false)}
+  end
+
+  @impl true
+  def handle_info({:gen_description_result, result, photo_id}, socket) do
+    if socket.assigns.photo.id == photo_id do
+      case result do
+        {:ok, updated_photo} ->
+          # Preserve the current note from form to avoid overwriting user's edits
+          current_note = socket.assigns.form[:note].value || updated_photo.note
+
+          {:noreply,
+           socket
+           |> assign(:photo, updated_photo)
+           |> assign(gen_description_loading: false)
+           |> assign(
+             :form,
+             to_form(%{
+               "note" => current_note,
+               "caption" => updated_photo.caption
+             })
+           )
+           |> put_flash(:info, "Caption generated")}
+
+        {:error, reason} ->
+          {:noreply,
+           socket
+           |> assign(gen_description_loading: false)
+           |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -248,31 +277,25 @@ defmodule VmemoWeb.PhotoIdLive do
               <div class="grow" />
             </div>
 
-            <.simple_form
-              for={@form}
-              phx-submit="save"
-              class="w-full flex flex-col gap-4"
-            >
-              <.textarea_field
-                id={@form[:note].id}
-                name={@form[:note].name}
-                value={@form[:note].value}
-                label="Note"
-              />
-
-              <div class="form-control w-full">
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <.label for={@form[:caption].id} class="label-text">Caption</.label>
-                    <.button
-                      variant="ghost"
-                      class="btn-sm btn-circle"
-                      aria-label={
-                        if @photo.caption && @photo.caption != "",
-                          do: gettext("Regenerate caption"),
-                          else: gettext("Generate caption")
-                      }
+            <div class="relative">
+              <div class="dropdown dropdown-end absolute top-0 right-0 z-10">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm">
+                  <.icon name="hero-ellipsis-vertical" class="h-4 w-4" />
+                </div>
+                <ul
+                  tabindex="0"
+                  class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow border border-base-300"
+                >
+                  <li>
+                    <button
+                      type="button"
                       phx-click="gen-description"
+                      disabled={@gen_description_loading}
+                      class={
+                        if @photo.caption && @photo.caption != "",
+                          do: "text-green-500",
+                          else: "text-base-content"
+                      }
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -284,10 +307,7 @@ defmodule VmemoWeb.PhotoIdLive do
                         stroke-width="2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        class={[
-                          "lucide lucide-brain-circuit w-4 h-4 inline",
-                          @photo.caption && @photo.caption != "" && "text-green-500"
-                        ]}
+                        class="lucide lucide-brain-circuit h-4 w-4"
                       >
                         <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" /><path d="M9 13a4.5 4.5 0 0 0 3-4" /><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" /><path d="M3.477 10.896a4 4 0 0 1 .585-.396" /><path d="M6 18a4 4 0 0 1-1.967-.516" /><path d="M12 13h4" /><path d="M12 18h6a2 2 0 0 1 2 2v1" /><path d="M12 8h8" /><path d="M16 8V5a2 2 0 0 1 2-2" /><circle
                           cx="16"
@@ -299,35 +319,68 @@ defmodule VmemoWeb.PhotoIdLive do
                           r=".5"
                         />
                       </svg>
-                    </.button>
-                  </div>
-                  <.textarea
-                    id={@form[:caption].id}
-                    name={@form[:caption].name}
-                    value={@form[:caption].value}
-                  />
-                </div>
-                <.error :for={msg <- @form[:caption].errors}>
-                  {msg}
-                </.error>
+                      <span>
+                        {if @photo.caption && @photo.caption != "",
+                          do: gettext("Regenerate caption"),
+                          else: gettext("Generate caption")}
+                      </span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      phx-click="delete-photo"
+                      phx-value-id={@photo.id}
+                      data-confirm="You can't undo this action. Are you sure?"
+                      class="text-error"
+                    >
+                      <.icon name="hero-trash" class="h-4 w-4" />
+                      <span>{gettext("Delete")}</span>
+                    </button>
+                  </li>
+                </ul>
               </div>
 
-              <:actions>
-                <div class="flex items-center justify-between w-full">
-                  <.button>Save</.button>
-                  <.button
-                    variant="danger"
-                    phx-click="delete-photo"
-                    phx-value-id={@photo.id}
-                    data-confirm="You can't undo this action. Are you sure?"
-                    aria-label={gettext("delete")}
-                    class="btn-square"
-                  >
-                    <.icon name="hero-trash" class="h-4 w-4" />
-                  </.button>
+              <.simple_form
+                for={@form}
+                phx-submit="save"
+                class="w-full flex flex-col gap-4"
+              >
+                <.textarea_field
+                  id={@form[:note].id}
+                  name={@form[:note].name}
+                  value={@form[:note].value}
+                  label="Note"
+                />
+
+                <div class="form-control w-full">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <.label for={@form[:caption].id}>Caption</.label>
+                      <%= if @gen_description_loading do %>
+                        <.icon name="hero-arrow-path" class="h-4 w-4 animate-spin text-primary" />
+                      <% end %>
+                    </div>
+                    <textarea
+                      id={@form[:caption].id}
+                      name={@form[:caption].name}
+                      class={[
+                        "textarea textarea-bordered w-full rounded-lg",
+                        @gen_description_loading && "animate-pulse"
+                      ]}
+                      disabled={@gen_description_loading}
+                    >{Phoenix.HTML.Form.normalize_value("textarea", @form[:caption].value)}</textarea>
+                  </div>
+                  <.error :for={msg <- @form[:caption].errors}>
+                    {msg}
+                  </.error>
                 </div>
-              </:actions>
-            </.simple_form>
+
+                <:actions>
+                  <.button>Save</.button>
+                </:actions>
+              </.simple_form>
+            </div>
           </div>
 
           <.live_component

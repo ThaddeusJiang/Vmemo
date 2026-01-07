@@ -46,7 +46,7 @@ defmodule VmemoWeb.ChatLive do
             </div>
             <ul
               tabindex="0"
-              class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow border"
+              class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow border border-base-300"
             >
               <li>
                 <button
