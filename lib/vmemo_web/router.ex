@@ -132,6 +132,7 @@ defmodule VmemoWeb.Router do
     pipe_through [:browser]
 
     delete "/users/logout", AshUserSessionController, :delete
+    get "/users/confirm-login/:token", AshUserConfirmationController, :confirm
 
     live_session :current_ash_user,
       on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do

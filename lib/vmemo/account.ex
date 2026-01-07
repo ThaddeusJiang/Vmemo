@@ -291,6 +291,16 @@ defmodule Vmemo.Account do
     end
   end
 
+  def ash_user_from_confirmation_token(token) do
+    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86400) do
+      {:ok, %{user_id: user_id}} ->
+        Ash.get(AshUser, user_id)
+
+      _ ->
+        {:error, :invalid_token}
+    end
+  end
+
   @doc """
   Delivers the reset password email to the given ash_user.
 
