@@ -42,6 +42,19 @@ shadcn/ui form cancel button is a ghost button.
 - **Why**: Prevents layout shift and flickering when images load slowly
 - **Example**: Use `class="w-12 h-12"` instead of `class="h-12" height="48"`
 
+## Spacing
+
+- **Form fields spacing**: Use `space-y-2` (8px) between form fields
+  - **Why**: Provides consistent and compact spacing between related form elements
+  - **Example**: `simple_form` component uses `space-y-2` internally
+
+- **Form fields to button spacing**: Use 16px spacing between form fields and action buttons
+  - **Implementation**: `simple_form` component uses `space-y-2` (8px) + actions div `py-2` (8px padding top) = 16px total
+  - **Why**: Provides clear visual separation between input fields and actions
+
+- **External actions to form spacing**: Use `pt-2` (8px) between external action buttons (e.g., dropdown menu) and form content
+  - **Why**: Maintains consistent spacing hierarchy
+
 ## List
 
 - **Always** sort lists by `inserted_at` (created time) by default, not `updated_at`

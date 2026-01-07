@@ -344,7 +344,7 @@ defmodule VmemoWeb.PhotoIdLive do
               <.simple_form
                 for={@form}
                 phx-submit="save"
-                class="w-full flex flex-col gap-4"
+                class="w-full flex flex-col pt-2"
               >
                 <.textarea_field
                   id={@form[:note].id}
