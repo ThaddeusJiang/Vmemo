@@ -6,6 +6,8 @@ defmodule VmemoWeb.PhotoIdLive do
 
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoMoondreamRequest
+  alias Vmemo.Photos.PhotoCaptionRequest
+  alias Vmemo.Workers.ProcessCaptionRequest
 
   alias VmemoWeb.LiveComponents.Waterfall
   alias VmemoWeb.LiveComponents.MoondreamPanel
@@ -35,6 +37,18 @@ defmodule VmemoWeb.PhotoIdLive do
                 _ -> []
               end
 
+            # Load caption requests
+            caption_requests =
+              case PhotoCaptionRequest.list_by_photo(photo.id, actor: user) do
+                {:ok, requests} -> requests
+                _ -> []
+              end
+
+            latest_caption_request =
+              caption_requests
+              |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+              |> List.first()
+
             socket =
               socket
               |> assign(photo: photo)
@@ -43,7 +57,9 @@ defmodule VmemoWeb.PhotoIdLive do
               |> assign(photos: photos)
               |> assign(moondream_requests: moondream_requests)
               |> assign(moondream_loading_requests: MapSet.new())
-              |> assign(gen_description_loading: false)
+              |> assign(caption_requests: caption_requests)
+              |> assign(caption_loading_requests: MapSet.new())
+              |> assign(latest_caption_request: latest_caption_request)
               |> assign_new(:form, fn ->
                 to_form(%{
                   "note" => photo.note,
@@ -54,6 +70,7 @@ defmodule VmemoWeb.PhotoIdLive do
             # Subscribe to PubSub
             if connected?(socket) do
               Phoenix.PubSub.subscribe(Vmemo.PubSub, "photo_moondream_request:#{photo.id}")
+              Phoenix.PubSub.subscribe(Vmemo.PubSub, "photo_caption_request:#{photo.id}")
             end
 
             {:ok, socket}
@@ -122,19 +139,87 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("gen-description", _, socket) do
-    socket = socket |> assign(gen_description_loading: true)
-
     user = socket.assigns.current_ash_user
     photo = socket.assigns.photo
 
-    pid = self()
+    case PhotoCaptionRequest.create(%{photo_id: photo.id, ash_user_id: user.id}, actor: user) do
+      {:ok, request} ->
+        # Create Oban job
+        %{request_id: request.id}
+        |> ProcessCaptionRequest.new()
+        |> Oban.insert()
 
-    Task.start(fn ->
-      result = Photo.gen_description(photo, actor: user)
-      send(pid, {:gen_description_result, result, photo.id})
-    end)
+        loading_requests = MapSet.put(socket.assigns.caption_loading_requests, request.id)
 
-    {:noreply, socket}
+        # Update requests list
+        updated_requests = [request | socket.assigns.caption_requests]
+
+        latest_caption_request =
+          updated_requests
+          |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+          |> List.first()
+
+        {:noreply,
+         socket
+         |> assign(:caption_loading_requests, loading_requests)
+         |> assign(:caption_requests, updated_requests)
+         |> assign(:latest_caption_request, latest_caption_request)}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to create caption request")}
+    end
+  end
+
+  @impl true
+  def handle_event("retry-caption-request", %{"request_id" => request_id}, socket) do
+    user = socket.assigns.current_ash_user
+
+    case Ash.get(PhotoCaptionRequest, request_id, actor: user) do
+      {:ok, request} ->
+        if request.status == "failed" do
+          # Reset status to pending
+          case PhotoCaptionRequest.update(request, %{status: "pending", error_message: nil},
+                 actor: user
+               ) do
+            {:ok, updated_request} ->
+              # Create new Oban job
+              %{request_id: updated_request.id}
+              |> ProcessCaptionRequest.new()
+              |> Oban.insert()
+
+              loading_requests =
+                MapSet.put(socket.assigns.caption_loading_requests, updated_request.id)
+
+              # Update requests list
+              updated_requests =
+                Enum.map(socket.assigns.caption_requests, fn req ->
+                  if req.id == updated_request.id do
+                    Map.merge(req, %{status: "pending", error_message: nil})
+                  else
+                    req
+                  end
+                end)
+
+              latest_caption_request =
+                updated_requests
+                |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+                |> List.first()
+
+              {:noreply,
+               socket
+               |> assign(:caption_loading_requests, loading_requests)
+               |> assign(:caption_requests, updated_requests)
+               |> assign(:latest_caption_request, latest_caption_request)}
+          end
+        else
+          {:noreply, socket}
+        end
+
+      {:error, _} ->
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -148,35 +233,54 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_info({:gen_description_result, result, photo_id}, socket) do
-    if socket.assigns.photo.id == photo_id do
-      case result do
-        {:ok, updated_photo} ->
-          # Preserve the current note from form to avoid overwriting user's edits
-          current_note = socket.assigns.form[:note].value || updated_photo.note
+  def handle_info({:caption_request_updated, payload}, socket) do
+    user = socket.assigns.current_ash_user
 
-          {:noreply,
-           socket
-           |> assign(:photo, updated_photo)
-           |> assign(gen_description_loading: false)
-           |> assign(
-             :form,
-             to_form(%{
-               "note" => current_note,
-               "caption" => updated_photo.caption
-             })
-           )
-           |> put_flash(:info, "Caption generated")}
-
-        {:error, reason} ->
-          {:noreply,
-           socket
-           |> assign(gen_description_loading: false)
-           |> put_flash(:error, "Failed to generate caption: #{inspect(reason)}")}
+    caption_requests =
+      case PhotoCaptionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+        {:ok, requests} -> requests
+        _ -> socket.assigns.caption_requests
       end
-    else
-      {:noreply, socket}
-    end
+
+    latest_caption_request =
+      caption_requests
+      |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+      |> List.first()
+
+    loading_requests =
+      socket.assigns.caption_loading_requests
+      |> MapSet.delete(payload.request_id)
+
+    # Update photo if caption was generated
+    socket =
+      if payload.status == "completed" && payload.caption do
+        case Photo.get_with_notes(socket.assigns.photo.id, user.id, actor: user) do
+          {:ok, updated_photo} ->
+            current_note = socket.assigns.form[:note].value || updated_photo.note
+
+            socket
+            |> assign(:photo, updated_photo)
+            |> assign(
+              :form,
+              to_form(%{
+                "note" => current_note,
+                "caption" => updated_photo.caption
+              })
+            )
+            |> put_flash(:info, "Caption generated")
+
+          _ ->
+            socket
+        end
+      else
+        socket
+      end
+
+    {:noreply,
+     socket
+     |> assign(:caption_requests, caption_requests)
+     |> assign(:caption_loading_requests, loading_requests)
+     |> assign(:latest_caption_request, latest_caption_request)}
   end
 
   @impl true
@@ -290,7 +394,13 @@ defmodule VmemoWeb.PhotoIdLive do
                     <button
                       type="button"
                       phx-click="gen-description"
-                      disabled={@gen_description_loading}
+                      disabled={
+                        if @latest_caption_request,
+                          do:
+                            @latest_caption_request.status == "pending" ||
+                              @latest_caption_request.status == "processing",
+                          else: false
+                      }
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -358,8 +468,29 @@ defmodule VmemoWeb.PhotoIdLive do
                   <div class="space-y-1">
                     <div class="flex items-center gap-2">
                       <.label for={@form[:caption].id}>Caption</.label>
-                      <%= if @gen_description_loading do %>
-                        <span class="text-sm text-success animate-pulse">thinking</span>
+                      <%= if @latest_caption_request do %>
+                        <%= if @latest_caption_request.status == "pending" || @latest_caption_request.status == "processing" do %>
+                          <span class="text-sm text-success animate-pulse">thinking</span>
+                        <% end %>
+                        <%= if @latest_caption_request.status == "failed" && @latest_caption_request.error_message do %>
+                          <div class="text-sm text-error space-y-2">
+                            <div>
+                              <span class="font-medium">Error:</span> {format_error_message(
+                                @latest_caption_request.error_message
+                              )}
+                            </div>
+                            <div>
+                              <.button
+                                variant="outline"
+                                size="sm"
+                                phx-click="retry-caption-request"
+                                phx-value-request_id={@latest_caption_request.id}
+                              >
+                                Retry
+                              </.button>
+                            </div>
+                          </div>
+                        <% end %>
                       <% end %>
                     </div>
                     <textarea
@@ -367,9 +498,20 @@ defmodule VmemoWeb.PhotoIdLive do
                       name={@form[:caption].name}
                       class={[
                         "textarea textarea-bordered w-full rounded-lg",
-                        @gen_description_loading && "animate-pulse"
+                        if(@latest_caption_request,
+                          do:
+                            @latest_caption_request.status == "pending" ||
+                              @latest_caption_request.status == "processing",
+                          else: false
+                        ) && "animate-pulse"
                       ]}
-                      disabled={@gen_description_loading}
+                      disabled={
+                        if @latest_caption_request,
+                          do:
+                            @latest_caption_request.status == "pending" ||
+                              @latest_caption_request.status == "processing",
+                          else: false
+                      }
                     >{Phoenix.HTML.Form.normalize_value("textarea", @form[:caption].value)}</textarea>
                   </div>
                   <.error :for={msg <- @form[:caption].errors}>
@@ -448,4 +590,10 @@ defmodule VmemoWeb.PhotoIdLive do
     </div>
     """
   end
+
+  defp format_error_message(error_message) when is_binary(error_message) do
+    error_message
+  end
+
+  defp format_error_message(_), do: "Unknown error"
 end

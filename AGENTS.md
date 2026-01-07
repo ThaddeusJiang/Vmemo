@@ -69,6 +69,18 @@
 - **数据库**：立即更新（同步）
 - **Typesense**：通过 Oban 作业异步更新
 
+**异步任务规范**
+
+- **总是**对耗时操作使用异步设计（Oban job + PubSub）
+  - **何时使用**：任何可能耗时超过几秒的操作（如 AI 生成、文件处理、数据同步等）
+  - **实现方式**：参考 `docs/coding-guidelines/background-jobs-with-pubsub.md` 了解详细实现指南
+  - **优点**：
+    - 用户可以异步确认任务结果，无需等待
+    - 在网络不好的环境下也可以使用功能
+    - 可以避免 socket 连接失败导致任务失败
+    - 用户离开页面后任务仍能继续执行
+  - **示例**：Caption 生成、Moondream 请求、需要处理的文件上传
+
 **git 规范**
 
 - **总是**生成简单的 git 提交信息，使用 `feat(scope):` `fix(scope):` `chore(scope):` 作为前缀

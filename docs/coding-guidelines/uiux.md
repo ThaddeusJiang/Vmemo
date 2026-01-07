@@ -75,3 +75,16 @@ shadcn/ui form cancel button is a ghost button.
 - **Always** sort lists by `inserted_at` (created time) by default, not `updated_at`
 - **Why**: Provides consistent and predictable ordering based on creation time
 - **Example**: Use `prepare build(default_sort: [inserted_at: :desc])` in Ash read actions
+
+## Asynchronous Tasks
+
+- **Always** use asynchronous design (Oban job + PubSub) for time-consuming operations
+
+  - **When**: Any operation that may take more than a few seconds (e.g., AI generation, file processing, data synchronization)
+  - **Implementation**: See `docs/coding-guidelines/background-jobs-with-pubsub.md` for detailed implementation guide
+  - **Why**:
+    - Users can asynchronously confirm task results without waiting
+    - Functions work reliably even in poor network conditions
+    - Prevents task failures due to socket connection issues
+    - Tasks continue executing even if user leaves the page
+  - **Example**: Caption generation, Moondream requests, file uploads with processing
