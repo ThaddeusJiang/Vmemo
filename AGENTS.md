@@ -21,6 +21,70 @@
   - 表单错误消息应该在表单附近
   - 按钮错误消息应该在按钮附近
 
+## UI/UX 规范
+
+- 设计参考 shadcn/ui 并进行风格微调
+- library 使用 daisyUI
+
+### Button
+
+> 少即是多。
+
+样式（颜色）
+
+1. 默认：outline
+2. 提交、保存：accent color
+3. 危险操作：error color
+
+- 表单的保存和取消按钮
+  - 保存：primary
+  - 取消：ghost
+
+shadcn/ui 表单取消按钮是 ghost 按钮。
+
+![shadcn/ui form cancel button](docs/coding-guidelines/shadcn_ui_form_cancel_button.gif)
+
+### Dropdown Menu
+
+- **总是**对下拉菜单使用 `shadow-lg` 阴影
+
+  - **原因**：提供清晰的视觉分离和深度感，使下拉菜单看起来浮在页面内容之上
+  - **示例**：`class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"`
+
+- **总是**使用分隔线来分隔菜单组
+  - **何时使用**：将相关的菜单项分组，并将破坏性操作（如登出、删除）与其他操作分开
+  - **实现方式**：使用 `<li class="border-t border-base-300 my-1"></li>` 作为分隔线
+  - **原因**：提供清晰的视觉分组，防止菜单项的阴影与分隔线重叠
+  - **示例**：在用户菜单中的 "Settings/Tokens" 和 "Logout" 之间放置分隔线
+
+### Image
+
+- **总是**使用 Tailwind CSS 类指定宽度和高度（例如 `w-12 h-12` 或 `size-12`）
+- **绝不**使用 HTML `width` 或 `height` 属性
+- **原因**：防止图片加载缓慢时的布局偏移和闪烁
+- **示例**：使用 `class="w-12 h-12"` 而不是 `class="h-12" height="48"`
+
+### Spacing
+
+- **表单字段间距**：表单字段之间使用 `space-y-2` (8px)
+
+  - **原因**：在相关的表单元素之间提供一致且紧凑的间距
+  - **示例**：`simple_form` 组件内部使用 `space-y-2`
+
+- **表单字段到按钮间距**：表单字段和操作按钮之间使用 16px 间距
+
+  - **实现方式**：`simple_form` 组件使用 `space-y-2` (8px) + actions div `py-2` (8px padding top) = 总共 16px
+  - **原因**：在输入字段和操作之间提供清晰的视觉分离
+
+- **外部操作到表单间距**：外部操作按钮（如下拉菜单）和表单内容之间使用 `pt-2` (8px)
+  - **原因**：保持一致的间距层次结构
+
+### List
+
+- **总是**默认按 `inserted_at`（创建时间）排序列表，而不是 `updated_at`
+- **原因**：基于创建时间提供一致且可预测的排序
+- **示例**：在 Ash read actions 中使用 `prepare build(default_sort: [inserted_at: :desc])`
+
 ## Elixir 规范
 
 - Elixir 具有**模式匹配**特性
@@ -51,13 +115,19 @@
 - **总是**使用 [LiveView 内置上传功能](https://hexdocs.pm/phoenix_live_view/uploads.html) 进行文件上传
 
 - **组件组织**：
+
   - **总是**在以下情况下将复杂的 UI 逻辑拆分为 LiveComponents：
     - 单个文件超过约 500 行
     - UI 部分具有独立的状态和事件处理
     - 组件可以在多个地方重用
   - **保持组件专注**：每个组件应该处理单一职责
   - **组件通信**：当组件需要更新父级状态时，使用 `send(self(), {:event, data})` 通知父级 LiveView
-  - **文件位置**：将组件放在 `lib/vmemo_web/live/components/` 目录中
+  - **文件位置**：
+    - `core_component` 用于无状态组件，Phoenix.Component
+    - `live/components` 用于有状态组件，Phoenix.LiveComponent
+
+- **绝不**使用 SurfaceUI
+  - **原因**：配置过于复杂，容易设置错误，在 liveview 升级后必须升级，影响构建、配置、Dockerfile 和 Docker 镜像大小。LiveView 已经足够好，SurfaceUI 是成本
 
 **PostgreSQL 规范**
 
