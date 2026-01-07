@@ -334,67 +334,70 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     <div class="bg-base-200 rounded-lg p-4 space-y-4">
       <h2 class="text-lg font-semibold">Moondream AI</h2>
 
-      <.form for={%{}} as={:moondream} phx-change="change" phx-submit="submit" phx-target={@myself}>
-        <div class="space-y-2">
+      <.simple_form
+        for={%{}}
+        as={:moondream}
+        phx-change="change"
+        phx-submit="submit"
+        phx-target={@myself}
+        class="pt-2"
+      >
+        <div class="flex flex-wrap gap-2">
+          <label
+            :for={func <- function_types()}
+            class={[
+              "btn rounded-lg",
+              if(@function == func, do: "btn-neutral", else: "btn-outline"),
+              if(is_segment_disabled?(func),
+                do: "opacity-50 cursor-not-allowed",
+                else: "cursor-pointer"
+              )
+            ]}
+            title={
+              if(is_segment_disabled?(func), do: "Segment function is not available yet", else: "")
+            }
+          >
+            <input
+              type="radio"
+              name="moondream[function]"
+              value={func}
+              class="hidden"
+              checked={@function == func}
+              disabled={is_segment_disabled?(func)}
+            />
+            {String.capitalize(func)}
+          </label>
+        </div>
+
+        <textarea
+          name="moondream[prompt]"
+          placeholder="Enter prompt..."
+          class="textarea textarea-bordered w-full disabled:border-base-300"
+          rows="3"
+          disabled={@function == "caption"}
+        >{@prompt}</textarea>
+
+        <%= if has_detection_results?(@requests) do %>
           <div class="flex flex-wrap gap-2">
-            <label
-              :for={func <- function_types()}
-              class={[
-                "btn rounded-lg",
-                if(@function == func, do: "btn-primary", else: "btn-outline"),
-                if(is_segment_disabled?(func),
-                  do: "opacity-50 cursor-not-allowed",
-                  else: "cursor-pointer"
-                )
-              ]}
-              title={
-                if(is_segment_disabled?(func), do: "Segment function is not available yet", else: "")
-              }
+            <button
+              :for={tag <- get_detection_tags(@requests)}
+              type="button"
+              class="btn btn-outline rounded-full"
+              phx-click="set-prompt"
+              phx-target={@myself}
+              phx-value-prompt={tag}
             >
-              <input
-                type="radio"
-                name="moondream[function]"
-                value={func}
-                class="hidden"
-                checked={@function == func}
-                disabled={is_segment_disabled?(func)}
-              />
-              {String.capitalize(func)}
-            </label>
-          </div>
-
-          <div class="space-y-2">
-            <textarea
-              name="moondream[prompt]"
-              placeholder="Enter prompt..."
-              class="textarea textarea-bordered w-full disabled:border-base-300"
-              rows="3"
-              disabled={@function == "caption"}
-            >{@prompt}</textarea>
-          </div>
-
-          <%= if has_detection_results?(@requests) do %>
-            <div class="flex flex-wrap gap-2">
-              <button
-                :for={tag <- get_detection_tags(@requests)}
-                type="button"
-                class="btn btn-outline rounded-full"
-                phx-click="set-prompt"
-                phx-target={@myself}
-                phx-value-prompt={tag}
-              >
-                {tag}
-              </button>
-            </div>
-          <% end %>
-
-          <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary">
-              Submit
+              {tag}
             </button>
           </div>
-        </div>
-      </.form>
+        <% end %>
+
+        <:actions>
+          <div class="flex justify-end">
+            <.button>Submit</.button>
+          </div>
+        </:actions>
+      </.simple_form>
 
       <%= if @requests != [] do %>
         <div class="space-y-2">

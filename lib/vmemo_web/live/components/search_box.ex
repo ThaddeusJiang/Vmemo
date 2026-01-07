@@ -339,7 +339,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
               <div class="flex gap-2 mt-auto">
                 <.button
                   type="submit"
-                  class="btn btn-primary"
+                  variant="submit"
                   disabled={
                     Enum.any?(@uploads.photo.entries, fn entry ->
                       entry.progress > 0 and entry.progress < 100
