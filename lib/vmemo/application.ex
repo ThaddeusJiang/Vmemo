@@ -7,6 +7,8 @@ defmodule Vmemo.Application do
 
   @impl true
   def start(_type, _args) do
+    Application.ensure_all_started(:os_mon)
+
     :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{
       config: %{metadata: [:file, :line]}
     })
