@@ -64,7 +64,11 @@ defmodule VmemoWeb.Router do
     scope "/dev", VmemoWeb do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: VmemoWeb.Telemetry
+      live_dashboard "/dashboard",
+        metrics: VmemoWeb.Telemetry,
+        additional_pages: [
+          external_services: VmemoWeb.LiveDashboard.ExternalServicesPage
+        ]
       oban_dashboard("/oban")
 
       live_session :dev_ui,
