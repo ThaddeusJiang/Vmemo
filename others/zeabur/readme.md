@@ -1,5 +1,6 @@
-# Zeabur
 
-一键在 zeabur.com 上部署你的 vmemo
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/H3EL85)
 
-https://github.com/ThaddeusJiang/zeabur-templates/blob/main/vmemo.yml
+```sh
+npx zeabur template update -c H3EL85 -f vmemo.yml
+```

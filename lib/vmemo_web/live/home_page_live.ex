@@ -20,24 +20,26 @@ defmodule VmemoWeb.HomePageLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="pt-12 px-4 pb-4 sm:pt-16 sm:px-4 sm:pb-4 lg:pt-20 lg:px-4 lg:pb-4 grow relative">
-      <div class="flex flex-col items-center justify-center h-full gap-8">
-        <div class="flex flex-col items-center space-y-2 w-full max-w-xl px-4">
-          <h1 class="text-4xl font-bold">Search</h1>
+    <div class="flex flex-col grow">
+      <section class="pt-12 px-4 pb-4 sm:pt-16 sm:px-4 sm:pb-4 lg:pt-20 lg:px-4 lg:pb-4 grow relative">
+        <div class="flex flex-col items-center justify-center h-full gap-8">
+          <div class="flex flex-col items-center space-y-2 w-full max-w-xl px-4">
+            <h1 class="text-4xl font-bold">Search</h1>
 
-          <div class="text-sm text-gray-600">
-            Total <span class="font-semibold">{@total_photos}</span> photos
+            <div class="text-sm text-gray-600">
+              Total <span class="font-semibold">{@total_photos}</span> photos
+            </div>
+
+            <.live_component
+              module={SearchBox}
+              id="home-search-box"
+              q={@q}
+              current_user={@current_ash_user}
+            />
           </div>
-
-          <.live_component
-            module={SearchBox}
-            id="home-search-box"
-            q={@q}
-            current_user={@current_ash_user}
-          />
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
     """
   end
 end
