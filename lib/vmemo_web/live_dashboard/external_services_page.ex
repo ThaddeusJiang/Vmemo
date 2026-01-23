@@ -13,7 +13,7 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
       id: :moondream,
       name: "Moondream",
       url_key: :moondream_url,
-      health_path: "/health"
+      health_path: "/stats"
     }
   ]
 
@@ -41,7 +41,7 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
         <div class="card mb-4">
           <div class="card-body">
             <h5>External Services</h5>
-            <p>Last checked: <%= format_checked_at(@checked_at) %></p>
+            <p>Last checked: {format_checked_at(@checked_at)}</p>
             <div class="table-responsive">
               <table class="table table-hover">
                 <thead>
@@ -55,15 +55,15 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
                 </thead>
                 <tbody>
                   <tr :for={service <- @services}>
-                    <td><%= service.name %></td>
+                    <td>{service.name}</td>
                     <td><pre><%= service.url || "Not configured" %></pre></td>
                     <td>
                       <span class={status_badge_class(service.status)}>
-                        <%= service.status %>
+                        {service.status}
                       </span>
                     </td>
                     <td><pre><%= service.detail || "-" %></pre></td>
-                    <td><%= format_response_time(service.response_time_ms) %></td>
+                    <td>{format_response_time(service.response_time_ms)}</td>
                   </tr>
                 </tbody>
               </table>

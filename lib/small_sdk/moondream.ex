@@ -222,6 +222,14 @@ defmodule SmallSdk.Moondream do
     end
   end
 
+  defp handle_response(
+         {:error, %Req.TransportError{reason: :connection_refused}},
+         function_type
+       ) do
+    Logger.warning("Moondream #{function_type} connection refused")
+    {:error, :connection_refused}
+  end
+
   defp handle_response({:error, reason}, function_type) do
     Logger.warning("Moondream #{function_type} request failed: #{inspect(reason)}")
     {:error, reason}
