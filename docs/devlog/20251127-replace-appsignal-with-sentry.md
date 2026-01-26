@@ -21,10 +21,10 @@
 {:hackney, "~> 1.21"}
 ```
 
-**配置 (config/prod.exs):**
+**配置 (config/runtime.exs):**
 ```elixir
 config :sentry,
-  dsn: "https://2c7940391427df715386b12696ce2b5e@o350425.ingest.us.sentry.io/4510435930734592",
+  dsn: sentry_dsn,
   environment_name: Mix.env(),
   enable_source_code_context: true,
   root_source_code_paths: [File.cwd!()]
@@ -43,4 +43,4 @@ config :sentry,
 
 ## 部署注意事项
 
-DSN 已硬编码在 `config/prod.exs` 中。未来可考虑改为从环境变量读取以提高安全性。
+DSN 通过环境变量注入，生产环境需要设置 `SENTRY_DSN`。
