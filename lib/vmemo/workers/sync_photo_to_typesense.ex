@@ -136,12 +136,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
       |> String.trim_leading("/")
       |> String.trim_leading("storage/v1/")
 
-    file_path =
-      if Mix.env() == :prod do
-        Path.join([Application.app_dir(:vmemo, "priv"), "storage", "v1", relative_path])
-      else
-        Path.join(["storage", "v1", relative_path])
-      end
+    file_path = Path.join(["storage", "v1", relative_path])
 
     case File.read(file_path) do
       {:ok, binary} ->
