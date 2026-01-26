@@ -904,4 +904,5 @@ defmodule VmemoWeb.CoreComponents do
     </div>
     """
   end
+
 end
