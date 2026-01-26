@@ -31,6 +31,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.create_collection(schema)
+    |> ensure_ok("create photos collection")
   end
 
   @doc """
@@ -51,6 +52,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.create_collection(notes_schema)
+    |> ensure_ok("create notes collection")
 
     photos_schema = %{
       "fields" => [
@@ -59,6 +61,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.update_collection("photos", photos_schema)
+    |> ensure_ok("update photos collection with note_ids")
   end
 
   @doc """
@@ -73,14 +76,22 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.update_collection("photos", schema)
+    |> ensure_ok("update photos collection with gen fields")
   end
 
   def reset do
     Typesense.drop_collection("photos")
+    |> ensure_ok("drop photos collection")
+
     Typesense.drop_collection("notes")
+    |> ensure_ok("drop notes collection")
 
     change_1()
     change_2()
     change_3()
   end
+
+  defp ensure_ok({:ok, _}, _action), do: :ok
+  defp ensure_ok({:error, "Not Found"}, _action), do: :ok
+  defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
 end
