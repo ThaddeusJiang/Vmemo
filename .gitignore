@@ -60,3 +60,4 @@ e2e/playwright/.cache/
 # mise local configuration (contains sensitive env vars)
 mise.local.toml
 debug.log
+.alma-snapshots
