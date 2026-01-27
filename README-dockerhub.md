@@ -10,6 +10,15 @@ Our brains are naturally inclined to remember visual content better than text. V
 
 ## Usage
 
+## Supported Platforms
+
+- linux/386
+- linux/amd64
+- linux/arm/v7
+- linux/arm64/v8
+- linux/ppc64le
+- linux/s390x
+
 ### Pull the Image
 ```bash
 docker pull thaddeusjiang/vmemo:latest
