@@ -42,4 +42,7 @@ COPY --from=builder /app ./
 
 ENV MIX_ENV=prod
 
-CMD ["mix", "phx.server"]
+COPY docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["/app/entrypoint.sh"]
