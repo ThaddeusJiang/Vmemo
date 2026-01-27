@@ -5,7 +5,7 @@ defmodule Vmemo.Workers.ProcessCaptionRequest do
 
   alias Vmemo.Photos.PhotoCaptionRequest
   alias Vmemo.Photos.Photo
-  alias Vmemo.PhotoService.TsPhoto
+  alias SmallSdk.Moondream
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"request_id" => request_id}}) do
@@ -46,22 +46,29 @@ defmodule Vmemo.Workers.ProcessCaptionRequest do
   end
 
   defp generate_caption(request, photo) do
-    case TsPhoto.gen_description(photo.id) do
-      {:ok, caption} ->
-        # Update photo caption
-        case Photo.update(photo, %{caption: caption}, actor: nil) do
-          {:ok, _updated_photo} ->
-            # Update request with success
-            update_request_with_success(request, caption)
+    case read_image_as_base64(photo.url) do
+      {:ok, image_base64} ->
+        case Moondream.caption(image_base64) do
+          {:ok, caption} ->
+            # Update photo caption
+            case Photo.update(photo, %{caption: caption}, actor: nil) do
+              {:ok, _updated_photo} ->
+                # Update request with success
+                update_request_with_success(request, caption)
 
-          {:error, error} ->
-            Logger.error("Failed to update photo caption: #{inspect(error)}")
-            update_request_with_error(request, "Failed to update photo: #{inspect(error)}")
+              {:error, error} ->
+                Logger.error("Failed to update photo caption: #{inspect(error)}")
+                update_request_with_error(request, "Failed to update photo: #{inspect(error)}")
+            end
+
+          {:error, reason} ->
+            error_msg = format_error_message(reason)
+            update_request_with_error(request, error_msg)
         end
 
       {:error, reason} ->
-        error_msg = format_error_message(reason)
-        update_request_with_error(request, error_msg)
+        Logger.error("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
+        update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
     end
   end
 
@@ -117,5 +124,25 @@ defmodule Vmemo.Workers.ProcessCaptionRequest do
          error_message: request.error_message
        }}
     )
+  end
+
+  defp read_image_as_base64(url) do
+    relative_path =
+      url
+      |> String.trim_leading("/")
+      |> String.trim_leading("storage/v1/")
+
+    file_path = Path.join(["storage", "v1", relative_path])
+
+    case File.read(file_path) do
+      {:ok, binary} ->
+        {:ok, Base.encode64(binary)}
+
+      {:error, :enoent} ->
+        {:error, :file_not_found}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end
