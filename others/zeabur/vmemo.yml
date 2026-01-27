@@ -26,6 +26,10 @@ spec:
         volumes:
           - id: data
             dir: /app/storage
+        instructions:
+          - type: TEXT
+            title: Admin Token
+            content: ${PASSWORD}
         env:
           DATABASE_URL:
             default: ${POSTGRES_CONNECTION_STRING}
