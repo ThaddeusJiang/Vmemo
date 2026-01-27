@@ -3,7 +3,7 @@ FROM elixir:1.19.2-otp-28 AS base
 FROM base as builder
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git \
+  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git rustc cargo pkg-config \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
