@@ -7,7 +7,8 @@
 - Expanded buildx `platforms` list for both tag and latest pushes.
 - Centralized the platforms list via `DOCKER_PLATFORMS` env to avoid duplication.
 - Documented supported platforms in Docker Hub README.
-- Added Rust toolchain packages in Docker builder to compile NIF deps on platforms without precompiled binaries.
+- Reduced platforms to linux/amd64 and linux/arm64/v8 for macOS and Linux support.
+- Removed Rust toolchain packages from Docker builder since extra platforms were dropped.
 
 ## Notes
 - The added platforms align with the list requested (386, amd64, arm/v7, arm64/v8, ppc64le, s390x).
