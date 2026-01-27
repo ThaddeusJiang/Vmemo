@@ -10,6 +10,7 @@ jobs:
       MIX_ENV: test
       TYPESENSE_URL: http://localhost:8108
       TYPESENSE_API_KEY: xyz
+      POSTGRES_PORT: "5432"
 
     services:
       postgres:
@@ -28,8 +29,8 @@ jobs:
 
     strategy:
       matrix:
-        otp: ["27"]
-        elixir: ["1.17.3"]
+        otp: ["28"]
+        elixir: ["1.19.2"]
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     steps:
       - uses: actions/checkout@v4

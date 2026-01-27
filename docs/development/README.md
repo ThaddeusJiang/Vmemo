@@ -292,8 +292,12 @@ SmallSdk.Typesense.delete_document("photos", "1")
 ### 运行测试
 
 ```bash
+docker compose up -d
 # 运行所有测试
 mix test
+
+# 使用 docker-compose 端口运行测试（默认 54321）
+POSTGRES_PORT=54321 mix test
 
 # 运行特定测试文件
 mix test test/vmemo_web/live/photo_test.exs
