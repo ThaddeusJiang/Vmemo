@@ -54,9 +54,6 @@ spec:
           TYPESENSE_URL:
             default: http://typesense:8108
             expose: false
-          TYPESENSE_API_KEY:
-            default: ${TYPESENSE_API_KEY}
-            expose: false
           MOONDREAM_URL:
             default: ${MOONDREAM_URL}
             expose: false
@@ -195,6 +192,13 @@ spec:
         volumes:
           - id: data
             dir: /data
+        instructions:
+          - type: TEXT
+            title: Typesense URL
+            content: ${ZEABUR_WEB_DOMAIN}
+          - type: TEXT
+            title: Typesense API Key
+            content: ${PASSWORD}
         env:
           TYPESENSE_API_KEY:
             default: ${PASSWORD}
