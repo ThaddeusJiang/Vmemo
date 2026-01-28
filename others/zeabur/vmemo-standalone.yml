@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Vmemo Standalone
+spec:
+  description: Record your life with impactful visuals, not plain, forgettable text.
+  icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Domain
+      description: What is the domain you want for your service?
+    - key: DATABASE_URL
+      type: STRING
+      name: Database URL
+      description: e.g. postgresql://USER:PASS@HOST:PORT/DB
+    - key: TYPESENSE_URL
+      type: STRING
+      name: Typesense URL
+      description: e.g. http://your-typesense:8108
+    - key: TYPESENSE_API_KEY
+      type: STRING
+      name: Typesense API Key
+      description: e.g. xyz
+    - key: MOONDREAM_URL
+      type: STRING
+      name: Moondream URL
+      description: e.g. http://your-moondream:5000
+      # 👇 External paid services
+    - key: OPENROUTER_API_KEY
+      type: STRING
+      name: OpenRouter API Key
+      description: e.g. sk-or-XXXXXXXXXXXXXXXXXXXX
+    - key: RESEND_API_KEY
+      type: STRING
+      name: Resend API Key
+      description: e.g. re_XXXXXXXXXXXXXXXXXXXX
+    - key: SENTRY_DSN
+      type: STRING
+      name: Sentry DSN
+      description: e.g. https://public@o0.ingest.sentry.io/0
+  services:
+    - name: Vmemo
+      domainKey: PUBLIC_DOMAIN
+      template: PREBUILT_V2
+      icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
+      spec:
+        source:
+          image: thaddeusjiang/vmemo:latest
+        ports:
+          - id: web
+            port: 4000
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /app/storage
+        instructions:
+          - type: TEXT
+            title: Admin Token
+            content: ${ADMIN_TOKEN}
+        env:
+          DATABASE_URL:
+            default: ${DATABASE_URL}
+            expose: false
+          TYPESENSE_URL:
+            default: ${TYPESENSE_URL}
+            expose: false
+          TYPESENSE_API_KEY:
+            default: ${TYPESENSE_API_KEY}
+            expose: false
+          MOONDREAM_URL:
+            default: ${MOONDREAM_URL}
+            expose: false
+          OPENROUTER_API_KEY:
+            default: ${OPENROUTER_API_KEY}
+            expose: false
+          RESEND_API_KEY:
+            default: ${RESEND_API_KEY}
+            expose: false
+          SENTRY_DSN:
+            default: ${SENTRY_DSN}
+            expose: false
+          SECRET_KEY_BASE:
+            default: ${PASSWORD}_${PASSWORD}
+            expose: false
+          ADMIN_TOKEN:
+            default: ${PASSWORD}
+            expose: false
+          PHX_SERVER:
+            default: "true"
+            expose: false
+          PHX_HOST:
+            default: ${ZEABUR_WEB_DOMAIN}
+            expose: false
+        configs: []
