@@ -95,7 +95,6 @@ defmodule Vmemo.MixProject do
       setup: ["deps.get", "ecto.setup", "ts.reset", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "ts.reset": ["run priv/ts/reset.exs"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind vmemo", "esbuild vmemo"],
