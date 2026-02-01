@@ -46,6 +46,10 @@ defmodule Vmemo.Photos.Photo do
       accept [:url, :note, :caption, :file_id, :ash_user_id]
     end
 
+    create :import do
+      accept [:id, :url, :note, :caption, :file_id, :ash_user_id]
+    end
+
     create :create_with_sync do
       accept [:url, :note, :caption, :file_id, :ash_user_id]
 
@@ -447,7 +451,7 @@ defmodule Vmemo.Photos.Photo do
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key :id, writable?: true
 
     attribute :url, :string do
       allow_nil? false

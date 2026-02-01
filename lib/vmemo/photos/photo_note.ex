@@ -21,6 +21,10 @@ defmodule Vmemo.Photos.PhotoNote do
 
   actions do
     defaults [:read, :create, :destroy]
+
+    create :import do
+      accept [:photo_id, :note_id]
+    end
   end
 
   attributes do

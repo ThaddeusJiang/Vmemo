@@ -35,6 +35,10 @@ defmodule Vmemo.Photos.Note do
              end)
     end
 
+    create :import do
+      accept [:id, :text, :ash_user_id]
+    end
+
     update :update do
       accept [:text]
       require_atomic? false
@@ -50,7 +54,7 @@ defmodule Vmemo.Photos.Note do
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key :id, writable?: true
 
     attribute :text, :string do
       allow_nil? false

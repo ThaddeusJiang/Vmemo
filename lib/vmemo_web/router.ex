@@ -167,6 +167,11 @@ defmodule VmemoWeb.Router do
   scope "/admin" do
     pipe_through [:browser, :require_admin_silent]
 
+    live_session :admin,
+      on_mount: [{VmemoWeb.AdminAuth, :ensure_admin}] do
+      live "/import", VmemoWeb.AdminImportLive, :index
+    end
+
     ash_admin("/")
 
     delete "/logout", VmemoWeb.AdminSessionController, :delete

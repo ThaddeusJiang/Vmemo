@@ -45,6 +45,10 @@ defmodule Vmemo.Account.AshUser do
       change &hash_password/2
     end
 
+    create :import do
+      accept [:id, :email, :hashed_password, :confirmed_at]
+    end
+
     update :update_profile do
       accept [:email, :confirmed_at]
       require_atomic? false
@@ -98,7 +102,7 @@ defmodule Vmemo.Account.AshUser do
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key :id, writable?: true
 
     attribute :email, :string, allow_nil?: false, public?: true
     attribute :hashed_password, :string, allow_nil?: false, sensitive?: true

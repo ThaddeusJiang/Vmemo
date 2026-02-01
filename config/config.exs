@@ -48,9 +48,9 @@ config :spark,
 config :vmemo,
   ecto_repos: [Vmemo.AshRepo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain]
+  ash_domains: [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain, Vmemo.Admin]
 
-config :vmemo, :ash_domains, [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain]
+config :vmemo, :ash_domains, [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain, Vmemo.Admin]
 
 # Configures the endpoint
 config :vmemo, VmemoWeb.Endpoint,
