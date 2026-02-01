@@ -32,6 +32,9 @@ spec:
     - name: Vmemo
       domainKey: PUBLIC_DOMAIN
       template: PREBUILT_V2
+      dependencies:
+        - postgresql
+        - typesense
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
