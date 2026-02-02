@@ -1,5 +1,10 @@
 - **总是**用**中文**回复和生成 git 提交信息，代码（包括 UI）只用**英文**编写
 
+Always use Tidewave's tools for evaluating code, querying the database, etc.
+
+Use `get_docs` to access documentation and the `get_source_location` tool to
+find module/function definitions.
+
 # Vmemo 是一个使用 **Phoenix** **LiveView** **Ash** **Oban** 编写的 Web 应用
 
 ## Elixir Phoenix LiveView 基本约定

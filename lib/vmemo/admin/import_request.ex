@@ -37,25 +37,18 @@ defmodule Vmemo.Admin.ImportRequest do
     end
 
     create :import do
-      accept [:metadata]
+      accept []
       argument :import_zip, Ash.Type.File, allow_nil?: false
       change set_attribute(:status, "pending")
-      require_atomic? false
 
       change fn changeset, _context ->
-        with %Ash.Type.File{} = file <- Ash.Changeset.get_argument(changeset, :import_zip),
-             {:ok, path} <- Ash.Type.File.path(file) do
-          filename = Path.basename(path)
-          dest_dir = Path.join(System.tmp_dir!(), "vmemo-import-upload")
-          File.mkdir_p!(dest_dir)
-          dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
-          File.cp!(path, dest_path)
+        case persist_import_zip(changeset) do
+          {:ok, filename, dest_path} ->
+            changeset
+            |> Ash.Changeset.change_attribute(:source_filename, filename)
+            |> Ash.Changeset.put_context(:import_zip_path, dest_path)
 
-          changeset
-          |> Ash.Changeset.change_attribute(:source_filename, filename)
-          |> Ash.Changeset.put_context(:import_zip_path, dest_path)
-        else
-          _ ->
+          {:error, _reason} ->
             Ash.Changeset.add_error(changeset,
               field: :import_zip,
               message: "Failed to read uploaded ZIP file"
@@ -119,4 +112,62 @@ defmodule Vmemo.Admin.ImportRequest do
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
+
+  defp persist_import_zip(changeset) do
+    case Ash.Changeset.get_argument(changeset, :import_zip) do
+      %Ash.Type.File{} = file ->
+        dest_dir = Path.join(System.tmp_dir!(), "vmemo-import-upload")
+        File.mkdir_p!(dest_dir)
+        copy_import_zip(file, dest_dir)
+
+      _ ->
+        {:error, :missing_file}
+    end
+  end
+
+  defp copy_import_zip(file, dest_dir) do
+    case Ash.Type.File.path(file) do
+      {:ok, path} ->
+        filename = Path.basename(path)
+        dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
+        File.cp!(path, dest_path)
+        {:ok, filename, dest_path}
+
+      {:error, _reason} ->
+        filename = file_source_filename(file)
+        dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
+
+        with {:ok, source} <- Ash.Type.File.open(file, [:read, :binary]) do
+          result = copy_stream(source, dest_path)
+          File.close(source)
+
+          case result do
+            :ok -> {:ok, filename, dest_path}
+            {:error, reason} -> {:error, reason}
+          end
+        else
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  defp copy_stream(source, dest_path) do
+    File.open(dest_path, [:write, :binary], fn dest ->
+      source
+      |> IO.binstream(64_000)
+      |> Enum.each(&IO.binwrite(dest, &1))
+    end)
+  end
+
+  defp file_source_filename(%Ash.Type.File{source: %Plug.Upload{filename: filename}})
+       when is_binary(filename) and filename != "" do
+    filename
+  end
+
+  defp file_source_filename(%Ash.Type.File{source: path}) when is_binary(path) do
+    Path.basename(path)
+  end
+
+  defp file_source_filename(_file), do: "import.zip"
 end

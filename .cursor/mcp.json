@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "Tidewave": {
-      "command": "~/macos-setup/mcp-proxy",
+      "command": "/Users/amami/my2026/personal/Vmemo",
       "args": ["http://localhost:4000/tidewave/mcp"]
     },
     "playwright": {
