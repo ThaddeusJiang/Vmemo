@@ -72,6 +72,11 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
+  def handle_event("change-col", %{"col" => _col}, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("search-by-photo", _, socket) do
     current_user =
       Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
