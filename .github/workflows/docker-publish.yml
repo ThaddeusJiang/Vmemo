@@ -26,6 +26,10 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      - name: Use single platform on develop
+        if: github.ref == 'refs/heads/develop'
+        run: echo "DOCKER_PLATFORMS=linux/amd64" >> $GITHUB_ENV
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:

@@ -188,3 +188,7 @@ password = "password123456"
 ## 项目规范
 
 - **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`.tool-versions` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+
+## Tools
+
+- 你可以使用很多 cli 工具，例如： `gh` `jq` 等

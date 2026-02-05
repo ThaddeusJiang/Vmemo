@@ -36,7 +36,7 @@ defmodule Vmemo.MixProject do
   defp deps do
     [
       {:mdex, "~> 0.7"},
-      {:ash_ai, "~> 0.4"},
+      {:ash_ai, "~> 0.5"},
       {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8"},
       {:phoenix_live_view, "~> 1.1", override: true},
@@ -68,18 +68,21 @@ defmodule Vmemo.MixProject do
       {:req, "~> 0.5.10"},
       {:mime, "~> 2.0"},
       {:tidewave, "~> 0.5", only: :dev},
-      {:sourceror, "~> 1.7", only: [:dev, :test]},
+      {:sourceror, "~> 1.7"},
       {:ash, "~> 3.0"},
       {:ash_postgres, ">= 2.6.8"},
       {:ash_phoenix, "~> 2.1"},
       {:ash_oban, "~> 0.2"},
       {:ash_admin, "~> 0.13.19"},
-      {:ash_authentication, "~> 4.0"},
+      {:ash_authentication, "~> 4.13"},
       {:oban, "~> 2.19"},
       {:oban_web, "~> 2.0"},
-      {:sentry, "~> 10.2.0"},
+      {:sentry, "~> 11.0"},
       {:hackney, "~> 1.21"},
-      {:igniter, "~> 0.5", only: [:dev]},
+      {:igniter, "~> 0.7"},
+      {:open_api_spex, "~> 3.22"},
+      {:oban_met, "~> 1.0"},
+      {:owl, "~> 0.13"},
       {:spark, "~> 2.3"}
     ]
   end

@@ -10,6 +10,9 @@ RUN apt-get update -y && \
 WORKDIR /app
 
 ENV MIX_ENV=prod
+ENV HEX_HTTP_TIMEOUT=120
+ENV HEX_HTTP_CONCURRENCY=1
+ENV HEX_HTTP_RETRIES=3
 
 COPY mix.exs mix.lock ./
 RUN mix local.hex --force && \
