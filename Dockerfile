@@ -12,16 +12,13 @@ WORKDIR /app
 ENV MIX_ENV=prod
 
 COPY mix.exs mix.lock ./
-RUN --mount=type=cache,target=/root/.hex \
-    --mount=type=cache,target=/root/.mix \
-    --mount=type=cache,target=/app/deps \
-    mix do local.hex --force, local.rebar --force, deps.get --only prod
+RUN mix local.hex --force && \
+    mix local.rebar --force && \
+    mix deps.get --only prod
 
 COPY . .
-RUN --mount=type=cache,target=/app/_build \
-    mix compile
-RUN --mount=type=cache,target=/root/.cache \
-    mix assets.deploy
+RUN mix compile
+RUN mix assets.deploy
 
 # ------------------ runner ------------------
 FROM base AS runner
