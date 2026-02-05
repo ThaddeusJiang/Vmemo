@@ -39,6 +39,8 @@ jobs:
           push: true
           platforms: ${{ env.DOCKER_PLATFORMS }}
           tags: thaddeusjiang/vmemo:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
         # main branch is :latest
       - name: Publish :latest image
@@ -49,6 +51,8 @@ jobs:
           push: true
           platforms: ${{ env.DOCKER_PLATFORMS }}
           tags: thaddeusjiang/vmemo:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Log out from Docker Hub
         run: docker logout
