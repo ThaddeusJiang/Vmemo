@@ -131,9 +131,9 @@ defmodule Vmemo.AdminImport do
 
   defp import_users(users) do
     Enum.reduce(users, {%{created: 0, skipped: 0, remapped: 0, failed: 0}, %{}, []}, fn user,
-                                                                                          {stats,
-                                                                                           id_map,
-                                                                                           errors} ->
+                                                                                        {stats,
+                                                                                         id_map,
+                                                                                         errors} ->
       user_id = pick_value(user, ["id", :id])
       email = pick_value(user, ["email", :email])
       hashed_password = pick_value(user, ["hashed_password", :hashed_password])
@@ -151,7 +151,15 @@ defmodule Vmemo.AdminImport do
                   {bump(stats, :skipped), Map.put(id_map, user_id, existing.id), errors}
 
                 {:error, %Ash.Error.Query.NotFound{}} ->
-                  create_or_remap_user(user_id, email, hashed_password, confirmed_at, stats, id_map, errors)
+                  create_or_remap_user(
+                    user_id,
+                    email,
+                    hashed_password,
+                    confirmed_at,
+                    stats,
+                    id_map,
+                    errors
+                  )
 
                 {:error, error} ->
                   {bump(stats, :failed), id_map,
@@ -159,7 +167,15 @@ defmodule Vmemo.AdminImport do
               end
 
             {:legacy, _legacy_id} ->
-              create_or_remap_user(user_id, email, hashed_password, confirmed_at, stats, id_map, errors)
+              create_or_remap_user(
+                user_id,
+                email,
+                hashed_password,
+                confirmed_at,
+                stats,
+                id_map,
+                errors
+              )
 
             :invalid ->
               {bump(stats, :failed), id_map,
@@ -212,10 +228,10 @@ defmodule Vmemo.AdminImport do
 
   defp import_photos(photos, user_id_map) do
     Enum.reduce(photos, {%{created: 0, skipped: 0, failed: 0}, MapSet.new(), %{}, []}, fn photo,
-                                                                                         {stats,
-                                                                                          ids,
-                                                                                          id_map,
-                                                                                          errors} ->
+                                                                                          {stats,
+                                                                                           ids,
+                                                                                           id_map,
+                                                                                           errors} ->
       photo_id = pick_value(photo, ["id", :id])
       url = pick_value(photo, ["url", :url])
       note = pick_value(photo, ["note", :note])
@@ -246,45 +262,47 @@ defmodule Vmemo.AdminImport do
   end
 
   defp import_notes(notes, user_id_map, photo_id_map) do
-    Enum.reduce(notes, {%{created: 0, skipped: 0, failed: 0}, MapSet.new(), %{}, %{}, []}, fn note,
-                                                                                            {stats,
-                                                                                             ids,
-                                                                                             id_map,
-                                                                                             note_map,
-                                                                                             errors} ->
-      note_id = pick_value(note, ["id", :id])
-      text =
-        note
-        |> pick_value(["text", :text])
-        |> normalize_note_text()
-      belongs_to = pick_value(note, ["belongs_to", :belongs_to, "ash_user_id", :ash_user_id])
-      ash_user_id = map_user_id(user_id_map, belongs_to)
-      photo_ids =
-        note
-        |> pick_value(["photo_ids", :photo_ids])
-        |> normalize_list()
-        |> Enum.map(&map_photo_id(photo_id_map, &1))
-        |> Enum.reject(&is_nil/1)
+    Enum.reduce(
+      notes,
+      {%{created: 0, skipped: 0, failed: 0}, MapSet.new(), %{}, %{}, []},
+      fn note, {stats, ids, id_map, note_map, errors} ->
+        note_id = pick_value(note, ["id", :id])
 
-      cond do
-        is_nil(note_id) ->
-          {bump(stats, :failed), ids, id_map, note_map,
-           add_error(errors, "Note missing id or text")}
+        text =
+          note
+          |> pick_value(["text", :text])
+          |> normalize_note_text()
 
-        true ->
-          import_note_record(
-            note_id,
-            text,
-            ash_user_id,
-            photo_ids,
-            stats,
-            ids,
-            id_map,
-            note_map,
-            errors
-          )
+        belongs_to = pick_value(note, ["belongs_to", :belongs_to, "ash_user_id", :ash_user_id])
+        ash_user_id = map_user_id(user_id_map, belongs_to)
+
+        photo_ids =
+          note
+          |> pick_value(["photo_ids", :photo_ids])
+          |> normalize_list()
+          |> Enum.map(&map_photo_id(photo_id_map, &1))
+          |> Enum.reject(&is_nil/1)
+
+        cond do
+          is_nil(note_id) ->
+            {bump(stats, :failed), ids, id_map, note_map,
+             add_error(errors, "Note missing id or text")}
+
+          true ->
+            import_note_record(
+              note_id,
+              text,
+              ash_user_id,
+              photo_ids,
+              stats,
+              ids,
+              id_map,
+              note_map,
+              errors
+            )
+        end
       end
-    end)
+    )
   end
 
   defp import_photo_notes(note_photo_map, photo_ids, note_ids, note_id_map) do
@@ -321,14 +339,16 @@ defmodule Vmemo.AdminImport do
 
                   {:error, error} ->
                     {bump(inner_stats, :failed),
-                     add_error(inner_errors,
+                     add_error(
+                       inner_errors,
                        "Photo note link failed (#{photo_id}, #{note_id}): #{format_error(error)}"
                      )}
                 end
 
               {:error, error} ->
                 {bump(inner_stats, :failed),
-                 add_error(inner_errors,
+                 add_error(
+                   inner_errors,
                    "Photo note link lookup failed (#{photo_id}, #{note_id}): #{format_error(error)}"
                  )}
             end
@@ -443,7 +463,18 @@ defmodule Vmemo.AdminImport do
              errors}
 
           {:error, %Ash.Error.Query.NotFound{}} ->
-            create_photo(uuid, url, note, caption, file_id, ash_user_id, stats, ids, id_map, errors)
+            create_photo(
+              uuid,
+              url,
+              note,
+              caption,
+              file_id,
+              ash_user_id,
+              stats,
+              ids,
+              id_map,
+              errors
+            )
 
           {:error, error} ->
             {bump(stats, :failed), ids, id_map,
@@ -461,7 +492,19 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp create_photo(uuid, url, note, caption, file_id, ash_user_id, stats, ids, id_map, errors, opts \\ []) do
+  defp create_photo(
+         uuid,
+         url,
+         note,
+         caption,
+         file_id,
+         ash_user_id,
+         stats,
+         ids,
+         id_map,
+         errors,
+         opts \\ []
+       ) do
     params =
       %{
         id: uuid,
@@ -477,12 +520,16 @@ defmodule Vmemo.AdminImport do
     case Ash.create(Photo, params, action: :import, actor: nil, authorize?: false) do
       {:ok, created} ->
         legacy_id = Keyword.get(opts, :legacy_id, created.id)
-        {bump(stats, :created), MapSet.put(ids, created.id), Map.put(id_map, legacy_id, created.id),
-         errors}
+
+        {bump(stats, :created), MapSet.put(ids, created.id),
+         Map.put(id_map, legacy_id, created.id), errors}
 
       {:error, error} ->
         {bump(stats, :failed), ids, id_map,
-         add_error(errors, "Photo #{inspect(uuid || opts[:legacy_id])} import failed: #{format_error(error)}")}
+         add_error(
+           errors,
+           "Photo #{inspect(uuid || opts[:legacy_id])} import failed: #{format_error(error)}"
+         )}
     end
   end
 
@@ -523,7 +570,18 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp create_note(uuid, text, ash_user_id, photo_ids, stats, ids, id_map, note_map, errors, opts \\ []) do
+  defp create_note(
+         uuid,
+         text,
+         ash_user_id,
+         photo_ids,
+         stats,
+         ids,
+         id_map,
+         note_map,
+         errors,
+         opts \\ []
+       ) do
     params =
       %{
         id: uuid,
@@ -536,12 +594,16 @@ defmodule Vmemo.AdminImport do
     case Ash.create(Note, params, action: :import, actor: nil, authorize?: false) do
       {:ok, created} ->
         legacy_id = Keyword.get(opts, :legacy_id, created.id)
-        {bump(stats, :created), MapSet.put(ids, created.id), Map.put(id_map, legacy_id, created.id),
-         Map.put(note_map, created.id, photo_ids), errors}
+
+        {bump(stats, :created), MapSet.put(ids, created.id),
+         Map.put(id_map, legacy_id, created.id), Map.put(note_map, created.id, photo_ids), errors}
 
       {:error, error} ->
         {bump(stats, :failed), ids, id_map, note_map,
-         add_error(errors, "Note #{inspect(uuid || opts[:legacy_id])} import failed: #{format_error(error)}")}
+         add_error(
+           errors,
+           "Note #{inspect(uuid || opts[:legacy_id])} import failed: #{format_error(error)}"
+         )}
     end
   end
 
@@ -583,9 +645,6 @@ defmodule Vmemo.AdminImport do
   end
 
   defp valid_uuid?(_id), do: false
-
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_value), do: false
 
   defp normalize_note_text(nil), do: ""
   defp normalize_note_text(text) when is_binary(text), do: text
