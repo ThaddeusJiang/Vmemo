@@ -25,6 +25,7 @@ defmodule Vmemo.Photos.Photo do
     define :destroy
     define :get_with_notes, args: [:id, :ash_user_id]
     define :hybrid_search, args: [:query, :similar_photo_id, :ash_user_id, :page]
+    define :hybrid_search_count, args: [:query, :similar_photo_id, :ash_user_id]
     define :list_similar, args: [:photo_id, :ash_user_id]
     define :gen_description
   end
@@ -100,10 +101,7 @@ defmodule Vmemo.Photos.Photo do
         page = Ash.Query.get_argument(query, :page)
 
         {photos, _found, _current_page} =
-          Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
-            user_id: ash_user_id,
-            page: page
-          )
+          typesense_hybrid_search(q, similar, ash_user_id, page)
 
         photo_ids =
           photos
@@ -122,16 +120,47 @@ defmodule Vmemo.Photos.Photo do
           query
           |> Ash.Query.filter(id: [in: photo_ids])
           |> Ash.Query.after_action(fn _query, records ->
+            photos_by_id = Map.new(photos, fn photo -> {photo.id, photo} end)
+
             sorted_records =
               photo_ids
               |> Enum.map(fn id ->
                 Enum.find(records, fn record -> record.id == id end)
               end)
               |> Enum.reject(&is_nil/1)
+              |> Enum.map(fn record ->
+                case Map.get(photos_by_id, record.id) do
+                  nil ->
+                    record
+
+                  ts_photo ->
+                    Map.merge(record, %{
+                      _vector_distance: ts_photo._vector_distance,
+                      _text_match_info: ts_photo._text_match_info
+                    })
+                end
+              end)
 
             {:ok, sorted_records}
           end)
         end
+      end
+    end
+
+    action :hybrid_search_count, :integer do
+      argument :query, :string
+      argument :similar_photo_id, :string
+      argument :ash_user_id, :uuid, allow_nil?: false
+
+      run fn input, _context ->
+        q = Ash.ActionInput.get_argument(input, :query) || ""
+        similar = Ash.ActionInput.get_argument(input, :similar_photo_id)
+        ash_user_id = Ash.ActionInput.get_argument(input, :ash_user_id)
+
+        {_photos, found, _current_page} =
+          typesense_hybrid_search(q, similar, ash_user_id, 1)
+
+        {:ok, found}
       end
     end
 
@@ -509,6 +538,13 @@ defmodule Vmemo.Photos.Photo do
     else
       "http://localhost:4000"
     end
+  end
+
+  defp typesense_hybrid_search(q, similar, ash_user_id, page) do
+    Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
+      user_id: ash_user_id,
+      page: page
+    )
   end
 
 end

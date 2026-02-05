@@ -1,9 +1,9 @@
 defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   use VmemoWeb, :live_component
 
+  alias Ash
+  alias Vmemo.Photos.Note
   alias VmemoWeb.LiveComponents.Waterfall
-
-  alias Vmemo.PhotoService.TsNote
 
   @impl true
   def update(assigns, socket) do
@@ -58,23 +58,32 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
   @impl true
   def handle_event("save", %{"note" => note_text}, socket) do
-    # user_id = socket.assigns.current_user.id
-    note_id = socket.assigns.note.id
-    now = :os.system_time(:millisecond)
+    actor = socket.assigns.current_ash_user
 
-    TsNote.update(%{
-      id: note_id,
-      text: note_text,
-      updated_at: now
-    })
+    case Ash.update(socket.assigns.note, %{text: note_text}, actor: actor, load: [:photos]) do
+      {:ok, note} ->
+        {:noreply,
+         socket
+         |> assign(note: note, photos: note.photos || [])
+         |> assign(form: to_form(%{"note" => note.text}))
+         |> put_flash(:info, "Updated")
+         |> push_patch(to: socket.assigns.patch)}
 
-    {:noreply, socket |> put_flash(:info, "Updated") |> push_patch(to: socket.assigns.patch)}
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
   end
 
   @impl true
-  def handle_event("delete-note", %{"id" => id}, socket) do
-    TsNote.delete(id)
+  def handle_event("delete-note", _params, socket) do
+    actor = socket.assigns.current_ash_user
 
-    {:noreply, socket |> put_flash(:info, "Deleted") |> push_navigate(to: ~p"/home")}
+    case Note.destroy(socket.assigns.note, actor: actor) do
+      {:ok, _note} ->
+        {:noreply, socket |> put_flash(:info, "Deleted") |> push_navigate(to: ~p"/home")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
   end
 end

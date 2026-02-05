@@ -1,12 +1,23 @@
 defmodule VmemoWeb.HomePageLive do
   use VmemoWeb, :live_view
 
+  require Ash.Query
+
+  alias Vmemo.Photos.Photo
   alias VmemoWeb.LiveComponents.SearchBox
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_ash_user
-    total_photos = Vmemo.PhotoService.TsPhoto.count_photos(user_id: user.id)
+
+    total_photos =
+      Photo
+      |> Ash.Query.filter(ash_user_id == ^user.id)
+      |> Ash.count(actor: user)
+      |> case do
+        {:ok, count} -> count
+        _ -> 0
+      end
 
     socket =
       socket

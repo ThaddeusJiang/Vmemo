@@ -2,7 +2,8 @@ defmodule VmemoWeb.NoteIdLive do
   require Logger
   use VmemoWeb, :live_view
 
-  alias Vmemo.PhotoService.TsNote
+  alias Ash
+  alias Vmemo.Photos.Note
   alias VmemoWeb.LiveComponents.NoteUpdateForm
 
   @impl true
@@ -12,19 +13,20 @@ defmodule VmemoWeb.NoteIdLive do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    user_id = socket.assigns.current_ash_user.id
-    {:ok, %{note: note, photos: photos}} = TsNote.get(id, :photos)
+    actor = socket.assigns.current_ash_user
 
-    if note == nil || note.belongs_to != user_id do
-      {:noreply,
-       socket
-       |> assign(note: nil)
-       |> assign(photos: [])}
-    else
-      {:noreply,
-       socket
-       |> assign(note: note)
-       |> assign(photos: photos)}
+    case Ash.get(Note, id, actor: actor, load: [:photos]) do
+      {:ok, note} ->
+        {:noreply,
+         socket
+         |> assign(note: note)
+         |> assign(photos: note.photos || [])}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(note: nil)
+         |> assign(photos: [])}
     end
   end
 
@@ -39,6 +41,7 @@ defmodule VmemoWeb.NoteIdLive do
           note={@note}
           photos={@photos}
           patch={~p"/notes/#{@note.id}"}
+          current_ash_user={@current_ash_user}
         />
       <% else %>
         <.not_found />
