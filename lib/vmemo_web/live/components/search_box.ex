@@ -108,7 +108,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
           {:ok, dest} = PhotoService.cp_file(path, current_user.id, filename)
 
-          case Photo.create_immediate(
+          case Photo.create_with_sync(
                  %{
                    note: "",
                    url: Path.join("/", dest),
@@ -118,14 +118,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                  actor: current_user
                ) do
             {:ok, photo} ->
-              case sync_photo_to_typesense(photo) do
-                {:ok, _} ->
-                  :ok
-
-                {:error, reason} ->
-                  Logger.error("Failed to sync to Typesense: #{inspect(reason)}")
-              end
-
               {:ok, photo}
 
             {:error, reason} ->
@@ -156,57 +148,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       {:error, reason} ->
         {:noreply, socket |> put_flash(:error, "Upload failed: #{inspect(reason)}")}
-    end
-  end
-
-  defp sync_photo_to_typesense(photo) do
-    require Logger
-    alias Vmemo.PhotoService.TsPhoto
-
-    inserted_at_unix = DateTime.to_unix(photo.inserted_at)
-
-    base_data = %{
-      id: photo.id,
-      note: photo.note || "",
-      note_ids: [],
-      url: photo.url,
-      file_id: photo.file_id,
-      inserted_at: inserted_at_unix,
-      inserted_by: photo.ash_user_id
-    }
-
-    typesense_data =
-      case read_image_as_base64(photo.url) do
-        {:ok, image} ->
-          Map.put(base_data, :image, image)
-
-        {:error, reason} ->
-          Logger.warning("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
-          base_data
-      end
-
-    case TsPhoto.get_photo(photo.id) do
-      nil -> TsPhoto.create(typesense_data)
-      _existing -> TsPhoto.update_photo(typesense_data)
-    end
-  end
-
-  defp read_image_as_base64(url) do
-    relative_path =
-      url
-      |> String.trim_leading("/")
-      |> String.trim_leading("storage/v1/")
-
-    file_path =
-      if Mix.env() == :prod do
-        Path.join([Application.app_dir(:vmemo, "priv"), "storage", "v1", relative_path])
-      else
-        Path.join(["storage", "v1", relative_path])
-      end
-
-    case File.read(file_path) do
-      {:ok, binary} -> {:ok, Base.encode64(binary)}
-      {:error, reason} -> {:error, reason}
     end
   end
 

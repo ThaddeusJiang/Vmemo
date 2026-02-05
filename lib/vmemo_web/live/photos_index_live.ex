@@ -6,15 +6,6 @@ defmodule VmemoWeb.PhotosIndexLive do
   alias Vmemo.Photos.Photo
   alias VmemoWeb.LiveComponents.Waterfall
 
-  defp valid_uuid?(id) when is_binary(id) do
-    Regex.match?(
-      ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      String.downcase(id)
-    )
-  end
-
-  defp valid_uuid?(_), do: false
-
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -41,51 +32,19 @@ defmodule VmemoWeb.PhotosIndexLive do
   end
 
   defp load_photos_with_count(q, similar_photo_id, page, user) do
-    {ts_photos, found, _current_page} =
-      Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar_photo_id},
-        user_id: user.id,
-        page: page
-      )
-
-    photo_ids =
-      ts_photos
-      |> Enum.map(& &1.id)
-      |> Enum.filter(&valid_uuid?/1)
-
     photos =
-      if photo_ids == [] do
-        []
-      else
-        require Ash.Query
-
-        query =
-          Photo
-          |> Ash.Query.filter(id in ^photo_ids)
-
-        case Ash.read(query, actor: user) do
-          {:ok, records} ->
-            photo_ids
-            |> Enum.map(fn id ->
-              ash_photo = Enum.find(records, fn record -> record.id == id end)
-              ts_photo = Enum.find(ts_photos, fn ts -> ts.id == id end)
-
-              if ash_photo && ts_photo do
-                Map.merge(ash_photo, %{
-                  _vector_distance: ts_photo._vector_distance,
-                  _text_match_info: ts_photo._text_match_info
-                })
-              else
-                ash_photo
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-
-          _ ->
-            []
-        end
+      case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
+        {:ok, records} -> records
+        _ -> []
       end
 
-    {photos, found}
+    total_count =
+      case Photo.hybrid_search_count(q, similar_photo_id, user.id, actor: user) do
+        {:ok, count} -> count
+        _ -> 0
+      end
+
+    {photos, total_count}
   end
 
   @impl true
