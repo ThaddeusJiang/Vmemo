@@ -2,6 +2,7 @@ defmodule VmemoWeb.AdminImportLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Admin.ImportRequest
+  alias VmemoWeb.Uploads.ImportZipWriter
 
   @impl true
   def mount(_params, _session, socket) do
@@ -10,7 +11,9 @@ defmodule VmemoWeb.AdminImportLive do
       |> allow_upload(:import_zip,
         accept: ~w(.zip),
         max_entries: 1,
-        max_file_size: 1024 * 1024 * 1024
+        max_file_size: 1024 * 1024 * 1024,
+        auto_upload: true,
+        writer: &import_zip_writer/3
       )
       |> assign(:form, to_form(%{}))
       |> assign(:request, nil)
@@ -23,8 +26,13 @@ defmodule VmemoWeb.AdminImportLive do
 
   @impl true
   def render(assigns) do
+    entries = assigns.uploads.import_zip.entries
+
     assigns =
-      assign(assigns, :has_file, Enum.any?(assigns.uploads.import_zip.entries))
+      assigns
+      |> assign(:has_file, Enum.any?(entries))
+      |> assign(:upload_progress, upload_progress(entries))
+      |> assign(:upload_complete, upload_complete?(entries))
 
     ~H"""
     <section class="pt-10 px-4 pb-6 sm:pt-12 sm:px-6 lg:px-10 max-w-3xl mx-auto">
@@ -66,13 +74,26 @@ defmodule VmemoWeb.AdminImportLive do
               </p>
 
               <p :if={@form_error} class="text-error text-sm">{@form_error}</p>
+
+              <div :if={@has_file} class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-base-content/70">
+                  <span>Upload progress</span>
+                  <span>{@upload_progress}%</span>
+                </div>
+                <progress
+                  class="progress progress-accent w-full"
+                  value={@upload_progress}
+                  max="100"
+                >
+                </progress>
+              </div>
             </div>
 
             <div class="py-2 flex items-center gap-2">
               <button
                 type="submit"
                 class="btn btn-accent"
-                disabled={@is_submitting || not @has_file}
+                disabled={@is_submitting || not @has_file || not @upload_complete}
               >
                 Import
               </button>
@@ -85,6 +106,18 @@ defmodule VmemoWeb.AdminImportLive do
               <span class={status_badge_class(@request.status)}>{@request.status}</span>
               <span class="text-sm text-base-content/70">Request ID: {@request.id}</span>
             </div>
+
+            <%= if progress = progress_value(@request.metadata) do %>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-base-content/70">
+                  <span>Processing progress</span>
+                  <span>{progress.percent}%</span>
+                </div>
+                <progress class="progress progress-info w-full" value={progress.percent} max="100">
+                </progress>
+                <p class="text-xs text-base-content/70">{progress.stage}</p>
+              </div>
+            <% end %>
 
             <%= if @request.error_message do %>
               <p class="text-error text-sm">{@request.error_message}</p>
@@ -173,57 +206,60 @@ defmodule VmemoWeb.AdminImportLive do
 
   @impl true
   def handle_event("save", _params, socket) do
-    if Enum.empty?(socket.assigns.uploads.import_zip.entries) do
-      {:noreply, assign(socket, form_error: "Please choose a ZIP file to import.")}
-    else
-      socket = assign(socket, is_submitting: true, form_error: nil, submit_error: nil)
+    entries = socket.assigns.uploads.import_zip.entries
 
-      uploaded =
-        consume_uploaded_entries(socket, :import_zip, fn %{path: path}, entry ->
-          dest_dir = Path.join(System.tmp_dir!(), "vmemo-import-upload")
-          File.mkdir_p!(dest_dir)
-          dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{entry.client_name}")
-          File.cp!(path, dest_path)
-          {:ok, %{path: dest_path, filename: entry.client_name}}
-        end)
+    cond do
+      entries == [] ->
+        {:noreply, assign(socket, form_error: "Please choose a ZIP file to import.")}
 
-      case uploaded do
-        [%{path: zip_path, filename: filename}] ->
-          case ImportRequest.create(%{source_filename: filename}, actor: nil) do
-            {:ok, request} ->
-              Phoenix.PubSub.subscribe(Vmemo.PubSub, "admin_import_request:#{request.id}")
+      not upload_complete?(entries) ->
+        {:noreply, assign(socket, form_error: "Upload is still in progress.")}
 
-              job =
-                %{request_id: request.id, zip_path: zip_path}
-                |> Vmemo.Workers.ProcessImportRequest.new()
+      true ->
+        socket = assign(socket, is_submitting: true, form_error: nil, submit_error: nil)
 
-              case Oban.insert(job) do
-                {:ok, _job} ->
-                  {:noreply,
-                   socket
-                   |> assign(is_submitting: false)
-                   |> assign(request: request)}
+        uploaded =
+          consume_uploaded_entries(socket, :import_zip, fn %{path: path}, entry ->
+            {:ok, %{path: path, filename: entry.client_name}}
+          end)
 
-                {:error, error} ->
-                  {:noreply,
-                   socket
-                   |> assign(is_submitting: false)
-                   |> assign(submit_error: "Failed to enqueue import job: #{format_error(error)}")}
-              end
+        case uploaded do
+          [%{path: zip_path, filename: filename}] ->
+            case ImportRequest.create(%{source_filename: filename}, actor: nil) do
+              {:ok, request} ->
+                Phoenix.PubSub.subscribe(Vmemo.PubSub, "admin_import_request:#{request.id}")
 
-            {:error, error} ->
-              {:noreply,
-               socket
-               |> assign(is_submitting: false)
-               |> assign(submit_error: "Failed to create import request: #{format_error(error)}")}
-          end
+                job =
+                  %{request_id: request.id, zip_path: zip_path}
+                  |> Vmemo.Workers.ProcessImportRequest.new()
 
-        _ ->
-          {:noreply,
-           socket
-           |> assign(is_submitting: false)
-           |> assign(form_error: "Failed to read ZIP file.")}
-      end
+                case Oban.insert(job) do
+                  {:ok, _job} ->
+                    {:noreply,
+                     socket
+                     |> assign(is_submitting: false)
+                     |> assign(request: request)}
+
+                  {:error, error} ->
+                    {:noreply,
+                     socket
+                     |> assign(is_submitting: false)
+                     |> assign(submit_error: "Failed to enqueue import job: #{format_error(error)}")}
+                end
+
+              {:error, error} ->
+                {:noreply,
+                 socket
+                 |> assign(is_submitting: false)
+                 |> assign(submit_error: "Failed to create import request: #{format_error(error)}")}
+            end
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(is_submitting: false)
+             |> assign(form_error: "Failed to read ZIP file.")}
+        end
     end
   end
 
@@ -237,7 +273,8 @@ defmodule VmemoWeb.AdminImportLive do
             request
             | status: payload.status,
               result: payload.result,
-              error_message: payload.error_message
+              error_message: payload.error_message,
+              metadata: payload.metadata
           }
       end
 
@@ -254,6 +291,38 @@ defmodule VmemoWeb.AdminImportLive do
     end)
   end
   defp result_value(_result, _keys, default), do: default
+
+  defp progress_value(metadata) when is_map(metadata) do
+    case Map.get(metadata, :progress) || Map.get(metadata, "progress") do
+      %{stage: stage, percent: percent} when is_binary(stage) and is_integer(percent) ->
+        %{stage: stage, percent: percent}
+
+      %{"stage" => stage, "percent" => percent} when is_binary(stage) and is_integer(percent) ->
+        %{stage: stage, percent: percent}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp progress_value(_metadata), do: nil
+
+  defp upload_progress(entries) do
+    case entries do
+      [] -> 0
+      _ -> entries |> Enum.map(& &1.progress) |> Enum.max()
+    end
+  end
+
+  defp upload_complete?(entries) do
+    entries != [] and Enum.all?(entries, &(&1.progress == 100))
+  end
+
+  defp import_zip_writer(_name, entry, _socket) do
+    dest_dir = Path.join(System.tmp_dir!(), "vmemo-import-upload")
+    {ImportZipWriter, dest_dir: dest_dir, filename: entry.client_name}
+  end
+
   defp format_error(error) when is_binary(error), do: error
   defp format_error(error), do: inspect(error)
 end

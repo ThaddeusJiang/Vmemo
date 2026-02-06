@@ -7,13 +7,19 @@ defmodule Vmemo.AdminImport do
 
   @error_limit 50
 
-  def import_zip(zip_path) do
+  def import_zip(zip_path, progress_fun \\ fn _progress -> :ok end) do
     tmp_dir = build_tmp_dir()
 
     result =
-      with :ok <- extract_zip(zip_path, tmp_dir),
-           {:ok, payload} <- read_payload(tmp_dir),
-           {:ok, import_result} <- import_payload(payload, tmp_dir) do
+      with :ok <- report_progress(progress_fun, "Extracting zip", 10, fn ->
+             extract_zip(zip_path, tmp_dir)
+           end),
+           {:ok, payload} <- report_progress(progress_fun, "Reading payload", 25, fn ->
+             read_payload(tmp_dir)
+           end),
+           {:ok, import_result} <- report_progress(progress_fun, "Importing data", 40, fn ->
+             import_payload(payload, tmp_dir, progress_fun)
+           end) do
         {:ok, import_result}
       else
         {:error, reason} ->
@@ -88,21 +94,36 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp import_payload(payload, tmp_dir) do
-    file_stats = copy_storage_files(tmp_dir)
+  defp import_payload(payload, tmp_dir, progress_fun) do
+    file_stats =
+      report_progress(progress_fun, "Copying files", 50, fn ->
+        copy_storage_files(tmp_dir)
+      end)
 
-    {user_stats, user_id_map, user_errors} = import_users(payload.users)
+    {user_stats, user_id_map, user_errors} =
+      report_progress(progress_fun, "Importing users", 60, fn ->
+        import_users(payload.users)
+      end)
 
     {photo_stats, photo_ids, photo_id_map, photo_errors} =
-      import_photos(payload.photos, user_id_map)
+      report_progress(progress_fun, "Importing photos", 70, fn ->
+        import_photos(payload.photos, user_id_map)
+      end)
 
     {note_stats, note_ids, note_id_map, note_photo_map, note_errors} =
-      import_notes(payload.notes, user_id_map, photo_id_map)
+      report_progress(progress_fun, "Importing notes", 80, fn ->
+        import_notes(payload.notes, user_id_map, photo_id_map)
+      end)
 
     {photo_note_stats, photo_note_errors} =
-      import_photo_notes(note_photo_map, photo_ids, note_ids, note_id_map)
+      report_progress(progress_fun, "Importing links", 90, fn ->
+        import_photo_notes(note_photo_map, photo_ids, note_ids, note_id_map)
+      end)
 
-    sync_typesense(photo_ids, note_ids)
+    report_progress(progress_fun, "Syncing search index", 95, fn ->
+      sync_typesense(photo_ids, note_ids)
+      :ok
+    end)
 
     errors =
       []
@@ -123,8 +144,10 @@ defmodule Vmemo.AdminImport do
     }
 
     if errors == [] do
+      report_progress(progress_fun, "Finalizing", 100, fn -> :ok end)
       {:ok, result}
     else
+      report_progress(progress_fun, "Finalizing", 100, fn -> :ok end)
       {:error, result}
     end
   end
@@ -416,6 +439,11 @@ defmodule Vmemo.AdminImport do
     tmp_dir = Path.join(base, "vmemo-import-#{System.unique_integer([:positive])}")
     File.mkdir_p!(tmp_dir)
     tmp_dir
+  end
+
+  defp report_progress(progress_fun, stage, percent, fun) do
+    progress_fun.(%{stage: stage, percent: percent})
+    fun.()
   end
 
   defp pick_value(map, keys) when is_map(map) do

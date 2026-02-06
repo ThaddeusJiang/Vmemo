@@ -23,9 +23,9 @@ defmodule Vmemo.Workers.ProcessImportRequest do
   end
 
   defp process_request(request, zip_path) do
-    case update_request(request, %{status: "processing"}) do
+    case update_request(request, %{status: "processing", metadata: progress_metadata("Starting", 0)}) do
       {:ok, request} ->
-        case AdminImport.import_zip(zip_path) do
+        case AdminImport.import_zip(zip_path, &update_request_progress(request, &1)) do
           {:ok, result} ->
             update_request_with_success(request, result)
 
@@ -45,7 +45,7 @@ defmodule Vmemo.Workers.ProcessImportRequest do
   defp update_request_with_success(request, result) do
     params = %{
       status: "completed",
-      metadata: Map.get(result, :metadata),
+      metadata: result_metadata(result, "Completed", 100),
       result: result,
       error_message: nil
     }
@@ -64,7 +64,7 @@ defmodule Vmemo.Workers.ProcessImportRequest do
   defp update_request_with_failure(request, error_message, result) do
     params = %{
       status: "failed",
-      metadata: Map.get(result, :metadata),
+      metadata: result_metadata(result, "Failed", 100),
       result: result,
       error_message: error_message
     }
@@ -84,6 +84,23 @@ defmodule Vmemo.Workers.ProcessImportRequest do
     ImportRequest.update(request, params, actor: nil)
   end
 
+  defp update_request_progress(request, progress) do
+    metadata =
+      request.metadata
+      |> ensure_map()
+      |> Map.put("progress", progress)
+
+    case update_request(request, %{metadata: metadata}) do
+      {:ok, updated_request} ->
+        broadcast_update(updated_request)
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to update import request progress: #{inspect(error)}")
+        :error
+    end
+  end
+
   defp broadcast_update(request) do
     Phoenix.PubSub.broadcast(
       Vmemo.PubSub,
@@ -91,12 +108,26 @@ defmodule Vmemo.Workers.ProcessImportRequest do
       {:import_request_updated,
        %{
          request_id: request.id,
-         status: request.status,
-         result: request.result,
-         error_message: request.error_message
+          status: request.status,
+          result: request.result,
+          error_message: request.error_message,
+          metadata: request.metadata
        }}
     )
   end
+
+  defp progress_metadata(stage, percent) do
+    %{"progress" => %{stage: stage, percent: percent}}
+  end
+
+  defp result_metadata(result, stage, percent) do
+    meta = Map.get(result, :metadata, %{}) |> ensure_map()
+    Map.put(meta, "progress", %{stage: stage, percent: percent})
+  end
+
+  defp ensure_map(nil), do: %{}
+  defp ensure_map(meta) when is_map(meta), do: meta
+  defp ensure_map(_meta), do: %{}
 
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(reason), do: inspect(reason)
