@@ -6,13 +6,17 @@ defmodule VmemoWeb.Uploads.ImportZipWriter do
     dest_dir = Keyword.fetch!(opts, :dest_dir)
     filename = Keyword.fetch!(opts, :filename)
 
-    File.mkdir_p!(dest_dir)
+    case File.mkdir_p(dest_dir) do
+      :ok ->
+        path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
 
-    path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
+        case File.open(path, [:write, :binary]) do
+          {:ok, io} -> {:ok, %{io: io, path: path, filename: filename, bytes: 0}}
+          {:error, reason} -> {:error, reason}
+        end
 
-    case File.open(path, [:write, :binary]) do
-      {:ok, io} -> {:ok, %{io: io, path: path, filename: filename, bytes: 0}}
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

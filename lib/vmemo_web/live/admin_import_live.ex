@@ -12,7 +12,8 @@ defmodule VmemoWeb.AdminImportLive do
         accept: ~w(.zip),
         max_entries: 1,
         max_file_size: 1024 * 1024 * 1024,
-        chunk_size: 16 * 1024 * 1024,
+        chunk_size: 8 * 1024 * 1024,
+        chunk_timeout: 120_000,
         auto_upload: true,
         writer: &import_zip_writer/3
       )
@@ -245,14 +246,18 @@ defmodule VmemoWeb.AdminImportLive do
                     {:noreply,
                      socket
                      |> assign(is_submitting: false)
-                     |> assign(submit_error: "Failed to enqueue import job: #{format_error(error)}")}
+                     |> assign(
+                       submit_error: "Failed to enqueue import job: #{format_error(error)}"
+                     )}
                 end
 
               {:error, error} ->
                 {:noreply,
                  socket
                  |> assign(is_submitting: false)
-                 |> assign(submit_error: "Failed to create import request: #{format_error(error)}")}
+                 |> assign(
+                   submit_error: "Failed to create import request: #{format_error(error)}"
+                 )}
             end
 
           _ ->
@@ -268,7 +273,9 @@ defmodule VmemoWeb.AdminImportLive do
   def handle_info({:import_request_updated, payload}, socket) do
     request =
       case socket.assigns.request do
-        nil -> nil
+        nil ->
+          nil
+
         request ->
           %{
             request
@@ -291,6 +298,7 @@ defmodule VmemoWeb.AdminImportLive do
       Map.get(result, key)
     end)
   end
+
   defp result_value(_result, _keys, default), do: default
 
   defp progress_value(metadata) when is_map(metadata) do
