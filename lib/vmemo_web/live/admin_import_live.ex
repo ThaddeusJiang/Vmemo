@@ -12,7 +12,7 @@ defmodule VmemoWeb.AdminImportLive do
         accept: ~w(.zip),
         max_entries: 1,
         max_file_size: 1024 * 1024 * 1024,
-        chunk_size: 4 * 1024 * 1024,
+        chunk_size: 16 * 1024 * 1024,
         auto_upload: true,
         writer: &import_zip_writer/3
       )
