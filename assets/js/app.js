@@ -22,6 +22,7 @@ import { ClipboardMediaFetcher } from "./hooks/clipboard_media_fetcher"
 import { Toast } from "./hooks/toast"
 import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
+import { DirectoryUpload } from "./hooks/directory_upload"
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
@@ -39,6 +40,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     Toast,
     Focus,
     MoondreamOverlay,
+    DirectoryUpload,
   },
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
