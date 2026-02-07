@@ -12,7 +12,17 @@ defmodule Vmemo.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: Mix.compilers() ++ [],
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      releases: releases()
+    ]
+  end
+
+  defp releases do
+    [
+      vmemo: [
+        include_executables_for: [:unix],
+        applications: [runtime_tools: :permanent]
+      ]
     ]
   end
 
