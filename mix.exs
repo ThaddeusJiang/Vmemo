@@ -12,17 +12,7 @@ defmodule Vmemo.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: Mix.compilers() ++ [],
-      listeners: [Phoenix.CodeReloader],
-      releases: releases()
-    ]
-  end
-
-  defp releases do
-    [
-      vmemo: [
-        include_executables_for: [:unix],
-        applications: [runtime_tools: :permanent]
-      ]
+      listeners: [Phoenix.CodeReloader]
     ]
   end
 
@@ -105,10 +95,12 @@ defmodule Vmemo.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "ts.reset", "assets.setup", "assets.build"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      setup: ["deps.get", "ash.setup", "ts.reset", "assets.setup", "assets.build"],
+      clean: ["clean.all"],
+      reset: ["ash.reset", "ts.reset", "storage.reset"],
+      "ash.setup": ["ash_postgres.create", "ash.migrate", "run priv/repo/seeds.exs"],
+      "ash.reset": ["ash_postgres.drop", "ash.setup"],
+      test: ["ash_postgres.create --quiet", "ash.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind vmemo", "esbuild vmemo"],
       "assets.deploy": [

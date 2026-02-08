@@ -35,6 +35,6 @@ if [ -n "$missing_required" ]; then
 fi
 
 echo "Running migrations..."
-mix ecto.migrate || exit 1
+mix ash.migrate || exit 1
 
 exec mix phx.server

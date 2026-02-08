@@ -195,7 +195,7 @@ PORT=4000
 # DNS 集群查询（用于集群部署）
 DNS_CLUSTER_QUERY=
 
-# 启用 Phoenix 服务器（用于 release 模式）
+# 启用 Phoenix 服务器（prod）
 PHX_SERVER=true
 ```
 

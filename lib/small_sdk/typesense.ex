@@ -6,9 +6,11 @@ defmodule SmallSdk.Typesense do
   ###
   # Collections start
   ###
+  @create_collection_receive_timeout 120_000
+
   def create_collection(schema) do
     req = build_request("/collections")
-    res = Req.post(req, json: schema)
+    res = Req.post(req, json: schema, connect_options: [receive_timeout: @create_collection_receive_timeout])
 
     handle_response(res)
   end
@@ -149,8 +151,8 @@ defmodule SmallSdk.Typesense do
     end
   end
 
-  def handle_response({:error, _}) do
-    {:error, "Request failed"}
+  def handle_response({:error, reason}) do
+    {:error, "Request failed: #{inspect(reason)}"}
   end
 
   def handle_response!(%{status: status, body: body}) do

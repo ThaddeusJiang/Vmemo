@@ -23,7 +23,7 @@ COPY . .
 RUN mix compile
 RUN mix assets.deploy
 
-# ------------------ runner ------------------
+# ------------------ runner (Elixir image + Mix) ------------------
 FROM base AS runner
 
 RUN apt-get update -y && \
