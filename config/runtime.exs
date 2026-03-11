@@ -3,8 +3,21 @@ import Config
 # OpenRouter API Key for chat functionality
 config :vmemo, openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
 
-# config/runtime.exs is executed for all environments after compilation.
-# Use it for production config and secrets from env. No compile-time config here.
+# Moondream URL from env (overrides dev.exs / test.exs when set)
+if url = System.get_env("MOONDREAM_URL") do
+  config :vmemo, moondream_url: url
+end
+
+if api_key = System.get_env("MOONDREAM_API_KEY") do
+  config :vmemo, moondream_api_key: api_key
+end
+
+# config/runtime.exs is executed for all environments, including
+# during releases. It is executed after compilation and before the
+# system starts, so it is typically used to load production configuration
+# and secrets from environment variables or elsewhere. Do not define
+# any compile-time configuration in here, as it won't be applied.
+# The block below contains prod specific runtime configuration.
 
 # Enable Phoenix server in prod (e.g. set PHX_SERVER=true in Docker).
 if System.get_env("PHX_SERVER") do
@@ -29,8 +42,6 @@ if config_env() == :prod do
 
   config :vmemo, typesense_url: System.get_env("TYPESENSE_URL")
   config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY")
-
-  config :vmemo, moondream_url: System.get_env("MOONDREAM_URL")
 
   # Admin token for production
   admin_token =

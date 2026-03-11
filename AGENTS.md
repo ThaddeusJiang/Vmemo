@@ -14,9 +14,11 @@ find module/function definitions.
 ## 个人规范
 
 - **总是**采用文档驱动开发，创建 `docs/devlog/YYYYMMDD-title.md` 并记录开发日志
+- 代码、注释、UI 文本一律使用 **英文**，不混用中文；只在文档或沟通中使用中文
 - **绝不**使用 i18n，代码中始终直接使用英文文本
 - **绝不**写过多注释，保持代码简洁易懂
 - **绝不**运行 `build` 和 `start` 命令，除非我要求，大多数情况下代码支持热替换
+- 当在对话中约定/发现新的 coding guideline 时，**必须及时在本文件中更新对应规范**（必要时再拆到 `docs/coding-guidelines/**`），避免规范只存在于对话里
 
 ## Web 应用规范
 
@@ -25,6 +27,10 @@ find module/function definitions.
 - **总是**在操作附近显示消息
   - 表单错误消息应该在表单附近
   - 按钮错误消息应该在按钮附近
+- External Services / Healthcheck
+  - **不要默认自动调用外部服务的 healthcheck**，应提供显式的「Test」或类似按钮，由用户主动触发
+  - healthcheck 调用要尽量轻量、幂等，可以使用最小真实数据（如小图片）验证端到端链路
+  - healthcheck 仅负责「是否可用」判断，不在 UI 中暴露底层 REST 细节（HTTP 拼接、headers 等）
 
 ## UI/UX 规范
 
@@ -93,6 +99,31 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 ## Elixir 规范
 
 - Elixir 具有**模式匹配**特性
+- 公共 utils 模块（尤其是纯函数的 helper）**必须**有测试和文档：
+  - `@moduledoc` 只做模块 summary，每个公开函数都写独立 `@doc`，并尽量附带 doctest example
+  - 在 `test/**` 下为每个 utils 模块添加对应的 `doctest` 或单元测试文件
+
+## 数据与 Utils 规范
+
+- **时间 / 时区**
+  - 所有 UI 展示的时间必须与**用户的时区**保持一致（例如从用户配置或浏览器上报的 timezone 推导），不能直接展示服务器时区
+  - 内部计算可以使用 UTC，但最终展示前必须转换到用户时区
+  - 数据交换（API、JSON、日志等）**一律使用 ISO8601 datetime 字符串**（包含时区或 `Z`）
+  - 统一通过 `VmemoWeb.Utils.Datetime` 之类的顶级 utils 模块处理时间：
+    - `now_iso_datetime/0`：按配置的 `:vmemo, :time_zone` 生成当前时间（ISO8601）
+    - `format_*`：只做纯粹的格式化，不嵌在 LiveView / Component 中
+
+- **Utils 组织**
+  - 公共数据格式化逻辑（datetime、number、money 等）**不要散落在 UI 模块附近**
+  - 优先放在顶级 `VmemoWeb.Utils.*` 或 `Vmemo.Utils.*` 模块下，按领域细分：
+    - `VmemoWeb.Utils.Datetime`、`VmemoWeb.Utils.Number`、`VmemoWeb.Utils.Money` 等
+  - LiveView / LiveComponent 中只调用 utils，不直接硬编码格式规则
+
+## API / SDK 规范
+
+- REST API request / response 处理逻辑应该封装在 **SDK 模块** 中（如 `SmallSdk.*`），而不是在业务逻辑里临时拼装 `Req` / `curl` 请求
+- 业务代码只调用 SDK 暴露的函数（如 `SmallSdk.Moondream.caption/2`），不关心 base_url、headers、stream 选项等细节
+- 当需要新的外部接口能力时，优先扩展 SDK，再在业务层使用，保持调用点简单、可替换
 
 ## Ash 规范
 
@@ -111,6 +142,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - **绝不**为 LiveView 创建 `.heex` 文件，在 **render()** 中编写 HTML
   - Phoenix 可以使用 `<.link method="delete">` 调用服务器函数
 - LiveView 可以使用 `push_event` 触发客户端事件
+- 在 LiveView `handle_event/3` 中，优先通过小的 helper（例如 `update_service/3`）处理特定 id/name，而不是在函数体内直接写复杂的 `Enum.map`/`case`；保持事件处理函数短小、语义清晰
 
 - **总是**对 LiveView 事件名称使用 **kebab-case**（在 `handle_event` 和 `phx-*` 属性中都是如此）
 

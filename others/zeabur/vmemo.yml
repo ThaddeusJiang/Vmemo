@@ -11,76 +11,54 @@ spec:
       type: DOMAIN
       name: Domain
       description: What is the domain you want for your service?
-    - key: MOONDREAM_URL
-      type: STRING
-      name: Moondream URL
-      description: e.g. http://your-moondream:5000
-      # 👇 External paid services
-    - key: OPENROUTER_API_KEY
-      type: STRING
-      name: OpenRouter API Key
-      description: API key for OpenRouter.
-    - key: RESEND_API_KEY
-      type: STRING
-      name: Resend API Key
-      description: API key for Resend email delivery.
-    - key: SENTRY_DSN
-      type: STRING
-      name: Sentry DSN
-      description: Sentry DSN for error reporting.
   services:
     - name: Vmemo
       domainKey: PUBLIC_DOMAIN
       template: PREBUILT_V2
-      dependencies:
-        - postgresql
-        - typesense
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
-          image: thaddeusjiang/vmemo:latest
+            image: thaddeusjiang/vmemo:latest
         ports:
-          - id: web
-            port: 4000
-            type: HTTP
+            - id: web
+              port: 4000
+              type: HTTP
         volumes:
-          - id: data
-            dir: /app/storage
+            - id: data
+              dir: /app/storage
         instructions:
-          - type: TEXT
-            title: Admin Token
-            content: ${ADMIN_TOKEN}
+            - type: TEXT
+              title: URL
+              content: ${ZEABUR_WEB_URL}
+              category: Hostname & Port
         env:
-          DATABASE_URL:
-            default: ${POSTGRES_CONNECTION_STRING}
-            expose: false
-          TYPESENSE_URL:
-            default: http://typesense:8108
-            expose: false
-          MOONDREAM_URL:
-            default: ${MOONDREAM_URL}
-            expose: false
-          OPENROUTER_API_KEY:
-            default: ${OPENROUTER_API_KEY}
-            expose: false
-          RESEND_API_KEY:
-            default: ${RESEND_API_KEY}
-            expose: false
-          SENTRY_DSN:
-            default: ${SENTRY_DSN}
-            expose: false
-          SECRET_KEY_BASE:
-            default: ${PASSWORD}_${PASSWORD}
-            expose: false
-          ADMIN_TOKEN:
-            default: ${PASSWORD}
-            expose: false
-          PHX_SERVER:
-            default: "true"
-            expose: false
-          PHX_HOST:
-            default: ${ZEABUR_WEB_DOMAIN}
-            expose: false
+            DATABASE_URL:
+              default: ${POSTGRES_CONNECTION_STRING}
+              expose: false
+            TYPESENSE_URL:
+                default: ${TYPESENSE_URL}
+                expose: false
+            TYPESENSE_API_KEY:
+                default: ${TYPESENSE_API_KEY}
+                expose: false
+            PHX_HOST:
+                default: ${ZEABUR_WEB_DOMAIN}
+                expose: false
+            PHX_SERVER:
+                default: "true"
+                expose: false
+            SECRET_KEY_BASE:
+              expose: false
+            ADMIN_TOKEN:
+                expose: false
+            SENTRY_DSN:
+                expose: false
+            RESEND_API_KEY:
+                expose: false
+            OPENROUTER_API_KEY:
+                expose: false
+            MOONDREAM_URL:
+                expose: false
         configs: []
 
     - name: postgresql

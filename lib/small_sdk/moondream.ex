@@ -27,7 +27,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/caption")
+    req = build_request("/v1/caption")
 
     res =
       Req.post(req,
@@ -46,17 +46,20 @@ defmodule SmallSdk.Moondream do
       Application.fetch_env!(:vmemo, :moondream_url)
       |> Utils.validate_url!()
 
-    {url}
+    api_key = Application.fetch_env!(:vmemo, :moondream_api_key)
+
+    {url, api_key}
   end
 
   defp build_request(path) do
-    {url} = get_env()
+    {url, api_key} = get_env()
 
     Req.new(
       base_url: url,
       url: path,
       headers: [
-        {"Content-Type", "application/json"}
+        {"Content-Type", "application/json"},
+        {"X-Moondream-Auth", api_key}
       ],
       receive_timeout: 120_000
     )
@@ -82,7 +85,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/query")
+    req = build_request("/v1/query")
 
     res =
       Req.post(req,
@@ -116,7 +119,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/point")
+    req = build_request("/v1/point")
 
     res =
       Req.post(req,
@@ -150,7 +153,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/detect")
+    req = build_request("/v1/detect")
 
     res =
       Req.post(req,
@@ -184,7 +187,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/segment")
+    req = build_request("/v1/segment")
 
     res =
       Req.post(req,

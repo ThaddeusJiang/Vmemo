@@ -27,7 +27,7 @@ RUN mix assets.deploy
 FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates \
+  apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git postgresql-client \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN mix local.hex --force && \
@@ -43,9 +43,12 @@ ENV LC_ALL en_US.UTF-8
 WORKDIR /app
 COPY --from=builder /app ./
 
+# Copy entrypoint script
+COPY rel/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 ENV MIX_ENV=prod
 
-COPY docker/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-CMD ["/app/entrypoint.sh"]
+# Use entrypoint script to handle migrations before starting server
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["mix", "phx.server"]

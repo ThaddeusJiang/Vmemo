@@ -24,6 +24,30 @@ import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
 import { DirectoryUpload } from "./hooks/directory_upload"
 
+const FormatDatetime = {
+  format() {
+    const iso = this.el.dataset.iso
+    if (!iso) return
+
+    const date = new Date(iso)
+    if (isNaN(date.getTime())) return
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    const hours = String(date.getHours()).padStart(2, "0")
+    const minutes = String(date.getMinutes()).padStart(2, "0")
+
+    this.el.textContent = `${year}-${month}-${day} ${hours}:${minutes}`
+  },
+  mounted() {
+    this.format()
+  },
+  updated() {
+    this.format()
+  },
+}
+
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
@@ -41,6 +65,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     Focus,
     MoondreamOverlay,
     DirectoryUpload,
+    FormatDatetime,
   },
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
