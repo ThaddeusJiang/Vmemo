@@ -256,6 +256,8 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
     end
   end
 
+  defp valid_url?(_), do: false
+
   defp format_health_url(%{url: nil}), do: "Not configured"
 
   defp format_health_url(%{url: url} = service) when is_binary(url) do
@@ -279,8 +281,6 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
 
   defp format_response_time(nil), do: "-"
   defp format_response_time(ms), do: "#{ms} ms"
-
-  defp valid_url?(_), do: false
 
   defp status_badge_class(status) do
     base = "badge"
