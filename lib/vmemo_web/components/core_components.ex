@@ -143,7 +143,11 @@ defmodule VmemoWeb.CoreComponents do
         <span class="font-semibold">{@title}</span>
       </div>
       <div class="text-sm">{msg}</div>
-      <button type="button" class="btn btn-circle" aria-label={gettext("close")}>
+      <button
+        type="button"
+        class="btn btn-circle btn-ghost btn-sm [--btn-color:transparent]"
+        aria-label={gettext("close")}
+      >
         <.icon name="hero-x-mark-solid" class="h-4 w-4" />
       </button>
     </div>

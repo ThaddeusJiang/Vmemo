@@ -26,8 +26,8 @@ defmodule VmemoWeb.ChatLive do
             </label>
           </div>
           <img
-            src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
-            alt="Logo"
+            src={~p"/images/logo.svg"}
+            alt="Vmemo logo"
             class="w-12 h-12"
           />
           <div class="mx-2 flex-1 px-2">
@@ -91,8 +91,9 @@ defmodule VmemoWeb.ChatLive do
                 <div :if={message.source == :agent} class="chat-image avatar">
                   <div class="w-10 rounded-full bg-base-300 p-1">
                     <img
-                      src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
-                      alt="Logo"
+                      src={~p"/images/logo.svg"}
+                      alt="Vmemo logo"
+                      class="w-8 h-8"
                     />
                   </div>
                 </div>

@@ -98,7 +98,7 @@
         @apply transition-transform duration-200;
     }
 
-    .btn:hover:not(:disabled) {
+    .btn:hover:not(:disabled):not(.btn-ghost) {
         transform: scale(1.01);
     }
 
@@ -107,7 +107,7 @@
         color: var(--color-base-content) !important;
     }
 
-    .btn-circle {
+    .btn-circle:not(.btn-ghost) {
         @apply ring-1 ring-base-100;
     }
 
