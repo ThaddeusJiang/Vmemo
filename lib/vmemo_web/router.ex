@@ -129,6 +129,7 @@ defmodule VmemoWeb.Router do
       live "/tokens/:id", ApiTokenLive.Show, :show
     end
 
+    get "/settings/export", UserDataController, :export
     post "/users/update-password", AshUserSettingsController, :update
   end
 

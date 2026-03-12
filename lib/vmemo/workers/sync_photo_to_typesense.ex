@@ -8,20 +8,22 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
     query =
-      "SELECT id::text, note, caption, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
+      "SELECT id::text, note, caption, ts_ocr, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
 
     case Vmemo.AshRepo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
-        [id, note, caption, url, file_id, inserted_at, ash_user_id] = row
+        [id, note, caption, ts_ocr, url, file_id, inserted_at, ash_user_id] = row
 
         photo = %{
           id: id,
           note: note,
           caption: caption,
+          ts_ocr: ts_ocr,
           url: url,
           file_id: file_id,
           inserted_at: inserted_at,
-          ash_user_id: ash_user_id
+          ash_user_id: ash_user_id,
+          note_ids: load_note_ids(id)
         }
 
         sync_to_typesense(photo)
@@ -54,11 +56,12 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
       id: photo.id,
       note: photo.note || "",
       caption: photo.caption || "",
-      note_ids: [],
+      note_ids: photo.note_ids || [],
       url: photo.url,
       file_id: photo.file_id,
       inserted_at: inserted_at_unix,
-      inserted_by: photo.ash_user_id
+      inserted_by: photo.ash_user_id,
+      _gen_ocr: photo.ts_ocr
     }
 
     typesense_data =
@@ -147,6 +150,15 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp load_note_ids(photo_id) do
+    query = "SELECT note_id::text FROM photos_notes WHERE photo_id::text = $1"
+
+    case Vmemo.AshRepo.query(query, [photo_id]) do
+      {:ok, %{rows: rows}} -> Enum.map(rows, fn [note_id] -> note_id end)
+      _ -> []
     end
   end
 end

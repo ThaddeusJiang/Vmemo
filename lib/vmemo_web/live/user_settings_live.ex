@@ -2,8 +2,18 @@ defmodule VmemoWeb.UserSettingsLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Account
+  alias Vmemo.UserDataTransfer
+  alias VmemoWeb.Uploads.ImportZipWriter
 
   def render(assigns) do
+    import_entries = assigns.uploads.import_zip.entries
+
+    assigns =
+      assigns
+      |> assign(:has_import_file, Enum.any?(import_entries))
+      |> assign(:import_upload_progress, import_upload_progress(import_entries))
+      |> assign(:import_upload_complete, import_upload_complete?(import_entries))
+
     ~H"""
     <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
       <.header>
@@ -71,6 +81,117 @@ defmodule VmemoWeb.UserSettingsLive do
             </:actions>
           </.simple_form>
         </div>
+
+        <div class="space-y-2">
+          <div class="border border-base-300 rounded-md p-4 space-y-2">
+            <h2 class="text-base font-medium">Data Export</h2>
+            <p class="text-sm text-base-content/70">
+              Download your photos, notes, and linked files as a ZIP file.
+            </p>
+            <div class="py-2">
+              <.link href={~p"/settings/export"} class="btn btn-outline">
+                Export Data
+              </.link>
+            </div>
+          </div>
+
+          <div class="border border-base-300 rounded-md p-4 space-y-2">
+            <h2 class="text-base font-medium">Data Import</h2>
+            <p class="text-sm text-base-content/70">
+              Upload a ZIP exported from this app. Import only writes files and database records.
+            </p>
+
+            <.form
+              for={@import_form}
+              phx-submit="import-data"
+              phx-change="validate-import"
+              class="space-y-2"
+            >
+              <div class="space-y-2">
+                <.live_file_input
+                  upload={@uploads.import_zip}
+                  class="file-input file-input-bordered w-full"
+                />
+
+                <ul class="space-y-1">
+                  <li
+                    :for={entry <- @uploads.import_zip.entries}
+                    class="flex items-center justify-between text-sm"
+                  >
+                    <span class="truncate">{entry.client_name}</span>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-ghost"
+                      phx-click="cancel-import-upload"
+                      phx-value-ref={entry.ref}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                </ul>
+
+                <p :for={err <- upload_errors(@uploads.import_zip)} class="text-error text-sm">
+                  {error_to_string(err)}
+                </p>
+
+                <p :if={@import_error} class="text-error text-sm">{@import_error}</p>
+
+                <div :if={@has_import_file} class="space-y-1">
+                  <div class="flex items-center justify-between text-xs text-base-content/70">
+                    <span>Upload progress</span>
+                    <span>{@import_upload_progress}%</span>
+                  </div>
+                  <progress
+                    class="progress progress-accent w-full"
+                    value={@import_upload_progress}
+                    max="100"
+                  >
+                  </progress>
+                </div>
+              </div>
+
+              <div class="py-2 flex items-center gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  disabled={@is_importing || not @has_import_file || not @import_upload_complete}
+                >
+                  Import Data
+                </button>
+              </div>
+            </.form>
+
+            <div :if={@import_result} class="border border-base-300 rounded-md p-2 text-sm space-y-1">
+              <p class="font-medium">Import Result</p>
+              <% files = result_value(@import_result, [:files, "files"], %{}) %>
+              <% photos = result_value(@import_result, [:photos, "photos"], %{}) %>
+              <% notes = result_value(@import_result, [:notes, "notes"], %{}) %>
+              <% photo_notes = result_value(@import_result, [:photo_notes, "photo_notes"], %{}) %>
+              <% typesense = result_value(@import_result, [:typesense, "typesense"], %{}) %>
+              <% typesense_photos = result_value(typesense, [:photos, "photos"], %{}) %>
+              <% typesense_notes = result_value(typesense, [:notes, "notes"], %{}) %>
+              <% errors = result_value(@import_result, [:errors, "errors"], []) %>
+              <% error_count = result_value(@import_result, [:error_count, "error_count"], 0) %>
+              <p>Files copied: {result_value(files, [:copied, "copied"], 0)}</p>
+              <p>Files skipped: {result_value(files, [:skipped, "skipped"], 0)}</p>
+              <p>Photos created: {result_value(photos, [:created, "created"], 0)}</p>
+              <p>Photos skipped: {result_value(photos, [:skipped, "skipped"], 0)}</p>
+              <p>Notes created: {result_value(notes, [:created, "created"], 0)}</p>
+              <p>Notes skipped: {result_value(notes, [:skipped, "skipped"], 0)}</p>
+              <p>Links created: {result_value(photo_notes, [:created, "created"], 0)}</p>
+              <p>Links skipped: {result_value(photo_notes, [:skipped, "skipped"], 0)}</p>
+              <p>
+                Typesense photos upserted: {result_value(typesense_photos, [:success, "success"], 0)}
+              </p>
+              <p>
+                Typesense notes upserted: {result_value(typesense_notes, [:success, "success"], 0)}
+              </p>
+              <p :if={errors != []} class="text-error">
+                Errors: {error_count}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -94,14 +215,85 @@ defmodule VmemoWeb.UserSettingsLive do
 
     socket =
       socket
+      |> allow_upload(:import_zip,
+        accept: ~w(.zip),
+        max_entries: 1,
+        max_file_size: 1024 * 1024 * 1024,
+        chunk_size: 8 * 1024 * 1024,
+        chunk_timeout: 120_000,
+        auto_upload: true,
+        writer: &import_zip_writer/3
+      )
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(%{"email" => user.email}, as: :user))
       |> assign(:password_form, to_form(%{}, as: :user))
       |> assign(:trigger_submit, false)
+      |> assign(:import_form, to_form(%{}))
+      |> assign(:import_result, nil)
+      |> assign(:import_error, nil)
+      |> assign(:is_importing, false)
 
     {:ok, socket}
+  end
+
+  def handle_event("validate-import", _params, socket) do
+    {:noreply, assign(socket, import_error: nil)}
+  end
+
+  def handle_event("cancel-import-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :import_zip, ref)}
+  end
+
+  def handle_event("import-data", _params, socket) do
+    entries = socket.assigns.uploads.import_zip.entries
+
+    cond do
+      entries == [] ->
+        {:noreply, assign(socket, import_error: "Please choose a ZIP file to import.")}
+
+      not import_upload_complete?(entries) ->
+        {:noreply, assign(socket, import_error: "Upload is still in progress.")}
+
+      true ->
+        socket = assign(socket, is_importing: true, import_error: nil)
+
+        uploaded =
+          consume_uploaded_entries(socket, :import_zip, fn %{path: path}, entry ->
+            {:ok, %{path: path, filename: entry.client_name}}
+          end)
+
+        case uploaded do
+          [%{path: zip_path}] ->
+            case UserDataTransfer.import_user_zip(socket.assigns.current_ash_user.id, zip_path) do
+              {:ok, result} ->
+                {:noreply,
+                 socket
+                 |> assign(:is_importing, false)
+                 |> assign(:import_result, result)}
+
+              {:error, %{} = result} ->
+                {:noreply,
+                 socket
+                 |> assign(:is_importing, false)
+                 |> assign(:import_result, result)
+                 |> assign(:import_error, "Import completed with errors.")}
+
+              {:error, reason} ->
+                {:noreply,
+                 socket
+                 |> assign(:is_importing, false)
+                 |> assign(:import_error, "Import failed: #{format_error(reason)}")}
+            end
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(:is_importing, false)
+             |> assign(:import_error, "Failed to read ZIP file.")}
+        end
+    end
   end
 
   def handle_event("validate-email", params, socket) do
@@ -176,4 +368,35 @@ defmodule VmemoWeb.UserSettingsLive do
         {:noreply, assign(socket, password_form: password_form, current_password: password)}
     end
   end
+
+  defp import_upload_progress(entries) do
+    case entries do
+      [] -> 0
+      _ -> entries |> Enum.map(& &1.progress) |> Enum.max()
+    end
+  end
+
+  defp import_upload_complete?(entries) do
+    entries != [] and Enum.all?(entries, &(&1.progress == 100))
+  end
+
+  defp import_zip_writer(_name, entry, _socket) do
+    dest_dir = Path.join(System.tmp_dir!(), "vmemo-user-import-upload")
+    {ImportZipWriter, dest_dir: dest_dir, filename: entry.client_name}
+  end
+
+  defp result_value(result, keys, default) when is_map(result) do
+    Enum.find_value(keys, default, fn key ->
+      Map.get(result, key)
+    end)
+  end
+
+  defp result_value(_result, _keys, default), do: default
+
+  defp error_to_string(:too_large), do: "Too large"
+  defp error_to_string(:too_many_files), do: "You have selected too many files"
+  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+
+  defp format_error(error) when is_binary(error), do: error
+  defp format_error(error), do: inspect(error)
 end

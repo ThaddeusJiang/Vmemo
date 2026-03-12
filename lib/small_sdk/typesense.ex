@@ -10,7 +10,12 @@ defmodule SmallSdk.Typesense do
 
   def create_collection(schema) do
     req = build_request("/collections")
-    res = Req.post(req, json: schema, connect_options: [receive_timeout: @create_collection_receive_timeout])
+
+    res =
+      Req.post(req,
+        json: schema,
+        connect_options: [receive_timeout: @create_collection_receive_timeout]
+      )
 
     handle_response(res)
   end
@@ -93,6 +98,57 @@ defmodule SmallSdk.Typesense do
     res = Req.get(req, params: [per_page: per_page, page: page])
 
     handle_response(res)
+  end
+
+  def search_documents(collection_name, params) when is_list(params) do
+    req = build_request("/collections/#{collection_name}/documents/search")
+    res = Req.get(req, params: params)
+
+    case handle_response(res) do
+      {:ok, %{"hits" => hits} = body} when is_list(hits) ->
+        documents = Enum.map(hits, &Map.get(&1, "document"))
+        {:ok, %{documents: documents, found: body["found"] || 0, page: body["page"] || 1}}
+
+      {:ok, _body} ->
+        {:ok, %{documents: [], found: 0, page: 1}}
+
+      error ->
+        error
+    end
+  end
+
+  def import_documents(collection_name, documents, opts \\ [])
+      when is_binary(collection_name) and is_list(documents) do
+    if documents == [] do
+      {:ok, %{success: 0, failed: 0, items: []}}
+    else
+      action = Keyword.get(opts, :action, "upsert")
+
+      body =
+        documents
+        |> Enum.map(&Jason.encode!/1)
+        |> Enum.join("\n")
+
+      req = build_request("/collections/#{collection_name}/documents/import")
+
+      res =
+        Req.post(req,
+          params: [action: action],
+          headers: [{"Content-Type", "text/plain"}],
+          body: body
+        )
+
+      case handle_response(res) do
+        {:ok, raw} when is_binary(raw) ->
+          {:ok, parse_import_result(raw)}
+
+        {:ok, _raw} ->
+          {:ok, %{success: 0, failed: length(documents), items: []}}
+
+        error ->
+          error
+      end
+    end
   end
 
   ###
@@ -225,5 +281,22 @@ defmodule SmallSdk.Typesense do
     api_key = Application.fetch_env!(:vmemo, :typesense_api_key)
 
     {url, api_key}
+  end
+
+  defp parse_import_result(raw) do
+    items =
+      raw
+      |> String.split("\n", trim: true)
+      |> Enum.map(fn line ->
+        case Jason.decode(line) do
+          {:ok, item} -> item
+          {:error, _reason} -> %{"success" => false, "error" => "invalid import response line"}
+        end
+      end)
+
+    success = Enum.count(items, &(Map.get(&1, "success") == true))
+    failed = length(items) - success
+
+    %{success: success, failed: failed, items: items}
   end
 end

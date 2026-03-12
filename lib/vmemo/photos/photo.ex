@@ -1,6 +1,16 @@
 defmodule Vmemo.Photos.Photo do
   @derive {Jason.Encoder,
-           only: [:id, :url, :note, :caption, :file_id, :ash_user_id, :inserted_at, :updated_at]}
+           only: [
+             :id,
+             :url,
+             :note,
+             :caption,
+             :ts_ocr,
+             :file_id,
+             :ash_user_id,
+             :inserted_at,
+             :updated_at
+           ]}
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
@@ -14,7 +24,7 @@ defmodule Vmemo.Photos.Photo do
   end
 
   admin do
-    table_columns([:id, :url, :note, :caption, :ash_user_id, :inserted_at])
+    table_columns([:id, :url, :note, :caption, :ts_ocr, :ash_user_id, :inserted_at])
   end
 
   code_interface do
@@ -44,15 +54,15 @@ defmodule Vmemo.Photos.Photo do
     defaults [:read, :destroy]
 
     create :create_immediate do
-      accept [:url, :note, :caption, :file_id, :ash_user_id]
+      accept [:url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
     end
 
     create :import do
-      accept [:id, :url, :note, :caption, :file_id, :ash_user_id]
+      accept [:id, :url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :caption, :file_id, :ash_user_id]
+      accept [:url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
 
       change after_action(fn _changeset, record, _context ->
                %{photo_id: record.id}
@@ -64,7 +74,7 @@ defmodule Vmemo.Photos.Photo do
     end
 
     update :update do
-      accept [:note, :caption, :url]
+      accept [:note, :caption, :ts_ocr, :url]
       require_atomic? false
 
       change after_action(fn _changeset, record, _context ->
@@ -488,6 +498,7 @@ defmodule Vmemo.Photos.Photo do
 
     attribute :note, :string
     attribute :caption, :string
+    attribute :ts_ocr, :string
     attribute :file_id, :string
     attribute :ash_user_id, :uuid
 
@@ -546,5 +557,4 @@ defmodule Vmemo.Photos.Photo do
       page: page
     )
   end
-
 end

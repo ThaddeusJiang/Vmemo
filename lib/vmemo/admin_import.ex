@@ -11,15 +11,18 @@ defmodule Vmemo.AdminImport do
     tmp_dir = build_tmp_dir()
 
     result =
-      with :ok <- report_progress(progress_fun, "Extracting zip", 10, fn ->
-             extract_zip(zip_path, tmp_dir)
-           end),
-           {:ok, payload} <- report_progress(progress_fun, "Reading payload", 25, fn ->
-             read_payload(tmp_dir)
-           end),
-           {:ok, import_result} <- report_progress(progress_fun, "Importing data", 40, fn ->
-             import_payload(payload, tmp_dir, progress_fun)
-           end) do
+      with :ok <-
+             report_progress(progress_fun, "Extracting zip", 10, fn ->
+               extract_zip(zip_path, tmp_dir)
+             end),
+           {:ok, payload} <-
+             report_progress(progress_fun, "Reading payload", 25, fn ->
+               read_payload(tmp_dir)
+             end),
+           {:ok, import_result} <-
+             report_progress(progress_fun, "Importing data", 40, fn ->
+               import_payload(payload, tmp_dir, progress_fun)
+             end) do
         {:ok, import_result}
       else
         {:error, reason} ->
@@ -119,11 +122,6 @@ defmodule Vmemo.AdminImport do
       report_progress(progress_fun, "Importing links", 90, fn ->
         import_photo_notes(note_photo_map, photo_ids, note_ids, note_id_map)
       end)
-
-    report_progress(progress_fun, "Syncing search index", 95, fn ->
-      sync_typesense(photo_ids, note_ids)
-      :ok
-    end)
 
     errors =
       []
@@ -391,20 +389,6 @@ defmodule Vmemo.AdminImport do
       {:ok, _} -> {:ok, true}
       {:error, error} -> {:error, error}
     end
-  end
-
-  defp sync_typesense(photo_ids, note_ids) do
-    Enum.each(photo_ids, fn photo_id ->
-      %{photo_id: photo_id}
-      |> Vmemo.Workers.SyncPhotoToTypesense.new()
-      |> Oban.insert()
-    end)
-
-    Enum.each(note_ids, fn note_id ->
-      %{note_id: note_id}
-      |> Vmemo.Workers.SyncNoteToTypesense.new()
-      |> Oban.insert()
-    end)
   end
 
   defp copy_storage_files(tmp_dir) do
