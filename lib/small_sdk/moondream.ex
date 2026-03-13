@@ -27,7 +27,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/v1/caption")
+    req = build_request("/caption")
 
     res =
       Req.post(req,
@@ -85,7 +85,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/v1/query")
+    req = build_request("/query")
 
     res =
       Req.post(req,
@@ -119,7 +119,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/v1/point")
+    req = build_request("/point")
 
     res =
       Req.post(req,
@@ -153,7 +153,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/v1/detect")
+    req = build_request("/detect")
 
     res =
       Req.post(req,
@@ -187,7 +187,7 @@ defmodule SmallSdk.Moondream do
         Utils.detect_mime_type_from_base64(image_base64) ||
         "image/jpeg"
 
-    req = build_request("/v1/segment")
+    req = build_request("/segment")
 
     res =
       Req.post(req,
