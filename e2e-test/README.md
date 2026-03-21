@@ -134,6 +134,8 @@ await expect(page.getByRole("button", { name: "Save" })).toHaveScreenshot()
 
 Commit the generated baseline snapshots so the same visual checks run locally and in CI.
 
+For team collaboration, treat the CI prod-like run as the source of truth for visual pass/fail decisions. Local dev-server runs are useful for debugging and iteration, but they are not the shared baseline for accepting or rejecting visual changes.
+
 Page-render visual assertions should run at both:
 
 - `iPhone SE`
@@ -172,3 +174,5 @@ Local development can run the same specs against either:
 
 - an already running dev server
 - the local Docker prod-like app from `e2e-test/docker-compose.yml` with external PostgreSQL and Typesense
+
+Use local runs to debug quickly. Use CI results to decide whether visual changes are acceptable for the team.

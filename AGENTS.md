@@ -209,6 +209,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - UI 测试**优先**使用 visual testing 方法
 - e2e / UI visual testing **总是**优先使用 Playwright 的 screenshot snapshot 断言（例如 `expect(page).toHaveScreenshot()`、`expect(locator).toHaveScreenshot()`），而不是只做肉眼查看或仅保存临时截图
 - Playwright visual testing 的 baseline snapshots **必须**提交到仓库，保证本地与 CI 都能做稳定对比；临时调试截图仍可额外保存到 `/tmp` 或 `test-results/`
+- visual testing 的团队协作基准 **总是**以 CI 中的 prod-like 运行结果为准；本地 dev server 运行只用于个人调试，不作为团队共享的通过/失败判定标准
 - 这里的“快照”指 **Playwright visual snapshots**；它不同于 DOM snapshot。项目仍然**优先**保留真实截图和视觉对比，不依赖 DOM 结构快照
 - visual testing **总是**至少覆盖两种 viewport：`iPhone SE` 和 `MacBook 13` size；同一套页面视觉 spec 应在这两个尺寸下运行
 - Playwright page-level e2e testing **总是**采用一个页面一个 `*.spec.ts` 文件，不要把多个页面定义在同一个路由数组里批量生成
