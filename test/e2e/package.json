@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test --headed --workers=1 --reporter=line",
-    "test:ci": "playwright test --config=playwright.ci.config.ts --reporter=line"
+    "e2e": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
+    "e2e:ci": "playwright test --reporter=line"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2"

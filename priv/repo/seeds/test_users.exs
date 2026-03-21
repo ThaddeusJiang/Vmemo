@@ -92,24 +92,11 @@ defmodule Vmemo.Seeds.TestUsers do
       {:ok, _} ->
         IO.puts("✓ Created fixed test API token: #{raw_token}")
         IO.puts("⚠ Use this token in tests: #{raw_token}")
-        save_token_to_file(raw_token)
 
       {:error, %Postgrex.Error{postgres: %{code: :unique_violation}}} ->
         IO.puts("→ Test API token already exists")
       error ->
         IO.puts("✗ Failed to create test API token: #{inspect(error)}")
-    end
-  end
-
-  # 保存 token 到文件，用于测试
-  defp save_token_to_file(token) do
-    token_file = Path.join([Application.app_dir(:vmemo, "priv"), "repo", "test_token.txt"])
-
-    case File.write(token_file, token) do
-      :ok ->
-        IO.puts("✓ Test token saved to: #{token_file}")
-      {:error, reason} ->
-        IO.puts("⚠ Failed to save token to file: #{reason}")
     end
   end
 end

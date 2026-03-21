@@ -5,8 +5,6 @@ const uploadFile = path.resolve(
   "/Users/amami/git/my2026personal/Vmemo/test/testdata_files/test-red-image.png",
 );
 
-test.use({ storageState: "/tmp/vmemo-e2e-storage.json" });
-
 test("upload file with authenticated session", async ({ page }) => {
   await page.goto("/photos/upload", { waitUntil: "domcontentloaded" });
   await expect(
@@ -19,7 +17,7 @@ test("upload file with authenticated session", async ({ page }) => {
 
   const note = page.locator('textarea[name="note"]');
   if (await note.isVisible().catch(() => false)) {
-    await note.fill("Visual e2e upload after login");
+    await note.fill("Playwright authenticated upload smoke test");
   }
 
   const submitUpload = uploadForm.getByRole("button", { name: /Upload/i });

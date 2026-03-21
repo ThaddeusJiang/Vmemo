@@ -9,6 +9,9 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: test/e2e
     env:
       DATABASE_URL: ecto://postgres:postgres@postgres/vmemo_dev
       TYPESENSE_URL: http://typesense:8108
@@ -34,12 +37,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Build app image for e2e
+        working-directory: .
         run: |
           docker build -t thaddeusjiang/vmemo:develop .
 
       - name: Start stack with image
         run: |
-          docker compose -f _prod/docker-compose.yml up -d --pull never
+          docker compose -f docker-compose.yml up -d --pull never
 
       - name: Wait for app
         run: |
@@ -48,7 +52,7 @@ jobs:
           until curl -fsS http://localhost:4000/login >/dev/null; do
             if [ $count -ge $timeout ]; then
               echo "Timeout waiting for app"
-              docker compose -f _prod/docker-compose.yml logs vmemo || true
+              docker compose -f docker-compose.yml logs vmemo || true
               exit 1
             fi
             echo "Waiting for app... ($count/$timeout)"
@@ -58,19 +62,17 @@ jobs:
           echo "App is ready!"
 
       - name: Install e2e dependencies
-        run: |
-          cd test/e2e
-          bun install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+
+      - name: Prepare e2e auth user
         run: |
-          cd test/e2e
-          bunx playwright install --with-deps chromium
+          docker compose -f docker-compose.yml exec -T vmemo sh -lc 'unset PHX_SERVER && mix run priv/repo/seeds/test_users.exs'
 
       - name: Run e2e tests
-        run: |
-          cd test/e2e
-          bun run test:ci
+        run: bun run e2e:ci
 
       - name: Upload screenshots
         if: always()
@@ -85,7 +87,7 @@ jobs:
       - name: Capture compose logs
         if: always()
         run: |
-          docker compose -f _prod/docker-compose.yml logs > /tmp/vmemo-compose.log || true
+          docker compose -f docker-compose.yml logs > /tmp/vmemo-compose.log || true
 
       - name: Upload compose log
         if: always()
@@ -97,4 +99,4 @@ jobs:
 
       - name: Stop stack
         if: always()
-        run: docker compose -f _prod/docker-compose.yml down -v || true
+        run: docker compose -f docker-compose.yml down -v || true

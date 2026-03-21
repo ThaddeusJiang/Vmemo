@@ -16,41 +16,68 @@ bun install
 bunx playwright install chromium
 ```
 
+## Start App Stack
+
+Start the production-like Docker stack used by e2e:
+
+```bash
+docker compose -f test/e2e/docker-compose.yml up -d --pull never
+```
+
+Stop and remove the stack after testing:
+
+```bash
+docker compose -f test/e2e/docker-compose.yml down -v
+```
+
+The compose file is self-contained and must not depend on `_prod/`.
+Default test-only placeholder env values are defined directly in `test/e2e/docker-compose.yml`.
+
+## Auth Setup
+
+Playwright runs `globalSetup` before tests:
+
+- log in once with the shared test account
+- save authenticated storage state to `/tmp/vmemo-e2e-storage.json`
+
+For CI, the workflow prepares the shared test user before Playwright by running:
+`mix run priv/repo/seeds/test_users.exs` inside the running `vmemo` container.
+
+Test files should reuse this authenticated state instead of embedding login flows in each spec.
+
 ## Run Tests
 
 Run all e2e tests:
 
 ```bash
 cd test/e2e
-bun run test
+bun run e2e
 ```
 
 Local default runs with visible browser UI (headed, recommended for human verification):
 
 ```bash
 cd test/e2e
-bun run test
+bun run e2e
 ```
 
 Run a single test:
 
 ```bash
 cd test/e2e
-bun run test -- tests/register-login.spec.ts
+bun run e2e -- tests/upload-only.spec.ts
 ```
 
 Run CI mode (headless):
 
 ```bash
 cd test/e2e
-bun run test:ci
+bun run e2e:ci
 ```
 
 ## Test Files
 
-- `tests/register-login.spec.ts`: register and login, then save auth state
-- `tests/upload-only.spec.ts`: upload with existing auth state
-- `tests/login-upload.spec.ts`: combined login/register + upload flow
+- `tests/upload-only.spec.ts`: authenticated upload flow smoke test
 
 ## Screenshots And Artifacts
 
@@ -80,5 +107,5 @@ CI e2e workflow runs only when PR has label:
 CI e2e uses Docker image startup flow (production-like) instead of `mix phx.server`:
 
 - build image from current branch
-- start stack with `_prod/docker-compose.yml`
-- run Playwright tests against `http://localhost:4000` with `bun run test:ci`
+- start stack with `test/e2e/docker-compose.yml`
+- run Playwright tests against `http://localhost:4000` with `bun run e2e:ci`
