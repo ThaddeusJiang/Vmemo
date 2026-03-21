@@ -26,6 +26,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      typesense:
+        image: typesense/typesense:27.1
+        ports:
+          - 8108:8108
+        env:
+          TYPESENSE_DATA_DIR: /data
+          TYPESENSE_API_KEY: xyz
+        options: >-
+          --tmpfs /data:rw,size=512m
 
     strategy:
       matrix:
@@ -54,28 +63,13 @@ jobs:
           mix ecto.create
           mix ecto.migrate
 
-      - name: Start Typesense
-        run: |
-          docker run -d \
-            --name typesense \
-            -p 8108:8108 \
-            --tmpfs /data:rw,size=512m \
-            typesense/typesense:27.1 \
-            --data-dir=/data \
-            --api-key=xyz
-
-          echo "Typesense container started, checking logs..."
-          sleep 2
-          docker logs typesense
-
       - name: Wait for Typesense
         run: |
           timeout=60
           count=0
-          until curl -f http://localhost:8108/health; do
+          until curl -fsS http://localhost:8108/health; do
             if [ $count -ge $timeout ]; then
               echo "Timeout waiting for Typesense"
-              docker logs typesense
               exit 1
             fi
             echo "Waiting for typesense... ($count/$timeout)"
