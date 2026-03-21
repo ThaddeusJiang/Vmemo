@@ -4,11 +4,11 @@ Date: 2026-03-21
 
 ## Goal
 
-Document how to run and debug Playwright e2e tests in `test/e2e`.
+Document how to run and debug Playwright e2e tests in `e2e-test`.
 
 ## Changes
 
-- Added `test/e2e/README.md` with:
+- Added `e2e-test/README.md` with:
   - prerequisites
   - Bun install and Playwright browser setup
   - run commands (all tests, single test, headed mode)

@@ -8,9 +8,9 @@ Use a single Playwright config file and control headed/headless mode through npm
 
 ## Changes
 
-- Updated `test/e2e/playwright.config.ts` to default `use.headless` to `true`.
-- Updated `test/e2e/package.json` scripts:
+- Updated `e2e-test/playwright.config.ts` to default `use.headless` to `true`.
+- Updated `e2e-test/package.json` scripts:
   - `e2e` uses `playwright test --headed`
   - `e2e:ci` uses `playwright test --reporter=line`
-- Removed `test/e2e/playwright.ci.config.ts`.
+- Removed `e2e-test/playwright.ci.config.ts`.
 - Kept README commands aligned with the script-based mode split.

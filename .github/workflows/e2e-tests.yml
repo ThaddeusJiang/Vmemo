@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: test/e2e
+        working-directory: e2e-test
     env:
       DATABASE_URL: ecto://postgres:postgres@postgres/vmemo_dev
       TYPESENSE_URL: http://typesense:8108
@@ -81,7 +81,7 @@ jobs:
           name: e2e-screenshots
           path: |
             /tmp/vmemo-e2e-*.png
-            test/e2e/test-results/**
+            e2e-test/test-results/**
           if-no-files-found: warn
 
       - name: Capture compose logs

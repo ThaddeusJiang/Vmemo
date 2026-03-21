@@ -8,12 +8,12 @@ Use explicit scripts for local UI e2e and CI headless e2e without environment-va
 
 ## Changes
 
-- Updated `test/e2e/package.json` scripts:
+- Updated `e2e-test/package.json` scripts:
   - `test`: headed UI run for local human verification
   - `test:ci`: headless run for CI via dedicated Playwright config
-- Simplified `test/e2e/playwright.config.ts`:
+- Simplified `e2e-test/playwright.config.ts`:
   - removed `E2E_HEADLESS` / `CI` branching logic
   - set `use.headless` to `false` (local default)
-- Added `test/e2e/playwright.ci.config.ts` with `use.headless: true`.
+- Added `e2e-test/playwright.ci.config.ts` with `use.headless: true`.
 - Updated GitHub workflow to run `bun run test:ci`.
-- Updated `test/e2e/README.md` commands to use `test` / `test:ci`.
+- Updated `e2e-test/README.md` commands to use `test` / `test:ci`.

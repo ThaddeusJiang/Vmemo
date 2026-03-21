@@ -9,5 +9,5 @@ Replace the local dev auth preparation step with a dedicated e2e seed executed i
 ## Changes
 
 - Reused `priv/repo/seeds/test_users.exs` as the single source of truth for the shared e2e login account.
-- Simplified `test/e2e/global-setup.ts` so it only logs in and saves storage state.
+- Simplified `e2e-test/global-setup.ts` so it only logs in and saves storage state.
 - Updated e2e scripts to run the dedicated seed inside the running `vmemo` container before Playwright, so auth preparation uses the same prod environment as the app under test.

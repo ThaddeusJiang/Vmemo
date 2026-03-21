@@ -10,8 +10,9 @@ This directory contains Playwright end-to-end tests written in TypeScript and ex
 
 ## Install
 
+Run from `e2e-test` directory:
+
 ```bash
-cd test/e2e
 bun install
 bunx playwright install chromium
 ```
@@ -21,17 +22,17 @@ bunx playwright install chromium
 Start the production-like Docker stack used by e2e:
 
 ```bash
-docker compose -f test/e2e/docker-compose.yml up -d --pull never
+docker compose -f docker-compose.yml up -d --pull never
 ```
 
 Stop and remove the stack after testing:
 
 ```bash
-docker compose -f test/e2e/docker-compose.yml down -v
+docker compose -f docker-compose.yml down -v
 ```
 
 The compose file is self-contained and must not depend on `_prod/`.
-Default test-only placeholder env values are defined directly in `test/e2e/docker-compose.yml`.
+Default test-only placeholder env values are defined directly in `docker-compose.yml`.
 
 ## Auth Setup
 
@@ -50,28 +51,24 @@ Test files should reuse this authenticated state instead of embedding login flow
 Run all e2e tests:
 
 ```bash
-cd test/e2e
 bun run e2e
 ```
 
 Local default runs with visible browser UI (headed, recommended for human verification):
 
 ```bash
-cd test/e2e
 bun run e2e
 ```
 
 Run a single test:
 
 ```bash
-cd test/e2e
 bun run e2e -- tests/upload-only.spec.ts
 ```
 
 Run CI mode (headless):
 
 ```bash
-cd test/e2e
 bun run e2e:ci
 ```
 
@@ -89,7 +86,7 @@ Tests save screenshots to `/tmp`:
 
 Playwright output is under:
 
-- `test/e2e/test-results/`
+- `test-results/`
 
 ## Test Account
 
@@ -107,5 +104,5 @@ CI e2e workflow runs only when PR has label:
 CI e2e uses Docker image startup flow (production-like) instead of `mix phx.server`:
 
 - build image from current branch
-- start stack with `test/e2e/docker-compose.yml`
+- start stack with `e2e-test/docker-compose.yml` (workflow runs in `e2e-test`, so command uses `docker-compose.yml`)
 - run Playwright tests against `http://localhost:4000` with `bun run e2e:ci`

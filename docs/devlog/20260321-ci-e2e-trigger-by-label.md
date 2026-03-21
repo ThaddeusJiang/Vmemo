@@ -15,5 +15,5 @@ Add a CI workflow that runs e2e tests only when PR is marked with a specific lab
 - Workflow pipeline:
   - build application Docker image from current branch code
   - start app stack via `_prod/docker-compose.yml`
-  - run Playwright e2e tests in `test/e2e` via Bun
+  - run Playwright e2e tests in `e2e-test` via Bun
   - upload screenshots and Phoenix logs as artifacts
