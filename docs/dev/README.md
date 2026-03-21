@@ -64,7 +64,7 @@ curl https://mise.run | sh
 
 ### 安装项目所需的 Elixir 和 Erlang 版本
 
-项目使用 `mise` 管理版本，版本定义在 `.tool-versions` 文件中：
+项目使用 `mise` 管理版本，版本定义在 `mise.toml` 文件中：
 
 ```bash
 # 进入项目目录后，mise 会自动安装所需版本
@@ -74,7 +74,7 @@ mise install
 
 当前项目要求：
 
-- Elixir: 1.19.2-otp-28
+- Elixir: 1.19.5-otp-28
 - Erlang: 28.1.1
 
 ## 快速开始

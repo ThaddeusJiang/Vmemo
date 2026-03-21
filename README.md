@@ -223,7 +223,7 @@ config :vmemo,
 ## 技术栈
 
 - **框架**: Elixir Phoenix + LiveView
-- **语言版本**: Elixir 1.19.2, Erlang/OTP 28
+- **语言版本**: Elixir 1.19.5, Erlang/OTP 28.1.1
 - **版本管理**: mise (推荐)
 - **数据库**: PostgreSQL
 - **搜索引擎**: Typesense (CLIP 模型)

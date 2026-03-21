@@ -215,12 +215,12 @@ password = "password123456"
 
 ## 项目规范
 
-- **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`.tool-versions` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+- **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`mise.toml` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
 - 每次 commit 都应该只提交独立的功能，不要在一个 commit 中混合过多不同的修改。
 
 ## Tools
 
-- `mise` 用于版本管理（Elixir, Erlang）。项目使用 `.tool-versions` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
+- `mise` 用于版本管理（Elixir, Erlang）。项目使用 `mise.toml` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
 - `Playwright` 与网页交互，我更喜欢使用**截图**而不是快照
