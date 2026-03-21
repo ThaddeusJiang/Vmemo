@@ -73,9 +73,11 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Setup
+      - name: Setup DB and Typesense
         run: |
-          MIX_ENV=test mix setup
+          mix ash_postgres.create --quiet
+          mix ash.migrate --quiet
+          mix ts.setup
 
       - name: Run tests
         run: |

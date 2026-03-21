@@ -21,6 +21,7 @@ config :vmemo, Vmemo.AshRepo,
 
 config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
+config :vmemo, typesense_image_embedding: false
 
 config :vmemo, moondream_url: "http://localhost:2020/v1"
 
