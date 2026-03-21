@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "e2e": "playwright test --headed",
-    "e2e:ui": "playwright test --ui",
-    "e2e:ci": "playwright test --reporter=line"
+    "e2e": "env -u NO_COLOR playwright test --headed",
+    "e2e:ui": "env -u NO_COLOR playwright test --ui",
+    "e2e:ci": "env -u NO_COLOR playwright test --reporter=line",
+    "e2e:update-snapshots": "env -u NO_COLOR playwright test --update-snapshots --headed"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

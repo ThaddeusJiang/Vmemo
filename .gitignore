@@ -68,3 +68,4 @@ debug.log
 _prod
 node_modules
 test-results
+*-darwin.png

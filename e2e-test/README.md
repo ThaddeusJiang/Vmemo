@@ -97,9 +97,15 @@ Run CI mode (headless):
 bun run e2e:ci
 ```
 
+Update Playwright visual baselines:
+
+```bash
+bun run e2e:update-snapshots
+```
+
 ## Test Files
 
-- `tests/upload-only.spec.ts`: authenticated upload flow smoke test
+- `tests/*-page.spec.ts`: page-level e2e tests with built-in visual assertions
 
 ## Test Assets
 
@@ -119,6 +125,20 @@ Playwright output is under:
 
 - `test-results/`
 
+For visual regression coverage, prefer Playwright screenshot snapshot assertions such as:
+
+```ts
+await expect(page).toHaveScreenshot()
+await expect(page.getByRole("button", { name: "Save" })).toHaveScreenshot()
+```
+
+Commit the generated baseline snapshots so the same visual checks run locally and in CI.
+
+Page-render visual assertions should run at both:
+
+- `iPhone SE`
+- `MacBook 13` size (`1280x800`)
+
 ## Test Account
 
 ```text
@@ -128,16 +148,25 @@ password = "password123456"
 
 ## CI Trigger
 
-CI e2e workflow runs only when PR has label:
+CI e2e workflow runs when the PR has label:
 
 - `run-e2e-testing`
+
+That single label runs the full e2e suite, including page-render visual assertions.
+
+The same workflow also supports manual `workflow_dispatch` with a single checkbox:
+
+- `update_snapshots`
+
+Manual dispatch always runs the full e2e suite. The checkbox only controls whether the suite updates snapshots.
 
 CI runs the same specs against a prod-like target:
 
 - build image from current branch
 - start `postgres` and `typesense` with GitHub Actions `services`
 - start the app with `docker compose -f docker-compose.yml up -d`
-- run Playwright tests against `http://localhost:4000` with `bun run e2e:ci`
+- run Playwright tests against `http://localhost:4000`
+- upload `test-results` and snapshot artifacts
 
 Local development can run the same specs against either:
 

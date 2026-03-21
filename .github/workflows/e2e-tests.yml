@@ -3,10 +3,20 @@ name: E2E Tests
 on:
   pull_request:
     types: [labeled, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: Update Playwright visual snapshots
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   e2e:
-    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')
+    if: |
+      (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')) ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -108,16 +118,22 @@ jobs:
           docker compose -f docker-compose.yml exec -T vmemo sh -lc 'unset PHX_SERVER && mix run priv/repo/seeds/test_users.exs'
 
       - name: Run e2e tests
+        if: ${{ !inputs.update_snapshots }}
         run: bun run e2e:ci
 
-      - name: Upload screenshots
+      - name: Update e2e snapshots
+        if: ${{ inputs.update_snapshots }}
+        run: bunx playwright test --update-snapshots --reporter=line
+
+      - name: Upload e2e artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-screenshots
+          name: e2e-artifacts
           path: |
             /tmp/vmemo-e2e-*.png
             e2e-test/test-results/**
+            e2e-test/tests/**-snapshots/**
           if-no-files-found: warn
 
       - name: Print app logs

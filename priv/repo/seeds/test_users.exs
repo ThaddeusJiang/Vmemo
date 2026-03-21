@@ -3,8 +3,18 @@ defmodule Vmemo.Seeds.TestUsers do
   Creates test users for development and testing environments.
   """
 
+  require Ash.Query
+
   alias Vmemo.Account
   alias Vmemo.AshRepo
+  alias Vmemo.Photos.Note
+  alias Vmemo.Photos.Photo
+  alias Vmemo.Photos.PhotoNote
+
+  @seeded_photo_id "11111111-1111-4111-8111-111111111111"
+  @seeded_note_id "22222222-2222-4222-8222-222222222222"
+  @seeded_photo_note "Seeded e2e note reference photo"
+  @seeded_note_text "Seeded e2e note reference"
 
   def run do
     # 创建 test 用户
@@ -12,6 +22,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
     # 为 test 用户创建 API token
     create_test_api_token(user)
+    ensure_note_reference_page_data(user)
   end
 
   defp create_test_user do
@@ -97,6 +108,97 @@ defmodule Vmemo.Seeds.TestUsers do
         IO.puts("→ Test API token already exists")
       error ->
         IO.puts("✗ Failed to create test API token: #{inspect(error)}")
+    end
+  end
+
+  defp ensure_note_reference_page_data(nil), do: :ok
+
+  defp ensure_note_reference_page_data(user) do
+    photo = ensure_seeded_photo(user)
+    note = ensure_seeded_note(user)
+    ensure_seeded_photo_note_link(user, photo, note)
+  end
+
+  defp ensure_seeded_photo(user) do
+    case Ash.get(Photo, @seeded_photo_id, actor: user) do
+      {:ok, photo} ->
+        IO.puts("→ Seeded e2e photo already exists")
+        photo
+
+      {:error, _} ->
+        case Ash.create(
+               Photo,
+               %{
+                 id: @seeded_photo_id,
+                 url: "/images/logo.svg",
+                 note: @seeded_photo_note,
+                 file_id: "seeded-e2e-note-reference-logo",
+                 ash_user_id: user.id
+               },
+               action: :import,
+               actor: user
+             ) do
+          {:ok, photo} ->
+            IO.puts("✓ Created seeded e2e photo")
+            photo
+
+          {:error, error} ->
+            raise "Failed to create seeded e2e photo: #{inspect(error)}"
+        end
+    end
+  end
+
+  defp ensure_seeded_note(user) do
+    case Ash.get(Note, @seeded_note_id, actor: user) do
+      {:ok, note} ->
+        IO.puts("→ Seeded e2e note already exists")
+        note
+
+      {:error, _} ->
+        case Ash.create(
+               Note,
+               %{
+                 id: @seeded_note_id,
+                 text: @seeded_note_text,
+                 ash_user_id: user.id
+               },
+               action: :import,
+               actor: user
+             ) do
+          {:ok, note} ->
+            IO.puts("✓ Created seeded e2e note")
+            note
+
+          {:error, error} ->
+            raise "Failed to create seeded e2e note: #{inspect(error)}"
+        end
+    end
+  end
+
+  defp ensure_seeded_photo_note_link(user, photo, note) do
+    existing_link =
+      PhotoNote
+      |> Ash.Query.filter(photo_id == ^photo.id and note_id == ^note.id)
+      |> Ash.read_one(actor: user)
+
+    case existing_link do
+      {:ok, nil} ->
+        case Ash.create(PhotoNote, %{photo_id: photo.id, note_id: note.id},
+               action: :import,
+               actor: user
+             ) do
+          {:ok, _link} ->
+            IO.puts("✓ Created seeded e2e photo-note link")
+
+          {:error, error} ->
+            raise "Failed to create seeded e2e photo-note link: #{inspect(error)}"
+        end
+
+      {:ok, _link} ->
+        IO.puts("→ Seeded e2e photo-note link already exists")
+
+      {:error, error} ->
+        raise "Failed to read seeded e2e photo-note link: #{inspect(error)}"
     end
   end
 end

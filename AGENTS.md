@@ -207,6 +207,13 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - **总是**在 `Upload` 测试中使用 `test/testdata_files/**` 中的真实文件
 - 测试 UI 时**总是**保存截图记录测试过程（例如 Playwright 截图）
 - UI 测试**优先**使用 visual testing 方法
+- e2e / UI visual testing **总是**优先使用 Playwright 的 screenshot snapshot 断言（例如 `expect(page).toHaveScreenshot()`、`expect(locator).toHaveScreenshot()`），而不是只做肉眼查看或仅保存临时截图
+- Playwright visual testing 的 baseline snapshots **必须**提交到仓库，保证本地与 CI 都能做稳定对比；临时调试截图仍可额外保存到 `/tmp` 或 `test-results/`
+- 这里的“快照”指 **Playwright visual snapshots**；它不同于 DOM snapshot。项目仍然**优先**保留真实截图和视觉对比，不依赖 DOM 结构快照
+- visual testing **总是**至少覆盖两种 viewport：`iPhone SE` 和 `MacBook 13` size；同一套页面视觉 spec 应在这两个尺寸下运行
+- Playwright page-level e2e testing **总是**采用一个页面一个 `*.spec.ts` 文件，不要把多个页面定义在同一个路由数组里批量生成
+- visual testing **不要**单独维护独立测试体系；应直接集成在对应页面的 e2e `*.spec.ts` 中，在页面渲染与交互流程里顺便执行 screenshot snapshot 断言
+- visual testing CI **必须**支持两种触发方式：PR label 触发与手动 `workflow_dispatch`；手动执行只保留一个 checkbox 输入 `update_snapshots` 用于控制是否更新 snapshots
 - e2e testing **必须**保持 dev / prod 独立：同一套 e2e specs 应同时支持对本地 dev server 和 prod-like Docker image 运行，不能把测试逻辑耦合到单一运行模式
 - CI e2e **总是**优先运行 Docker image（生产运行方式），不要使用 `mix phx.server` 作为 CI e2e 的应用启动方式
 - e2e testing 使用的 Docker Compose 配置**必须**是已提交、可独立运行的测试入口，**绝不**依赖本地临时目录（如 `_prod/`）
@@ -240,6 +247,6 @@ password = "password123456"
 - `mise` 用于版本管理（Elixir, Erlang）。项目使用 `mise.toml` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
-- `Playwright` 与网页交互，我更喜欢使用**截图**而不是快照
+- `Playwright` 与网页交互；做 UI/e2e visual testing 时优先使用**截图型快照**（visual snapshots），不要把它和 DOM snapshot 混淆
 - **绝不**使用 `python` 运行脚本
 - 可以使用 `curl` `jq` `gh` 等
