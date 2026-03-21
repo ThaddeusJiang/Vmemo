@@ -1,4 +1,4 @@
-name: Elixir CI
+name: Elixir Checks
 
 on:
   pull_request:
@@ -58,11 +58,6 @@ jobs:
             sleep 1
           done
 
-      - name: Set up database
-        run: |
-          mix ecto.create
-          mix ecto.migrate
-
       - name: Wait for Typesense
         run: |
           timeout=60
@@ -78,12 +73,9 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Reset Typesense
+      - name: Setup
         run: |
-          MIX_ENV=test mix ts.reset
-
-      - name: Sleep for Typesense to reset
-        run: sleep 20
+          MIX_ENV=test mix setup
 
       - name: Run tests
         run: |
