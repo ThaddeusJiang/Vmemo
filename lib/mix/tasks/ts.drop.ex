@@ -1,11 +1,11 @@
-defmodule Mix.Tasks.Ts.Reset do
+defmodule Mix.Tasks.Ts.Drop do
   use Mix.Task
 
-  @shortdoc "Reset Typesense collections"
+  @shortdoc "Drop Typesense collections"
 
   @moduledoc """
   Usage:
-    mix ts.reset
+    mix ts.drop
   """
 
   @impl Mix.Task

@@ -87,8 +87,6 @@ defmodule Vmemo.Ts do
 
     Typesense.drop_collection("notes")
     |> ensure_ok("drop notes collection")
-
-    migrate()
   end
 
   def migrate do
