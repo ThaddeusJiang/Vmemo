@@ -64,3 +64,4 @@ debug.log
 # mise local configuration (contains sensitive env vars)
 *.local.toml
 *.local.yml
+.env
