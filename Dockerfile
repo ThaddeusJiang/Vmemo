@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.6
-FROM elixir:1.19.2-otp-28 AS base
+FROM elixir:1.19.5-otp-28 AS base
 
 FROM base as builder
 

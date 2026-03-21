@@ -1,32 +1,32 @@
 defmodule Vmemo.Ts do
   alias SmallSdk.Typesense
 
+  @migrations_glob "priv/ts/migrations/*.exs"
+
   @doc """
   2024-12-20
   create photos collection
   """
   def change_1() do
+    fields = [
+      %{"name" => "image", "type" => "image", "store" => false},
+      %{"name" => "note", "type" => "string", "optional" => true},
+      %{"name" => "url", "type" => "string"},
+      %{"name" => "file_id", "type" => "string", "optional" => true},
+      %{"name" => "inserted_at", "type" => "int64"},
+      %{"name" => "inserted_by", "type" => "string"}
+    ]
+
+    fields =
+      if image_embedding_enabled?() do
+        fields ++ [image_embedding_field()]
+      else
+        fields
+      end
+
     schema = %{
       "name" => "photos",
-      "fields" => [
-        %{"name" => "image", "type" => "image", "store" => false},
-        %{"name" => "note", "type" => "string", "optional" => true},
-        %{"name" => "url", "type" => "string"},
-        %{"name" => "file_id", "type" => "string", "optional" => true},
-        %{"name" => "inserted_at", "type" => "int64"},
-        %{"name" => "inserted_by", "type" => "string"},
-        # embedding
-        %{
-          "name" => "image_embedding",
-          "type" => "float[]",
-          "embed" => %{
-            "from" => ["image"],
-            "model_config" => %{
-              "model_name" => "ts/clip-vit-b-p32"
-            }
-          }
-        }
-      ],
+      "fields" => fields,
       "default_sorting_field" => "inserted_at"
     }
 
@@ -85,13 +85,35 @@ defmodule Vmemo.Ts do
 
     Typesense.drop_collection("notes")
     |> ensure_ok("drop notes collection")
+  end
 
-    change_1()
-    change_2()
-    change_3()
+  def migrate do
+    @migrations_glob
+    |> Path.wildcard()
+    |> Enum.sort()
+    |> Enum.each(&Code.eval_file/1)
+
+    :ok
   end
 
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
+
+  defp image_embedding_enabled? do
+    Application.get_env(:vmemo, :typesense_image_embedding, true)
+  end
+
+  defp image_embedding_field do
+    %{
+      "name" => "image_embedding",
+      "type" => "float[]",
+      "embed" => %{
+        "from" => ["image"],
+        "model_config" => %{
+          "model_name" => "ts/clip-vit-b-p32"
+        }
+      }
+    }
+  end
 end

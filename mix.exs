@@ -95,11 +95,13 @@ defmodule Vmemo.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ash.setup", "ts.reset", "assets.setup", "assets.build"],
+      setup: ["deps.get", "ash.setup", "ts.setup", "assets.setup", "assets.build"],
       clean: ["clean.all"],
       reset: ["ash.reset", "ts.reset", "storage.reset"],
       "ash.setup": ["ash_postgres.create", "ash.migrate", "run priv/repo/seeds.exs"],
       "ash.reset": ["ash_postgres.drop", "ash.setup"],
+      "ts.setup": ["ts.migrate"],
+      "ts.reset": ["ts.drop", "ts.setup"],
       test: ["ash_postgres.create --quiet", "ash.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind vmemo", "esbuild vmemo"],

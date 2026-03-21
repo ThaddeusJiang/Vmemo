@@ -124,6 +124,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - REST API request / response 处理逻辑应该封装在 **SDK 模块** 中（如 `SmallSdk.*`），而不是在业务逻辑里临时拼装 `Req` / `curl` 请求
 - 业务代码只调用 SDK 暴露的函数（如 `SmallSdk.Moondream.caption/2`），不关心 base_url、headers、stream 选项等细节
 - 当需要新的外部接口能力时，优先扩展 SDK，再在业务层使用，保持调用点简单、可替换
+- 外部服务地址、密钥等环境相关配置应优先通过 `config/runtime.exs` 覆盖，避免只在 `dev.exs` / `test.exs` 中写死导致环境变更不生效
 - **不要**在代码中编写 env 格式兼容或自动修正逻辑；只需要约定好 env 格式
 - 如果 env 不合法（缺失、格式错误、无效值），应**直接报错**，不要静默兜底或推断修复
 
@@ -214,12 +215,12 @@ password = "password123456"
 
 ## 项目规范
 
-- **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`.tool-versions` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+- **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`mise.toml` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
 - 每次 commit 都应该只提交独立的功能，不要在一个 commit 中混合过多不同的修改。
 
 ## Tools
 
-- `mise` 用于版本管理（Elixir, Erlang）。项目使用 `.tool-versions` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
+- `mise` 用于版本管理（Elixir, Erlang）。项目使用 `mise.toml` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
 - `Playwright` 与网页交互，我更喜欢使用**截图**而不是快照

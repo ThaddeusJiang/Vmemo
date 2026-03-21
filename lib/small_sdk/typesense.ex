@@ -14,7 +14,7 @@ defmodule SmallSdk.Typesense do
     res =
       Req.post(req,
         json: schema,
-        connect_options: [receive_timeout: @create_collection_receive_timeout]
+        receive_timeout: @create_collection_receive_timeout
       )
 
     handle_response(res)
