@@ -205,6 +205,13 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 
 - **优先**使用**真实数据**和**UI**进行测试
 - **总是**在 `Upload` 测试中使用 `test/testdata_files/**` 中的真实文件
+- 测试 UI 时**总是**保存截图记录测试过程（例如 Playwright 截图）
+- UI 测试**优先**使用 visual testing 方法
+- e2e testing **总是**优先运行 Docker image（生产运行方式），不要使用 `mix phx.server` 作为 CI e2e 的应用启动方式
+- e2e testing guidelines（用户视角）：
+  - **总是**优先点击用户可见的按钮文本（例如 `Login` 按钮），而不是依赖 `button[type='submit']` 这类实现细节选择器
+  - **总是**尽量按真实用户操作路径编写测试步骤（从用户能看到和能点击的元素出发）
+  - 选择器优先级：可见文本/ARIA role > label > test id > CSS 实现细节
 
 你可以在本地使用测试账号
 

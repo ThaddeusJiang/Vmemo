@@ -1,0 +1,100 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+jobs:
+  e2e:
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo_dev
+      TYPESENSE_URL: http://typesense:8108
+      TYPESENSE_API_KEY: xyz
+      OPENROUTER_API_KEY: test-openrouter-key
+      MOONDREAM_URL: https://api.moondream.ai/v1
+      MOONDREAM_API_KEY: test-moondream-key
+      RESEND_API_KEY: test-resend-key
+      PHX_SERVER: "true"
+      ECTO_IPV6: "false"
+      POOL_SIZE: "10"
+      ADMIN_TOKEN: test-admin-token
+      SENTRY_DSN: https://public@example.com/1
+      SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
+      PHX_HOST: localhost
+      PORT: "4000"
+      DNS_CLUSTER_QUERY: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Build app image for e2e
+        run: |
+          docker build -t thaddeusjiang/vmemo:develop .
+
+      - name: Start stack with image
+        run: |
+          docker compose -f _prod/docker-compose.yml up -d --pull never
+
+      - name: Wait for app
+        run: |
+          timeout=60
+          count=0
+          until curl -fsS http://localhost:4000/login >/dev/null; do
+            if [ $count -ge $timeout ]; then
+              echo "Timeout waiting for app"
+              docker compose -f _prod/docker-compose.yml logs vmemo || true
+              exit 1
+            fi
+            echo "Waiting for app... ($count/$timeout)"
+            sleep 1
+            count=$((count + 1))
+          done
+          echo "App is ready!"
+
+      - name: Install e2e dependencies
+        run: |
+          cd test/e2e
+          bun install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: |
+          cd test/e2e
+          bunx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: |
+          cd test/e2e
+          bun run test:e2e -- --reporter=line
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: |
+            /tmp/vmemo-e2e-*.png
+            test/e2e/test-results/**
+          if-no-files-found: warn
+
+      - name: Capture compose logs
+        if: always()
+        run: |
+          docker compose -f _prod/docker-compose.yml logs > /tmp/vmemo-compose.log || true
+
+      - name: Upload compose log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vmemo-compose-log
+          path: /tmp/vmemo-compose.log
+          if-no-files-found: warn
+
+      - name: Stop stack
+        if: always()
+        run: docker compose -f _prod/docker-compose.yml down -v || true

@@ -27,7 +27,7 @@ RUN mix assets.deploy
 FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git postgresql-client \
+  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git postgresql-client \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN mix local.hex --force && \

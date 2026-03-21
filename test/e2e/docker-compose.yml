@@ -1,0 +1,54 @@
+services:
+  vmemo:
+    platform: ${VMEMO_PLATFORM:-linux/amd64}
+    image: ${VMEMO_IMAGE:-thaddeusjiang/vmemo:develop}
+    restart: on-failure
+    ports:
+      - "${VMEMO_PORT:-4000}:4000"
+    depends_on:
+      - postgres
+      - typesense
+    env_file:
+      - path: ../../_prod/.env
+        required: false
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-ecto://postgres:postgres@postgres/vmemo_dev}
+      TYPESENSE_URL: ${TYPESENSE_URL:-http://typesense:8108}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      MOONDREAM_URL: ${MOONDREAM_URL:-}
+      MOONDREAM_API_KEY: ${MOONDREAM_API_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
+      PHX_SERVER: ${PHX_SERVER:-true}
+      ECTO_IPV6: ${ECTO_IPV6:-false}
+      POOL_SIZE: ${POOL_SIZE:-10}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?ADMIN_TOKEN is required}
+      SENTRY_DSN: ${SENTRY_DSN:?SENTRY_DSN is required}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
+      PHX_HOST: ${PHX_HOST:-localhost}
+      PORT: ${PORT:-4000}
+      DNS_CLUSTER_QUERY: ${DNS_CLUSTER_QUERY:-}
+
+  postgres:
+    image: postgres:17
+    restart: on-failure
+    hostname: postgres
+    ports:
+      - "${POSTGRES_PORT:-54321}:5432"
+    volumes:
+      - ../../_prod/_data/pg-data:/var/lib/postgresql/data
+      - ../../docker/postgres/initdb:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vmemo_dev
+
+  typesense:
+    image: typesense/typesense:27.1
+    restart: on-failure
+    hostname: typesense
+    ports:
+      - "${TYPESENSE_PORT:-8766}:8108"
+    volumes:
+      - ../../_prod/_data/ts-data:/data
+    command: "--data-dir /data --api-key=xyz --enable-cors"

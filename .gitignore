@@ -65,3 +65,6 @@ debug.log
 *.local.toml
 *.local.yml
 .env
+_prod
+node_modules
+test-results
