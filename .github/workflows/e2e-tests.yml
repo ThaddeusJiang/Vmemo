@@ -9,12 +9,33 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vmemo_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vmemo_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      typesense:
+        image: typesense/typesense:27.1
+        env:
+          TYPESENSE_API_KEY: xyz
+          TYPESENSE_DATA_DIR: /tmp/typesense-data
+        ports:
+          - 8108:8108
     defaults:
       run:
         working-directory: e2e-test
     env:
-      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo_dev
-      TYPESENSE_URL: http://typesense:8108
+      DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo_dev
+      TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
       OPENROUTER_API_KEY: test-openrouter-key
       MOONDREAM_URL: https://api.moondream.ai/v1
@@ -41,9 +62,24 @@ jobs:
         run: |
           docker build -t thaddeusjiang/vmemo:develop .
 
-      - name: Start stack with image
+      - name: Wait for dependency services
         run: |
-          docker compose -f docker-compose.yml up -d --pull never
+          timeout=60
+          count=0
+          until curl -fsS http://localhost:8108/health >/dev/null; do
+            if [ $count -ge $timeout ]; then
+              echo "Timeout waiting for Typesense"
+              exit 1
+            fi
+            echo "Waiting for Typesense... ($count/$timeout)"
+            sleep 1
+            count=$((count + 1))
+          done
+          echo "Typesense is ready!"
+
+      - name: Start app with compose
+        run: |
+          docker compose -f docker-compose.yml up -d
 
       - name: Wait for app
         run: |
@@ -84,19 +120,10 @@ jobs:
             e2e-test/test-results/**
           if-no-files-found: warn
 
-      - name: Capture compose logs
-        if: always()
-        run: |
-          docker compose -f docker-compose.yml logs > /tmp/vmemo-compose.log || true
+      - name: Print app logs
+        if: failure()
+        run: docker compose -f docker-compose.yml logs vmemo || true
 
-      - name: Upload compose log
+      - name: Stop app container
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vmemo-compose-log
-          path: /tmp/vmemo-compose.log
-          if-no-files-found: warn
-
-      - name: Stop stack
-        if: always()
-        run: docker compose -f docker-compose.yml down -v || true
+        run: docker compose -f docker-compose.yml down || true

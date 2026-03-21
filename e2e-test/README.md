@@ -17,9 +17,29 @@ bun install
 bunx playwright install chromium
 ```
 
-## Start App Stack
+## Target Environments
 
-Start the production-like Docker stack used by e2e:
+The same Playwright specs should work against both:
+
+- local dev server
+- prod-like Docker app
+
+Select the target with `E2E_BASE_URL`. The default is `http://localhost:4000`.
+
+## Dev Mode
+
+Use this when the app is already running in your local dev environment.
+
+Example:
+
+```bash
+E2E_BASE_URL=http://localhost:4000 bun run e2e
+```
+
+## Prod-Like Mode
+
+Start the prod-like app container from `e2e-test/docker-compose.yml`.
+This compose file now manages only `vmemo`; PostgreSQL and Typesense must already be available outside it.
 
 ```bash
 docker compose -f docker-compose.yml up -d --pull never
@@ -31,8 +51,12 @@ Stop and remove the stack after testing:
 docker compose -f docker-compose.yml down -v
 ```
 
-The compose file is self-contained and must not depend on `_prod/`.
-Default test-only placeholder env values are defined directly in `docker-compose.yml`.
+By default, the app container connects to:
+
+- PostgreSQL: `host.docker.internal:5432`
+- Typesense: `host.docker.internal:8108`
+
+Override `DATABASE_URL` or `TYPESENSE_URL` if your target services are elsewhere.
 
 ## Auth Setup
 
@@ -41,14 +65,15 @@ Playwright runs `globalSetup` before tests:
 - log in once with the shared test account
 - save authenticated storage state to `/tmp/vmemo-e2e-storage.json`
 
-For CI, the workflow prepares the shared test user before Playwright by running:
-`mix run priv/repo/seeds/test_users.exs` inside the running `vmemo` container.
+Seed or auth preparation must happen in the environment under test.
+
+For CI, the workflow prepares the shared test user inside the running `vmemo` container.
 
 Test files should reuse this authenticated state instead of embedding login flows in each spec.
 
 ## Run Tests
 
-Run all e2e tests:
+Run all e2e tests against the current target:
 
 ```bash
 bun run e2e
@@ -107,8 +132,14 @@ CI e2e workflow runs only when PR has label:
 
 - `run-e2e-testing`
 
-CI e2e uses Docker image startup flow (production-like) instead of `mix phx.server`:
+CI runs the same specs against a prod-like target:
 
 - build image from current branch
-- start stack with `e2e-test/docker-compose.yml` (workflow runs in `e2e-test`, so command uses `docker-compose.yml`)
+- start `postgres` and `typesense` with GitHub Actions `services`
+- start the app with `docker compose -f docker-compose.yml up -d`
 - run Playwright tests against `http://localhost:4000` with `bun run e2e:ci`
+
+Local development can run the same specs against either:
+
+- an already running dev server
+- the local Docker prod-like app from `e2e-test/docker-compose.yml` with external PostgreSQL and Typesense
