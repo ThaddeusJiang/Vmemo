@@ -40,7 +40,7 @@ jobs:
       matrix:
         otp: ["28"]
         elixir: ["1.19.5"]
-    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    name: Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
