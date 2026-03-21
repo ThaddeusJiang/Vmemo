@@ -1,2 +1,0 @@
-include:
-  - ./test/e2e/docker-compose.yml
