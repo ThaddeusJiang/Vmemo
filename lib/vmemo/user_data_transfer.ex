@@ -609,7 +609,38 @@ defmodule Vmemo.UserDataTransfer do
     {%{photos: photo_stats, notes: note_stats}, photo_errors ++ note_errors}
   end
 
+  defp upsert_typesense_collection(_collection, []) do
+    {%{requested: 0, success: 0, failed: 0}, []}
+  end
+
   defp upsert_typesense_collection(collection, documents) do
+    chunk_size = typesense_import_chunk_size()
+    chunk_pause_ms = typesense_import_chunk_pause_ms()
+
+    documents
+    |> Enum.chunk_every(chunk_size)
+    |> Enum.with_index()
+    |> Enum.reduce(
+      {%{requested: 0, success: 0, failed: 0}, []},
+      fn {chunk, idx}, {stats, errors} ->
+        if idx > 0 and chunk_pause_ms > 0 do
+          Process.sleep(chunk_pause_ms)
+        end
+
+        {chunk_stats, chunk_errors} = upsert_typesense_chunk(collection, chunk)
+
+        merged_stats = %{
+          requested: stats.requested + chunk_stats.requested,
+          success: stats.success + chunk_stats.success,
+          failed: stats.failed + chunk_stats.failed
+        }
+
+        {merged_stats, errors ++ chunk_errors}
+      end
+    )
+  end
+
+  defp upsert_typesense_chunk(collection, documents) do
     case Typesense.import_documents(collection, documents, action: "upsert") do
       {:ok, %{success: success, failed: failed, items: items}} ->
         errors =
@@ -992,6 +1023,14 @@ defmodule Vmemo.UserDataTransfer do
 
       Map.put(acc, normalized_key, value)
     end)
+  end
+
+  defp typesense_import_chunk_size do
+    Application.get_env(:vmemo, :user_data_import_typesense_chunk_size, 50)
+  end
+
+  defp typesense_import_chunk_pause_ms do
+    Application.get_env(:vmemo, :user_data_import_typesense_chunk_pause_ms, 50)
   end
 
   defp extract_valid_uuid_id(value) do

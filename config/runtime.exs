@@ -20,6 +20,32 @@ if api_key = System.get_env("MOONDREAM_API_KEY") do
   config :vmemo, moondream_api_key: api_key
 end
 
+if chunk_size = System.get_env("USER_DATA_IMPORT_TYPESENSE_CHUNK_SIZE") do
+  case Integer.parse(chunk_size) do
+    {value, ""} when value > 0 ->
+      config :vmemo, user_data_import_typesense_chunk_size: value
+
+    _ ->
+      raise """
+      environment variable USER_DATA_IMPORT_TYPESENSE_CHUNK_SIZE is invalid.
+      It must be a positive integer.
+      """
+  end
+end
+
+if chunk_pause_ms = System.get_env("USER_DATA_IMPORT_TYPESENSE_CHUNK_PAUSE_MS") do
+  case Integer.parse(chunk_pause_ms) do
+    {value, ""} when value >= 0 ->
+      config :vmemo, user_data_import_typesense_chunk_pause_ms: value
+
+    _ ->
+      raise """
+      environment variable USER_DATA_IMPORT_TYPESENSE_CHUNK_PAUSE_MS is invalid.
+      It must be a non-negative integer.
+      """
+  end
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
