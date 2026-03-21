@@ -76,6 +76,12 @@ bun run e2e:ci
 
 - `tests/upload-only.spec.ts`: authenticated upload flow smoke test
 
+## Test Assets
+
+Upload fixtures used by Playwright specs live under:
+
+- `fixtures/upload-files/`
+
 ## Screenshots And Artifacts
 
 Tests save screenshots to `/tmp`:

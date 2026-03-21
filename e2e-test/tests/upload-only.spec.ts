@@ -2,7 +2,8 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 const uploadFile = path.resolve(
-  "/Users/amami/git/my2026personal/Vmemo/test/testdata_files/test-red-image.png",
+  import.meta.dirname,
+  "../fixtures/upload-files/test-red-image.png",
 );
 
 test("upload file with authenticated session", async ({ page }) => {
