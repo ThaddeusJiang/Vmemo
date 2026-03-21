@@ -22,28 +22,28 @@ Run all e2e tests:
 
 ```bash
 cd test/e2e
-bun run e2e
+bun run test
 ```
 
 Local default runs with visible browser UI (headed, recommended for human verification):
 
 ```bash
 cd test/e2e
-bun run e2e -- --workers=1 --reporter=line
+bun run test
 ```
 
 Run a single test:
 
 ```bash
 cd test/e2e
-bun run e2e -- tests/register-login.spec.ts --workers=1 --reporter=line
+bun run test -- tests/register-login.spec.ts
 ```
 
-Force headless mode:
+Run CI mode (headless):
 
 ```bash
 cd test/e2e
-E2E_HEADLESS=true bun run e2e -- --reporter=line
+bun run test:ci
 ```
 
 ## Test Files
@@ -81,4 +81,4 @@ CI e2e uses Docker image startup flow (production-like) instead of `mix phx.serv
 
 - build image from current branch
 - start stack with `_prod/docker-compose.yml`
-- run Playwright tests against `http://localhost:4000` in headless mode (`E2E_HEADLESS=true`)
+- run Playwright tests against `http://localhost:4000` with `bun run test:ci`

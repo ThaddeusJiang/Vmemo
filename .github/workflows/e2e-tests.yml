@@ -70,7 +70,7 @@ jobs:
       - name: Run e2e tests
         run: |
           cd test/e2e
-          E2E_HEADLESS=true bun run e2e -- --reporter=line
+          bun run test:ci
 
       - name: Upload screenshots
         if: always()
