@@ -128,6 +128,9 @@ mix setup
 - 编译项目 (`mix compile`)
 - 创建数据库 (`mix ash_postgres.create`)
 - 运行数据库迁移 (`mix ash_postgres.migrate`)
+- 重建 Typesense collections 并执行 `priv/ts/migrations/*.exs`
+
+外部服务相关环境变量（如 `TYPESENSE_URL`、`MOONDREAM_URL`）通过 `config/runtime.exs` 在启动时覆盖配置。本地开发时需要先用 shell、`mise` 或容器环境把这些变量加载进去。
 
 ### 4. 启动 Phoenix 服务器
 
@@ -196,7 +199,7 @@ MOONDREAM_URL = "http://your-moondream-host:2020/v1"  # 可选
 - Moondream Station 需要 **CUDA GPU** 才能运行，CPU-only 模式已不再支持
 - 需要在有 GPU 的机器上单独部署 Moondream Station 服务
 - 按照 [Moondream Station 官方文档](https://docs.moondream.ai/station/) 进行安装和配置
-- 部署完成后，设置 `MOONDREAM_URL` 环境变量或修改 `config/dev.exs` 中的配置
+- 部署完成后，设置 `MOONDREAM_URL` 环境变量，并确保它在应用启动前被 shell、`mise` 或容器环境加载
 
 **如果未部署 Moondream**：
 
@@ -418,8 +421,8 @@ OPENROUTER_API_KEY environment variable is required
 
 2. **检查配置**
 
-   - 确认 `config/dev.exs` 中的 `moondream_url` 配置正确
-   - 或确认 `MOONDREAM_URL` 环境变量设置正确
+   - 确认 `MOONDREAM_URL` 环境变量设置正确
+   - 确认应用启动前已通过 shell、`mise` 或容器环境加载该变量
 
 3. **验证 GPU 支持**
 

@@ -1,6 +1,8 @@
 defmodule Vmemo.Ts do
   alias SmallSdk.Typesense
 
+  @migrations_glob "priv/ts/migrations/*.exs"
+
   @doc """
   2024-12-20
   create photos collection
@@ -86,9 +88,16 @@ defmodule Vmemo.Ts do
     Typesense.drop_collection("notes")
     |> ensure_ok("drop notes collection")
 
-    change_1()
-    change_2()
-    change_3()
+    migrate()
+  end
+
+  def migrate do
+    @migrations_glob
+    |> Path.wildcard()
+    |> Enum.sort()
+    |> Enum.each(&Code.eval_file/1)
+
+    :ok
   end
 
   defp ensure_ok({:ok, _}, _action), do: :ok
