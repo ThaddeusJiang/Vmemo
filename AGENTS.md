@@ -216,6 +216,7 @@ password = "password123456"
 ## 项目规范
 
 - **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`mise.toml` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+- 每次从没有 diff 的状态开始写代码时，先创建一个新的 branch，不要直接在 `develop` 或 `main` 上开始工作。
 - 每次 commit 都应该只提交独立的功能，不要在一个 commit 中混合过多不同的修改。
 
 ## Tools
