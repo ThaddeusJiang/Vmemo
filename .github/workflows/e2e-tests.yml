@@ -112,20 +112,19 @@ jobs:
       - name: Install e2e dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Playwright browser
-        run: bunx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: bunx playwright install
 
       - name: Prepare e2e auth user
         run: |
           docker compose -f docker-compose.yml exec -T vmemo sh -lc 'unset PHX_SERVER && mix run priv/repo/seeds/test_users.exs'
 
-      - name: Run e2e tests
-        if: ${{ !inputs.update_snapshots }}
-        run: bun run e2e
-
       - name: Update e2e snapshots
         # if: ${{ inputs.update_snapshots }}
         run: bun run e2e:update-snapshots
+
+      - name: Run e2e tests
+        run: bun run e2e
 
       - name: Upload e2e artifacts
         if: always()
