@@ -121,11 +121,11 @@ jobs:
 
       - name: Run e2e tests
         if: ${{ !inputs.update_snapshots }}
-        run: bun run e2e:ci
+        run: bun run e2e
 
       - name: Update e2e snapshots
-        if: ${{ inputs.update_snapshots }}
-        run: bunx playwright test --update-snapshots --reporter=line
+        # if: ${{ inputs.update_snapshots }}
+        run: bun run e2e:update-snapshots
 
       - name: Upload e2e artifacts
         if: always()
