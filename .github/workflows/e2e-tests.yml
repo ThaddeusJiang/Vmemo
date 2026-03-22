@@ -112,8 +112,8 @@ jobs:
       - name: Install e2e dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: bunx playwright install
+      - name: Install Playwright browsers and host dependencies
+        run: bunx playwright install --with-deps
 
       - name: Prepare e2e auth user
         run: |
