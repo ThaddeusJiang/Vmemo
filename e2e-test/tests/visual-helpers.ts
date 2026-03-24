@@ -54,12 +54,24 @@ export async function createUploadedPhoto(page: Page, noteText = visualNote) {
   const uploadForm = await prepareUploadForm(page, noteText);
   const submitUpload = uploadForm.getByRole("button", { name: /Upload/i });
   await submitUpload.click();
+  await expect(page.getByRole("alert").filter({ hasText: "Photos uploaded successfully" })).toBeVisible({
+    timeout: 30_000,
+  });
 
-  await page.goto("/photos", { waitUntil: "domcontentloaded" });
   await expect
-    .poll(async () => page.locator('a[href^="/photos/"]', { has: page.locator(`img[alt="${noteText}"]`) }).count(), {
-      timeout: 20_000,
-    })
+    .poll(
+      async () => {
+        await page.goto("/photos", { waitUntil: "domcontentloaded" });
+        return page
+          .locator('a[href^="/photos/"]', {
+            has: page.locator(`img[alt="${noteText}"]`),
+          })
+          .count();
+      },
+      {
+        timeout: 30_000,
+      },
+    )
     .toBeGreaterThan(0);
 
   return noteText;
@@ -69,18 +81,22 @@ export async function uploadPhotoAndAssertSuccess(page: Page) {
   const uploadForm = await prepareUploadForm(page, uploadSmokeNote);
   const submitUpload = uploadForm.getByRole("button", { name: /Upload/i });
   await submitUpload.click();
+  await expect(page.getByRole("alert").filter({ hasText: "Photos uploaded successfully" })).toBeVisible({
+    timeout: 30_000,
+  });
 
-  await page.goto("/photos", { waitUntil: "domcontentloaded" });
   await expect
     .poll(
-      async () =>
-        page
+      async () => {
+        await page.goto("/photos", { waitUntil: "domcontentloaded" });
+        return page
           .locator('a[href^="/photos/"]', {
             has: page.locator(`img[alt="${uploadSmokeNote}"]`),
           })
-          .count(),
+          .count();
+      },
       {
-      timeout: 20_000,
+        timeout: 30_000,
       },
     )
     .toBeGreaterThan(0);
