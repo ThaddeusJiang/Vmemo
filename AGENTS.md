@@ -125,6 +125,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - 业务代码只调用 SDK 暴露的函数（如 `SmallSdk.Moondream.caption/2`），不关心 base_url、headers、stream 选项等细节
 - 当需要新的外部接口能力时，优先扩展 SDK，再在业务层使用，保持调用点简单、可替换
 - 外部服务地址、密钥等环境相关配置应优先通过 `config/runtime.exs` 覆盖，避免只在 `dev.exs` / `test.exs` 中写死导致环境变更不生效
+- 外部服务的**默认值**应写在代码配置层（优先 `config/runtime.exs`），**不要**写在 Docker Compose 中；Compose 只负责透传 env，不负责定义应用默认行为
 - **不要**在代码中编写 env 格式兼容或自动修正逻辑；只需要约定好 env 格式
 - 如果 env 不合法（缺失、格式错误、无效值），应**直接报错**，不要静默兜底或推断修复
 

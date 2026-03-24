@@ -59,6 +59,8 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  config :vmemo, moondream_url: System.get_env("MOONDREAM_URL") || "https://api.moondream.ai/v1"
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
