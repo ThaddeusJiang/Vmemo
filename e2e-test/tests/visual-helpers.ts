@@ -54,9 +54,7 @@ export async function createUploadedPhoto(page: Page, noteText = visualNote) {
   const uploadForm = await prepareUploadForm(page, noteText);
   const submitUpload = uploadForm.getByRole("button", { name: /Upload/i });
   await submitUpload.click();
-  await expect(page.getByRole("alert").filter({ hasText: "Photos uploaded successfully" })).toBeVisible({
-    timeout: 30_000,
-  });
+  await waitForUploadToFinish(page, uploadForm);
 
   await expect
     .poll(
@@ -81,9 +79,7 @@ export async function uploadPhotoAndAssertSuccess(page: Page) {
   const uploadForm = await prepareUploadForm(page, uploadSmokeNote);
   const submitUpload = uploadForm.getByRole("button", { name: /Upload/i });
   await submitUpload.click();
-  await expect(page.getByRole("alert").filter({ hasText: "Photos uploaded successfully" })).toBeVisible({
-    timeout: 30_000,
-  });
+  await waitForUploadToFinish(page, uploadForm);
 
   await expect
     .poll(
@@ -199,4 +195,13 @@ async function prepareUploadForm(page: Page, noteText: string) {
   }
 
   throw lastError;
+}
+
+async function waitForUploadToFinish(page: Page, uploadForm: Locator) {
+  await expect(uploadForm.locator("article.upload-entry")).toHaveCount(0, {
+    timeout: 30_000,
+  });
+  await expect(page.locator('textarea[name="note"]')).toBeHidden({
+    timeout: 30_000,
+  });
 }

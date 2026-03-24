@@ -14,9 +14,9 @@ The failing tests clicked `Upload` and then navigated to `/photos` immediately. 
 
 ## Change
 
-- Wait for the success toast `Photos uploaded successfully` before leaving the upload page
+- Wait for the upload entries to be consumed and for the form to return to its initial state before leaving the upload page
 - Extend the follow-up polling window from 20 seconds to 30 seconds to keep CI tolerant to slower containers
 
 ## Result
 
-The upload assertions now wait for the user-visible completion signal before verifying the photo list.
+The upload assertions now wait for the upload form to finish processing before verifying the photo list.

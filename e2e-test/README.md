@@ -160,7 +160,7 @@ The same workflow also supports manual `workflow_dispatch` with a single checkbo
 
 - `update_snapshots`
 
-Manual dispatch always runs the full e2e suite. The checkbox only controls whether the suite updates snapshots.
+When `update_snapshots` is enabled, the workflow runs Playwright in snapshot update mode and commits the generated baseline snapshots back to the selected branch automatically.
 
 CI runs the same specs against a prod-like target:
 
