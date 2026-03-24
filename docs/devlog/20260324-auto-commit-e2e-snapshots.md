@@ -16,7 +16,7 @@ That is not enough for long-term visual regression checks because baseline snaps
 
 - Grant `contents: write` permission to the workflow
 - Make `Update e2e snapshots` run only for manual dispatch with `update_snapshots=true`
-- Add a step that stages `*-snapshots`, commits them, and pushes them back to the selected branch
+- Use `EndBug/add-and-commit@v9` to stage `*-snapshots`, commit them, and push them back to the selected branch
 - Keep normal e2e runs unchanged for PR label triggers and manual dispatch without snapshot updates
 
 ## Result
