@@ -59,6 +59,8 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  config :vmemo, moondream_url: System.get_env("MOONDREAM_URL") || "https://api.moondream.ai/v1"
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -74,12 +76,12 @@ if config_env() == :prod do
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 
-  # Admin token for production
+  # Admin password for production
   admin_token =
-    System.get_env("ADMIN_TOKEN") ||
+    System.get_env("ADMIN_PASSWORD") ||
       raise """
-      environment variable ADMIN_TOKEN is missing.
-      Please set a secure admin token for production.
+      environment variable ADMIN_PASSWORD is missing.
+      Please set a secure admin password for production.
       """
 
   config :vmemo, admin_token: admin_token

@@ -99,7 +99,7 @@
 - `PHX_SERVER=true` - 启用 Phoenix 服务器
 - `DATABASE_URL` - 数据库连接字符串
 - `SECRET_KEY_BASE` - 密钥（至少 64 字符）
-- `ADMIN_TOKEN` - 管理员令牌
+- `ADMIN_PASSWORD` - 管理员密码
 - `SENTRY_DSN` - Sentry DSN（格式：`https://key@host/project_id`）
 - `RESEND_API_KEY` - Resend API 密钥
 - `PORT` - 端口号（默认 4000）
@@ -129,7 +129,7 @@ docker run --rm \
   -e PHX_SERVER=true \
   -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev" \
   -e SECRET_KEY_BASE="your_secret_key_base" \
-  -e ADMIN_TOKEN="test_admin_token" \
+  -e ADMIN_PASSWORD="test_admin_password" \
   -e SENTRY_DSN="https://test@test.ingest.sentry.io/123456" \
   -e RESEND_API_KEY="test_resend_key" \
   -e PHX_HOST="vmemo.orb.local" \

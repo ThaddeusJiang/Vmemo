@@ -1,0 +1,82 @@
+services:
+  vmemo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "14000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo_dev
+      TYPESENSE_URL: http://typesense:8108
+      TYPESENSE_API_KEY: xyz
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      MOONDREAM_API_KEY: ${MOONDREAM_API_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      ADMIN_PASSWORD: test
+      SENTRY_DSN: https://public@example.com/1
+      PHX_HOST: localhost
+      PHX_SERVER: true
+      ECTO_IPV6: false
+      POOL_SIZE: 10
+      SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
+
+  cloudflared:
+    profiles:
+      - preview
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - vmemo
+    env_file:
+      - .env
+    command: tunnel --no-autoupdate run --url http://vmemo:4000
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+
+  postgres:
+    image: postgres:17
+    restart: on-failure
+    hostname: postgres
+    ports:
+      - "54321:5432"
+    volumes:
+      - ./_data/pg-data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vmemo_dev"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vmemo_dev
+
+  typesense:
+    image: typesense/typesense:27.1
+    restart: on-failure
+    hostname: typesense
+    ports:
+      - "8766:8108"
+    volumes:
+      - ./_data/ts-data:/data
+    command: "--data-dir /data --api-key=xyz --enable-cors"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -lc 'exec 3<>/dev/tcp/127.0.0.1/8108 && printf \"GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s

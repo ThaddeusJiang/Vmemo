@@ -150,8 +150,8 @@ TYPESENSE_API_KEY=xyz
 # 数据库连接（必需）
 DATABASE_URL=postgresql://user:pass@host/database
 
-# 管理员 Token（必需）
-ADMIN_TOKEN=your_secure_admin_token
+# 管理员密码（必需）
+ADMIN_PASSWORD=your_secure_admin_password
 
 # Phoenix 密钥（必需）
 SECRET_KEY_BASE=your_secret_key_base
@@ -253,11 +253,11 @@ config :vmemo,
 # 构建镜像
 docker build -t vmemo:latest .
 
-# 运行容器（必需环境变量）
+# 运行容器（ENTRYPOINT 会先执行 ash.migrate、ts.migrate，然后 CMD 运行 phx.server）
 docker run -p 4000:4000 \
   -e SECRET_KEY_BASE=your_secret_key_base \
   -e DATABASE_URL=postgresql://user:pass@host/database \
-  -e ADMIN_TOKEN=your_secure_admin_token \
+  -e ADMIN_PASSWORD=your_secure_admin_password \
   -e SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id \
   -e RESEND_API_KEY=your_resend_api_key \
   -e TYPESENSE_URL=http://typesense-host:8108 \
@@ -268,9 +268,9 @@ docker run -p 4000:4000 \
 
 **Docker 最佳实践**：
 
-- ✅ **自动数据库迁移**: 容器启动时会自动等待数据库就绪，然后运行数据库迁移（包括 Oban 表创建），无需手动执行迁移命令
-- ✅ **健康检查**: 使用入口点脚本确保数据库连接正常后再启动应用
-- ✅ **优雅启动**: 如果数据库未就绪或迁移失败，容器会退出并显示错误信息，便于排查问题
+- ✅ **自动 Postgres 迁移**: 容器启动时先执行 `mix ash.migrate`，包括 Oban 表创建
+- ✅ **自动 Typesense 迁移**: 容器启动时继续执行 `mix ts.migrate`
+- ✅ **Mix 运行时**: runner 保留 `mix`，可直接在 prod hosting 中执行 Elixir 生态任务
 
 **注意**: 生产环境部署时，建议使用 `.env` 文件或 Docker secrets 来管理敏感信息，而不是直接在命令行中暴露。
 
@@ -290,7 +290,7 @@ docker run --rm \
   -e PHX_SERVER=true \
   -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev" \
   -e SECRET_KEY_BASE="$(mix phx.gen.secret)" \
-  -e ADMIN_TOKEN="test_admin_token" \
+  -e ADMIN_PASSWORD="test_admin_password" \
   -e SENTRY_DSN="https://test@test.ingest.sentry.io/123456" \
   -e RESEND_API_KEY="test_resend_key" \
   -e PHX_HOST="vmemo.orb.local" \
@@ -306,6 +306,12 @@ docker run --rm \
 - 测试环境变量使用占位符值，仅用于验证构建和运行
 - 访问地址：`http://vmemo.orb.local:4000`（需要配置 hosts 或使用 OrbStack）
 
+容器启动链路会依次执行：
+
+1. `mix ash.migrate`
+2. `mix ts.migrate`
+3. `mix phx.server`
+
 **验证步骤**：
 
 1. ✅ **Docker Build**: 镜像构建成功，无错误
@@ -316,7 +322,7 @@ docker run --rm \
 
 1. **必需环境变量**: 生产环境必须设置所有必需的环境变量（见上方配置部分）
    - `SECRET_KEY_BASE`: 用于加密 cookies、会话和 JWT token 签名，使用 `mix phx.gen.secret` 生成
-   - `ADMIN_TOKEN`: 管理员访问令牌，必须使用强随机值
+   - `ADMIN_PASSWORD`: 管理员访问密码，必须使用强随机值
    - `SENTRY_DSN`: 错误监控服务配置
    - `RESEND_API_KEY`: 邮件服务 API 密钥
    - `DATABASE_URL`: 数据库连接字符串

@@ -31,7 +31,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.create_collection(schema)
-    |> ensure_ok("create photos collection")
+    |> ensure_collection_created("photos")
   end
 
   @doc """
@@ -52,7 +52,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.create_collection(notes_schema)
-    |> ensure_ok("create notes collection")
+    |> ensure_collection_created("notes")
 
     photos_schema = %{
       "fields" => [
@@ -61,7 +61,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.update_collection("photos", photos_schema)
-    |> ensure_ok("update photos collection with note_ids")
+    |> ensure_collection_updated("update photos collection with note_ids")
   end
 
   @doc """
@@ -76,7 +76,7 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.update_collection("photos", schema)
-    |> ensure_ok("update photos collection with gen fields")
+    |> ensure_collection_updated("update photos collection with gen fields")
   end
 
   def reset do
@@ -95,6 +95,24 @@ defmodule Vmemo.Ts do
 
     :ok
   end
+
+  defp ensure_collection_created({:ok, _}, _collection), do: :ok
+  defp ensure_collection_created({:error, "Conflict"}, _collection), do: :ok
+
+  defp ensure_collection_created(result, collection),
+    do: ensure_ok(result, "create #{collection} collection")
+
+  defp ensure_collection_updated({:ok, _}, _action), do: :ok
+  defp ensure_collection_updated({:error, "Not Found"}, _action), do: :ok
+  defp ensure_collection_updated({:error, reason}, _action) when is_binary(reason) do
+    if String.contains?(reason, "is already part of the schema") do
+      :ok
+    else
+      {:error, reason}
+    end
+  end
+
+  defp ensure_collection_updated(result, action), do: ensure_ok(result, action)
 
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
