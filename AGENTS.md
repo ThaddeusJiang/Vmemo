@@ -206,8 +206,9 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - **优先**使用**真实数据**和**UI**进行测试
 - **总是**在 `Upload` 测试中使用 `test/testdata_files/**` 中的真实文件
 - 测试 UI 时**总是**保存截图记录测试过程（例如 Playwright 截图）
-- UI 测试**优先**使用 visual testing 方法
-- e2e / UI visual testing **总是**优先使用 Playwright 的 screenshot snapshot 断言（例如 `expect(page).toHaveScreenshot()`、`expect(locator).toHaveScreenshot()`），而不是只做肉眼查看或仅保存临时截图
+- UI 测试**优先**使用 visual testing 方法，而不是 snapshots testing；snapshot 断言只是 visual testing 的实现手段之一
+- 本地**不需要**默认执行 visual testing；需要共享基准或验证视觉回归时，再在 CI 的 prod-like 环境中执行
+- 当执行 e2e / UI visual testing 时，**优先**使用 Playwright 的 screenshot snapshot 断言（例如 `expect(page).toHaveScreenshot()`、`expect(locator).toHaveScreenshot()`），而不是只做肉眼查看或仅保存临时截图
 - Playwright visual testing 的 baseline snapshots **必须**提交到仓库，保证本地与 CI 都能做稳定对比；临时调试截图仍可额外保存到 `/tmp` 或 `test-results/`
 - visual testing 的团队协作基准 **总是**以 CI 中的 prod-like 运行结果为准；本地 dev server 运行只用于个人调试，不作为团队共享的通过/失败判定标准
 - 这里的“快照”指 **Playwright visual snapshots**；它不同于 DOM snapshot。项目仍然**优先**保留真实截图和视觉对比，不依赖 DOM 结构快照
@@ -219,6 +220,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - CI e2e **总是**优先运行 Docker image（生产运行方式），不要使用 `mix phx.server` 作为 CI e2e 的应用启动方式
 - e2e testing 使用的 Docker Compose 配置**必须**是已提交、可独立运行的测试入口，**绝不**依赖本地临时目录（如 `_prod/`）
 - GitHub Actions 中的 e2e workflow **总是**优先使用 `services` 启动 `postgres`、`typesense` 等依赖服务；应用容器可以单独使用 `docker run` 启动，避免在 CI 中再用 Docker Compose 托管整套栈
+- local 执行 e2e **应该按需执行**相关 spec 或页面，不需要默认执行全部 e2e testing
 - e2e testing 默认使用 UI 模式（headed）便于人工确认，CI 环境使用 headless 模式
 - e2e testing 的鉴权准备**总是**放在 Playwright `globalSetup` 或等效统一入口中，通过 storage state 复用登录态；**不要**在各个 `spec.ts` 中重复编写 register/login 逻辑
 - e2e testing 的 seed / auth preparation **必须**在当前被测试的目标环境中执行：
@@ -248,6 +250,6 @@ password = "password123456"
 - `mise` 用于版本管理（Elixir, Erlang）。项目使用 `mise.toml` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
-- `Playwright` 与网页交互；做 UI/e2e visual testing 时优先使用**截图型快照**（visual snapshots），不要把它和 DOM snapshot 混淆
+- `Playwright` 与网页交互；做 UI/e2e visual testing 时优先采用 visual testing，必要时使用 **visual snapshots** 作为断言手段，不要把它和 DOM snapshot 混淆
 - **绝不**使用 `python` 运行脚本
 - 可以使用 `curl` `jq` `gh` 等

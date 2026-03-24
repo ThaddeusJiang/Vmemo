@@ -59,7 +59,7 @@ jobs:
       PHX_SERVER: "true"
       ECTO_IPV6: "false"
       POOL_SIZE: "10"
-      ADMIN_TOKEN: test-admin-token
+      ADMIN_PASSWORD: test-admin-password
       SENTRY_DSN: https://public@example.com/1
       SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
       PHX_HOST: localhost

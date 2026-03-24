@@ -18,47 +18,47 @@ spec:
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
-            image: thaddeusjiang/vmemo:latest
+          image: thaddeusjiang/vmemo:latest
         ports:
-            - id: web
-              port: 4000
-              type: HTTP
+          - id: web
+            port: 4000
+            type: HTTP
         volumes:
-            - id: data
-              dir: /app/storage
+          - id: data
+            dir: /app/storage
         instructions:
-            - type: TEXT
-              title: URL
-              content: ${ZEABUR_WEB_URL}
-              category: Hostname & Port
+          - type: TEXT
+            title: URL
+            content: ${ZEABUR_WEB_URL}
+            category: Hostname & Port
         env:
-            DATABASE_URL:
-              default: ${POSTGRES_CONNECTION_STRING}
-              expose: false
-            TYPESENSE_URL:
-                default: ${TYPESENSE_URL}
-                expose: false
-            TYPESENSE_API_KEY:
-                default: ${TYPESENSE_API_KEY}
-                expose: false
-            PHX_HOST:
-                default: ${ZEABUR_WEB_DOMAIN}
-                expose: false
-            PHX_SERVER:
-                default: "true"
-                expose: false
-            SECRET_KEY_BASE:
-              expose: false
-            ADMIN_TOKEN:
-                expose: false
-            SENTRY_DSN:
-                expose: false
-            RESEND_API_KEY:
-                expose: false
-            OPENROUTER_API_KEY:
-                expose: false
-            MOONDREAM_URL:
-                expose: false
+          DATABASE_URL:
+            default: ${POSTGRES_CONNECTION_STRING}
+            expose: false
+          TYPESENSE_URL:
+            default: ${TYPESENSE_URL}
+            expose: false
+          TYPESENSE_API_KEY:
+            default: ${TYPESENSE_API_KEY}
+            expose: false
+          PHX_HOST:
+            default: ${ZEABUR_WEB_DOMAIN}
+            expose: false
+          PHX_SERVER:
+            default: "true"
+            expose: false
+          SECRET_KEY_BASE:
+            expose: false
+          ADMIN_PASSWORD:
+            expose: false
+          SENTRY_DSN:
+            expose: false
+          RESEND_API_KEY:
+            expose: false
+          OPENROUTER_API_KEY:
+            expose: false
+          MOONDREAM_URL:
+            expose: false
         configs: []
 
     - name: postgresql

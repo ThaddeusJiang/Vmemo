@@ -1,0 +1,63 @@
+services:
+  vmemo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "14000:4000"
+    depends_on:
+      - postgres
+      - typesense
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo_dev
+      TYPESENSE_URL: http://typesense:8108
+      TYPESENSE_API_KEY: xyz
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      MOONDREAM_URL: ${MOONDREAM_URL}
+      MOONDREAM_API_KEY: ${MOONDREAM_API_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      ADMIN_PASSWORD: test
+      SENTRY_DSN: https://public@example.com/1
+      PHX_HOST: preview.vmemo.app
+      PHX_SERVER: true
+      ECTO_IPV6: false
+      POOL_SIZE: 10
+      SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - vmemo
+    env_file:
+      - .env
+    command: tunnel --no-autoupdate run --url http://vmemo:4000
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN is required}
+
+  postgres:
+    image: postgres:17
+    restart: on-failure
+    hostname: postgres
+    ports:
+      - "54321:5432"
+    volumes:
+      - ./_data/pg-data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vmemo_dev
+
+  typesense:
+    image: typesense/typesense:27.1
+    restart: on-failure
+    hostname: typesense
+    ports:
+      - "8766:8108"
+    volumes:
+      - ./_data/ts-data:/data
+    command: "--data-dir /data --api-key=xyz --enable-cors"
