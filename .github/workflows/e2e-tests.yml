@@ -67,10 +67,10 @@ jobs:
       DNS_CLUSTER_QUERY: ""
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2.2.0
+        uses: oven-sh/setup-bun@v2
 
       - name: Build app image for e2e
         working-directory: .
@@ -123,12 +123,12 @@ jobs:
           docker compose -f docker-compose.yml exec -T vmemo sh -lc 'unset PHX_SERVER && mix run priv/repo/seeds/test_users.exs'
 
       - name: Update e2e snapshots
-        # if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
         run: bun run e2e:update-snapshots
 
       - name: Commit updated snapshots
-        # if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
-        uses: EndBug/add-and-commit@v10.0.0
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
+        uses: EndBug/add-and-commit@v9
         with:
           add: "e2e-test/tests/**-snapshots"
           default_author: github_actions
@@ -136,12 +136,12 @@ jobs:
           push: true
 
       - name: Run e2e tests
-        # if: ${{ github.event_name != 'workflow_dispatch' || !inputs.update_snapshots }}
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.update_snapshots }}
         run: bun run e2e
 
       - name: Upload e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-artifacts
           path: |
