@@ -52,8 +52,7 @@ jobs:
       DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo_dev
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
-      OPENROUTER_API_KEY: test-openrouter-key
-      MOONDREAM_URL: https://api.moondream.ai/v1
+      OPENROUTER_API_KEY: test-openrouter-key      
       MOONDREAM_API_KEY: test-moondream-key
       RESEND_API_KEY: test-resend-key
       PHX_SERVER: "true"
