@@ -205,6 +205,30 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 
 - **优先**使用**真实数据**和**UI**进行测试
 - **总是**在 `Upload` 测试中使用 `test/testdata_files/**` 中的真实文件
+- 测试 UI 时**总是**保存截图记录测试过程（例如 Playwright 截图）
+- UI 测试**优先**使用 visual testing 方法
+- e2e / UI visual testing **总是**优先使用 Playwright 的 screenshot snapshot 断言（例如 `expect(page).toHaveScreenshot()`、`expect(locator).toHaveScreenshot()`），而不是只做肉眼查看或仅保存临时截图
+- Playwright visual testing 的 baseline snapshots **必须**提交到仓库，保证本地与 CI 都能做稳定对比；临时调试截图仍可额外保存到 `/tmp` 或 `test-results/`
+- visual testing 的团队协作基准 **总是**以 CI 中的 prod-like 运行结果为准；本地 dev server 运行只用于个人调试，不作为团队共享的通过/失败判定标准
+- 这里的“快照”指 **Playwright visual snapshots**；它不同于 DOM snapshot。项目仍然**优先**保留真实截图和视觉对比，不依赖 DOM 结构快照
+- visual testing **总是**至少覆盖两种 viewport：`iPhone SE` 和 `MacBook 13` size；同一套页面视觉 spec 应在这两个尺寸下运行
+- Playwright page-level e2e testing **总是**采用一个页面一个 `*.spec.ts` 文件，不要把多个页面定义在同一个路由数组里批量生成
+- visual testing **不要**单独维护独立测试体系；应直接集成在对应页面的 e2e `*.spec.ts` 中，在页面渲染与交互流程里顺便执行 screenshot snapshot 断言
+- visual testing CI **必须**支持两种触发方式：PR label 触发与手动 `workflow_dispatch`；手动执行只保留一个 checkbox 输入 `update_snapshots` 用于控制是否更新 snapshots
+- e2e testing **必须**保持 dev / prod 独立：同一套 e2e specs 应同时支持对本地 dev server 和 prod-like Docker image 运行，不能把测试逻辑耦合到单一运行模式
+- CI e2e **总是**优先运行 Docker image（生产运行方式），不要使用 `mix phx.server` 作为 CI e2e 的应用启动方式
+- e2e testing 使用的 Docker Compose 配置**必须**是已提交、可独立运行的测试入口，**绝不**依赖本地临时目录（如 `_prod/`）
+- GitHub Actions 中的 e2e workflow **总是**优先使用 `services` 启动 `postgres`、`typesense` 等依赖服务；应用容器可以单独使用 `docker run` 启动，避免在 CI 中再用 Docker Compose 托管整套栈
+- e2e testing 默认使用 UI 模式（headed）便于人工确认，CI 环境使用 headless 模式
+- e2e testing 的鉴权准备**总是**放在 Playwright `globalSetup` 或等效统一入口中，通过 storage state 复用登录态；**不要**在各个 `spec.ts` 中重复编写 register/login 逻辑
+- e2e testing 的 seed / auth preparation **必须**在当前被测试的目标环境中执行：
+  - 测试 dev server 时，在 dev 环境准备数据
+  - 测试 prod-like container 时，在对应容器环境准备数据
+- 不常用且仅 CI 需要的 e2e 准备步骤（例如 auth seed）**不要**默认耦合到本地 npm/bun scripts；应在 CI workflow 中显式执行
+- e2e testing guidelines（用户视角）：
+  - **总是**优先点击用户可见的按钮文本（例如 `Login` 按钮），而不是依赖 `button[type='submit']` 这类实现细节选择器
+  - **总是**尽量按真实用户操作路径编写测试步骤（从用户能看到和能点击的元素出发）
+  - 选择器优先级：可见文本/ARIA role > label > test id > CSS 实现细节
 
 你可以在本地使用测试账号
 
@@ -224,6 +248,6 @@ password = "password123456"
 - `mise` 用于版本管理（Elixir, Erlang）。项目使用 `mise.toml` 文件指定版本。**总是**使用 mise 管理 Elixir/Erlang 版本，不要使用 Homebrew 或其他包管理器
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
-- `Playwright` 与网页交互，我更喜欢使用**截图**而不是快照
+- `Playwright` 与网页交互；做 UI/e2e visual testing 时优先使用**截图型快照**（visual snapshots），不要把它和 DOM snapshot 混淆
 - **绝不**使用 `python` 运行脚本
 - 可以使用 `curl` `jq` `gh` 等

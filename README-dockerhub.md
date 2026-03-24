@@ -12,6 +12,13 @@ Our brains are naturally inclined to remember visual content better than text. V
 
 ## Supported Platforms
 
+These images are published as Linux multi-arch images and run on:
+
+- Linux hosts
+- macOS via Docker Desktop
+
+Available image platforms:
+
 - linux/amd64
 - linux/arm64/v8
 
