@@ -15,16 +15,24 @@ services:
     command:
       - sh
       - -lc
-      - psql -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql
+      - |
+        for i in $(seq 1 120); do
+          if psql -tAc "SELECT to_regclass('public.ash_users')" 2>/dev/null | grep -q ash_users; then
+            break
+          fi
+          sleep 1
+        done
+        psql -tAc "SELECT to_regclass('public.ash_users')" 2>/dev/null | grep -q ash_users || {
+          echo "ash_users table was not ready after waiting"
+          exit 3
+        }
+        psql -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql
 
   vmemo:
     platform: ${VMEMO_PLATFORM:-linux/amd64}
     image: ${VMEMO_IMAGE:-thaddeusjiang/vmemo:develop}
     command: ["start"]
     restart: on-failure
-    depends_on:
-      e2e-seed:
-        condition: service_completed_successfully
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
