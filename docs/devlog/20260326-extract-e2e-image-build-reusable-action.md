@@ -57,3 +57,6 @@
   - `DATABASE_URL`
 - Removed invalid `retention-days` input from `actions/cache@v4` in reusable action
   (keep retention on artifact upload only).
+- Added E2E runtime caches in workflow:
+  - `e2e-test/node_modules` cache keyed by `e2e-test/bun.lock`
+  - `~/.cache/ms-playwright` cache keyed by `e2e-test/bun.lock`
