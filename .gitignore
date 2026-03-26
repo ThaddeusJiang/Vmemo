@@ -62,10 +62,10 @@ debug.log
 .alma-snapshots
 
 # mise local configuration (contains sensitive env vars)
-docker-compose.yml
 *.local.toml
 *.local.yml
 .env
 node_modules
 test-results
 *-darwin.png
+devlog/

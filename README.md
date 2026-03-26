@@ -1,95 +1,193 @@
 # Vmemo
 
-Vmemo 是一个视觉记忆应用，帮助用户通过照片捕捉和组织生活瞬间。支持 AI 驱动的图片搜索、自动描述生成和 Public API。
+Vmemo is a visual memory app for capturing life with photos, searching with AI, and reviewing moments quickly without writing long text notes.
 
-## 功能特性
+## Why Vmemo
 
-- 📸 **照片上传和管理**: 支持多图上传、拖拽上传、剪贴板粘贴
-- 🔍 **智能搜索**: 文本搜索和图片相似度搜索（基于 CLIP 模型）
-- 🤖 **AI 增强**: 自动生成图片描述和 OCR 文本提取
-- 🔐 **API Token 管理**: 完整的 API Token CRUD 功能，支持过期时间设置
-- 🌐 **Public API**: RESTful API 支持外部应用集成
-- 📱 **响应式设计**: 支持桌面和移动端
+Text-only journaling is easy to forget and hard to revisit. Vmemo focuses on visual memory:
 
-## 快速开始
+- Upload and organize photos quickly.
+- Search by text or image similarity.
+- Generate captions and OCR text with AI.
+- Access your data from the web app and Public API.
 
-详细的本地开发环境设置指南，请参阅 [本地开发文档](docs/development/readme.md)。
+## Features
 
-快速开始步骤：
+- Photo upload and management (multi-upload, drag-and-drop, paste).
+- AI-powered search (text and image similarity).
+- AI caption and OCR extraction.
+- API token management.
+- Public REST API for external integrations.
+- Responsive web UI for desktop and mobile.
 
-1. **启动依赖服务**: `docker compose up -d`
-2. **安装依赖并初始化数据库**: `mix setup`
-3. **启动 Phoenix 服务器**: `iex -S mix phx.server`
+## Docker Image Platforms
 
-现在可以访问 [`localhost:4000`](http://localhost:4000)
+Vmemo provides Linux multi-arch Docker images:
+
+- `linux/amd64`
+- `linux/arm64/v8`
+
+## Self-hosting
+
+You can also run Vmemo on your local machine or self-host it.
+We also publish official Docker images for Vmemo on [Docker hub](https://hub.docker.com/r/thaddeusjiang/vmemo)
+
+### 1. Create `.env`
+
+```bash
+MOONDREAM_API_KEY=""
+OPENROUTER_API_KEY=""
+```
+
+Generate a secret with:
+
+```bash
+openssl rand -hex 64
+```
+
+### 2. Create `docker-compose.yml`
+
+```yaml
+services:
+  vmemo:
+    image: thaddeusjiang/vmemo:latest
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    restart: on-failure
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./vmemo_data/pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vmemo"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vmemo
+
+  typesense:
+    image: typesense/typesense:27.1
+    restart: on-failure
+    hostname: typesense
+    ports:
+      - "8108:8108"
+    volumes:
+      - ./vmemo_data/ts-data:/data
+    command: "--data-dir /data --api-key=xyz --enable-cors"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -lc 'exec 3<>/dev/tcp/127.0.0.1/8108 && printf \"GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+      
+  # cloudflared:
+  #   profiles:
+  #     - preview
+  #   image: cloudflare/cloudflared:latest
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - vmemo
+  #   env_file:
+  #     - .env
+  #   command: tunnel --no-autoupdate run --url http://vmemo:4000
+  #   environment:
+  #     TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+
+```
+
+### 3. Start Services
+
+```bash
+docker compose up -d
+```
+
+Open `http://localhost:4000`.
+
+### Optional: Define a Public Domain via Cloudflare Tunnel
+
+To expose Vmemo with your own domain, enable the optional `cloudflared` service from `docker-compose.yml`.
+
+1. Add `TUNNEL_TOKEN` to `.env`.
+2. Set `PHX_HOST` in `.env` to your public domain.
+
+Start with profile enabled:
+
+```bash
+docker compose --profile preview up -d
+```
 
 ## Public API
 
-Vmemo 提供 RESTful API 供外部应用集成。
+Vmemo includes a token-based REST API for photo operations and integrations.
 
-### 认证
+### Authentication
 
-所有 API 请求需要在 Header 中包含 API Token：
+Include an API token in the `Authorization` header:
 
 ```bash
 Authorization: Bearer vmemo_your_token_here
 ```
 
-### 创建 API Token
+Create a token in the web UI:
 
-1. 登录 Vmemo
-2. 访问 `/tokens` 页面
-3. 点击"创建新 Token"
-4. 设置名称、描述和过期时间
-5. **重要**: 创建后立即复制保存 Token，之后无法再次查看完整内容
+1. Sign in to Vmemo.
+2. Open `/tokens`.
+3. Create a token.
+4. Copy the token immediately.
 
-### API 端点
+### Base URL
 
-#### 上传照片
+```text
+http://localhost:4000/api/v1
+```
+
+### Endpoints
+
+Upload a photo:
 
 ```bash
-POST /api/v1/photos
-Content-Type: multipart/form-data
-
 curl -X POST http://localhost:4000/api/v1/photos \
   -H "Authorization: Bearer vmemo_your_token" \
   -F "file=@/path/to/image.jpg" \
-  -F "note=My photo description"
+  -F "note=My photo note"
 ```
 
-**响应示例**:
-
-```json
-{
-  "status": "success",
-  "data": {
-    "id": "photo-uuid",
-    "url": "/storage/v1/<user_id>/photos/filename.jpg",
-    "note": "My photo description",
-    "inserted_at": "2025-01-26T10:30:00Z"
-  }
-}
-```
-
-#### 获取照片信息
+Get a photo:
 
 ```bash
-GET /api/v1/photos/:id
-
 curl -X GET http://localhost:4000/api/v1/photos/photo-uuid \
   -H "Authorization: Bearer vmemo_your_token"
 ```
 
-#### 删除照片
+Delete a photo:
 
 ```bash
-DELETE /api/v1/photos/:id
-
 curl -X DELETE http://localhost:4000/api/v1/photos/photo-uuid \
   -H "Authorization: Bearer vmemo_your_token"
 ```
 
-### 错误响应
+Example error response:
 
 ```json
 {
@@ -101,240 +199,46 @@ curl -X DELETE http://localhost:4000/api/v1/photos/photo-uuid \
 }
 ```
 
-**常见错误码**:
-
-- `401`: 未认证或 Token 无效/过期
-- `404`: 资源不存在
-- `400`: 请求参数错误
-- `500`: 服务器内部错误
-
-### 文件限制
-
-- **支持格式**: PNG, JPG, JPEG, GIF, WEBP
-- **文件大小**: 建议不超过 10MB（可配置）
-
-## 配置
-
-### 环境变量
-
-#### 开发环境 (dev)
-
-开发环境使用 `config/dev.exs` 中的默认配置，大部分配置都有默认值。
-
-**如果使用聊天功能**，需要在项目根目录创建 `mise.local.toml` 文件设置环境变量：
-
-```toml
-[env]
-OPENROUTER_API_KEY = "your-openrouter-api-key"
-```
-
-详细的开发环境配置说明，请参阅 [本地开发文档](docs/development/readme.md)。
-
-#### 测试环境 (test)
-
-测试环境使用 `config/test.exs` 中的默认配置，大部分环境变量都有默认值：
-
-```bash
-# 可选：Typesense 配置（默认: http://localhost:8766 / xyz）
-TYPESENSE_URL=http://localhost:8766
-TYPESENSE_API_KEY=xyz
-```
-
-#### 生产环境 (prod)
-
-生产环境**必须**设置以下环境变量（通过 `config/runtime.exs` 加载）：
-
-**必需环境变量**：
-
-```bash
-# 数据库连接（必需）
-DATABASE_URL=postgresql://user:pass@host/database
-
-# 管理员密码（必需）
-ADMIN_PASSWORD=your_secure_admin_password
-
-# Phoenix 密钥（必需）
-SECRET_KEY_BASE=your_secret_key_base
-# 生成方式: mix phx.gen.secret
-
-# Sentry 错误监控（必需）
-SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
-
-# 邮件服务 Resend（必需）
-RESEND_API_KEY=your_resend_api_key
-
-# 注意: JWT_SIGNING_SECRET 已合并到 SECRET_KEY_BASE
-# JWT token 签名现在使用 SECRET_KEY_BASE，无需单独配置
-```
-
-**可选环境变量**：
-
-```bash
-# PostgreSQL 连接池大小（默认: 10）
-POOL_SIZE=10
-
-# 启用 IPv6（默认: false）
-ECTO_IPV6=false
-
-# Typesense 搜索引擎
-TYPESENSE_URL=http://typesense-host:8108
-TYPESENSE_API_KEY=your_typesense_api_key
-
-# Moondream AI 服务
-MOONDREAM_URL=http://moondream-host:2020/v1
-
-# OpenRouter API Key（如果使用聊天功能）
-OPENROUTER_API_KEY=your_openrouter_api_key
-
-# Phoenix 主机名（默认: vmemo.app）
-PHX_HOST=vmemo.app
-
-# 服务端口（默认: 4000）
-PORT=4000
-
-# DNS 集群查询（用于集群部署）
-DNS_CLUSTER_QUERY=
-
-# 启用 Phoenix 服务器（prod）
-PHX_SERVER=true
-```
-
-### 可选配置
-
-```elixir
-# config/runtime.exs
-config :vmemo,
-  max_file_size: 10 * 1024 * 1024,  # 10MB
-  allowed_file_types: ~w(.png .jpg .jpeg .gif .webp)
-```
-
-## 开发
-
-详细的开发工作流指南，请参阅 [本地开发文档](docs/development/readme.md)。
-
-包括：
-
-- 运行测试
-- 代码格式化
-- 数据库管理
-- IEx 交互式 Shell
-- 常见问题排查
-
-## 技术栈
-
-- **框架**: Elixir Phoenix + LiveView
-- **语言版本**: Elixir 1.19.5, Erlang/OTP 28.1.1
-- **版本管理**: mise (推荐)
-- **数据库**: PostgreSQL
-- **搜索引擎**: Typesense (CLIP 模型)
-- **认证**: Ash Authentication
-- **任务队列**: Oban
-- **邮件**: Swoosh + Resend
-- **前端**: Tailwind CSS + DaisyUI
-
-## 文档
-
-- [Public API 详细文档](docs/public-api.md)
-- [API Token 管理指南](docs/api-tokens.md)
-- [Release Notes](docs/RELEASE-NOTES.md)
-- [Migration Guide](docs/MIGRATION-GUIDE.md)
-- [Test Plan](docs/TEST-PLAN.md)
-- [Code Review](docs/CODE-REVIEW.md)
-
-## 部署
-
-### Zeabur 一键部署
-
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/H3EL85)
-
-### Docker 部署
-
-```bash
-# 构建镜像
-docker build -t vmemo:latest .
-
-# 运行容器（ENTRYPOINT 会先执行 ash.migrate、ts.migrate，然后 CMD 运行 phx.server）
-docker run -p 4000:4000 \
-  -e SECRET_KEY_BASE=your_secret_key_base \
-  -e DATABASE_URL=postgresql://user:pass@host/database \
-  -e ADMIN_PASSWORD=your_secure_admin_password \
-  -e SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id \
-  -e RESEND_API_KEY=your_resend_api_key \
-  -e TYPESENSE_URL=http://typesense-host:8108 \
-  -e TYPESENSE_API_KEY=your_typesense_api_key \
-  -e PHX_SERVER=true \
-  vmemo:latest
-```
-
-**Docker 最佳实践**：
-
-- ✅ **自动 Postgres 迁移**: 容器启动时先执行 `mix ash.migrate`，包括 Oban 表创建
-- ✅ **自动 Typesense 迁移**: 容器启动时继续执行 `mix ts.migrate`
-- ✅ **Mix 运行时**: runner 保留 `mix`，可直接在 prod hosting 中执行 Elixir 生态任务
-
-**注意**: 生产环境部署时，建议使用 `.env` 文件或 Docker secrets 来管理敏感信息，而不是直接在命令行中暴露。
-
-### 本地预览（Local Preview）
-
-用于验证 Docker 构建和运行的本地测试环境：
-
-```bash
-# 1. 构建镜像
-docker build -t vmemo:test .
-
-# 2. 启动依赖服务（如果尚未启动）
-docker compose up -d
-
-# 3. 运行容器进行本地预览
-docker run --rm \
-  -e PHX_SERVER=true \
-  -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev" \
-  -e SECRET_KEY_BASE="$(mix phx.gen.secret)" \
-  -e ADMIN_PASSWORD="test_admin_password" \
-  -e SENTRY_DSN="https://test@test.ingest.sentry.io/123456" \
-  -e RESEND_API_KEY="test_resend_key" \
-  -e PHX_HOST="vmemo.orb.local" \
-  -e PORT=4000 \
-  -p 4000:4000 \
-  vmemo:test
-```
-
-**本地预览说明**：
-
-- 使用 `vmemo.orb.local` 作为 host（适用于 OrbStack 本地域名系统）
-- 数据库连接使用 `host.docker.internal:54321` 访问本地 Docker Compose 服务
-- 测试环境变量使用占位符值，仅用于验证构建和运行
-- 访问地址：`http://vmemo.orb.local:4000`（需要配置 hosts 或使用 OrbStack）
-
-容器启动链路会依次执行：
-
-1. `mix ash.migrate`
-2. `mix ts.migrate`
-3. `mix phx.server`
-
-**验证步骤**：
-
-1. ✅ **Docker Build**: 镜像构建成功，无错误
-2. ✅ **Docker Run**: 容器启动成功，应用正常运行
-3. ✅ **功能验证**: Phoenix LiveView 应用在容器中正常工作
-
-## 安全注意事项
-
-1. **必需环境变量**: 生产环境必须设置所有必需的环境变量（见上方配置部分）
-   - `SECRET_KEY_BASE`: 用于加密 cookies、会话和 JWT token 签名，使用 `mix phx.gen.secret` 生成
-   - `ADMIN_PASSWORD`: 管理员访问密码，必须使用强随机值
-   - `SENTRY_DSN`: 错误监控服务配置
-   - `RESEND_API_KEY`: 邮件服务 API 密钥
-   - `DATABASE_URL`: 数据库连接字符串
-2. **API Token**: 创建后立即保存，无法再次查看
-3. **Token 过期**: 建议设置合理的过期时间
-4. **速率限制**: 生产环境建议启用 API 速率限制
-5. **HTTPS**: 生产环境必须使用 HTTPS
-6. **环境变量管理**: 不要将敏感信息提交到版本控制系统，使用环境变量或密钥管理服务
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
+## Required Environment Variables (Production)
+
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection URL |
+| `ADMIN_PASSWORD` | Admin password for protected actions |
+| `SECRET_KEY_BASE` | Phoenix secret key base |
+| `SENTRY_DSN` | Sentry DSN |
+| `SENTRY_ENV` | Sentry environment (`production`, `staging`, etc.) |
+| `RESEND_API_KEY` | Resend API key for email |
+
+## Optional Environment Variables
+
+| Variable | Description |
+| --- | --- |
+| `TYPESENSE_URL` | Typesense endpoint |
+| `TYPESENSE_API_KEY` | Typesense API key |
+| `MOONDREAM_URL` | Moondream API endpoint |
+| `MOONDREAM_API_KEY` | Moondream API key |
+| `OPENROUTER_API_KEY` | OpenRouter API key for chat features |
+| `PHX_HOST` | Public host name (`vmemo.app` default) |
+| `PORT` | App port (`4000` default) |
+| `POOL_SIZE` | DB pool size (`10` default) |
+| `ECTO_IPV6` | Enable IPv6 when set to `true` or `1` |
+| `PHX_SERVER` | Enable Phoenix server in runtime |
+| `TUNNEL_TOKEN` | Cloudflare Tunnel token when using `cloudflared` profile |
+
+## Tech Stack
+
+- Elixir + Phoenix LiveView
+- Ash Framework + Oban
+- PostgreSQL + Typesense
+- Tailwind CSS + daisyUI
+
+## Security Notes
+
+- Use strong random values for `SECRET_KEY_BASE` and `ADMIN_PASSWORD`.
+- Keep API tokens private and rotate periodically.
+- Use HTTPS in production.
+- Store secrets in environment variables or a secrets manager.
 
 ## License
 

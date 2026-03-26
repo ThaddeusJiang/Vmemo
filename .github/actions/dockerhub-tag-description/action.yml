@@ -1,0 +1,73 @@
+name: Docker Hub Tag Description
+description: Update Docker Hub full_description for a specific tag
+
+inputs:
+  username:
+    description: Docker Hub username
+    required: true
+  password:
+    description: Docker Hub password or personal access token
+    required: true
+  repository:
+    description: Docker Hub repository in format namespace/name
+    required: true
+  tag:
+    description: Docker tag name
+    required: true
+  commit-sha:
+    description: Source commit SHA
+    required: true
+  description-template:
+    description: Optional markdown template for full_description
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Update Docker Hub tag full_description
+      shell: bash
+      env:
+        INPUT_USERNAME: ${{ inputs.username }}
+        INPUT_PASSWORD: ${{ inputs.password }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_COMMIT_SHA: ${{ inputs.commit-sha }}
+        INPUT_DESCRIPTION_TEMPLATE: ${{ inputs.description-template }}
+      run: |
+        auth_payload=$(jq -n \
+          --arg username "${INPUT_USERNAME}" \
+          --arg password "${INPUT_PASSWORD}" \
+          '{username: $username, password: $password}')
+
+        auth_response=$(curl -fsSL \
+          -X POST \
+          -H "Content-Type: application/json" \
+          -d "${auth_payload}" \
+          "https://hub.docker.com/v2/users/login/")
+
+        token=$(echo "${auth_response}" | jq -r '.token')
+        if [[ -z "${token}" || "${token}" == "null" ]]; then
+          echo "Failed to get Docker Hub token"
+          exit 1
+        fi
+
+        if [[ -n "${INPUT_DESCRIPTION_TEMPLATE}" ]]; then
+          full_description="${INPUT_DESCRIPTION_TEMPLATE}"
+        else
+          full_description=$(printf '%s\n' \
+            "# Vmemo ${INPUT_TAG}" \
+            "" \
+            "- Image: \`docker pull ${INPUT_REPOSITORY}:${INPUT_TAG}\`" \
+            "- Commit: \`${INPUT_COMMIT_SHA}\`" \
+            "- Published from GitHub Actions tag pipeline.")
+        fi
+
+        update_payload=$(jq -n --arg full_description "${full_description}" '{full_description: $full_description}')
+
+        curl -fsSL \
+          -X PATCH \
+          -H "Authorization: JWT ${token}" \
+          -H "Content-Type: application/json" \
+          -d "${update_payload}" \
+          "https://hub.docker.com/v2/repositories/${INPUT_REPOSITORY}/tags/${INPUT_TAG}/"

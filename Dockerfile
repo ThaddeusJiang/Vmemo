@@ -4,8 +4,8 @@ FROM elixir:1.19.5-otp-28 AS base
 FROM base AS builder
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
+  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -27,8 +27,8 @@ RUN mix assets.deploy
 FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git postgresql-client \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
+  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git postgresql-client && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN mix local.hex --force && \
   mix local.rebar --force

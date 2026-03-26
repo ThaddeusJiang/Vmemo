@@ -18,6 +18,7 @@ find module/function definitions.
 - **绝不**使用 i18n，代码中始终直接使用英文文本
 - **绝不**写过多注释，保持代码简洁易懂
 - **绝不**运行 `build` 和 `start` 命令，除非我要求，大多数情况下代码支持热替换
+- 本地如需使用 Docker，**只**维护单一的 prod 镜像路径，统一使用根目录 `Dockerfile` 和 `MIX_ENV=prod`；不要折腾单独的 dev Docker 环境
 - 当在对话中约定/发现新的 coding guideline 时，**必须及时在本文件中更新对应规范**（必要时再拆到 `docs/coding-guidelines/**`），避免规范只存在于对话里
 
 ## Web 应用规范

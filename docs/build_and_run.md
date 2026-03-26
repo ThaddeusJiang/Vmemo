@@ -1,16 +1,54 @@
 # 构建和运行
 
-Docker runner 使用 Elixir 镜像 + Mix，与本地开发一致（`mix phx.server`、`mix ash.migrate`、`mix ts.migrate` 等）。
+Docker 只保留单一的 prod 镜像入口：
 
-本地隔离运行入口使用 [`_local/docker-compose.yml`](/Users/amami/git/my-personal-2026/Vmemo/_local/docker-compose.yml)。该文件基于 `docker-compose.example.yml`，并把数据目录、`storage` 和 `.env` 都放到 `_local/` 下，避免污染项目根目录。
+- 根目录 [`Dockerfile`](/Users/amami/git/my-personal-2026/Vmemo/Dockerfile) 同时用于本地 Docker 运行和 GitHub Actions publish，统一使用 `MIX_ENV=prod`
 
-## 在 Docker 里执行一次性任务
+不再维护单独的 dev Docker 环境或额外的 Dockerfile 变体。
 
-镜像默认使用 `ENTRYPOINT + CMD` 启动，entrypoint 依次执行 `mix ash.migrate`、`mix ts.migrate`，然后用 `mix phx.server` 启动应用。要执行 `mix ts.setup`、`mix ts.reset` 等一次性任务，用**一次性容器**（不占 4000 端口）：
+## 本地依赖服务
+
+[`_local/docker-compose.yml`](/Users/amami/git/my-personal-2026/Vmemo/_local/docker-compose.yml) 用于启动本地依赖服务；应用可以运行在宿主机上，也可以单独以 prod 容器方式运行。
+
+启动依赖服务：
 
 ```bash
-# 宿主机、项目根目录
-docker compose -f _local/docker-compose.yml run --no-deps vmemo mix ts.reset
+docker compose -f _local/docker-compose.yml up -d postgres typesense
 ```
 
-不要在已跑着 Web 的**同一容器里**跑会启动整应用的任务（如 `mix ts.setup` 或 `mix ts.reset`），避免 4000 端口冲突。
+## 本地运行 prod 容器
+
+先构建 prod 镜像：
+
+```bash
+docker build -t vmemo:local .
+```
+
+然后运行：
+
+```bash
+docker run --rm -p 4000:4000 \
+  -e SECRET_KEY_BASE=your_secret_key_base \
+  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev \
+  -e ADMIN_PASSWORD=test_admin_password \
+  -e SENTRY_DSN=https://test@example.ingest.sentry.io/123456 \
+  -e SENTRY_ENV=staging \
+  -e RESEND_API_KEY=test_resend_key \
+  -e TYPESENSE_URL=http://host.docker.internal:8766 \
+  -e TYPESENSE_API_KEY=xyz \
+  -e PHX_HOST=localhost \
+  -e PHX_SERVER=true \
+  vmemo:local
+```
+
+容器会以 `MIX_ENV=prod` 启动，并在入口脚本中先执行迁移，再运行 `mix phx.server`。
+
+## 宿主机运行应用
+
+在项目根目录直接运行：
+
+```bash
+iex -S mix phx.server
+```
+
+`mix ts.setup`、`mix ts.reset` 等一次性任务仍然建议直接在宿主机上执行。
