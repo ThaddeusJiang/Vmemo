@@ -41,11 +41,11 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: vmemo_dev
+          POSTGRES_DB: vmemo
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d vmemo_dev"
+          --health-cmd "pg_isready -U postgres -d vmemo"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -63,7 +63,7 @@ jobs:
         working-directory: e2e-test
     env:
       VMEMO_IMAGE: thaddeusjiang/vmemo:e2e
-      DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo_dev
+      DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
       OPENROUTER_API_KEY: test-openrouter-key

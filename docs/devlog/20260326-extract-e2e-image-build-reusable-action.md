@@ -51,3 +51,7 @@
 - Fixed E2E compose runtime env mismatch:
   - `e2e-test/docker-compose.yml` passed `ADMIN_TOKEN`, but runtime requires `ADMIN_PASSWORD`.
   - Updated compose env to pass `ADMIN_PASSWORD` so app container can boot in CI.
+- Updated E2E workflow database naming in GitHub Actions from `vmemo_dev` to `vmemo`:
+  - `POSTGRES_DB`
+  - postgres healthcheck database
+  - `DATABASE_URL`
