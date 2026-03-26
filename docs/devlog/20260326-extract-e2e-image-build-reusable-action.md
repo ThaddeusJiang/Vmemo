@@ -66,3 +66,7 @@
 - Fixed E2E instability caused by Typesense image embedding model download in prod runtime:
   - added strict runtime env `TYPESENSE_IMAGE_EMBEDDING` (`true|false`)
   - set `TYPESENSE_IMAGE_EMBEDDING=false` in E2E CI workflow and compose env
+- Added explicit E2E workflow guard for required runtime env:
+  - validate `ADMIN_PASSWORD` before `docker compose up`
+  - fail fast with clear error message instead of waiting for app timeout
+- Aligned E2E compose fallback database URL to `vmemo` to match workflow/runtime naming.

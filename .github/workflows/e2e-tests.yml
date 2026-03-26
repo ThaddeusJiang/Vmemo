@@ -92,6 +92,13 @@ jobs:
       - name: Load app image
         run: docker load -i /tmp/vmemo-ci-image/vmemo-e2e-image.tar
 
+      - name: Validate app runtime env
+        run: |
+          if [ -z "${ADMIN_PASSWORD:-}" ]; then
+            echo "ADMIN_PASSWORD is missing"
+            exit 1
+          fi
+
       - name: Start app with compose
         run: |
           docker compose -f docker-compose.yml up -d
