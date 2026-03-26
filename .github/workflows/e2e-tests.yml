@@ -15,11 +15,24 @@ permissions:
   contents: write
 
 jobs:
-  e2e:
+  build-image:
     if: |
       (github.event_name == 'pull_request' &&
         contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')) ||
       github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: Build and cache app image
+        uses: ./.github/actions/build-ci-image
+        with:
+          image_name: thaddeusjiang/vmemo:e2e
+          cache_key: vmemo-e2e-image-${{ hashFiles('Dockerfile', 'mix.exs', 'mix.lock', 'assets/**', 'config/**', 'lib/**', 'priv/**', 'rel/**') }}
+
+  e2e:
+    needs: build-image
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -28,11 +41,11 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: vmemo_dev
+          POSTGRES_DB: vmemo
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d vmemo_dev"
+          --health-cmd "pg_isready -U postgres -d vmemo"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -49,10 +62,11 @@ jobs:
       run:
         working-directory: e2e-test
     env:
-      DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo_dev
+      VMEMO_IMAGE: thaddeusjiang/vmemo:e2e
+      DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
-      OPENROUTER_API_KEY: test-openrouter-key      
+      OPENROUTER_API_KEY: test-openrouter-key
       MOONDREAM_API_KEY: test-moondream-key
       RESEND_API_KEY: test-resend-key
       PHX_SERVER: "true"
@@ -66,15 +80,20 @@ jobs:
       DNS_CLUSTER_QUERY: ""
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Download app image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vmemo-e2e-image
+          path: /tmp/vmemo-ci-image
 
-      - name: Build app image for e2e
-        working-directory: .
+      - name: Load app image
+        run: docker load -i /tmp/vmemo-ci-image/vmemo-e2e-image.tar
+
+      - name: Start app with compose
         run: |
-          docker build -t thaddeusjiang/vmemo:develop .
+          docker compose -f docker-compose.yml up -d
 
       - name: Wait for dependency services
         run: |
@@ -91,10 +110,6 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Start app with compose (auto seed)
-        run: |
-          docker compose -f docker-compose.yml up -d
-
       - name: Wait for app
         run: |
           timeout=60
@@ -110,6 +125,9 @@ jobs:
             count=$((count + 1))
           done
           echo "App is ready!"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install e2e dependencies
         run: bun install --frozen-lockfile
