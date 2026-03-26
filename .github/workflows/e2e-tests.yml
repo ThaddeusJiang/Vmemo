@@ -91,8 +91,9 @@ jobs:
       - name: Load app image
         run: docker load -i /tmp/vmemo-ci-image/vmemo-e2e-image.tar
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Start app with compose
+        run: |
+          docker compose -f docker-compose.yml up -d
 
       - name: Wait for dependency services
         run: |
@@ -109,10 +110,6 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Start app with compose
-        run: |
-          docker compose -f docker-compose.yml up -d
-
       - name: Wait for app
         run: |
           timeout=60
@@ -128,6 +125,9 @@ jobs:
             count=$((count + 1))
           done
           echo "App is ready!"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install e2e dependencies
         run: bun install --frozen-lockfile

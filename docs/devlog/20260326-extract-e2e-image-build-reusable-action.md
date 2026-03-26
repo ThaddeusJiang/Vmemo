@@ -41,3 +41,9 @@
 
 - `release.yml` 保持原有简单方案（直接 `docker/build-push-action`），不复用该 action。
 - 该 action 当前只服务 CI/E2E 场景。
+
+## Follow-up
+
+- Adjusted E2E step order:
+  - Move `Start app with compose` earlier (right after loading image).
+  - Move `Setup Bun` to after app startup checks (`Wait for app`).
