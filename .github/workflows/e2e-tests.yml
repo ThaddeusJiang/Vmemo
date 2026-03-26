@@ -141,6 +141,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Cache Playwright browsers
+        id: cache-playwright
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -148,8 +149,12 @@ jobs:
           restore-keys: |
             e2e-playwright-${{ runner.os }}-
 
-      - name: Install Playwright browsers and host dependencies
-        run: bunx playwright install --with-deps
+      - name: Install Playwright host dependencies
+        run: bunx playwright install-deps chromium
+
+      - name: Install Playwright chromium browser
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: bunx playwright install chromium
 
       - name: Prepare e2e auth user
         run: |

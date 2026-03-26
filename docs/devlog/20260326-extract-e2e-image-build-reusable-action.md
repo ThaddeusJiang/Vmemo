@@ -60,3 +60,6 @@
 - Added E2E runtime caches in workflow:
   - `e2e-test/node_modules` cache keyed by `e2e-test/bun.lock`
   - `~/.cache/ms-playwright` cache keyed by `e2e-test/bun.lock`
+- Split Playwright install step for better cache usage:
+  - always run `playwright install-deps chromium` for host deps
+  - run `playwright install chromium` only when browser cache misses
