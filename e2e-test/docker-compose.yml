@@ -2,6 +2,7 @@ services:
   vmemo:
     platform: ${VMEMO_PLATFORM:-linux/amd64}
     image: ${VMEMO_IMAGE:-thaddeusjiang/vmemo:develop}
+    command: ["start"]
     restart: on-failure
     extra_hosts:
       - "host.docker.internal:host-gateway"

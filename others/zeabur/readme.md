@@ -12,8 +12,8 @@ npx zeabur template update -c H3EL85 -f vmemo.yml
 - The template includes all required dependencies: `postgresql` and `typesense`
 - The app service uses the project `Dockerfile`
 - Container startup uses `rel/entrypoint.sh`
-- `ENTRYPOINT` runs `mix ash.migrate` and `mix ts.migrate`
-- `CMD` runs `mix phx.server`
+- `ENTRYPOINT` runs release migration tasks
+- `CMD` runs `start` (resolved to `bin/vmemo start`)
 - `PHX_SERVER=true` must be set
 - `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `SENTRY_DSN`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, and `MOONDREAM_URL` are required
 - `OPENROUTER_API_KEY` is optional
@@ -93,9 +93,9 @@ Optional, missing values only cause warnings:
 
 ### Startup Flow
 
-1. `mix ash.migrate`
-2. `mix ts.migrate`
-3. `mix phx.server`
+1. `bin/vmemo eval "Vmemo.Release.migrate()"`
+2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
+3. `bin/vmemo start`
 
 ### Migration Failure
 
@@ -109,6 +109,6 @@ Optional, missing values only cause warnings:
 ```sh
 docker logs <container_id>
 docker exec -it <container_id> /bin/bash
-mix ash.migrate --dry-run
-mix ts.migrate
+/app/bin/vmemo eval "Vmemo.Release.migrate()"
+/app/bin/vmemo eval "Vmemo.Release.ts_migrate()"
 ```

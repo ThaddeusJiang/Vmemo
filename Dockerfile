@@ -22,16 +22,14 @@ RUN mix local.hex --force && \
 COPY . .
 RUN mix compile
 RUN mix assets.deploy
+RUN mix release
 
-# ------------------ runner (Elixir image + Mix) ------------------
-FROM base AS runner
+# ------------------ runner (Release runtime) ------------------
+FROM debian:bookworm-slim AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git postgresql-client && \
+  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
-
-RUN mix local.hex --force && \
-  mix local.rebar --force
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
@@ -41,12 +39,12 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
 WORKDIR /app
-COPY --from=builder /app ./
+COPY --from=builder /app/_build/prod/rel/vmemo /app
 
 COPY rel/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-ENV MIX_ENV=prod
+ENV HOME=/app
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["mix", "phx.server"]
+CMD ["start"]

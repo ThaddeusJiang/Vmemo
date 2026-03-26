@@ -67,6 +67,7 @@ openssl rand -hex 64
 services:
   vmemo:
     image: thaddeusjiang/vmemo:latest
+    command: ["start"]
     restart: on-failure
     environment:
       DATABASE_URL: ecto://postgres:postgres@postgres/vmemo
@@ -147,6 +148,18 @@ docker compose up -d
 ```
 
 Open `http://localhost:4000`.
+
+Startup flow in container:
+
+1. `bin/vmemo eval "Vmemo.Release.migrate()"`
+2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
+3. `bin/vmemo start`
+
+Remote IEx (release mode):
+
+```bash
+docker exec -it <container_name> /app/bin/vmemo remote
+```
 
 ### Optional: Define a Public Domain via Cloudflare Tunnel
 
