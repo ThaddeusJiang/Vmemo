@@ -48,3 +48,6 @@
   - Move `Start app with compose` earlier (right after loading image).
   - Move `Setup Bun` to after app startup checks (`Wait for app`).
 - Added `mix.exs` into image cache key hash inputs to avoid stale image cache when only dependency/build configuration changes in `mix.exs`.
+- Fixed E2E compose runtime env mismatch:
+  - `e2e-test/docker-compose.yml` passed `ADMIN_TOKEN`, but runtime requires `ADMIN_PASSWORD`.
+  - Updated compose env to pass `ADMIN_PASSWORD` so app container can boot in CI.

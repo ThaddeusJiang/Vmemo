@@ -18,7 +18,7 @@ services:
       PHX_SERVER: ${PHX_SERVER:-true}
       ECTO_IPV6: ${ECTO_IPV6:-false}
       POOL_SIZE: ${POOL_SIZE:-10}
-      ADMIN_TOKEN: ${ADMIN_TOKEN:-test-admin-token}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-test-admin-password}
       SENTRY_DSN: ${SENTRY_DSN:-https://public@example.com/1}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest}
       PHX_HOST: ${PHX_HOST:-localhost}
