@@ -25,7 +25,7 @@ RUN mix assets.deploy
 RUN mix release
 
 # ------------------ runner (Release runtime) ------------------
-FROM debian:bookworm-slim AS runner
+FROM base AS runner
 
 RUN apt-get update -y && \
   apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates && \
