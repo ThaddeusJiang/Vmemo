@@ -170,6 +170,19 @@ CI runs the same specs against a prod-like target:
 - run Playwright tests against `http://localhost:4000`
 - upload `test-results` and snapshot artifacts
 
+### Typesense Stability In CI
+
+In E2E CI, `TYPESENSE_IMAGE_EMBEDDING` is set to `false`.
+
+Reason:
+
+- when image embedding is enabled in prod runtime, Typesense may try to download model files
+- this external download can intermittently fail in GitHub Actions (`503` / timeout)
+- the app then restarts during tests, causing random `ERR_CONNECTION_*` failures in Playwright
+
+This is why previous runs could sometimes pass and sometimes fail even with no code changes.
+Disabling image embedding in CI removes that flaky external dependency and keeps E2E deterministic.
+
 Local development can run the same specs against either:
 
 - an already running dev server
