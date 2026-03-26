@@ -63,3 +63,6 @@
 - Split Playwright install step for better cache usage:
   - always run `playwright install-deps chromium` for host deps
   - run `playwright install chromium` only when browser cache misses
+- Fixed E2E instability caused by Typesense image embedding model download in prod runtime:
+  - added strict runtime env `TYPESENSE_IMAGE_EMBEDDING` (`true|false`)
+  - set `TYPESENSE_IMAGE_EMBEDDING=false` in E2E CI workflow and compose env

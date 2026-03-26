@@ -31,7 +31,7 @@ jobs:
           image_name: thaddeusjiang/vmemo:e2e
           cache_key: vmemo-e2e-image-${{ hashFiles('Dockerfile', 'mix.exs', 'mix.lock', 'assets/**', 'config/**', 'lib/**', 'priv/**', 'rel/**') }}
 
-  e2e:
+  e2e-test:
     needs: build-image
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -66,6 +66,7 @@ jobs:
       DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
+      TYPESENSE_IMAGE_EMBEDDING: "false"
       OPENROUTER_API_KEY: test-openrouter-key
       MOONDREAM_API_KEY: test-moondream-key
       RESEND_API_KEY: test-resend-key
