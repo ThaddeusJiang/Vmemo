@@ -91,7 +91,7 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Start app with compose
+      - name: Start app with compose (auto seed)
         run: |
           docker compose -f docker-compose.yml up -d
 
@@ -116,10 +116,6 @@ jobs:
 
       - name: Install Playwright browsers and host dependencies
         run: bunx playwright install --with-deps
-
-      - name: Prepare e2e auth user
-        run: |
-          docker compose -f docker-compose.yml exec -T vmemo sh -lc '/app/bin/vmemo rpc "Vmemo.Seeds.TestUsers.run()"'
 
       - name: Update e2e snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}

@@ -1,6 +1,8 @@
 defmodule Vmemo.Seeds.TestUsers do
   @moduledoc """
-  Creates test users for development and e2e environments.
+  Creates test users for development and test environments.
+
+  CI e2e auth/data preparation is handled by SQL scripts in `e2e-test/fixtures`.
   """
 
   require Ash.Query

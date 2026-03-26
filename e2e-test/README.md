@@ -38,8 +38,13 @@ E2E_BASE_URL=http://localhost:4000 bun run e2e
 
 ## Prod-Like Mode
 
-Start the prod-like app container from `e2e-test/docker-compose.yml`.
-This compose file now manages only `vmemo`; PostgreSQL and Typesense must already be available outside it.
+Start the prod-like app stack from `e2e-test/docker-compose.yml`.
+This compose file manages:
+
+- `e2e-seed` (one-shot SQL seed service)
+- `vmemo`
+
+PostgreSQL and Typesense must already be available outside this compose file.
 
 ```bash
 docker compose -f docker-compose.yml up -d --pull never
@@ -51,12 +56,12 @@ Stop and remove the stack after testing:
 docker compose -f docker-compose.yml down -v
 ```
 
-By default, the app container connects to:
+By default, both `e2e-seed` and app container connect to:
 
 - PostgreSQL: `host.docker.internal:5432`
 - Typesense: `host.docker.internal:8108`
 
-Override `DATABASE_URL` or `TYPESENSE_URL` if your target services are elsewhere.
+Override `DATABASE_URL` / `TYPESENSE_URL` for app, and `E2E_PG*` variables for seed service if your target services are elsewhere.
 
 ## Auth Setup
 
@@ -67,7 +72,7 @@ Playwright runs `globalSetup` before tests:
 
 Seed or auth preparation must happen in the environment under test.
 
-For CI, the workflow prepares the shared test user inside the running `vmemo` container.
+For CI, compose startup runs `e2e-seed` automatically, then starts `vmemo`.
 
 Test files should reuse this authenticated state instead of embedding login flows in each spec.
 

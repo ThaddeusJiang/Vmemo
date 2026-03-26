@@ -196,6 +196,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 **git 规范**
 
 - **总是**生成简单的 git 提交信息，使用 `feat(scope):` `fix(scope):` `chore(scope):` 作为前缀
+- **总是**使用中文编写 PR 标题和 PR 描述（body）
 - **绝不**提交 `.playwright-mcp/*`
 
 **代码格式**
@@ -228,6 +229,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - e2e testing 的 seed / auth preparation **必须**在当前被测试的目标环境中执行：
   - 测试 dev server 时，在 dev 环境准备数据
   - 测试 prod-like container 时，在对应容器环境准备数据
+- CI 中的 e2e auth/data seed **总是**优先使用 SQL 脚本（`psql`）直接插入幂等测试数据，**不要**依赖 `Vmemo.Seeds.TestUsers` 这类应用层 seed 模块
 - 不常用且仅 CI 需要的 e2e 准备步骤（例如 auth seed）**不要**默认耦合到本地 npm/bun scripts；应在 CI workflow 中显式执行
 - e2e testing guidelines（用户视角）：
   - **总是**优先点击用户可见的按钮文本（例如 `Login` 按钮），而不是依赖 `button[type='submit']` 这类实现细节选择器

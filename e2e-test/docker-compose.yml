@@ -1,9 +1,30 @@
 services:
+  e2e-seed:
+    image: postgres:17
+    restart: "no"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PGHOST: ${E2E_PGHOST:-host.docker.internal}
+      PGPORT: ${E2E_PGPORT:-5432}
+      PGUSER: ${E2E_PGUSER:-postgres}
+      PGPASSWORD: ${E2E_PGPASSWORD:-postgres}
+      PGDATABASE: ${E2E_PGDATABASE:-vmemo_dev}
+    volumes:
+      - ./fixtures/prepare-e2e-auth.sql:/e2e/prepare-e2e-auth.sql:ro
+    command:
+      - sh
+      - -lc
+      - psql -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql
+
   vmemo:
     platform: ${VMEMO_PLATFORM:-linux/amd64}
     image: ${VMEMO_IMAGE:-thaddeusjiang/vmemo:develop}
     command: ["start"]
     restart: on-failure
+    depends_on:
+      e2e-seed:
+        condition: service_completed_successfully
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
