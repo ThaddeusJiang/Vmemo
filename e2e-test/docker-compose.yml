@@ -9,7 +9,7 @@ services:
       PGPORT: ${E2E_PGPORT:-5432}
       PGUSER: ${E2E_PGUSER:-postgres}
       PGPASSWORD: ${E2E_PGPASSWORD:-postgres}
-      PGDATABASE: ${E2E_PGDATABASE:-vmemo_dev}
+      PGDATABASE: ${E2E_PGDATABASE:-vmemo}
     volumes:
       - ./fixtures/prepare-e2e-auth.sql:/e2e/prepare-e2e-auth.sql:ro
     command:
