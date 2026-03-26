@@ -35,7 +35,6 @@ runs:
       with:
         path: ${{ steps.meta.outputs.image_tar }}
         key: ${{ inputs.cache_key }}
-        retention-days: 7
 
     - name: Load image from cache
       if: steps.restore-image-cache.outputs.cache-hit == 'true'

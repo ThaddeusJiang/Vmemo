@@ -55,3 +55,5 @@
   - `POSTGRES_DB`
   - postgres healthcheck database
   - `DATABASE_URL`
+- Removed invalid `retention-days` input from `actions/cache@v4` in reusable action
+  (keep retention on artifact upload only).
