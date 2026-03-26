@@ -70,3 +70,6 @@
   - validate `ADMIN_PASSWORD` before `docker compose up`
   - fail fast with clear error message instead of waiting for app timeout
 - Aligned E2E compose fallback database URL to `vmemo` to match workflow/runtime naming.
+- Fixed browser installation mismatch in E2E CI:
+  - iPhone SE project requires WebKit, but workflow only installed Chromium
+  - switched Playwright browser install step to `playwright install chromium webkit`

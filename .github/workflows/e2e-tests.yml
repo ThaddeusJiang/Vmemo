@@ -160,9 +160,8 @@ jobs:
       - name: Install Playwright host dependencies
         run: bunx playwright install-deps chromium
 
-      - name: Install Playwright chromium browser
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: bunx playwright install chromium
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium webkit
 
       - name: Prepare e2e auth user
         run: |
