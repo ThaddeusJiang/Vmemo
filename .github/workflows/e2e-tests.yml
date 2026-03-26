@@ -73,6 +73,7 @@ jobs:
       ECTO_IPV6: "false"
       POOL_SIZE: "10"
       ADMIN_PASSWORD: test-admin-password
+      E2E_PGDATABASE: vmemo
       SENTRY_DSN: https://public@example.com/1
       SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
       PHX_HOST: localhost
@@ -134,10 +135,6 @@ jobs:
 
       - name: Install Playwright browsers and host dependencies
         run: bunx playwright install --with-deps
-
-      - name: Prepare e2e auth user
-        run: |
-          docker compose -f docker-compose.yml exec -T vmemo sh -lc 'unset PHX_SERVER && mix run priv/repo/seeds/test_users.exs'
 
       - name: Update e2e snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}

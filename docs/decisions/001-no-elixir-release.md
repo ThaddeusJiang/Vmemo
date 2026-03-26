@@ -2,7 +2,7 @@
 
 Date: 2026-02-08
 
-Status: accepted
+Status: superseded by [002-use-elixir-release.md](./002-use-elixir-release.md)
 
 ## Context
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-mix ash.migrate
-mix ts.migrate
+/app/bin/vmemo eval "Vmemo.Release.migrate()"
+/app/bin/vmemo eval "Vmemo.Release.ts_migrate()"
 
-exec "$@"
+exec /app/bin/vmemo "$@"

@@ -41,7 +41,31 @@ docker run --rm -p 4000:4000 \
   vmemo:local
 ```
 
-容器会以 `MIX_ENV=prod` 启动，并在入口脚本中先执行迁移，再运行 `mix phx.server`。
+容器会先在 release 中执行迁移，再运行 `bin/vmemo start`。
+
+## Release 模式远程登录 IEx
+
+当应用以 release 方式运行（`bin/vmemo start`）时，可以通过 release 命令远程连接到正在运行的节点。
+
+先找到容器名：
+
+```bash
+docker ps --format '{{.Names}}'
+```
+
+然后远程进入 IEx：
+
+```bash
+docker exec -it <container_name> /app/bin/vmemo remote
+```
+
+连接成功后即可执行 Elixir 代码，例如：
+
+```elixir
+Vmemo.Release.migrate()
+```
+
+退出远程 IEx 使用 `Ctrl+C` 两次。
 
 ## 宿主机运行应用
 
