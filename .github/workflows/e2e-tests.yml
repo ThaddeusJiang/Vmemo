@@ -119,7 +119,7 @@ jobs:
 
       - name: Prepare e2e auth user
         run: |
-          docker compose -f docker-compose.yml exec -T vmemo sh -lc 'unset PHX_SERVER && mix run priv/repo/seeds/test_users.exs'
+          docker compose -f docker-compose.yml exec -T vmemo sh -lc '/app/bin/vmemo eval "Code.require_file(\"/app/priv/repo/seeds/test_users.exs\")"'
 
       - name: Update e2e snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
