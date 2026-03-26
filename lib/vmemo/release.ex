@@ -50,12 +50,9 @@ defmodule Vmemo.Release do
   end
 
   defp migration_paths(repo) do
-    default_path = Application.app_dir(@app, "priv/#{repo_migrations_path(repo)}/migrations")
-    legacy_path = Application.app_dir(@app, "priv/repo/migrations")
+    path = Application.app_dir(@app, "priv/#{repo_migrations_path(repo)}/migrations")
 
-    [default_path, legacy_path]
-    |> Enum.uniq()
-    |> Enum.filter(&File.dir?/1)
+    if File.dir?(path), do: [path], else: []
   end
 
   defp repo_migrations_path(repo) do
