@@ -29,7 +29,7 @@ jobs:
         uses: ./.github/actions/build-ci-image
         with:
           image_name: thaddeusjiang/vmemo:e2e
-          cache_key: vmemo-e2e-image-${{ hashFiles('Dockerfile', 'mix.lock', 'assets/**', 'config/**', 'lib/**', 'priv/**', 'rel/**') }}
+          cache_key: vmemo-e2e-image-${{ hashFiles('Dockerfile', 'mix.exs', 'mix.lock', 'assets/**', 'config/**', 'lib/**', 'priv/**', 'rel/**') }}
 
   e2e:
     needs: build-image

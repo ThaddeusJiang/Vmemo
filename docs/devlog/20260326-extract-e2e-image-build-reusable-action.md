@@ -47,3 +47,4 @@
 - Adjusted E2E step order:
   - Move `Start app with compose` earlier (right after loading image).
   - Move `Setup Bun` to after app startup checks (`Wait for app`).
+- Added `mix.exs` into image cache key hash inputs to avoid stale image cache when only dependency/build configuration changes in `mix.exs`.
