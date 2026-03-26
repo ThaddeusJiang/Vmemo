@@ -1,12 +1,15 @@
 name: Publish Docker Image
 
 on:
-  push:
-    tags:
-      - "*"
-    branches:
-      - develop
-      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version in CalVer format (YYYY.M.Patch). Leave empty to use current date."
+        required: false
+        type: string
+
+permissions:
+  contents: write
 
 jobs:
   publish:
@@ -35,30 +38,43 @@ jobs:
       - name: Compute Docker tags
         id: tags
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            {
-              echo "tags<<EOF"
-              echo "thaddeusjiang/vmemo:${GITHUB_REF_NAME}"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-            exit 0
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          VERSION="${INPUT_VERSION}"
+
+          if [[ -z "$VERSION" ]]; then
+            VERSION="$(TZ=Asia/Tokyo date +'%Y.%-m.%-d')"
           fi
 
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            {
-              echo "tags<<EOF"
-              echo "thaddeusjiang/vmemo:main"
-              echo "thaddeusjiang/vmemo:latest"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-            exit 0
+          if [[ ! "$VERSION" =~ ^[0-9]{4}\.(1[0-2]|[1-9])\.([1-9][0-9]*)$ ]]; then
+            echo "Invalid release version: '$VERSION'"
+            echo "Expected CalVer: YYYY.M.Patch (no leading zero, month 1-12, patch >= 1)"
+            exit 1
           fi
 
           {
+            echo "version=$VERSION"
+            echo "tag=$VERSION"
             echo "tags<<EOF"
-            echo "thaddeusjiang/vmemo:${GITHUB_REF_NAME}"
+            echo "thaddeusjiang/vmemo:${VERSION}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.tags.outputs.tag }}"
+          TITLE="${{ steps.tags.outputs.version }}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub release '$TAG' already exists."
+            exit 1
+          fi
+
+          gh release create "$TAG" \
+            --title "$TITLE" \
+            --notes "Release $TITLE" \
+            --target "${GITHUB_SHA}"
 
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v7.0.0
@@ -72,13 +88,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Update Docker Hub tag description
-        if: startsWith(github.ref, 'refs/tags/')
         uses: ./.github/actions/dockerhub-tag-description
         with:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: thaddeusjiang/vmemo
-          tag: ${{ github.ref_name }}
+          tag: ${{ steps.tags.outputs.version }}
           commit-sha: ${{ github.sha }}
 
       - name: Log out from Docker Hub
