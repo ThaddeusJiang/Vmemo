@@ -100,7 +100,7 @@ if config_env() == :prod do
 
   config :sentry,
     dsn: sentry_dsn,
-    environment_name: System.get_env("SENTRY_ENV") || System.fetch_env!("PHX_HOST"),
+    environment_name: System.get_env("SENTRY_ENV") || "prod",
     enable_source_code_context: true,
     root_source_code_paths: [File.cwd!()]
 
