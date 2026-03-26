@@ -73,3 +73,12 @@
 - Fixed browser installation mismatch in E2E CI:
   - iPhone SE project requires WebKit, but workflow only installed Chromium
   - switched Playwright browser install step to `playwright install chromium webkit`
+- Fixed regression introduced by forcing `TYPESENSE_IMAGE_EMBEDDING=false` in E2E workflow:
+  - compared failed run `23596590617` and successful run `23595031486`
+  - found Typesense `27.1` crash in `multi_search` with empty vector query (`image_embedding:([])`)
+  - removed `TYPESENSE_IMAGE_EMBEDDING=false` from `.github/workflows/e2e-tests.yml` to restore previous stable behavior
+- Simplified E2E workflow back to the previously stable version (`838e351`):
+  - removed runtime cache steps (`actions/cache` for bun dependencies and Playwright browsers)
+  - removed split Playwright install steps and restored single `playwright install --with-deps`
+  - removed extra runtime validation step to keep workflow minimal and easier to maintain
+  - kept build-image + e2e stage split and artifact handoff as the only CI optimization layer
