@@ -1,0 +1,62 @@
+name: Build CI Docker Image
+
+description: Build, cache, and package Docker image for CI jobs.
+
+inputs:
+  image_name:
+    description: Docker image name:tag to build and load.
+    required: true
+  cache_key:
+    description: Cache key used for image tarball.
+    required: true
+  artifact_name:
+    description: Artifact name for passing image between jobs.
+    required: false
+    default: vmemo-e2e-image
+
+outputs:
+  image_tar:
+    description: Path to the generated image tar file.
+    value: ${{ steps.meta.outputs.image_tar }}
+
+runs:
+  using: composite
+  steps:
+    - name: Define image tar path
+      id: meta
+      shell: bash
+      run: |
+        mkdir -p /tmp/vmemo-ci-image
+        echo "image_tar=/tmp/vmemo-ci-image/${{ inputs.artifact_name }}.tar" >> "$GITHUB_OUTPUT"
+
+    - name: Restore image tar cache
+      id: restore-image-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.meta.outputs.image_tar }}
+        key: ${{ inputs.cache_key }}
+        retention-days: 7
+
+    - name: Load image from cache
+      if: steps.restore-image-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: docker load -i "${{ steps.meta.outputs.image_tar }}"
+
+    - name: Build and save image tar
+      if: steps.restore-image-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker build \
+          --file ./Dockerfile \
+          --tag "${{ inputs.image_name }}" \
+          .
+
+        docker save "${{ inputs.image_name }}" -o "${{ steps.meta.outputs.image_tar }}"
+
+    - name: Upload image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ steps.meta.outputs.image_tar }}
+        retention-days: 7
+        if-no-files-found: error
