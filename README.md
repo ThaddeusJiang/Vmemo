@@ -1,5 +1,10 @@
 # Vmemo
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-ThaddeusJiang%2FVmemo-181717?logo=github)](https://github.com/ThaddeusJiang/Vmemo)
+[![Last Commit](https://img.shields.io/github/last-commit/ThaddeusJiang/Vmemo)](https://github.com/ThaddeusJiang/Vmemo/commits)
+[![License](https://img.shields.io/github/license/ThaddeusJiang/Vmemo)](https://github.com/ThaddeusJiang/Vmemo/LICENSE)
+[![Docker Pulls](https://img.shields.io/docker/pulls/thaddeusjiang/vmemo)](https://hub.docker.com/r/thaddeusjiang/vmemo)
+
 Vmemo is a visual memory app for capturing life with photos, searching with AI, and reviewing moments quickly without writing long text notes.
 
 ## Why Vmemo
@@ -35,8 +40,19 @@ We also publish official Docker images for Vmemo on [Docker hub](https://hub.doc
 ### 1. Create `.env`
 
 ```bash
-MOONDREAM_API_KEY=""
-OPENROUTER_API_KEY=""
+PHX_HOST=localhost
+PHX_SERVER=true
+
+SECRET_KEY_BASE=replace_with_a_long_random_secret
+ADMIN_PASSWORD=replace_with_a_strong_admin_password
+
+# Optional AI integrations
+OPENROUTER_API_KEY=
+MOONDREAM_API_KEY=
+
+# DevOps
+RESEND_API_KEY=
+SENTRY_DSN=
 ```
 
 Generate a secret with:
@@ -52,6 +68,14 @@ services:
   vmemo:
     image: thaddeusjiang/vmemo:latest
     restart: on-failure
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo
+      TYPESENSE_URL: http://typesense:8108
+      TYPESENSE_API_KEY: xyz
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
+      SENTRY_DSN: ${SENTRY_DSN:?SENTRY_DSN is required}
     env_file:
       - .env
     ports:
@@ -129,7 +153,7 @@ Open `http://localhost:4000`.
 To expose Vmemo with your own domain, enable the optional `cloudflared` service from `docker-compose.yml`.
 
 1. Add `TUNNEL_TOKEN` to `.env`.
-2. Set `PHX_HOST` in `.env` to your public domain.
+2. Set `PHX_HOST` in `.env` to your public domain, like: `vmemo.app`
 
 Start with profile enabled:
 
