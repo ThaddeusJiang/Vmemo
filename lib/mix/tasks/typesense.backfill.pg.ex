@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Typesense.Backfill.Pg do
   @shortdoc "Backfill missing Postgres photo fields from Typesense documents"
 
   alias SmallSdk.Typesense
-  alias Vmemo.AshRepo
+  alias Vmemo.Repo
 
   @moduledoc """
   Backfills missing `photos.caption` and `photos.ts_ocr` from Typesense.
@@ -71,7 +71,7 @@ defmodule Mix.Tasks.Typesense.Backfill.Pg do
       )
     """
 
-    case AshRepo.query(query, [id, caption, ts_ocr]) do
+    case Repo.query(query, [id, caption, ts_ocr]) do
       {:ok, %{num_rows: num_rows}} when num_rows > 0 -> :updated
       {:ok, _result} -> :skipped
       {:error, _reason} -> :skipped

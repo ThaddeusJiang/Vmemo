@@ -46,7 +46,7 @@ config :spark,
   ]
 
 config :vmemo,
-  ecto_repos: [Vmemo.AshRepo],
+  ecto_repos: [Vmemo.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [Vmemo.Chat, Vmemo.Photos, Vmemo.AccountDomain, Vmemo.Admin],
   user_data_import_typesense_chunk_size: 50,

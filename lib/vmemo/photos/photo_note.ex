@@ -6,7 +6,7 @@ defmodule Vmemo.Photos.PhotoNote do
 
   postgres do
     table "photos_notes"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   admin do

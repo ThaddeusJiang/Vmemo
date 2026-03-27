@@ -23,7 +23,7 @@ defmodule Vmemo.Chat.Message do
 
   postgres do
     table "messages"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
 
     references do
       reference :conversation, on_delete: :delete

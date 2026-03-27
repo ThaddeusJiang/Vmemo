@@ -1,4 +1,4 @@
-defmodule Vmemo.AshRepo do
+defmodule Vmemo.Repo do
   use AshPostgres.Repo, otp_app: :vmemo
 
   def installed_extensions do

@@ -3,7 +3,7 @@ import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
-config :vmemo, Vmemo.AshRepo,
+config :vmemo, Vmemo.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -22,7 +22,7 @@ config :vmemo, moondream_url: "http://localhost:2020/v1"
 config :vmemo, admin_token: "admin"
 
 config :vmemo, Oban,
-  repo: Vmemo.AshRepo,
+  repo: Vmemo.Repo,
   notifier: Oban.Notifiers.PG,
   plugins: [Oban.Plugins.Pruner],
   queues: [default: 10, sync_typesense: 5]

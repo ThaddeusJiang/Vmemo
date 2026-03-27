@@ -10,7 +10,7 @@ config :bcrypt_elixir, :log_rounds, 1
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :vmemo, Vmemo.AshRepo,
+config :vmemo, Vmemo.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -29,7 +29,7 @@ config :vmemo, moondream_url: "http://localhost:2020/v1"
 config :vmemo, admin_token: "admin"
 
 config :vmemo, Oban,
-  repo: Vmemo.AshRepo,
+  repo: Vmemo.Repo,
   testing: :inline
 
 # Store secret_key_base in application config for JWT signing

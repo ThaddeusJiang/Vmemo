@@ -8,7 +8,7 @@ defmodule Vmemo.Photos.PhotoCaptionRequest do
 
   postgres do
     table "photo_caption_requests"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   admin do
