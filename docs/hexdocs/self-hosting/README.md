@@ -14,7 +14,7 @@
 1. 进入目录：
 
 ```bash
-cd others/self-hosting
+cd docs/hexdocs/self-hosting
 ```
 
 2. 复制环境变量模板并填写必要变量：
@@ -103,7 +103,7 @@ cp docker-compose.example.yml docker-compose.yml
 services:
   vmemo:
     volumes:
-      - ./vmemo_data/storage:/app/storage
+      - ../../../vmemo_data/storage:/app/storage
 ```
 
 ### 3) 启动和验证
@@ -133,29 +133,9 @@ docker exec -it <container_name> /app/bin/vmemo remote
 
 ### 4) 可选：Cloudflare Tunnel 对外暴露
 
-1. 在 `.env` 设置 `TUNNEL_TOKEN`
-2. 把 `PHX_HOST` 改为你的公网域名（例如 `vmemo.app`）
-3. 启动 preview profile：
+完整配置请参考：
 
-```bash
-docker compose --profile preview up -d
-```
-
-## 端口与数据目录
-
-`docker-compose.example.yml` 默认端口：
-
-- Vmemo: `14000 -> 4000`
-- PostgreSQL: `54321 -> 5432`
-- Typesense: `8766 -> 8108`
-
-`docker-compose.yml`（仓库当前版本）可能使用不同端口（例如 `15432` / `18108`），请以文件实际配置为准。
-
-默认持久化目录：
-
-- PostgreSQL: `./vmemo_data/pg-data`
-- Typesense: `./vmemo_data/ts-data`
-- Storage: `./vmemo_data/storage`（容器内 `/app/storage`）
+- `docs/hexdocs/self-hosting/cloudflare-tunnel-cli.md`
 
 ## Notes
 

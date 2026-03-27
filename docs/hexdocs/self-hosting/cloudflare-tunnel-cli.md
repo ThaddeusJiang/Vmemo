@@ -1,4 +1,4 @@
-# Cloudflare Tunnel Complete CLI Guide
+# Publish application via cloudflared cli
 
 This guide covers the full Cloudflare Tunnel workflow with `cloudflared` CLI on macOS, from installation to long-running process, using `vmemo.app` as the example domain.
 
