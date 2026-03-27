@@ -1,26 +1,29 @@
 # Self-hosting Vmemo
 
-这个目录提供一个最小的 Docker Compose 自托管入口，用于运行：
+这个目录提供 Vmemo 的 Docker Compose 自托管入口，包含：
 
 - `vmemo`
 - `postgres`
 - `typesense`
+- optional `cloudflared`（preview profile）
 
-## Quick start
+## 最简单版本（推荐先跑通）
 
-1. 进入当前目录：
+适合快速启动，直接使用仓库里的 `docker-compose.yml`。
+
+1. 进入目录：
 
 ```bash
 cd others/self-hosting
 ```
 
-2. 复制环境变量模板：
+2. 复制环境变量模板并填写必要变量：
 
 ```bash
 cp .env.example .env
 ```
 
-3. 编辑 `.env`，至少填写这些必需变量：
+必填变量：
 
 - `SECRET_KEY_BASE`
 - `ADMIN_PASSWORD`
@@ -29,48 +32,38 @@ cp .env.example .env
 - `RESEND_API_KEY`
 - `SENTRY_DSN`
 
-建议同时确认这些值：
-
-- `PHX_HOST`
-- `TYPESENSE_URL`
-- `SENTRY_ENV`
-- `OPENROUTER_API_KEY`
-- `MOONDREAM_API_KEY`
-- `MOONDREAM_URL`
-
-4. 准备 Compose 文件：
-
-```bash
-cp docker-compose.example.yml docker-compose.yml
-```
-
-5. 启动：
+3. 启动服务：
 
 ```bash
 docker compose up -d
 ```
 
-如果你不想复制 compose 文件，也可以直接运行：
+4. 检查状态和日志：
 
 ```bash
-docker compose -f docker-compose.example.yml up -d
+docker compose ps
+docker compose logs -f vmemo
 ```
 
-## Required environment variables
+5. 打开：
 
-当前生产运行配置会直接要求以下变量存在，否则容器启动失败：
+```text
+http://localhost:14000
+```
 
-- `DATABASE_URL`
-- `ADMIN_PASSWORD`
-- `SECRET_KEY_BASE`
-- `RESEND_API_KEY`
-- `SENTRY_DSN`
+## 最全版本（从零自定义）
 
-`typesense` 服务本身还要求：
+适合你要完全控制 `.env` 与 compose 内容，或需要可选公开域名。
 
-- `TYPESENSE_API_KEY`
+### 1) 准备 `.env`
 
-一个可工作的本地 compose 示例：
+你可以从模板开始：
+
+```bash
+cp .env.example .env
+```
+
+示例：
 
 ```env
 PHX_HOST=localhost
@@ -84,45 +77,88 @@ TYPESENSE_API_KEY=replace_with_a_strong_typesense_key
 RESEND_API_KEY=replace_with_your_resend_api_key
 SENTRY_DSN=https://public@example.com/1
 SENTRY_ENV=production
+OPENROUTER_API_KEY=
+MOONDREAM_API_KEY=
+MOONDREAM_URL=
+TUNNEL_TOKEN=
 ```
 
-`OPENROUTER_API_KEY` 和 `MOONDREAM_API_KEY` 只有在你要启用对应 AI 能力时才需要填写。
-
-## Ports and volumes
-
-默认端口映射：
-
-- Vmemo: `14000 -> 4000`
-- PostgreSQL: `54321 -> 5432`
-- Typesense: `8766 -> 8108`
-
-默认数据目录：
-
-- PostgreSQL: `./vmemo_data/pg-data`
-- Typesense: `./vmemo_data/ts-data`
-
-## Verify
-
-启动后可以检查服务状态：
+生成 `SECRET_KEY_BASE`：
 
 ```bash
+openssl rand -hex 64
+```
+
+### 2) 准备 compose
+
+可直接复制 example 作为起点：
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+```
+
+重点确认 `vmemo` 的 storage volume：
+
+```yaml
+services:
+  vmemo:
+    volumes:
+      - ./vmemo_data/storage:/app/storage
+```
+
+### 3) 启动和验证
+
+```bash
+docker compose up -d
 docker compose ps
 ```
 
-然后访问：
+访问：
 
 ```text
 http://localhost:14000
 ```
 
-如果需要查看应用日志：
+容器启动流程（release）：
+
+1. `bin/vmemo eval "Vmemo.Release.migrate()"`
+2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
+3. `bin/vmemo start`
+
+远程 IEx：
 
 ```bash
-docker compose logs -f vmemo
+docker exec -it <container_name> /app/bin/vmemo remote
 ```
+
+### 4) 可选：Cloudflare Tunnel 对外暴露
+
+1. 在 `.env` 设置 `TUNNEL_TOKEN`
+2. 把 `PHX_HOST` 改为你的公网域名（例如 `vmemo.app`）
+3. 启动 preview profile：
+
+```bash
+docker compose --profile preview up -d
+```
+
+## 端口与数据目录
+
+`docker-compose.example.yml` 默认端口：
+
+- Vmemo: `14000 -> 4000`
+- PostgreSQL: `54321 -> 5432`
+- Typesense: `8766 -> 8108`
+
+`docker-compose.yml`（仓库当前版本）可能使用不同端口（例如 `15432` / `18108`），请以文件实际配置为准。
+
+默认持久化目录：
+
+- PostgreSQL: `./vmemo_data/pg-data`
+- Typesense: `./vmemo_data/ts-data`
+- Storage: `./vmemo_data/storage`（容器内 `/app/storage`）
 
 ## Notes
 
-- 默认镜像标签是 `thaddeusjiang/vmemo:latest`；如果你要固定版本，请在 [`docker-compose.example.yml`](/Users/amami/git/my-personal-2026/Vmemo/others/self-hosting/docker-compose.example.yml) 里改成具体 tag（例如 `v0.1.0`）。
-- 当前 compose 配置会依赖容器内自动执行数据库迁移和 Typesense 迁移。
-- 如果你要对外暴露服务，请把 `PHX_HOST` 改成实际域名，并在反向代理或入口层处理 HTTPS。
+- 默认镜像标签是 `thaddeusjiang/vmemo:latest`；如需固定版本，可在 compose 文件改为具体 tag（例如 `v0.1.0`）。
+- compose 依赖容器启动时自动执行数据库迁移和 Typesense 迁移。
+- 如需公网访问，请在入口层或反向代理启用 HTTPS。

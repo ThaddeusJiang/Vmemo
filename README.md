@@ -81,6 +81,8 @@ services:
       - .env
     ports:
       - "4000:4000"
+    volumes:
+      - ./vmemo_data/storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
