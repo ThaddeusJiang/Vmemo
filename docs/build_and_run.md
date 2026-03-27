@@ -29,7 +29,7 @@ docker build -t vmemo:local .
 ```bash
 docker run --rm -p 4000:4000 \
   -e SECRET_KEY_BASE=your_secret_key_base \
-  -e DATABASE_URL=ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev \
+  -e DATABASE_URL=postgres://postgres:postgres@host.docker.internal:54321/vmemo_dev \
   -e ADMIN_PASSWORD=test_admin_password \
   -e SENTRY_DSN=https://test@example.ingest.sentry.io/123456 \
   -e SENTRY_ENV=staging \

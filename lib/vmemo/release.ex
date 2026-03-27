@@ -6,9 +6,21 @@ defmodule Vmemo.Release do
   @app :vmemo
 
   @doc """
-  Run all Ecto migrations for configured repos.
+  Run all release migrations.
+
+  This includes:
+  - AshPostgres repo migrations
+  - Typesense migrations
   """
   def migrate do
+    ash_migrate()
+    ts_migrate()
+  end
+
+  @doc """
+  Run all AshPostgres release migrations for configured repos.
+  """
+  def ash_migrate do
     load_app()
 
     for repo <- repos() do

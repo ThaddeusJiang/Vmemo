@@ -71,7 +71,7 @@ PHX_SERVER=true
 PORT=4000
 SECRET_KEY_BASE=replace_with_a_long_random_secret
 ADMIN_PASSWORD=replace_with_a_strong_admin_password
-DATABASE_URL=ecto://postgres:postgres@postgres/vmemo
+DATABASE_URL=postgres://postgres:postgres@postgres/vmemo
 TYPESENSE_URL=http://typesense:8108
 TYPESENSE_API_KEY=replace_with_a_strong_typesense_key
 RESEND_API_KEY=replace_with_your_resend_api_key
@@ -122,8 +122,14 @@ http://localhost:14000
 容器启动流程（release）：
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-3. `bin/vmemo start`
+2. `bin/vmemo start`
+
+说明：
+
+- 当前项目统一使用 Ash + ash_postgres。
+- `Vmemo.Release.migrate()` 是该项目首选的 release 迁移入口。
+- 它会同时执行 AshPostgres repo migrations 与 Typesense migrations。
+- 本地迁移建议使用 Ash 任务（如 `mix ash.migrate`），不建议使用 `mix ecto.*`。
 
 远程 IEx：
 

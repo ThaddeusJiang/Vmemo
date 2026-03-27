@@ -70,7 +70,7 @@ services:
     command: ["start"]
     restart: on-failure
     environment:
-      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo
+      DATABASE_URL: postgres://postgres:postgres@postgres/vmemo
       TYPESENSE_URL: http://typesense:8108
       TYPESENSE_API_KEY: xyz
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
@@ -142,8 +142,14 @@ Open `http://localhost:4000`.
 Startup flow in container:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-3. `bin/vmemo start`
+2. `bin/vmemo start`
+
+Migration note:
+
+- Vmemo uses Ash + ash_postgres for data access and schema changes.
+- `Vmemo.Release.migrate()` is the preferred release entrypoint.
+- It runs both AshPostgres repo migrations and Typesense migrations.
+- For local migration workflow, prefer Ash tasks (for example `mix ash.migrate`) instead of `mix ecto.*`.
 
 Remote IEx (release mode):
 

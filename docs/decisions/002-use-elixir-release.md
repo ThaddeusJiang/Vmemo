@@ -18,8 +18,8 @@ Status: accepted
 - runner 镜像仅拷贝 release 产物
 - 容器启动流程改为：
   1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-  2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-  3. `bin/vmemo start`
+  2. `bin/vmemo start`
+- 其中 `Vmemo.Release.migrate()` 统一执行 AshPostgres repo migrations 与 Typesense migrations
 
 ## Consequences
 
