@@ -3,7 +3,7 @@ defmodule Vmemo.UserDataTransfer do
   require Logger
 
   alias SmallSdk.Typesense
-  alias Vmemo.AshRepo
+  alias Vmemo.Repo
   alias Vmemo.Account.AshUser
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
@@ -374,7 +374,7 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case AshRepo.insert_all("photos", rows, on_conflict: :nothing, conflict_target: [:id]) do
+          case Repo.insert_all("photos", rows, on_conflict: :nothing, conflict_target: [:id]) do
             {count, _} ->
               {count, []}
 
@@ -503,7 +503,7 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case AshRepo.insert_all("notes", rows, on_conflict: :nothing, conflict_target: [:id]) do
+          case Repo.insert_all("notes", rows, on_conflict: :nothing, conflict_target: [:id]) do
             {count, _} ->
               {count, []}
 
@@ -565,7 +565,7 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case AshRepo.insert_all("photos_notes", rows,
+          case Repo.insert_all("photos_notes", rows,
                  on_conflict: :nothing,
                  conflict_target: [:photo_id, :note_id]
                ) do
@@ -1045,7 +1045,7 @@ defmodule Vmemo.UserDataTransfer do
   defp generate_uuid_v7_list(count) when count > 0 do
     query = "SELECT uuid_generate_v7()::text FROM generate_series(1, $1)"
 
-    case AshRepo.query(query, [count]) do
+    case Repo.query(query, [count]) do
       {:ok, %{rows: rows}} -> Enum.map(rows, fn [id] -> id end)
       _ -> Enum.map(1..count, fn _ -> Ecto.UUID.generate() end)
     end
@@ -1056,7 +1056,7 @@ defmodule Vmemo.UserDataTransfer do
   defp fetch_existing_owner_map(table, ids) when table in ["photos", "notes"] do
     query = "SELECT id::text, ash_user_id::text FROM #{table} WHERE id::text = ANY($1::text[])"
 
-    case AshRepo.query(query, [ids]) do
+    case Repo.query(query, [ids]) do
       {:ok, %{rows: rows}} ->
         Map.new(rows, fn [id, owner_id] -> {id, owner_id} end)
 
@@ -1078,7 +1078,7 @@ defmodule Vmemo.UserDataTransfer do
     WHERE photo_id::text = ANY($1::text[]) AND note_id::text = ANY($2::text[])
     """
 
-    case AshRepo.query(query, [photo_ids, note_ids]) do
+    case Repo.query(query, [photo_ids, note_ids]) do
       {:ok, %{rows: rows}} ->
         rows
         |> Enum.map(fn [photo_id, note_id] -> {photo_id, note_id} end)

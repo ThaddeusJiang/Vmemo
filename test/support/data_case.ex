@@ -18,7 +18,7 @@ defmodule Vmemo.DataCase do
 
   using do
     quote do
-      alias Vmemo.AshRepo
+      alias Vmemo.Repo
 
       # Ash changesets are based on Ecto changesets internally
       import Ecto.Changeset, only: [get_change: 2, get_field: 2]
@@ -35,7 +35,7 @@ defmodule Vmemo.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Vmemo.AshRepo, shared: not tags[:async])
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Vmemo.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 

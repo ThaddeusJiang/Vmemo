@@ -6,7 +6,7 @@ defmodule Vmemo.Admin.ImportRequest do
 
   postgres do
     table "import_requests"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   admin do

@@ -8,7 +8,7 @@ defmodule Vmemo.Seeds.TestUsers do
   require Ash.Query
 
   alias Vmemo.Account
-  alias Vmemo.AshRepo
+  alias Vmemo.Repo
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
@@ -39,7 +39,7 @@ defmodule Vmemo.Seeds.TestUsers do
             now = DateTime.utc_now() |> DateTime.truncate(:second)
             user_id = Ecto.UUID.dump!(user.id)
 
-            case AshRepo.query("UPDATE ash_users SET confirmed_at = $1 WHERE id = $2", [
+            case Repo.query("UPDATE ash_users SET confirmed_at = $1 WHERE id = $2", [
                    now,
                    user_id
                  ]) do
@@ -88,7 +88,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
     user_id = Ecto.UUID.dump!(user.id)
 
-    case AshRepo.query(sql, [
+    case Repo.query(sql, [
            "Test API Token",
            "Fixed token for testing: #{raw_token}",
            expires_at,

@@ -21,7 +21,7 @@ defmodule Vmemo.Chat.Conversation do
 
   postgres do
     table "conversations"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   actions do
