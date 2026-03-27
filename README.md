@@ -127,8 +127,6 @@ services:
       timeout: 5s
       retries: 30
       start_period: 5s
-      
-
 ```
 
 ### 3. Start Services
@@ -227,30 +225,29 @@ Example error response:
 
 ## Required Environment Variables (Production)
 
-| Variable | Description |
-| --- | --- |
-| `DATABASE_URL` | PostgreSQL connection URL |
-| `ADMIN_PASSWORD` | Admin password for protected actions |
-| `SECRET_KEY_BASE` | Phoenix secret key base |
-| `SENTRY_DSN` | Sentry DSN |
-| `SENTRY_ENV` | Sentry environment (`production`, `staging`, etc.) |
-| `RESEND_API_KEY` | Resend API key for email |
+| Variable          | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `DATABASE_URL`    | PostgreSQL connection URL                          |
+| `ADMIN_PASSWORD`  | Admin password for protected actions               |
+| `SECRET_KEY_BASE` | Phoenix secret key base                            |
+| `SENTRY_DSN`      | Sentry DSN                                         |
+| `SENTRY_ENV`      | Sentry environment (`production`, `staging`, etc.) |
+| `RESEND_API_KEY`  | Resend API key for email                           |
 
 ## Optional Environment Variables
 
-| Variable | Description |
-| --- | --- |
-| `TYPESENSE_URL` | Typesense endpoint |
-| `TYPESENSE_API_KEY` | Typesense API key |
-| `MOONDREAM_URL` | Moondream API endpoint |
-| `MOONDREAM_API_KEY` | Moondream API key |
-| `OPENROUTER_API_KEY` | OpenRouter API key for chat features |
-| `PHX_HOST` | Public host name (`vmemo.app` default) |
-| `PORT` | App port (`4000` default) |
-| `POOL_SIZE` | DB pool size (`10` default) |
-| `ECTO_IPV6` | Enable IPv6 when set to `true` or `1` |
-| `PHX_SERVER` | Enable Phoenix server in runtime |
-| `TUNNEL_TOKEN` | Cloudflare Tunnel token when using `cloudflared` profile |
+| Variable             | Description                            |
+| -------------------- | -------------------------------------- |
+| `TYPESENSE_URL`      | Typesense endpoint                     |
+| `TYPESENSE_API_KEY`  | Typesense API key                      |
+| `MOONDREAM_URL`      | Moondream API endpoint                 |
+| `MOONDREAM_API_KEY`  | Moondream API key                      |
+| `OPENROUTER_API_KEY` | OpenRouter API key for chat features   |
+| `PHX_HOST`           | Public host name (`vmemo.app` default) |
+| `PORT`               | App port (`4000` default)              |
+| `POOL_SIZE`          | DB pool size (`10` default)            |
+| `ECTO_IPV6`          | Enable IPv6 when set to `true` or `1`  |
+| `PHX_SERVER`         | Enable Phoenix server in runtime       |
 
 ## Tech Stack
 

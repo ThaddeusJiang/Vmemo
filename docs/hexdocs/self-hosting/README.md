@@ -5,7 +5,7 @@
 - `vmemo`
 - `postgres`
 - `typesense`
-- optional `cloudflared`（preview profile）
+- optional `cloudflared`
 
 ## 最简单版本（推荐先跑通）
 
@@ -80,7 +80,6 @@ SENTRY_ENV=production
 OPENROUTER_API_KEY=
 MOONDREAM_API_KEY=
 MOONDREAM_URL=
-TUNNEL_TOKEN=
 ```
 
 生成 `SECRET_KEY_BASE`：
@@ -103,7 +102,7 @@ cp docker-compose.example.yml docker-compose.yml
 services:
   vmemo:
     volumes:
-      - ../../../vmemo_data/storage:/app/storage
+      - ./vmemo_data/storage:/app/storage
 ```
 
 ### 3) 启动和验证
