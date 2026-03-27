@@ -128,18 +128,6 @@ services:
       retries: 30
       start_period: 5s
       
-  # cloudflared:
-  #   profiles:
-  #     - preview
-  #   image: cloudflare/cloudflared:latest
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - vmemo
-  #   env_file:
-  #     - .env
-  #   command: tunnel --no-autoupdate run --url http://vmemo:4000
-  #   environment:
-  #     TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
 
 ```
 
@@ -165,16 +153,9 @@ docker exec -it <container_name> /app/bin/vmemo remote
 
 ### Optional: Define a Public Domain via Cloudflare Tunnel
 
-To expose Vmemo with your own domain, enable the optional `cloudflared` service from `docker-compose.yml`.
+Use the Cloudflare Tunnel CLI guide to complete the full tunnel setup, including tunnel creation, DNS route, domain mapping, and service run commands:
 
-1. Add `TUNNEL_TOKEN` to `.env`.
-2. Set `PHX_HOST` in `.env` to your public domain, like: `vmemo.app`
-
-Start with profile enabled:
-
-```bash
-docker compose --profile preview up -d
-```
+- `docs/hexdocs/cloudflare-tunnel-cli.md`
 
 ## Public API
 
