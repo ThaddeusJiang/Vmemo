@@ -95,11 +95,16 @@ defmodule Vmemo.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ash.setup", "ts.setup", "assets.setup", "assets.build"],
+      setup: ["deps.get", "db.setup", "ts.setup", "assets.setup", "assets.build"],
       clean: ["clean.all"],
-      reset: ["ash.reset", "ts.reset", "storage.reset"],
-      "ash.setup": ["ash_postgres.create", "ash.migrate", "run priv/repo/seeds.exs"],
-      "ash.reset": ["ash_postgres.drop", "ash.setup"],
+      reset: ["db.reset", "ts.reset", "storage.reset"],
+      "db.create": ["ash_postgres.create"],
+      "db.drop": ["ash_postgres.drop"],
+      "db.migrate": ["ash.migrate"],
+      "db.rollback": ["ash_postgres.rollback"],
+      "db.seed": ["run priv/repo/seeds.exs"],
+      "db.setup": ["db.create", "db.migrate", "db.seed"],
+      "db.reset": ["db.drop", "db.setup"],
       "ts.setup": ["ts.migrate"],
       "ts.reset": ["ts.drop", "ts.setup"],
       test: ["ash_postgres.create --quiet", "ash.migrate --quiet", "ts.migrate", "test"],

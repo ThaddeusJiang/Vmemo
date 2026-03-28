@@ -147,7 +147,9 @@ Migration note:
 - Vmemo uses Ash + ash_postgres for data access and schema changes.
 - `Vmemo.Release.migrate()` is the preferred release entrypoint.
 - It runs both AshPostgres repo migrations and Typesense migrations.
-- For local migration workflow, prefer Ash tasks (for example `mix ash.migrate`) instead of `mix ecto.*`.
+- For local setup/reset workflow, prefer `mix setup` and `mix reset`.
+- This project depends on both database and Typesense, so setup/reset should usually run both sides together.
+- Use standalone DB commands only for targeted maintenance.
 
 Remote IEx (release mode):
 
