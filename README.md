@@ -34,13 +34,15 @@ Vmemo provides architecture-specific Docker images:
 
 Pick the image by your host CPU:
 
-- Apple Silicon (M1/M2/M3/M4): use `-arm64`
-- Most cloud Linux servers on Intel/AMD CPUs: use `-amd64`
-
-Examples:
+Apple Silicon (M1/M2/M3/M4/M5): use `-arm64`
 
 ```bash
 docker pull thaddeusjiang/vmemo:2026.3.28-arm64
+```
+
+Intel/AMD CPUs: use `-amd64`
+
+```bash
 docker pull thaddeusjiang/vmemo:2026.3.28-amd64
 ```
 
