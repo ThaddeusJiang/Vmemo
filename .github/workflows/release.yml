@@ -84,15 +84,6 @@ jobs:
           cache-from: type=gha,scope=release-amd64
           cache-to: type=gha,mode=max,scope=release-amd64
 
-      - name: Update Docker Hub amd64 tag description
-        uses: ./.github/actions/dockerhub-tag-description
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: thaddeusjiang/vmemo
-          tag: ${{ steps.tags.outputs.version }}-amd64
-          commit-sha: ${{ github.sha }}
-
       - name: Build and push arm64 image
         uses: docker/build-push-action@v7.0.0
         with:
@@ -103,15 +94,6 @@ jobs:
           tags: ${{ steps.tags.outputs.arm64_tag }}
           cache-from: type=gha,scope=release-arm64
           cache-to: type=gha,mode=max,scope=release-arm64
-
-      - name: Update Docker Hub arm64 tag description
-        uses: ./.github/actions/dockerhub-tag-description
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: thaddeusjiang/vmemo
-          tag: ${{ steps.tags.outputs.version }}-arm64
-          commit-sha: ${{ github.sha }}
 
       - name: Log out from Docker Hub
         run: docker logout
