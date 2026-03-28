@@ -68,4 +68,4 @@ debug.log
 node_modules
 test-results
 *-darwin.png
-devlog/
+_local_docs/
