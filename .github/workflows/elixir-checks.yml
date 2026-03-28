@@ -83,8 +83,5 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Setup Typesense
-        run: mix ts.setup
-
       - name: Run tests
         run: mix test
