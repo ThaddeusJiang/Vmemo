@@ -27,10 +27,22 @@ Text-only journaling is easy to forget and hard to revisit. Vmemo focuses on vis
 
 ## Docker Image Platforms
 
-Vmemo provides Linux multi-arch Docker images:
+Vmemo provides architecture-specific Docker images:
 
-- `linux/amd64`
-- `linux/arm64/v8`
+- `thaddeusjiang/vmemo:<version>-amd64`
+- `thaddeusjiang/vmemo:<version>-arm64`
+
+Pick the image by your host CPU:
+
+- Apple Silicon (M1/M2/M3/M4): use `-arm64`
+- Most cloud Linux servers on Intel/AMD CPUs: use `-amd64`
+
+Examples:
+
+```bash
+docker pull thaddeusjiang/vmemo:2026.3.28-arm64
+docker pull thaddeusjiang/vmemo:2026.3.28-amd64
+```
 
 ## Self-hosting
 
@@ -66,7 +78,7 @@ openssl rand -hex 64
 ```yaml
 services:
   vmemo:
-    image: thaddeusjiang/vmemo:latest
+    image: thaddeusjiang/vmemo:<version>-amd64
     command: ["start"]
     restart: on-failure
     environment:
