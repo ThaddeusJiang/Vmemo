@@ -45,6 +45,19 @@ For full runtime variables, see:
 mix setup
 ```
 
+`mix setup` prepares both database and Typesense in this project:
+
+- Database setup and migrations
+- Typesense schema setup and migrations
+
+For daily maintenance, prefer:
+
+```bash
+mix reset
+```
+
+Use standalone `mix db.*` or `mix ts.*` commands only for targeted fixes.
+
 ## 5. Run the App
 
 Run the Phoenix server in local development:
