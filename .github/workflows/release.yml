@@ -14,8 +14,6 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
 
     steps:
       - name: Checkout repository
@@ -54,9 +52,8 @@ jobs:
           {
             echo "version=$VERSION"
             echo "tag=$VERSION"
-            echo "tags<<EOF"
-            echo "thaddeusjiang/vmemo:${VERSION}"
-            echo "EOF"
+            echo "amd64_tag=thaddeusjiang/vmemo:${VERSION}-amd64"
+            echo "arm64_tag=thaddeusjiang/vmemo:${VERSION}-arm64"
           } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
@@ -76,25 +73,27 @@ jobs:
             --notes "Release $TITLE" \
             --target "${GITHUB_SHA}"
 
-      - name: Build and push multi-arch image
+      - name: Build and push amd64 image
         uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          tags: ${{ steps.tags.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          tags: ${{ steps.tags.outputs.amd64_tag }}
+          cache-from: type=gha,scope=release-amd64
+          cache-to: type=gha,mode=max,scope=release-amd64
 
-      - name: Update Docker Hub tag description
-        uses: ./.github/actions/dockerhub-tag-description
+      - name: Build and push arm64 image
+        uses: docker/build-push-action@v7.0.0
         with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: thaddeusjiang/vmemo
-          tag: ${{ steps.tags.outputs.version }}
-          commit-sha: ${{ github.sha }}
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/arm64/v8
+          tags: ${{ steps.tags.outputs.arm64_tag }}
+          cache-from: type=gha,scope=release-arm64
+          cache-to: type=gha,mode=max,scope=release-arm64
 
       - name: Log out from Docker Hub
         run: docker logout
