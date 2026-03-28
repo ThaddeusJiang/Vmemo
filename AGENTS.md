@@ -13,7 +13,7 @@ find module/function definitions.
 
 ## 个人规范
 
-- **总是**采用文档驱动开发，创建 `docs/devlog/YYYYMMDD-title.md` 并记录开发日志
+- **总是**采用文档驱动开发，创建 `_local_docs/devlog/YYYYMMDD-title.md` 并记录开发日志（仅本地保留，绝不提交到 git）
 - 代码、注释、UI 文本一律使用 **英文**，不混用中文；只在文档或沟通中使用中文
 - **绝不**使用 i18n，代码中始终直接使用英文文本
 - **绝不**写过多注释，保持代码简洁易懂
