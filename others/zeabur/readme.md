@@ -94,8 +94,9 @@ Optional, missing values only cause warnings:
 ### Startup Flow
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-3. `bin/vmemo start`
+2. `bin/vmemo start`
+
+`Vmemo.Release.migrate()` includes both AshPostgres repo migrations and Typesense migrations.
 
 ### Migration Failure
 
@@ -110,5 +111,4 @@ Optional, missing values only cause warnings:
 docker logs <container_id>
 docker exec -it <container_id> /bin/bash
 /app/bin/vmemo eval "Vmemo.Release.migrate()"
-/app/bin/vmemo eval "Vmemo.Release.ts_migrate()"
 ```

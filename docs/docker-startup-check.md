@@ -7,8 +7,7 @@
 ### 1. 入口点脚本 (`rel/entrypoint.sh`)
 
 - ✅ 容器通过 `ENTRYPOINT` 先执行启动前准备
-- ✅ 启动时先运行 Postgres 迁移（`bin/vmemo eval "Vmemo.Release.migrate()"`）
-- ✅ 启动时继续运行 Typesense 迁移（`bin/vmemo eval "Vmemo.Release.ts_migrate()"`）
+- ✅ 启动时运行统一 release 迁移（`bin/vmemo eval "Vmemo.Release.migrate()"`，包含 Postgres + Typesense）
 - ✅ 最后通过 `CMD` 启动 release（`bin/vmemo start`）
 
 ### 2. Dockerfile 配置
@@ -36,17 +35,12 @@
 
 ## 🔍 启动流程验证
 
-1. **运行 Postgres 迁移**
+1. **运行 release 迁移（包含 Postgres + Typesense）**
    ```bash
    bin/vmemo eval "Vmemo.Release.migrate()"
    ```
 
-2. **运行 Typesense 迁移**
-   ```bash
-   bin/vmemo eval "Vmemo.Release.ts_migrate()"
-   ```
-
-3. **启动服务**
+2. **启动服务**
    ```bash
    bin/vmemo start
    ```

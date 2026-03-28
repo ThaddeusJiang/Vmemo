@@ -11,7 +11,7 @@ Update production compose config so `vmemo` reads environment values from `.env`
 - Added `depends_on` for `postgres` and `typesense` under `vmemo`.
 - Added `env_file: .env` for `vmemo`.
 - Added fallback environment values for:
-  - `DATABASE_URL` -> `ecto://postgres:postgres@postgres/vmemo_dev`
+  - `DATABASE_URL` -> `postgres://postgres:postgres@postgres/vmemo_dev`
   - `TYPESENSE_URL` -> `http://typesense:8108`
   - `TYPESENSE_API_KEY` -> `xyz`
 - Added explicit Moondream passthrough vars:

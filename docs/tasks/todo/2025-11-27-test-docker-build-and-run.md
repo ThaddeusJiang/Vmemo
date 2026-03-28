@@ -127,7 +127,7 @@
 ```bash
 docker run --rm \
   -e PHX_SERVER=true \
-  -e DATABASE_URL="ecto://postgres:postgres@host.docker.internal:54321/vmemo_dev" \
+  -e DATABASE_URL="postgres://postgres:postgres@host.docker.internal:54321/vmemo_dev" \
   -e SECRET_KEY_BASE="your_secret_key_base" \
   -e ADMIN_PASSWORD="test_admin_password" \
   -e SENTRY_DSN="https://test@test.ingest.sentry.io/123456" \

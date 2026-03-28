@@ -81,12 +81,12 @@ if config_env() == :prod do
     System.get_env("DATABASE_URL") ||
       raise """
       environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
+      For example: postgres://USER:PASS@HOST/DATABASE
       """
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
-  config :vmemo, Vmemo.AshRepo,
+  config :vmemo, Vmemo.Repo,
     # ssl: true,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
@@ -103,7 +103,7 @@ if config_env() == :prod do
   config :vmemo, admin_token: admin_token
 
   config :vmemo, Oban,
-    repo: Vmemo.AshRepo,
+    repo: Vmemo.Repo,
     plugins: [Oban.Plugins.Pruner],
     queues: [default: 10, sync_typesense: 5]
 

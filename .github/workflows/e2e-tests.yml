@@ -63,7 +63,7 @@ jobs:
         working-directory: e2e-test
     env:
       VMEMO_IMAGE: thaddeusjiang/vmemo:e2e
-      DATABASE_URL: ecto://postgres:postgres@host.docker.internal:5432/vmemo
+      DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
       OPENROUTER_API_KEY: test-openrouter-key

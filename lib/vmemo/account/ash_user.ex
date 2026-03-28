@@ -6,7 +6,7 @@ defmodule Vmemo.Account.AshUser do
 
   postgres do
     table "ash_users"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   authentication do

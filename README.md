@@ -70,7 +70,7 @@ services:
     command: ["start"]
     restart: on-failure
     environment:
-      DATABASE_URL: ecto://postgres:postgres@postgres/vmemo
+      DATABASE_URL: postgres://postgres:postgres@postgres/vmemo
       TYPESENSE_URL: http://typesense:8108
       TYPESENSE_API_KEY: xyz
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
@@ -127,20 +127,6 @@ services:
       timeout: 5s
       retries: 30
       start_period: 5s
-      
-  # cloudflared:
-  #   profiles:
-  #     - preview
-  #   image: cloudflare/cloudflared:latest
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - vmemo
-  #   env_file:
-  #     - .env
-  #   command: tunnel --no-autoupdate run --url http://vmemo:4000
-  #   environment:
-  #     TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
-
 ```
 
 ### 3. Start Services
@@ -154,8 +140,14 @@ Open `http://localhost:4000`.
 Startup flow in container:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-3. `bin/vmemo start`
+2. `bin/vmemo start`
+
+Migration note:
+
+- Vmemo uses Ash + ash_postgres for data access and schema changes.
+- `Vmemo.Release.migrate()` is the preferred release entrypoint.
+- It runs both AshPostgres repo migrations and Typesense migrations.
+- For local migration workflow, prefer Ash tasks (for example `mix ash.migrate`) instead of `mix ecto.*`.
 
 Remote IEx (release mode):
 
@@ -165,16 +157,9 @@ docker exec -it <container_name> /app/bin/vmemo remote
 
 ### Optional: Define a Public Domain via Cloudflare Tunnel
 
-To expose Vmemo with your own domain, enable the optional `cloudflared` service from `docker-compose.yml`.
+Use the Cloudflare Tunnel CLI guide to complete the full tunnel setup, including tunnel creation, DNS route, domain mapping, and service run commands:
 
-1. Add `TUNNEL_TOKEN` to `.env`.
-2. Set `PHX_HOST` in `.env` to your public domain, like: `vmemo.app`
-
-Start with profile enabled:
-
-```bash
-docker compose --profile preview up -d
-```
+- `docs/hexdocs/cloudflare-tunnel-cli.md`
 
 ## Public API
 
@@ -240,30 +225,29 @@ Example error response:
 
 ## Required Environment Variables (Production)
 
-| Variable | Description |
-| --- | --- |
-| `DATABASE_URL` | PostgreSQL connection URL |
-| `ADMIN_PASSWORD` | Admin password for protected actions |
-| `SECRET_KEY_BASE` | Phoenix secret key base |
-| `SENTRY_DSN` | Sentry DSN |
-| `SENTRY_ENV` | Sentry environment (`production`, `staging`, etc.) |
-| `RESEND_API_KEY` | Resend API key for email |
+| Variable          | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `DATABASE_URL`    | PostgreSQL connection URL                          |
+| `ADMIN_PASSWORD`  | Admin password for protected actions               |
+| `SECRET_KEY_BASE` | Phoenix secret key base                            |
+| `SENTRY_DSN`      | Sentry DSN                                         |
+| `SENTRY_ENV`      | Sentry environment (`production`, `staging`, etc.) |
+| `RESEND_API_KEY`  | Resend API key for email                           |
 
 ## Optional Environment Variables
 
-| Variable | Description |
-| --- | --- |
-| `TYPESENSE_URL` | Typesense endpoint |
-| `TYPESENSE_API_KEY` | Typesense API key |
-| `MOONDREAM_URL` | Moondream API endpoint |
-| `MOONDREAM_API_KEY` | Moondream API key |
-| `OPENROUTER_API_KEY` | OpenRouter API key for chat features |
-| `PHX_HOST` | Public host name (`vmemo.app` default) |
-| `PORT` | App port (`4000` default) |
-| `POOL_SIZE` | DB pool size (`10` default) |
-| `ECTO_IPV6` | Enable IPv6 when set to `true` or `1` |
-| `PHX_SERVER` | Enable Phoenix server in runtime |
-| `TUNNEL_TOKEN` | Cloudflare Tunnel token when using `cloudflared` profile |
+| Variable             | Description                            |
+| -------------------- | -------------------------------------- |
+| `TYPESENSE_URL`      | Typesense endpoint                     |
+| `TYPESENSE_API_KEY`  | Typesense API key                      |
+| `MOONDREAM_URL`      | Moondream API endpoint                 |
+| `MOONDREAM_API_KEY`  | Moondream API key                      |
+| `OPENROUTER_API_KEY` | OpenRouter API key for chat features   |
+| `PHX_HOST`           | Public host name (`vmemo.app` default) |
+| `PORT`               | App port (`4000` default)              |
+| `POOL_SIZE`          | DB pool size (`10` default)            |
+| `ECTO_IPV6`          | Enable IPv6 when set to `true` or `1`  |
+| `PHX_SERVER`         | Enable Phoenix server in runtime       |
 
 ## Tech Stack
 

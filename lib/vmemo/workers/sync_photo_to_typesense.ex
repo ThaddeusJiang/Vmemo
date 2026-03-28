@@ -10,7 +10,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
     query =
       "SELECT id::text, note, caption, ts_ocr, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
 
-    case Vmemo.AshRepo.query(query, [photo_id]) do
+    case Vmemo.Repo.query(query, [photo_id]) do
       {:ok, %{rows: [row]}} ->
         [id, note, caption, ts_ocr, url, file_id, inserted_at, ash_user_id] = row
 
@@ -156,7 +156,7 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   defp load_note_ids(photo_id) do
     query = "SELECT note_id::text FROM photos_notes WHERE photo_id::text = $1"
 
-    case Vmemo.AshRepo.query(query, [photo_id]) do
+    case Vmemo.Repo.query(query, [photo_id]) do
       {:ok, %{rows: rows}} -> Enum.map(rows, fn [note_id] -> note_id end)
       _ -> []
     end

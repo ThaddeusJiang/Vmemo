@@ -20,7 +20,7 @@ defmodule Vmemo.Photos.Photo do
 
   postgres do
     table "photos"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   admin do

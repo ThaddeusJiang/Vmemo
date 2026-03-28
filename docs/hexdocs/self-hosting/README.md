@@ -5,7 +5,7 @@
 - `vmemo`
 - `postgres`
 - `typesense`
-- optional `cloudflared`（preview profile）
+- optional `cloudflared`
 
 ## 最简单版本（推荐先跑通）
 
@@ -14,7 +14,7 @@
 1. 进入目录：
 
 ```bash
-cd others/self-hosting
+cd docs/hexdocs/self-hosting
 ```
 
 2. 复制环境变量模板并填写必要变量：
@@ -71,7 +71,7 @@ PHX_SERVER=true
 PORT=4000
 SECRET_KEY_BASE=replace_with_a_long_random_secret
 ADMIN_PASSWORD=replace_with_a_strong_admin_password
-DATABASE_URL=ecto://postgres:postgres@postgres/vmemo
+DATABASE_URL=postgres://postgres:postgres@postgres/vmemo
 TYPESENSE_URL=http://typesense:8108
 TYPESENSE_API_KEY=replace_with_a_strong_typesense_key
 RESEND_API_KEY=replace_with_your_resend_api_key
@@ -80,7 +80,6 @@ SENTRY_ENV=production
 OPENROUTER_API_KEY=
 MOONDREAM_API_KEY=
 MOONDREAM_URL=
-TUNNEL_TOKEN=
 ```
 
 生成 `SECRET_KEY_BASE`：
@@ -122,8 +121,14 @@ http://localhost:14000
 容器启动流程（release）：
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-3. `bin/vmemo start`
+2. `bin/vmemo start`
+
+说明：
+
+- 当前项目统一使用 Ash + ash_postgres。
+- `Vmemo.Release.migrate()` 是该项目首选的 release 迁移入口。
+- 它会同时执行 AshPostgres repo migrations 与 Typesense migrations。
+- 本地迁移建议使用 Ash 任务（如 `mix ash.migrate`），不建议使用 `mix ecto.*`。
 
 远程 IEx：
 
@@ -133,29 +138,9 @@ docker exec -it <container_name> /app/bin/vmemo remote
 
 ### 4) 可选：Cloudflare Tunnel 对外暴露
 
-1. 在 `.env` 设置 `TUNNEL_TOKEN`
-2. 把 `PHX_HOST` 改为你的公网域名（例如 `vmemo.app`）
-3. 启动 preview profile：
+完整配置请参考：
 
-```bash
-docker compose --profile preview up -d
-```
-
-## 端口与数据目录
-
-`docker-compose.example.yml` 默认端口：
-
-- Vmemo: `14000 -> 4000`
-- PostgreSQL: `54321 -> 5432`
-- Typesense: `8766 -> 8108`
-
-`docker-compose.yml`（仓库当前版本）可能使用不同端口（例如 `15432` / `18108`），请以文件实际配置为准。
-
-默认持久化目录：
-
-- PostgreSQL: `./vmemo_data/pg-data`
-- Typesense: `./vmemo_data/ts-data`
-- Storage: `./vmemo_data/storage`（容器内 `/app/storage`）
+- `docs/hexdocs/self-hosting/cloudflare-tunnel-cli.md`
 
 ## Notes
 

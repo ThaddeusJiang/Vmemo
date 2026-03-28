@@ -6,7 +6,7 @@
 
 1. 使用单一 prod Dockerfile
 2. 使用 Elixir release 启动（`bin/vmemo start`）
-3. 在入口点串行执行 Postgres + Typesense 迁移
+3. 在入口点执行统一 release 迁移（包含 Postgres + Typesense）
 
 ## 入口点脚本
 
@@ -14,7 +14,6 @@
 
 ```bash
 /app/bin/vmemo eval "Vmemo.Release.migrate()"
-/app/bin/vmemo eval "Vmemo.Release.ts_migrate()"
 exec /app/bin/vmemo "$@"
 ```
 
@@ -50,8 +49,7 @@ docker run -p 4000:4000 \
 容器启动顺序：
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo eval "Vmemo.Release.ts_migrate()"`
-3. `bin/vmemo start`
+2. `bin/vmemo start`
 
 ## 手动运维
 

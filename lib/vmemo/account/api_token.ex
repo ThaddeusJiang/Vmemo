@@ -8,7 +8,7 @@ defmodule Vmemo.Account.ApiToken do
 
   postgres do
     table "api_tokens"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   admin do

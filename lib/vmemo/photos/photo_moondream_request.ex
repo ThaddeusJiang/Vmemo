@@ -8,7 +8,7 @@ defmodule Vmemo.Photos.PhotoMoondreamRequest do
 
   postgres do
     table "photo_moondream_requests"
-    repo Vmemo.AshRepo
+    repo Vmemo.Repo
   end
 
   admin do
