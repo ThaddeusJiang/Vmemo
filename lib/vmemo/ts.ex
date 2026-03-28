@@ -2,7 +2,7 @@ defmodule Vmemo.Ts do
   alias SmallSdk.Typesense
 
   @migrations_glob "priv/ts/migrations/*.exs"
-  @migrations_collection "_ts_schema_migrations"
+  @migrations_collection "ts_schema_migrations"
   @list_documents_page_size 100
 
   @doc """
@@ -97,6 +97,7 @@ defmodule Vmemo.Ts do
     applied_versions = applied_migration_versions()
 
     migration_entries()
+    |> validate_unique_migration_versions()
     |> pending_migrations(applied_versions)
     |> Enum.each(fn %{version: version, path: path} ->
       Code.eval_file(path)
@@ -150,6 +151,27 @@ defmodule Vmemo.Ts do
         path: path
       }
     end)
+  end
+
+  @doc """
+  Validate migration versions are unique and return entries unchanged.
+  """
+  def validate_unique_migration_versions(entries) do
+    versions = Enum.map(entries, & &1.version)
+
+    case versions -- Enum.uniq(versions) do
+      [] ->
+        entries
+
+      duplicated ->
+        duplicated_versions =
+          duplicated
+          |> Enum.uniq()
+          |> Enum.sort()
+          |> Enum.join(", ")
+
+        raise("Typesense migration versions must be unique: #{duplicated_versions}")
+    end
   end
 
   defp ensure_migrations_collection do

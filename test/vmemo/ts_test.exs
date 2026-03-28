@@ -28,4 +28,26 @@ defmodule Vmemo.TsTest do
       assert [] = Vmemo.Ts.pending_migrations(entries, applied_versions)
     end
   end
+
+  describe "validate_unique_migration_versions/1" do
+    test "returns entries when versions are unique" do
+      entries = [
+        %{version: "2024-12-19", path: "a"},
+        %{version: "2024-12-20", path: "b"}
+      ]
+
+      assert entries == Vmemo.Ts.validate_unique_migration_versions(entries)
+    end
+
+    test "raises when duplicated migration versions exist" do
+      entries = [
+        %{version: "2024-12-19", path: "a"},
+        %{version: "2024-12-19", path: "b"}
+      ]
+
+      assert_raise RuntimeError, ~r/Typesense migration versions must be unique/, fn ->
+        Vmemo.Ts.validate_unique_migration_versions(entries)
+      end
+    end
+  end
 end
