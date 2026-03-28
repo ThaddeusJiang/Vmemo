@@ -48,6 +48,16 @@ jobs:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
 
+      - name: Cache deps and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
+
       - name: Install dependencies
         run: mix deps.get
 
@@ -73,12 +83,8 @@ jobs:
           done
           echo "Typesense is ready!"
 
-      - name: Setup DB and Typesense
-        run: |
-          mix ash_postgres.create --quiet
-          mix ash.migrate --quiet
-          mix ts.setup
+      - name: Setup Typesense
+        run: mix ts.setup
 
       - name: Run tests
-        run: |
-          mix test
+        run: mix test
