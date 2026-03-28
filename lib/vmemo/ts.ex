@@ -2,6 +2,8 @@ defmodule Vmemo.Ts do
   alias SmallSdk.Typesense
 
   @migrations_glob "priv/ts/migrations/*.exs"
+  @migrations_collection "_ts_schema_migrations"
+  @list_documents_page_size 100
 
   @doc """
   2024-12-20
@@ -85,15 +87,34 @@ defmodule Vmemo.Ts do
 
     Typesense.drop_collection("notes")
     |> ensure_ok("drop notes collection")
+
+    Typesense.drop_collection(@migrations_collection)
+    |> ensure_ok("drop typesense migration tracking collection")
   end
 
   def migrate do
-    @migrations_glob
-    |> Path.wildcard()
-    |> Enum.sort()
-    |> Enum.each(&Code.eval_file/1)
+    ensure_migrations_collection()
+    applied_versions = applied_migration_versions()
+
+    migration_entries()
+    |> pending_migrations(applied_versions)
+    |> Enum.each(fn %{version: version, path: path} ->
+      Code.eval_file(path)
+      record_migration_version(version)
+    end)
 
     :ok
+  end
+
+  @doc """
+  Build ordered pending migration entries from migration files and applied versions.
+  """
+  def pending_migrations(migration_entries, applied_versions) do
+    applied_versions = MapSet.new(applied_versions)
+
+    migration_entries
+    |> Enum.sort_by(& &1.version)
+    |> Enum.reject(fn %{version: version} -> MapSet.member?(applied_versions, version) end)
   end
 
   defp ensure_collection_created({:ok, _}, _collection), do: :ok
@@ -104,6 +125,7 @@ defmodule Vmemo.Ts do
 
   defp ensure_collection_updated({:ok, _}, _action), do: :ok
   defp ensure_collection_updated({:error, "Not Found"}, _action), do: :ok
+
   defp ensure_collection_updated({:error, reason}, _action) when is_binary(reason) do
     if String.contains?(reason, "is already part of the schema") do
       :ok
@@ -117,6 +139,79 @@ defmodule Vmemo.Ts do
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
+
+  defp migration_entries do
+    @migrations_glob
+    |> Path.wildcard()
+    |> Enum.sort()
+    |> Enum.map(fn path ->
+      %{
+        version: Path.basename(path, ".exs"),
+        path: path
+      }
+    end)
+  end
+
+  defp ensure_migrations_collection do
+    schema = %{
+      "name" => @migrations_collection,
+      "fields" => [
+        %{"name" => "version", "type" => "string"},
+        %{"name" => "inserted_at", "type" => "int64"}
+      ],
+      "default_sorting_field" => "inserted_at"
+    }
+
+    Typesense.create_collection(schema)
+    |> ensure_collection_created(@migrations_collection)
+  end
+
+  defp applied_migration_versions do
+    load_applied_migration_versions(1, MapSet.new())
+  end
+
+  defp load_applied_migration_versions(page, acc) do
+    case Typesense.list_documents!(@migrations_collection, @list_documents_page_size, page) do
+      {:ok, docs} when is_list(docs) ->
+        next_acc =
+          docs
+          |> Enum.reduce(acc, fn doc, set ->
+            case Map.get(doc, "version") do
+              version when is_binary(version) -> MapSet.put(set, version)
+              _ -> set
+            end
+          end)
+
+        if length(docs) < @list_documents_page_size do
+          next_acc
+        else
+          load_applied_migration_versions(page + 1, next_acc)
+        end
+
+      {:ok, _other} ->
+        acc
+
+      {:error, "Not Found"} ->
+        acc
+
+      {:error, reason} ->
+        raise("Typesense list migration versions failed: #{reason}")
+    end
+  end
+
+  defp record_migration_version(version) do
+    document = %{
+      "id" => version,
+      "version" => version,
+      "inserted_at" => System.system_time(:second)
+    }
+
+    case Typesense.create_document(@migrations_collection, document) do
+      {:ok, _} -> :ok
+      {:error, "Conflict"} -> :ok
+      {:error, reason} -> raise("Typesense record migration version failed: #{reason}")
+    end
+  end
 
   defp image_embedding_enabled? do
     Application.get_env(:vmemo, :typesense_image_embedding, true)
