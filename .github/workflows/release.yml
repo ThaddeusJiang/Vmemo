@@ -19,6 +19,8 @@ permissions:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
     outputs:
       version: ${{ steps.tags.outputs.version }}
       tag: ${{ steps.tags.outputs.tag }}
@@ -131,6 +133,8 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
     needs:
       - prepare
       - build-amd64
