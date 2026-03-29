@@ -159,6 +159,6 @@ jobs:
           fi
 
           gh release create "$TAG" \
-            --title "$TITLE" \
+            --title "Vmemo $TITLE" \
             --notes "Release $TITLE" \
             --target "${GITHUB_SHA}"
