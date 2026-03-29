@@ -17,27 +17,15 @@ permissions:
   contents: write
 
 jobs:
-  publish:
+  prepare:
     runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
+    outputs:
+      version: ${{ steps.tags.outputs.version }}
+      tag: ${{ steps.tags.outputs.tag }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
-        with:
-          driver: docker-container
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4.0.0
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4.0.0
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Compute Docker tags
         id: tags
         run: |
@@ -57,16 +45,13 @@ jobs:
           {
             echo "version=$VERSION"
             echo "tag=$VERSION"
-            echo "amd64_tag=thaddeusjiang/vmemo:${VERSION}-amd64"
-            echo "arm64_tag=thaddeusjiang/vmemo:${VERSION}-arm64"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub release
+      - name: Validate GitHub release tag availability
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.tags.outputs.tag }}"
-          TITLE="${{ steps.tags.outputs.version }}"
           OVERWRITE="${{ github.event.inputs.overwrite_existing_release }}"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -75,37 +60,105 @@ jobs:
               echo "Re-run workflow with 'overwrite_existing_release' checked to replace it."
               exit 1
             fi
+          fi
 
-            echo "GitHub release '$TAG' already exists. Deleting it because overwrite is enabled."
-            gh release delete "$TAG" --yes
+  build:
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            cache_scope: release-amd64
+            needs_qemu: false
+          - arch: arm64
+            platform: linux/arm64/v8
+            cache_scope: release-arm64
+            needs_qemu: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+        with:
+          driver: docker-container
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4.0.0
+        with:
+          username: thaddeusjiang
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        if: ${{ matrix.needs_qemu }}
+        uses: docker/setup-qemu-action@v4.0.0
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7.0.0
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: ${{ matrix.platform }}
+          tags: thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.cache_scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache_scope }}
+
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
+    needs:
+      - prepare
+      - build
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+        with:
+          driver: docker-container
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4.0.0
+        with:
+          username: thaddeusjiang
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create multi-platform manifest tag
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+
+          docker buildx imagetools create \
+            -t "thaddeusjiang/vmemo:${VERSION}" \
+            "thaddeusjiang/vmemo:${VERSION}-amd64" \
+            "thaddeusjiang/vmemo:${VERSION}-arm64"
+
+      - name: Verify multi-platform manifest
+        run: docker buildx imagetools inspect "thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ needs.prepare.outputs.tag }}"
+          TITLE="${{ needs.prepare.outputs.version }}"
+          OVERWRITE="${{ github.event.inputs.overwrite_existing_release }}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if [[ "$OVERWRITE" = "true" ]]; then
+              echo "GitHub release '$TAG' already exists. Deleting it because overwrite is enabled."
+              gh release delete "$TAG" --yes
+            else
+              echo "GitHub release '$TAG' already exists and overwrite is disabled."
+              exit 1
+            fi
           fi
 
           gh release create "$TAG" \
-            --title "$TITLE" \
+            --title "Vmemo $TITLE" \
             --notes "Release $TITLE" \
             --target "${GITHUB_SHA}"
-
-      - name: Build and push amd64 image
-        uses: docker/build-push-action@v7.0.0
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.tags.outputs.amd64_tag }}
-          cache-from: type=gha,scope=release-amd64
-          cache-to: type=gha,mode=max,scope=release-amd64
-
-      - name: Build and push arm64 image
-        uses: docker/build-push-action@v7.0.0
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          platforms: linux/arm64/v8
-          tags: ${{ steps.tags.outputs.arm64_tag }}
-          cache-from: type=gha,scope=release-arm64
-          cache-to: type=gha,mode=max,scope=release-arm64
-
-      - name: Log out from Docker Hub
-        run: docker logout
