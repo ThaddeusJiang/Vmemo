@@ -24,9 +24,6 @@ jobs:
     outputs:
       version: ${{ steps.tags.outputs.version }}
       tag: ${{ steps.tags.outputs.tag }}
-      multi_tag: ${{ steps.tags.outputs.multi_tag }}
-      amd64_tag: ${{ steps.tags.outputs.amd64_tag }}
-      arm64_tag: ${{ steps.tags.outputs.arm64_tag }}
 
     steps:
       - name: Compute Docker tags
@@ -48,9 +45,6 @@ jobs:
           {
             echo "version=$VERSION"
             echo "tag=$VERSION"
-            echo "multi_tag=thaddeusjiang/vmemo:${VERSION}"
-            echo "amd64_tag=thaddeusjiang/vmemo:${VERSION}-amd64"
-            echo "arm64_tag=thaddeusjiang/vmemo:${VERSION}-arm64"
           } >> "$GITHUB_OUTPUT"
 
       - name: Validate GitHub release tag availability
@@ -68,9 +62,21 @@ jobs:
             fi
           fi
 
-  build-amd64:
+  build:
     runs-on: ubuntu-latest
     needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            cache_scope: release-amd64
+            needs_qemu: false
+          - arch: arm64
+            platform: linux/arm64/v8
+            cache_scope: release-arm64
+            needs_qemu: true
 
     steps:
       - name: Checkout repository
@@ -86,50 +92,21 @@ jobs:
         with:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push amd64 image
-        uses: docker/build-push-action@v7.0.0
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          platforms: linux/amd64
-          tags: ${{ needs.prepare.outputs.amd64_tag }}
-          cache-from: type=gha,scope=release-amd64
-          cache-to: type=gha,mode=max,scope=release-amd64
-
-  build-arm64:
-    runs-on: ubuntu-latest
-    needs: prepare
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
-        with:
-          driver: docker-container
 
       - name: Set up QEMU
+        if: ${{ matrix.needs_qemu }}
         uses: docker/setup-qemu-action@v4.0.0
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4.0.0
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push arm64 image
+      - name: Build and push image
         uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: linux/arm64/v8
-          tags: ${{ needs.prepare.outputs.arm64_tag }}
-          cache-from: type=gha,scope=release-arm64
-          cache-to: type=gha,mode=max,scope=release-arm64
+          platforms: ${{ matrix.platform }}
+          tags: thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.cache_scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache_scope }}
 
   publish:
     runs-on: ubuntu-latest
@@ -137,8 +114,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
     needs:
       - prepare
-      - build-amd64
-      - build-arm64
+      - build
 
     steps:
       - name: Set up Docker Buildx
@@ -154,13 +130,15 @@ jobs:
 
       - name: Create multi-platform manifest tag
         run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+
           docker buildx imagetools create \
-            -t "${{ needs.prepare.outputs.multi_tag }}" \
-            "${{ needs.prepare.outputs.amd64_tag }}" \
-            "${{ needs.prepare.outputs.arm64_tag }}"
+            -t "thaddeusjiang/vmemo:${VERSION}" \
+            "thaddeusjiang/vmemo:${VERSION}-amd64" \
+            "thaddeusjiang/vmemo:${VERSION}-arm64"
 
       - name: Verify multi-platform manifest
-        run: docker buildx imagetools inspect "${{ needs.prepare.outputs.multi_tag }}"
+        run: docker buildx imagetools inspect "thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}"
 
       - name: Create GitHub release
         env:
