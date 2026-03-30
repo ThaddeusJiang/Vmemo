@@ -110,15 +110,7 @@ defmodule Vmemo.Photos.Photo do
         ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
         page = Ash.Query.get_argument(query, :page)
 
-        {photos, _found, _current_page} =
-          typesense_hybrid_search(q, similar, ash_user_id, page)
-
-        photo_ids =
-          photos
-          |> Enum.map(& &1.id)
-          |> Enum.filter(&valid_uuid?/1)
-
-        if photo_ids == [] do
+        if blank_query_without_similar?(q, similar) do
           per_page = 10
           offset = (page - 1) * per_page
 
@@ -127,32 +119,50 @@ defmodule Vmemo.Photos.Photo do
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
         else
-          query
-          |> Ash.Query.filter(id: [in: photo_ids])
-          |> Ash.Query.after_action(fn _query, records ->
-            photos_by_id = Map.new(photos, fn photo -> {photo.id, photo} end)
+          {photos, _found, _current_page} =
+            typesense_hybrid_search(q, similar, ash_user_id, page)
 
-            sorted_records =
-              photo_ids
-              |> Enum.map(fn id ->
-                Enum.find(records, fn record -> record.id == id end)
-              end)
-              |> Enum.reject(&is_nil/1)
-              |> Enum.map(fn record ->
-                case Map.get(photos_by_id, record.id) do
-                  nil ->
-                    record
+          photo_ids =
+            photos
+            |> Enum.map(& &1.id)
+            |> Enum.filter(&valid_uuid?/1)
 
-                  ts_photo ->
-                    Map.merge(record, %{
-                      _vector_distance: ts_photo._vector_distance,
-                      _text_match_info: ts_photo._text_match_info
-                    })
-                end
-              end)
+          if photo_ids == [] do
+            per_page = 10
+            offset = (page - 1) * per_page
 
-            {:ok, sorted_records}
-          end)
+            Ash.Query.filter(query, ash_user_id == ^ash_user_id)
+            |> Ash.Query.sort(inserted_at: :desc)
+            |> Ash.Query.offset(offset)
+            |> Ash.Query.limit(per_page)
+          else
+            query
+            |> Ash.Query.filter(id: [in: photo_ids])
+            |> Ash.Query.after_action(fn _query, records ->
+              photos_by_id = Map.new(photos, fn photo -> {photo.id, photo} end)
+
+              sorted_records =
+                photo_ids
+                |> Enum.map(fn id ->
+                  Enum.find(records, fn record -> record.id == id end)
+                end)
+                |> Enum.reject(&is_nil/1)
+                |> Enum.map(fn record ->
+                  case Map.get(photos_by_id, record.id) do
+                    nil ->
+                      record
+
+                    ts_photo ->
+                      Map.merge(record, %{
+                        _vector_distance: ts_photo._vector_distance,
+                        _text_match_info: ts_photo._text_match_info
+                      })
+                  end
+                end)
+
+              {:ok, sorted_records}
+            end)
+          end
         end
       end
     end
@@ -162,15 +172,21 @@ defmodule Vmemo.Photos.Photo do
       argument :similar_photo_id, :string
       argument :ash_user_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
+      run fn input, context ->
         q = Ash.ActionInput.get_argument(input, :query) || ""
         similar = Ash.ActionInput.get_argument(input, :similar_photo_id)
         ash_user_id = Ash.ActionInput.get_argument(input, :ash_user_id)
 
-        {_photos, found, _current_page} =
-          typesense_hybrid_search(q, similar, ash_user_id, 1)
+        if blank_query_without_similar?(q, similar) do
+          __MODULE__
+          |> Ash.Query.filter(ash_user_id == ^ash_user_id)
+          |> Ash.count(actor: context.actor)
+        else
+          {_photos, found, _current_page} =
+            typesense_hybrid_search(q, similar, ash_user_id, 1)
 
-        {:ok, found}
+          {:ok, found}
+        end
       end
     end
 
@@ -556,5 +572,9 @@ defmodule Vmemo.Photos.Photo do
       user_id: ash_user_id,
       page: page
     )
+  end
+
+  defp blank_query_without_similar?(q, similar) do
+    String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
   end
 end

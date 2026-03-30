@@ -56,29 +56,25 @@ defmodule Vmemo.Ts do
     Typesense.create_collection(notes_schema)
     |> ensure_collection_created("notes")
 
-    photos_schema = %{
-      "fields" => [
-        %{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true}
-      ]
-    }
-
-    Typesense.update_collection("photos", photos_schema)
-    |> ensure_collection_updated("update photos collection with note_ids")
+    ensure_collection_fields(
+      "photos",
+      [%{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true}],
+      "update photos collection with note_ids"
+    )
   end
 
   @doc """
   add photos.ocr
   """
   def change_3() do
-    schema = %{
-      "fields" => [
+    ensure_collection_fields(
+      "photos",
+      [
         %{"name" => "_gen_ocr", "type" => "string", "optional" => true},
         %{"name" => "_gen_description", "type" => "string", "optional" => true}
-      ]
-    }
-
-    Typesense.update_collection("photos", schema)
-    |> ensure_collection_updated("update photos collection with gen fields")
+      ],
+      "update photos collection with gen fields"
+    )
   end
 
   def reset do
@@ -127,11 +123,11 @@ defmodule Vmemo.Ts do
   defp ensure_collection_updated({:ok, _}, _action), do: :ok
   defp ensure_collection_updated({:error, "Not Found"}, _action), do: :ok
 
-  defp ensure_collection_updated({:error, reason}, _action) when is_binary(reason) do
+  defp ensure_collection_updated({:error, reason}, action) when is_binary(reason) do
     if String.contains?(reason, "is already part of the schema") do
       :ok
     else
-      {:error, reason}
+      ensure_ok({:error, reason}, action)
     end
   end
 
@@ -250,5 +246,37 @@ defmodule Vmemo.Ts do
         }
       }
     }
+  end
+
+  defp ensure_collection_fields(collection_name, fields, action) when is_list(fields) do
+    existing_field_names = collection_field_names(collection_name)
+
+    missing_fields =
+      Enum.reject(fields, fn field ->
+        field_name = Map.get(field, "name")
+        MapSet.member?(existing_field_names, field_name)
+      end)
+
+    if missing_fields == [] do
+      :ok
+    else
+      schema = %{"fields" => missing_fields}
+
+      Typesense.update_collection(collection_name, schema)
+      |> ensure_collection_updated(action)
+    end
+  end
+
+  defp collection_field_names(collection_name) do
+    case Typesense.get_collection(collection_name) do
+      {:ok, %{"fields" => fields}} when is_list(fields) ->
+        fields
+        |> Enum.map(&Map.get(&1, "name"))
+        |> Enum.reject(&is_nil/1)
+        |> MapSet.new()
+
+      _ ->
+        MapSet.new()
+    end
   end
 end
