@@ -75,11 +75,10 @@ defmodule Vmemo.PhotoService.TsPhoto do
   end
 
   def get_photo(id) do
-    {:ok, photo} = Typesense.get_document(@collection_name, id)
-
-    case photo do
-      nil -> nil
-      _ -> parse(photo)
+    case Typesense.get_document(@collection_name, id) do
+      {:ok, nil} -> nil
+      {:ok, photo} -> parse(photo)
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -141,11 +140,18 @@ defmodule Vmemo.PhotoService.TsPhoto do
   end
 
   def gen_description(id) do
-    photo = get_photo(id)
-    # 只调用 AI 生成，不更新 Typesense
-    case Ai.gen_description(photo.url) do
-      {:ok, description} -> {:ok, description}
-      {:error, reason} -> {:error, reason}
+    case get_photo(id) do
+      nil ->
+        {:error, :photo_not_found}
+
+      {:error, reason} ->
+        {:error, reason}
+
+      photo ->
+        case Ai.gen_description(photo.url) do
+          {:ok, description} -> {:ok, description}
+          {:error, reason} -> {:error, reason}
+        end
     end
   end
 

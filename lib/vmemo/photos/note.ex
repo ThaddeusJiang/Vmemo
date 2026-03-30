@@ -103,6 +103,7 @@ defmodule Vmemo.Photos.Note do
 
     case TsNote.get(note.id) do
       nil -> TsNote.create(typesense_data)
+      {:error, reason} -> {:error, reason}
       _existing -> TsNote.update(typesense_data)
     end
   end

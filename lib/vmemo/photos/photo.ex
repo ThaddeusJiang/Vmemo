@@ -595,6 +595,7 @@ defmodule Vmemo.Photos.Photo do
 
     case TsPhoto.get_photo(photo.id) do
       nil -> TsPhoto.create(typesense_data)
+      {:error, reason} -> {:error, reason}
       _existing -> TsPhoto.update_photo(typesense_data)
     end
   end

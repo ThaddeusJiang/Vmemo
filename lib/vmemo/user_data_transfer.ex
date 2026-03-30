@@ -616,7 +616,7 @@ defmodule Vmemo.UserDataTransfer do
                                                                                chunk_errors_acc} ->
             requested = chunk_stats_acc.requested + 1
 
-            case sync_fun.(id) do
+            case safe_sync_call(sync_fun, id) do
               {:ok, true} ->
                 {%{chunk_stats_acc | requested: requested, success: chunk_stats_acc.success + 1},
                  chunk_errors_acc}
@@ -631,6 +631,13 @@ defmodule Vmemo.UserDataTransfer do
                    chunk_errors_acc,
                    "Typesense #{entity_name} sync failed for #{id}: #{format_error(reason)}"
                  )}
+
+              other ->
+                {%{chunk_stats_acc | requested: requested, failed: chunk_stats_acc.failed + 1},
+                 add_error(
+                   chunk_errors_acc,
+                   "Typesense #{entity_name} sync returned unexpected result for #{id}: #{inspect(other)}"
+                 )}
             end
           end)
 
@@ -643,6 +650,16 @@ defmodule Vmemo.UserDataTransfer do
         {merged_stats, errors ++ chunk_errors}
       end
     )
+  end
+
+  defp safe_sync_call(sync_fun, id) do
+    sync_fun.(id)
+  rescue
+    exception ->
+      {:error, Exception.message(exception)}
+  catch
+    kind, reason ->
+      {:error, "#{kind}: #{inspect(reason)}"}
   end
 
   defp source_user_id_from_payload(payload, tmp_dir) do
