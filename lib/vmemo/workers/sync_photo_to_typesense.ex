@@ -2,133 +2,51 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
   require Logger
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Photos.Photo
   alias SmallSdk.Moondream
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
-    query =
-      "SELECT id::text, note, caption, ts_ocr, url, file_id, inserted_at, ash_user_id::text FROM photos WHERE id::text = $1"
-
-    case Vmemo.Repo.query(query, [photo_id]) do
-      {:ok, %{rows: [row]}} ->
-        [id, note, caption, ts_ocr, url, file_id, inserted_at, ash_user_id] = row
-
-        photo = %{
-          id: id,
-          note: note,
-          caption: caption,
-          ts_ocr: ts_ocr,
-          url: url,
-          file_id: file_id,
-          inserted_at: inserted_at,
-          ash_user_id: ash_user_id,
-          note_ids: load_note_ids(id)
-        }
-
-        sync_to_typesense(photo)
-
-      {:ok, %{rows: []}} ->
+    with {:ok, photo} <- Ash.get(Photo, photo_id, actor: nil, authorize?: false),
+         {:ok, true} <- Photo.sync_typesense_by_id(photo_id, actor: nil, authorize?: false) do
+      maybe_generate_caption(photo)
+    else
+      {:error, %Ash.Error.Query.NotFound{}} ->
         Logger.warning("Photo #{photo_id} not found in database")
         {:discard, :photo_not_found}
+
+      {:ok, false} ->
+        {:error, :sync_failed}
 
       {:error, error} ->
         {:error, error}
     end
   end
 
-  defp sync_to_typesense(photo) do
-    inserted_at_unix =
-      case photo.inserted_at do
-        %NaiveDateTime{} = naive_dt ->
-          naive_dt
-          |> DateTime.from_naive!("Etc/UTC")
-          |> DateTime.to_unix()
-
-        %DateTime{} = dt ->
-          DateTime.to_unix(dt)
-
-        _ ->
-          :os.system_time(:second)
-      end
-
-    base_data = %{
-      id: photo.id,
-      note: photo.note || "",
-      caption: photo.caption || "",
-      note_ids: photo.note_ids || [],
-      url: photo.url,
-      file_id: photo.file_id,
-      inserted_at: inserted_at_unix,
-      inserted_by: photo.ash_user_id,
-      _gen_ocr: photo.ts_ocr
-    }
-
-    typesense_data =
-      case read_image_as_base64(photo.url) do
-        {:ok, image} ->
-          Map.put(base_data, :image, image)
-
-        {:error, :file_not_found} ->
-          Logger.warning(
-            "Photo #{photo.id}: Image file not found at #{photo.url}, syncing without image"
-          )
-
-          base_data
-
-        {:error, reason} ->
-          Logger.warning(
-            "Photo #{photo.id}: Failed to read image (#{inspect(reason)}), syncing without image"
-          )
-
-          base_data
-      end
-
-    result =
-      case TsPhoto.get_photo(photo.id) do
-        nil ->
-          TsPhoto.create(typesense_data)
-
-        _existing ->
-          TsPhoto.update_photo(typesense_data)
-      end
-
-    case result do
-      {:ok, _} ->
-        if is_nil(photo.caption) or photo.caption == "" do
-          generate_caption(photo.id, typesense_data[:image])
-        end
-
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Failed to sync photo #{photo.id} to Typesense: #{inspect(reason)}")
-        {:error, reason}
+  defp maybe_generate_caption(photo) do
+    if is_nil(photo.caption) or photo.caption == "" do
+      generate_caption(photo)
+    else
+      :ok
     end
   end
 
-  defp generate_caption(photo_id, nil) do
-    Logger.info("Photo #{photo_id}: No image data available, skipping caption generation")
-    :ok
-  end
+  defp generate_caption(photo) do
+    with {:ok, image_base64} <- read_image_as_base64(photo.url),
+         {:ok, caption} <- Moondream.caption(image_base64) do
+      Logger.info("Photo #{photo.id}: Generated caption: #{String.slice(caption, 0, 50)}...")
 
-  defp generate_caption(photo_id, image_base64) do
-    case Moondream.caption(image_base64) do
-      {:ok, caption} ->
-        Logger.info("Photo #{photo_id}: Generated caption: #{String.slice(caption, 0, 50)}...")
-
-        # Only update database, Photo.update's after_action will trigger
-        # a new SyncPhotoToTypesense job to sync caption to Typesense
-        case Ash.get(Vmemo.Photos.Photo, photo_id, actor: nil) do
-          {:ok, photo} ->
-            Vmemo.Photos.Photo.update(photo, %{caption: caption}, actor: nil)
-
-          _ ->
-            :ok
-        end
+      case Photo.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+        {:ok, _updated_photo} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      {:error, :file_not_found} ->
+        Logger.info("Photo #{photo.id}: No image data available, skipping caption generation")
+        :ok
 
       {:error, reason} ->
-        Logger.warning("Photo #{photo_id}: Failed to generate caption: #{inspect(reason)}")
+        Logger.warning("Photo #{photo.id}: Failed to generate caption: #{inspect(reason)}")
         :ok
     end
   end
@@ -150,15 +68,6 @@ defmodule Vmemo.Workers.SyncPhotoToTypesense do
 
       {:error, reason} ->
         {:error, reason}
-    end
-  end
-
-  defp load_note_ids(photo_id) do
-    query = "SELECT note_id::text FROM photos_notes WHERE photo_id::text = $1"
-
-    case Vmemo.Repo.query(query, [photo_id]) do
-      {:ok, %{rows: rows}} -> Enum.map(rows, fn [note_id] -> note_id end)
-      _ -> []
     end
   end
 end

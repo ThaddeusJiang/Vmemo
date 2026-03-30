@@ -2,7 +2,6 @@ defmodule Vmemo.UserDataTransfer do
   require Ash.Query
   require Logger
 
-  alias SmallSdk.Typesense
   alias Vmemo.Repo
   alias Vmemo.Account.AshUser
   alias Vmemo.Photos.Note
@@ -224,15 +223,7 @@ defmodule Vmemo.UserDataTransfer do
     {link_stats, link_errors} =
       import_photo_links(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids)
 
-    {typesense_stats, typesense_errors} =
-      import_typesense_documents(
-        payload.typesense_photos,
-        payload.typesense_notes,
-        source_user_id,
-        user_id,
-        photo_id_map,
-        note_id_map
-      )
+    {typesense_stats, typesense_errors} = sync_imported_typesense_documents(photo_ids, note_ids)
 
     errors =
       []
@@ -583,41 +574,33 @@ defmodule Vmemo.UserDataTransfer do
     {%{created: inserted_count, skipped: skipped, failed: length(insert_errors)}, insert_errors}
   end
 
-  defp import_typesense_documents(
-         typesense_photos,
-         typesense_notes,
-         source_user_id,
-         target_user_id,
-         photo_id_map,
-         note_id_map
-       ) do
-    remapped_photos =
-      typesense_photos
-      |> Enum.map(
-        &remap_typesense_photo_doc(&1, source_user_id, target_user_id, photo_id_map, note_id_map)
+  defp sync_imported_typesense_documents(photo_ids, note_ids) do
+    {photo_stats, photo_errors} =
+      sync_typesense_records(
+        MapSet.to_list(photo_ids),
+        fn id -> Photo.sync_typesense_by_id(id, actor: nil, authorize?: false) end,
+        "photo"
       )
-      |> Enum.reject(&is_nil/1)
 
-    remapped_notes =
-      typesense_notes
-      |> Enum.map(&remap_typesense_note_doc(&1, target_user_id, photo_id_map, note_id_map))
-      |> Enum.reject(&is_nil/1)
-
-    {photo_stats, photo_errors} = upsert_typesense_collection("photos", remapped_photos)
-    {note_stats, note_errors} = upsert_typesense_collection("notes", remapped_notes)
+    {note_stats, note_errors} =
+      sync_typesense_records(
+        MapSet.to_list(note_ids),
+        fn id -> Note.sync_typesense_by_id(id, actor: nil, authorize?: false) end,
+        "note"
+      )
 
     {%{photos: photo_stats, notes: note_stats}, photo_errors ++ note_errors}
   end
 
-  defp upsert_typesense_collection(_collection, []) do
+  defp sync_typesense_records([], _sync_fun, _entity_name) do
     {%{requested: 0, success: 0, failed: 0}, []}
   end
 
-  defp upsert_typesense_collection(collection, documents) do
+  defp sync_typesense_records(ids, sync_fun, entity_name) do
     chunk_size = typesense_import_chunk_size()
     chunk_pause_ms = typesense_import_chunk_pause_ms()
 
-    documents
+    ids
     |> Enum.chunk_every(chunk_size)
     |> Enum.with_index()
     |> Enum.reduce(
@@ -627,7 +610,29 @@ defmodule Vmemo.UserDataTransfer do
           Process.sleep(chunk_pause_ms)
         end
 
-        {chunk_stats, chunk_errors} = upsert_typesense_chunk(collection, chunk)
+        {chunk_stats, chunk_errors} =
+          Enum.reduce(chunk, {%{requested: 0, success: 0, failed: 0}, []}, fn id,
+                                                                              {chunk_stats_acc,
+                                                                               chunk_errors_acc} ->
+            requested = chunk_stats_acc.requested + 1
+
+            case sync_fun.(id) do
+              {:ok, true} ->
+                {%{chunk_stats_acc | requested: requested, success: chunk_stats_acc.success + 1},
+                 chunk_errors_acc}
+
+              {:ok, false} ->
+                {%{chunk_stats_acc | requested: requested, failed: chunk_stats_acc.failed + 1},
+                 add_error(chunk_errors_acc, "Typesense #{entity_name} sync failed for #{id}")}
+
+              {:error, reason} ->
+                {%{chunk_stats_acc | requested: requested, failed: chunk_stats_acc.failed + 1},
+                 add_error(
+                   chunk_errors_acc,
+                   "Typesense #{entity_name} sync failed for #{id}: #{format_error(reason)}"
+                 )}
+            end
+          end)
 
         merged_stats = %{
           requested: stats.requested + chunk_stats.requested,
@@ -638,74 +643,6 @@ defmodule Vmemo.UserDataTransfer do
         {merged_stats, errors ++ chunk_errors}
       end
     )
-  end
-
-  defp upsert_typesense_chunk(collection, documents) do
-    case Typesense.import_documents(collection, documents, action: "upsert") do
-      {:ok, %{success: success, failed: failed, items: items}} ->
-        errors =
-          items
-          |> Enum.filter(&(Map.get(&1, "success") == false))
-          |> Enum.map(fn item ->
-            "Typesense #{collection} import failed: #{Map.get(item, "error", "unknown error")}"
-          end)
-
-        {%{requested: length(documents), success: success, failed: failed}, errors}
-
-      {:error, reason} ->
-        {%{requested: length(documents), success: 0, failed: length(documents)},
-         ["Typesense #{collection} import request failed: #{format_error(reason)}"]}
-    end
-  end
-
-  defp remap_typesense_photo_doc(doc, source_user_id, target_user_id, photo_id_map, note_id_map) do
-    legacy_id = pick_value(doc, ["id", :id])
-    mapped_id = Map.get(photo_id_map, legacy_id)
-
-    if is_nil(mapped_id) do
-      nil
-    else
-      note_ids =
-        doc
-        |> pick_value(["note_ids", :note_ids])
-        |> normalize_list()
-        |> Enum.map(&Map.get(note_id_map, &1))
-        |> Enum.reject(&is_nil/1)
-        |> Enum.uniq()
-
-      doc
-      |> stringify_keys()
-      |> Map.put("id", mapped_id)
-      |> Map.put("inserted_by", target_user_id)
-      |> Map.put(
-        "url",
-        remap_photo_url(pick_value(doc, ["url", :url]), source_user_id, target_user_id)
-      )
-      |> Map.put("note_ids", note_ids)
-    end
-  end
-
-  defp remap_typesense_note_doc(doc, target_user_id, photo_id_map, note_id_map) do
-    legacy_id = pick_value(doc, ["id", :id])
-    mapped_id = Map.get(note_id_map, legacy_id)
-
-    if is_nil(mapped_id) do
-      nil
-    else
-      photo_ids =
-        doc
-        |> pick_value(["photo_ids", :photo_ids])
-        |> normalize_list()
-        |> Enum.map(&Map.get(photo_id_map, &1))
-        |> Enum.reject(&is_nil/1)
-        |> Enum.uniq()
-
-      doc
-      |> stringify_keys()
-      |> Map.put("id", mapped_id)
-      |> Map.put("belongs_to", target_user_id)
-      |> Map.put("photo_ids", photo_ids)
-    end
   end
 
   defp source_user_id_from_payload(payload, tmp_dir) do
@@ -1011,19 +948,6 @@ defmodule Vmemo.UserDataTransfer do
   end
 
   defp pick_value(_map, _keys), do: nil
-
-  defp stringify_keys(map) when is_map(map) do
-    Enum.reduce(map, %{}, fn {key, value}, acc ->
-      normalized_key =
-        case key do
-          atom when is_atom(atom) -> Atom.to_string(atom)
-          binary when is_binary(binary) -> binary
-          other -> to_string(other)
-        end
-
-      Map.put(acc, normalized_key, value)
-    end)
-  end
 
   defp typesense_import_chunk_size do
     Application.get_env(:vmemo, :user_data_import_typesense_chunk_size, 50)

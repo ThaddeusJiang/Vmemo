@@ -17,6 +17,7 @@ defmodule Vmemo.Photos.Photo do
     extensions: [AshAdmin.Resource]
 
   require Ash.Query
+  alias Vmemo.PhotoService.TsPhoto
 
   postgres do
     table "photos"
@@ -38,6 +39,7 @@ defmodule Vmemo.Photos.Photo do
     define :hybrid_search_count, args: [:query, :similar_photo_id, :ash_user_id]
     define :list_similar, args: [:photo_id, :ash_user_id]
     define :gen_description
+    define :sync_typesense_by_id, args: [:photo_id]
   end
 
   defp valid_uuid?(id) when is_binary(id) do
@@ -84,6 +86,20 @@ defmodule Vmemo.Photos.Photo do
 
                {:ok, record}
              end)
+    end
+
+    action :sync_typesense_by_id, :boolean do
+      argument :photo_id, :uuid, allow_nil?: false
+
+      run fn input, _context ->
+        photo_id = Ash.ActionInput.get_argument(input, :photo_id)
+
+        with {:ok, photo} <- Ash.get(__MODULE__, photo_id, actor: nil, authorize?: false),
+             {:ok, photo_with_notes} <- Ash.load(photo, :notes, actor: nil, authorize?: false),
+             {:ok, _} <- upsert_typesense_photo(photo_with_notes) do
+          {:ok, true}
+        end
+      end
     end
 
     read :get_with_notes do
@@ -210,7 +226,7 @@ defmodule Vmemo.Photos.Photo do
           {:error, "Actor is required for photo search"}
         else
           {photos, _found, _current_page} =
-            Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
+            TsPhoto.hybird_search_photos({q, similar},
               user_id: ash_user_id,
               page: page
             )
@@ -453,7 +469,7 @@ defmodule Vmemo.Photos.Photo do
         photo_id = Ash.Query.get_argument(query, :photo_id)
         ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
 
-        photos = Vmemo.PhotoService.TsPhoto.list_similar_photos(photo_id, user_id: ash_user_id)
+        photos = TsPhoto.list_similar_photos(photo_id, user_id: ash_user_id)
 
         photo_ids =
           photos
@@ -483,7 +499,7 @@ defmodule Vmemo.Photos.Photo do
       change fn changeset, context ->
         photo_id = Ash.Changeset.get_attribute(changeset, :id)
 
-        case Vmemo.PhotoService.TsPhoto.gen_description(photo_id) do
+        case TsPhoto.gen_description(photo_id) do
           {:ok, description} ->
             Ash.Changeset.change_attribute(changeset, :caption, description)
 
@@ -568,11 +584,55 @@ defmodule Vmemo.Photos.Photo do
   end
 
   defp typesense_hybrid_search(q, similar, ash_user_id, page) do
-    Vmemo.PhotoService.TsPhoto.hybird_search_photos({q, similar},
+    TsPhoto.hybird_search_photos({q, similar},
       user_id: ash_user_id,
       page: page
     )
   end
+
+  defp upsert_typesense_photo(photo) do
+    typesense_data = build_typesense_sync_payload(photo)
+
+    case TsPhoto.get_photo(photo.id) do
+      nil -> TsPhoto.create(typesense_data)
+      _existing -> TsPhoto.update_photo(typesense_data)
+    end
+  end
+
+  defp build_typesense_sync_payload(photo) do
+    base_payload = %{
+      id: photo.id,
+      note: photo.note || "",
+      caption: photo.caption || "",
+      note_ids: Enum.map(photo.notes || [], & &1.id),
+      url: photo.url,
+      file_id: photo.file_id,
+      inserted_at: to_unix_timestamp(photo.inserted_at),
+      inserted_by: photo.ash_user_id,
+      _gen_ocr: photo.ts_ocr
+    }
+
+    case read_image_base64_for_typesense(photo.url) do
+      {:ok, image} -> Map.put(base_payload, :image, image)
+      _ -> base_payload
+    end
+  end
+
+  defp read_image_base64_for_typesense(url) do
+    case read_image_as_base64(url) do
+      {:ok, {base64_data, _mime_type}} -> {:ok, base64_data}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp to_unix_timestamp(%NaiveDateTime{} = naive_dt) do
+    naive_dt
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_unix()
+  end
+
+  defp to_unix_timestamp(%DateTime{} = date_time), do: DateTime.to_unix(date_time)
+  defp to_unix_timestamp(_), do: :os.system_time(:second)
 
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""

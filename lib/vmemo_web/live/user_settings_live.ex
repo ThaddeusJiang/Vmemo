@@ -98,7 +98,7 @@ defmodule VmemoWeb.UserSettingsLive do
           <div class="border border-base-300 rounded-md p-4 space-y-2">
             <h2 class="text-base font-medium">Data Import</h2>
             <p class="text-sm text-base-content/70">
-              Upload a ZIP exported from this app. Import only writes files and database records.
+              Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.
             </p>
 
             <.form

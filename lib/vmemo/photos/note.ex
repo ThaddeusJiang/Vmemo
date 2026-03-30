@@ -4,6 +4,8 @@ defmodule Vmemo.Photos.Note do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource]
 
+  alias Vmemo.PhotoService.TsNote
+
   postgres do
     table "notes"
     repo Vmemo.Repo
@@ -18,6 +20,7 @@ defmodule Vmemo.Photos.Note do
     define :read
     define :update
     define :destroy
+    define :sync_typesense_by_id, args: [:note_id]
   end
 
   actions do
@@ -51,6 +54,20 @@ defmodule Vmemo.Photos.Note do
                {:ok, record}
              end)
     end
+
+    action :sync_typesense_by_id, :boolean do
+      argument :note_id, :uuid, allow_nil?: false
+
+      run fn input, _context ->
+        note_id = Ash.ActionInput.get_argument(input, :note_id)
+
+        with {:ok, note} <- Ash.get(__MODULE__, note_id, actor: nil, authorize?: false),
+             {:ok, note_with_photos} <- Ash.load(note, :photos, actor: nil, authorize?: false),
+             {:ok, _} <- upsert_typesense_note(note_with_photos) do
+          {:ok, true}
+        end
+      end
+    end
   end
 
   attributes do
@@ -71,6 +88,22 @@ defmodule Vmemo.Photos.Note do
       through Vmemo.Photos.PhotoNote
       source_attribute_on_join_resource :note_id
       destination_attribute_on_join_resource :photo_id
+    end
+  end
+
+  defp upsert_typesense_note(note) do
+    typesense_data = %{
+      id: note.id,
+      text: note.text,
+      belongs_to: note.ash_user_id,
+      photo_ids: Enum.map(note.photos || [], & &1.id),
+      inserted_at: DateTime.to_unix(note.inserted_at),
+      updated_at: DateTime.to_unix(note.updated_at)
+    }
+
+    case TsNote.get(note.id) do
+      nil -> TsNote.create(typesense_data)
+      _existing -> TsNote.update(typesense_data)
     end
   end
 end
