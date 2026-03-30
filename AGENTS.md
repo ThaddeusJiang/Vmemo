@@ -225,6 +225,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - GitHub Actions 中的 e2e workflow **总是**优先使用 `services` 启动 `postgres`、`typesense` 等依赖服务；应用容器可以单独使用 `docker run` 启动，避免在 CI 中再用 Docker Compose 托管整套栈
 - local 执行 e2e **应该按需执行**相关 spec 或页面，不需要默认执行全部 e2e testing
 - e2e testing 默认使用 UI 模式（headed）便于人工确认，CI 环境使用 headless 模式
+- UI debug **总是**使用真实浏览器（headed）并实际操作可见 UI；**不要**使用 headless 模式进行 UI debug
 - e2e testing 的鉴权准备**总是**放在 Playwright `globalSetup` 或等效统一入口中，通过 storage state 复用登录态；**不要**在各个 `spec.ts` 中重复编写 register/login 逻辑
 - e2e testing 的 seed / auth preparation **必须**在当前被测试的目标环境中执行：
   - 测试 dev server 时，在 dev 环境准备数据

@@ -398,6 +398,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                photo_id: photo.id,
                note_id: note.id
              },
+             action: :import,
              actor: current_user
            ) do
         {:ok, _photo_note} ->
