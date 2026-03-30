@@ -1,12 +1,13 @@
 services:
   vmemo:
-    image: thaddeusjiang/vmemo:latest
-    command: ["start"]
+    image: thaddeusjiang/vmemo
     restart: on-failure
     env_file:
       - .env
     ports:
       - "14000:4000"
+    volumes:
+      - ./vmemo_data/storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -18,26 +19,26 @@ services:
     restart: on-failure
     hostname: postgres
     ports:
-      - "54321:5432"
+      - "15432:5432"
     volumes:
       - ./vmemo_data/pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vmemo
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d vmemo"]
       interval: 2s
       timeout: 5s
       retries: 20
       start_period: 5s
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: vmemo
 
   typesense:
     image: typesense/typesense:27.1
     restart: on-failure
     hostname: typesense
     ports:
-      - "8766:8108"
+      - "18108:8108"
     volumes:
       - ./vmemo_data/ts-data:/data
     command: "--data-dir /data --api-key=${TYPESENSE_API_KEY:?TYPESENSE_API_KEY is required} --enable-cors"
@@ -51,3 +52,10 @@ services:
       timeout: 5s
       retries: 30
       start_period: 5s
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.3.0
+    restart: unless-stopped
+    depends_on:
+      - vmemo
+    command: tunnel --no-autoupdate --url http://vmemo:4000 run --token ${CLOUDFLARED_TOKEN}
