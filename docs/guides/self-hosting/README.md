@@ -14,7 +14,7 @@
 1. 进入目录：
 
 ```bash
-cd docs/hexdocs/self-hosting
+cd docs/guides/self-hosting
 ```
 
 2. 复制环境变量模板并填写必要变量：
@@ -136,11 +136,39 @@ http://localhost:14000
 docker exec -it <container_name> /app/bin/vmemo remote
 ```
 
-### 4) 可选：Cloudflare Tunnel 对外暴露
+### 4) 可选：Cloudflare Tunnel 对外暴露（Docker）
 
-完整配置请参考：
+1. 在 Cloudflare Zero Trust 创建 remotely-managed tunnel，并拿到 token。
+2. 在 `.env` 设置：
 
-- `docs/hexdocs/self-hosting/cloudflare-tunnel-cli.md`
+```env
+CLOUDFLARED_TOKEN=replace_with_your_tunnel_token
+PHX_HOST=your.public.hostname
+```
+
+3. 启动服务（包含 tunnel）：
+
+```bash
+docker compose up -d
+```
+
+4. 验证：
+
+```bash
+docker compose ps
+curl -I https://your.public.hostname
+```
+
+说明：
+
+- 这里使用 `--url` 只会把公网请求转发到 `vmemo`（`http://vmemo:4000`）。
+- `postgres` 和 `typesense` 仅供 `vmemo` 容器内部依赖，不会被 cloudflared 直接公开。
+- 这个 Docker 方案不依赖 `~/.cloudflared/config.yml` 等 Docker 外部配置文件。
+
+CLI 方式请参考：
+
+- `docs/guides/self-hosting/cloudflare-tunnel-cli.md`
+- CLI 指南同样使用 `--url` 模式，不需要 `~/.cloudflared/config.yml`。
 
 ## Notes
 
