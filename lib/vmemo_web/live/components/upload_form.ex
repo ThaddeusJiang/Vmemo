@@ -356,23 +356,21 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                 |> Enum.filter(fn result -> match?({:ok, _}, result) end)
                 |> Enum.map(fn {:ok, photo} -> photo end)
 
-              if note != nil do
-                for photo <- photos do
-                  Ash.create(PhotoNote, %{
-                    photo_id: photo.id,
-                    note_id: note.id
-                  })
-                end
-              end
+              case maybe_link_note_to_photos(note, photos, current_user) do
+                :ok ->
+                  # 通知父组件上传成功，传递图片列表
+                  if socket.parent_pid do
+                    send(socket.parent_pid, {:upload_success, photos})
+                  end
 
-              # 通知父组件上传成功，传递图片列表
-              if socket.parent_pid do
-                send(socket.parent_pid, {:upload_success, photos})
-              end
+                  {:noreply,
+                   socket
+                   |> put_flash(:info, "Photos uploaded successfully")}
 
-              {:noreply,
-               socket
-               |> put_flash(:info, "Photos uploaded successfully")}
+                {:error, _reason} ->
+                  {:noreply,
+                   socket |> put_flash(:error, "Failed to link note to uploaded photos")}
+              end
           end
 
         _ ->
@@ -386,4 +384,29 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   end
 
   defp maybe_focus_note_field(socket, false), do: socket
+
+  defp maybe_link_note_to_photos(nil, _photos, _current_user), do: :ok
+
+  defp maybe_link_note_to_photos(_note, [], _current_user), do: :ok
+
+  defp maybe_link_note_to_photos(note, photos, current_user) do
+    photos
+    |> Enum.reduce_while(:ok, fn photo, _acc ->
+      case Ash.create(
+             PhotoNote,
+             %{
+               photo_id: photo.id,
+               note_id: note.id
+             },
+             action: :import,
+             actor: current_user
+           ) do
+        {:ok, _photo_note} ->
+          {:cont, :ok}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+  end
 end
