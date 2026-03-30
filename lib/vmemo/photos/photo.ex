@@ -16,6 +16,7 @@ defmodule Vmemo.Photos.Photo do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource]
 
+  require Logger
   require Ash.Query
   alias Vmemo.PhotoService.TsPhoto
 
@@ -67,10 +68,7 @@ defmodule Vmemo.Photos.Photo do
       accept [:url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
 
       change after_action(fn _changeset, record, _context ->
-               %{photo_id: record.id}
-               |> Vmemo.Workers.SyncPhotoToTypesense.new()
-               |> Oban.insert()
-
+               enqueue_photo_sync_job(record.id)
                {:ok, record}
              end)
     end
@@ -80,10 +78,7 @@ defmodule Vmemo.Photos.Photo do
       require_atomic? false
 
       change after_action(fn _changeset, record, _context ->
-               %{photo_id: record.id}
-               |> Vmemo.Workers.SyncPhotoToTypesense.new()
-               |> Oban.insert()
-
+               enqueue_photo_sync_job(record.id)
                {:ok, record}
              end)
     end
@@ -512,10 +507,7 @@ defmodule Vmemo.Photos.Photo do
       end
 
       change after_action(fn _changeset, record, _context ->
-               %{photo_id: record.id}
-               |> Vmemo.Workers.SyncPhotoToTypesense.new()
-               |> Oban.insert()
-
+               enqueue_photo_sync_job(record.id)
                {:ok, record}
              end)
     end
@@ -637,5 +629,21 @@ defmodule Vmemo.Photos.Photo do
 
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
+  end
+
+  defp enqueue_photo_sync_job(photo_id) do
+    case %{photo_id: photo_id}
+         |> Vmemo.Workers.SyncPhotoToTypesense.new()
+         |> Oban.insert() do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to enqueue SyncPhotoToTypesense for photo #{photo_id}: #{inspect(reason)}"
+        )
+
+        :error
+    end
   end
 end

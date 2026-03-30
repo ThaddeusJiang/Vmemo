@@ -4,6 +4,7 @@ defmodule Vmemo.Photos.Note do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource]
 
+  require Logger
   alias Vmemo.PhotoService.TsNote
 
   postgres do
@@ -30,10 +31,7 @@ defmodule Vmemo.Photos.Note do
       accept [:text, :ash_user_id]
 
       change after_action(fn _changeset, record, _context ->
-               %{note_id: record.id}
-               |> Vmemo.Workers.SyncNoteToTypesense.new()
-               |> Oban.insert()
-
+               enqueue_note_sync_job(record.id)
                {:ok, record}
              end)
     end
@@ -47,10 +45,7 @@ defmodule Vmemo.Photos.Note do
       require_atomic? false
 
       change after_action(fn _changeset, record, _context ->
-               %{note_id: record.id}
-               |> Vmemo.Workers.SyncNoteToTypesense.new()
-               |> Oban.insert()
-
+               enqueue_note_sync_job(record.id)
                {:ok, record}
              end)
     end
@@ -105,6 +100,22 @@ defmodule Vmemo.Photos.Note do
       nil -> TsNote.create(typesense_data)
       {:error, reason} -> {:error, reason}
       _existing -> TsNote.update(typesense_data)
+    end
+  end
+
+  defp enqueue_note_sync_job(note_id) do
+    case %{note_id: note_id}
+         |> Vmemo.Workers.SyncNoteToTypesense.new()
+         |> Oban.insert() do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to enqueue SyncNoteToTypesense for note #{note_id}: #{inspect(reason)}"
+        )
+
+        :error
     end
   end
 end
