@@ -91,6 +91,61 @@ defmodule Vmemo.UserDataTransferTest do
     assert length(target_notes) == 1
   end
 
+  test "import keeps running when typesense sync raises runtime errors" do
+    source_user = user_fixture()
+    target_user = user_fixture()
+
+    on_exit(fn ->
+      File.rm_rf(Path.join(["storage", "v1", source_user.id]))
+      File.rm_rf(Path.join(["storage", "v1", target_user.id]))
+    end)
+
+    source_photo =
+      create_photo!(%{
+        url: "/storage/v1/#{source_user.id}/photos/source-photo.png",
+        note: "source photo",
+        caption: "source caption",
+        file_id: "source-file",
+        ash_user_id: source_user.id
+      })
+
+    source_note = create_note!(%{text: "source note", ash_user_id: source_user.id})
+    create_photo_note!(source_photo.id, source_note.id)
+
+    write_user_file_from_fixture!(
+      source_user.id,
+      "source-photo.png",
+      "test/testdata_files/test-red-image.png"
+    )
+
+    assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)
+
+    tmp_zip_path =
+      Path.join(
+        System.tmp_dir!(),
+        "vmemo-user-export-test-typesense-down-#{System.unique_integer([:positive])}.zip"
+      )
+
+    File.write!(tmp_zip_path, export_result.binary)
+    on_exit(fn -> File.rm(tmp_zip_path) end)
+
+    original_typesense_url = Application.fetch_env!(:vmemo, :typesense_url)
+
+    Application.put_env(:vmemo, :typesense_url, "http://127.0.0.1:1")
+
+    on_exit(fn ->
+      Application.put_env(:vmemo, :typesense_url, original_typesense_url)
+    end)
+
+    assert {:error, result} = UserDataTransfer.import_user_zip(target_user.id, tmp_zip_path)
+    assert result.photos.created == 1
+    assert result.notes.created == 1
+    assert result.photo_notes.created == 1
+    assert result.typesense.photos.failed >= 1
+    assert result.typesense.notes.failed >= 1
+    assert result.error_count >= 1
+  end
+
   defp create_photo!(attrs) do
     case Ash.create(Photo, attrs, action: :import, actor: nil, authorize?: false) do
       {:ok, photo} -> photo

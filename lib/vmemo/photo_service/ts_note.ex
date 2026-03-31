@@ -27,15 +27,15 @@ defmodule Vmemo.PhotoService.TsNote do
       }) do
     now = :os.system_time(:millisecond)
 
-    {:ok, note} =
-      Typesense.create_document(@collection_name, %{
-        text: text,
-        belongs_to: belongs_to,
-        inserted_at: now,
-        updated_at: now
-      })
-
-    {:ok, parse(note)}
+    case Typesense.create_document(@collection_name, %{
+           text: text,
+           belongs_to: belongs_to,
+           inserted_at: now,
+           updated_at: now
+         }) do
+      {:ok, note} -> {:ok, parse(note)}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   # TODO: renaming to read?
@@ -66,11 +66,10 @@ defmodule Vmemo.PhotoService.TsNote do
 
   # TODO: renaming to read?
   def get(id) do
-    {:ok, note} = Typesense.get_document(@collection_name, id)
-
-    case note do
-      nil -> nil
-      _ -> parse(note)
+    case Typesense.get_document(@collection_name, id) do
+      {:ok, nil} -> nil
+      {:ok, note} -> parse(note)
+      {:error, reason} -> {:error, reason}
     end
   end
 
