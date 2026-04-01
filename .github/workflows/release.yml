@@ -19,11 +19,8 @@ permissions:
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    env:
-      GH_REPO: ${{ github.repository }}
     outputs:
       version: ${{ steps.tags.outputs.version }}
-      tag: ${{ steps.tags.outputs.tag }}
 
     steps:
       - name: Compute Docker tags
@@ -44,23 +41,7 @@ jobs:
 
           {
             echo "version=$VERSION"
-            echo "tag=$VERSION"
           } >> "$GITHUB_OUTPUT"
-
-      - name: Validate GitHub release tag availability
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="${{ steps.tags.outputs.tag }}"
-          OVERWRITE="${{ github.event.inputs.overwrite_existing_release }}"
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            if [[ "$OVERWRITE" != "true" ]]; then
-              echo "GitHub release '$TAG' already exists."
-              echo "Re-run workflow with 'overwrite_existing_release' checked to replace it."
-              exit 1
-            fi
-          fi
 
   build:
     runs-on: ubuntu-latest
@@ -110,8 +91,6 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    env:
-      GH_REPO: ${{ github.repository }}
     needs:
       - prepare
       - build
@@ -141,24 +120,13 @@ jobs:
         run: docker buildx imagetools inspect "thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}"
 
       - name: Create GitHub release
+        uses: ncipollo/release-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="${{ needs.prepare.outputs.tag }}"
-          TITLE="${{ needs.prepare.outputs.version }}"
-          OVERWRITE="${{ github.event.inputs.overwrite_existing_release }}"
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            if [[ "$OVERWRITE" = "true" ]]; then
-              echo "GitHub release '$TAG' already exists. Deleting it because overwrite is enabled."
-              gh release delete "$TAG" --yes
-            else
-              echo "GitHub release '$TAG' already exists and overwrite is disabled."
-              exit 1
-            fi
-          fi
-
-          gh release create "$TAG" \
-            --title "Vmemo $TITLE" \
-            --notes "Release $TITLE" \
-            --target "${GITHUB_SHA}"
+        with:
+          tag: ${{ needs.prepare.outputs.version }}
+          commit: main
+          name: Vmemo ${{ needs.prepare.outputs.version }}
+          draft: true
+          generateReleaseNotes: true
+          allowUpdates: ${{ github.event.inputs.overwrite_existing_release == 'true' }}
