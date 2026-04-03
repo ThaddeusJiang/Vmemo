@@ -60,7 +60,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
       case VisionRequest.create(
              %{
                photo_id: photo.id,
-               ash_user_id: user.id,
+               user_id: user.id,
                function_type: function,
                prompt: prompt
              },

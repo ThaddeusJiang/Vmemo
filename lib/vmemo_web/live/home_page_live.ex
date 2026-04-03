@@ -8,11 +8,11 @@ defmodule VmemoWeb.HomePageLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     total_photos =
       Photo
-      |> Ash.Query.filter(ash_user_id == ^user.id)
+      |> Ash.Query.filter(user_id == ^user.id)
       |> Ash.count(actor: user)
       |> case do
         {:ok, count} -> count
@@ -45,7 +45,7 @@ defmodule VmemoWeb.HomePageLive do
               module={SearchBox}
               id="home-search-box"
               q={@q}
-              current_user={@current_ash_user}
+              current_user={@current_user}
             />
           </div>
         </div>

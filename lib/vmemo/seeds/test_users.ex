@@ -32,20 +32,20 @@ defmodule Vmemo.Seeds.TestUsers do
     email = "test@example.com"
     password = "password123456"
 
-    case Account.get_ash_user_by_email(email) do
+    case Account.get_user_by_email(email) do
       nil ->
         case Account.register_user(%{email: email, password: password}) do
           {:ok, user} ->
             now = DateTime.utc_now() |> DateTime.truncate(:second)
             user_id = Ecto.UUID.dump!(user.id)
 
-            case Repo.query("UPDATE ash_users SET confirmed_at = $1 WHERE id = $2", [
+            case Repo.query("UPDATE users SET confirmed_at = $1 WHERE id = $2", [
                    now,
                    user_id
                  ]) do
               {:ok, _} ->
                 IO.puts("Created and confirmed user: #{email}")
-                Account.get_ash_user_by_email(email)
+                Account.get_user_by_email(email)
 
               {:error, error} ->
                 IO.puts("User created but confirmation failed: #{inspect(error)}")
@@ -81,7 +81,7 @@ defmodule Vmemo.Seeds.TestUsers do
     now_usec = DateTime.utc_now()
 
     sql = """
-    INSERT INTO api_tokens (name, description, expires_at, token_hash, ash_user_id, created_at, inserted_at, updated_at, is_active)
+    INSERT INTO api_tokens (name, description, expires_at, token_hash, user_id, created_at, inserted_at, updated_at, is_active)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING id
     """
@@ -132,7 +132,7 @@ defmodule Vmemo.Seeds.TestUsers do
                  url: "/images/logo.svg",
                  note: @seeded_photo_note,
                  file_id: "seeded-e2e-note-reference-logo",
-                 ash_user_id: user.id
+                 user_id: user.id
                },
                action: :import,
                actor: user
@@ -159,7 +159,7 @@ defmodule Vmemo.Seeds.TestUsers do
                %{
                  id: @seeded_note_id,
                  text: @seeded_note_text,
-                 ash_user_id: user.id
+                 user_id: user.id
                },
                action: :import,
                actor: user

@@ -10,8 +10,8 @@ defmodule Vmemo.AccountDomain do
   end
 
   resources do
-    resource Vmemo.Account.AshUser
-    resource Vmemo.Account.AshUserToken
+    resource Vmemo.Account.User
+    resource Vmemo.Account.UserToken
     resource Vmemo.Account.ApiToken
   end
 

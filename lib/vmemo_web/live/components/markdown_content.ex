@@ -10,9 +10,9 @@ defmodule VmemoWeb.LiveComponents.MarkdownContent do
 
     # Get user from assigns (passed from parent) or socket.assigns
     user =
-      Map.get(assigns, :current_ash_user) ||
-        Map.get(socket.assigns, :current_ash_user) ||
-        socket.assigns[:current_ash_user]
+      Map.get(assigns, :current_user) ||
+        Map.get(socket.assigns, :current_user) ||
+        socket.assigns[:current_user]
 
     processed_html = process_images_in_html(html, user)
 
@@ -100,7 +100,7 @@ defmodule VmemoWeb.LiveComponents.MarkdownContent do
     # Use url: [in: urls] syntax similar to id: [in: photo_ids]
     query =
       Photo
-      |> Ash.Query.filter(ash_user_id == ^user.id)
+      |> Ash.Query.filter(user_id == ^user.id)
       |> Ash.Query.filter(url: [in: urls])
 
     case Ash.read(query, actor: user) do

@@ -15,7 +15,7 @@ defmodule VmemoWeb.PhotoUploadLive do
       <.live_component
         id="upload_form"
         module={UploadForm}
-        current_user={@current_ash_user}
+        current_user={@current_user}
         show_full_form={true}
       />
     </section>

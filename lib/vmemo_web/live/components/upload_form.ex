@@ -267,12 +267,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         socket
       ) do
     current_user =
-      Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
+      Map.get(socket.assigns, :current_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket |> put_flash(:error, "User not found")}
     else
-      ash_user_id = current_user.id
+      user_id = current_user.id
 
       note =
         case is_whole do
@@ -280,7 +280,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             case Note.create_with_sync(
                    %{
                      text: note_text,
-                     ash_user_id: ash_user_id
+                     user_id: user_id
                    },
                    actor: current_user
                  ) do
@@ -299,14 +299,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               consume_uploaded_entry(socket, entry, fn %{path: path} ->
                 filename = entry.uuid <> Path.extname(entry.client_name)
 
-                {:ok, dest} = PhotoService.cp_file(path, ash_user_id, filename)
+                {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
                 case Photo.create_with_sync(
                        %{
                          note: note_text,
                          url: Path.join("/", dest),
                          file_id: filename,
-                         ash_user_id: ash_user_id
+                         user_id: user_id
                        },
                        actor: current_user
                      ) do

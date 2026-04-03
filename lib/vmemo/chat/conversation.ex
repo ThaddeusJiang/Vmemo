@@ -96,7 +96,7 @@ defmodule Vmemo.Chat.Conversation do
       public? true
     end
 
-    belongs_to :user, Vmemo.Account.AshUser do
+    belongs_to :user, Vmemo.Account.User do
       public? true
       allow_nil? false
     end

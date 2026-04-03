@@ -2,7 +2,7 @@
   <header class="px-4 lg:px-4 flex-none ">
     <div class="flex items-center justify-between border-b border-base-300 h-[60px] text-sm gap-2 sm:gap-4">
       <div class="flex grow items-center gap-2 sm:gap-4">
-        <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
+        <%= if assigns[:current_user] || assigns[:current_user] do %>
           <.link href="/home" class="flex gap-2 sm:gap-4 items-center font-bold ">
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" />
             <span>Vmemo</span>
@@ -15,7 +15,7 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
-        <%= if assigns[:current_ash_user] || assigns[:current_user] do %>
+        <%= if assigns[:current_user] || assigns[:current_user] do %>
           <.link href="/photos/upload" class="flex items-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -38,7 +38,7 @@
             >
               <div class="bg-neutral text-neutral-content w-8 rounded-full">
                 <span>
-                  {String.at((assigns[:current_ash_user] || assigns[:current_user]).email, 0)}
+                  {String.at((assigns[:current_user] || assigns[:current_user]).email, 0)}
                 </span>
               </div>
             </div>

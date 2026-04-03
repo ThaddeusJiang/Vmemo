@@ -171,7 +171,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     api_tokens = ApiTokenService.list_user_api_tokens(user)
     expiring_tokens = ApiTokenService.get_expiring_tokens(user.id)
     expired_tokens = ApiTokenService.get_expired_tokens(user.id)
@@ -192,7 +192,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   end
 
   def handle_event("delete-token", %{"id" => id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     token = ApiTokenService.get_user_api_token!(user, id)
 
     {:noreply,
@@ -225,7 +225,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   end
 
   def handle_event("toggle-token-status", %{"id" => id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     socket = assign(socket, :loading, true)
 

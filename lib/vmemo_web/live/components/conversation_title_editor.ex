@@ -87,7 +87,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
   end
 
   def handle_event("save", %{"title" => title}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     conversation = socket.assigns.conversation
     trimmed_title = String.trim(title)
 

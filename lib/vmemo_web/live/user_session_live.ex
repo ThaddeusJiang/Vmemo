@@ -16,11 +16,11 @@ defmodule VmemoWeb.UserSessionLive do
             Login
           </h2>
 
-          <%= if @current_ash_user do %>
+          <%= if @current_user do %>
             <div class="flex gap-3 mb-4 ">
               <div class="flex flex-col gap-2 flex-1">
                 <div class="text-sm">
-                  You are currently logged in as <strong>{@current_ash_user.email}</strong>
+                  You are currently logged in as <strong>{@current_user.email}</strong>
                 </div>
               </div>
             </div>

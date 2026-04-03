@@ -20,7 +20,7 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   defp mount_photo(id, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Photo.get_with_notes(id, user.id, actor: user) do
       {:ok, photo} ->
@@ -84,7 +84,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("delete-photo", %{"id" => id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Ash.get(Photo, id, actor: user) do
       {:ok, photo} ->
@@ -104,7 +104,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("save", params, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     note = Map.get(params, "note", socket.assigns.photo.note)
     caption = Map.get(params, "caption", socket.assigns.photo.caption)
 
@@ -131,10 +131,10 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("gen-description", _, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     photo = socket.assigns.photo
 
-    case VisionRequest.create_caption(%{photo_id: photo.id, ash_user_id: user.id}, actor: user) do
+    case VisionRequest.create_caption(%{photo_id: photo.id, user_id: user.id}, actor: user) do
       {:ok, request} ->
         loading_requests = MapSet.put(socket.assigns.caption_loading_requests, request.id)
 
@@ -161,7 +161,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("retry-caption-request", %{"request_id" => request_id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Ash.get(VisionRequest, request_id, actor: user) do
       {:ok, request} ->
@@ -213,7 +213,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_info({:vision_request_updated, payload}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     vision_requests =
       case VisionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
@@ -279,7 +279,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_info({:moondream_request_submitted, request}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     moondream_requests =
       case VisionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
@@ -498,7 +498,7 @@ defmodule VmemoWeb.PhotoIdLive do
             id="moondream-panel"
             module={MoondreamPanel}
             photo={@photo}
-            current_user={@current_ash_user}
+            current_user={@current_user}
             requests={@moondream_requests}
             loading_requests={@moondream_loading_requests}
           />

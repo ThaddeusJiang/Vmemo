@@ -1,11 +1,11 @@
-defmodule Vmemo.Account.AshUser do
+defmodule Vmemo.Account.User do
   use Ash.Resource,
     domain: Vmemo.AccountDomain,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAuthentication]
+    extensions: [AshAuthentication, AshAdmin.Resource]
 
   postgres do
-    table "ash_users"
+    table "users"
     repo Vmemo.Repo
   end
 
@@ -23,8 +23,12 @@ defmodule Vmemo.Account.AshUser do
       enabled?(true)
       token_lifetime(60 * 24 * 60 * 60)
       signing_secret(&get_signing_secret/2)
-      token_resource(Vmemo.Account.AshUserToken)
+      token_resource(Vmemo.Account.UserToken)
     end
+  end
+
+  admin do
+    name "User"
   end
 
   code_interface do

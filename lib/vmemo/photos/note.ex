@@ -12,7 +12,7 @@ defmodule Vmemo.Photos.Note do
   end
 
   admin do
-    table_columns([:id, :text, :ash_user_id, :inserted_at, :updated_at])
+    table_columns([:id, :text, :user_id, :inserted_at, :updated_at])
   end
 
   oban do
@@ -40,12 +40,12 @@ defmodule Vmemo.Photos.Note do
     defaults [:read, :destroy]
 
     create :create_with_sync do
-      accept [:text, :ash_user_id]
+      accept [:text, :user_id]
       change run_oban_trigger(:sync_typesense)
     end
 
     create :import do
-      accept [:id, :text, :ash_user_id]
+      accept [:id, :text, :user_id]
     end
 
     update :update do
@@ -97,7 +97,7 @@ defmodule Vmemo.Photos.Note do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :uuid
+    attribute :user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at
@@ -115,7 +115,7 @@ defmodule Vmemo.Photos.Note do
     typesense_data = %{
       id: note.id,
       text: note.text,
-      belongs_to: note.ash_user_id,
+      belongs_to: note.user_id,
       photo_ids: Enum.map(note.photos || [], & &1.id),
       inserted_at: DateTime.to_unix(note.inserted_at),
       updated_at: DateTime.to_unix(note.updated_at)

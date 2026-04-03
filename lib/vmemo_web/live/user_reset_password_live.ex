@@ -93,7 +93,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
             errors = validate_password(user_params)
 
             if Enum.empty?(errors) do
-              case Account.reset_ash_user_password(user, user_params) do
+              case Account.reset_user_password(user, user_params) do
                 {:ok, _user} ->
                   # 撤销 token，使其无法再次使用
                   revoke_reset_password_token(token)
@@ -150,7 +150,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
   defp validate_password(_), do: [password: {"can't be blank", []}]
 
   defp revoke_reset_password_token(token) do
-    case AshAuthentication.Jwt.verify(token, Vmemo.Account.AshUser) do
+    case AshAuthentication.Jwt.verify(token, Vmemo.Account.User) do
       {:ok, claims, _resource} ->
         # 从 claims 中获取 jti (token ID) 并撤销 token
         case Map.get(claims, "jti") do
@@ -159,7 +159,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
 
           jti ->
             # 删除 token 记录
-            case Ash.get(Vmemo.Account.AshUserToken, jti) do
+            case Ash.get(Vmemo.Account.UserToken, jti) do
               {:ok, token_record} -> Ash.destroy(token_record)
               _ -> :ok
             end

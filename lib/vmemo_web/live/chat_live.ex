@@ -36,7 +36,7 @@ defmodule VmemoWeb.ChatLive do
                 id="conversation-title-editor"
                 module={VmemoWeb.LiveComponents.ConversationTitleEditor}
                 conversation={@conversation}
-                current_ash_user={@current_ash_user}
+                current_user={@current_user}
               />
             </div>
           </div>
@@ -107,7 +107,7 @@ defmodule VmemoWeb.ChatLive do
                     id={"markdown-#{id}"}
                     module={VmemoWeb.LiveComponents.MarkdownContent}
                     text={message.text}
-                    current_ash_user={@current_ash_user}
+                    current_user={@current_user}
                   />
                   {render_thinking(assigns, is_thinking)}
                   {render_photos(assigns, photos)}
@@ -176,7 +176,7 @@ defmodule VmemoWeb.ChatLive do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     if connected?(socket) do
       VmemoWeb.Endpoint.subscribe("chat:conversations:#{user.id}")
@@ -198,7 +198,7 @@ defmodule VmemoWeb.ChatLive do
   end
 
   def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
       {:ok, conversation} ->
@@ -273,7 +273,7 @@ defmodule VmemoWeb.ChatLive do
   end
 
   def handle_event("archive-conversation", %{"id" => conversation_id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
       {:ok, conversation} ->
@@ -318,7 +318,7 @@ defmodule VmemoWeb.ChatLive do
   end
 
   def handle_event("delete-conversation", %{"id" => conversation_id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
       {:ok, conversation} ->
@@ -473,7 +473,7 @@ defmodule VmemoWeb.ChatLive do
         AshPhoenix.Form.for_create(
           Vmemo.Chat.Message,
           :create,
-          actor: socket.assigns.current_ash_user,
+          actor: socket.assigns.current_user,
           private_arguments: %{conversation_id: socket.assigns.conversation.id}
         )
         |> to_form()
@@ -481,7 +481,7 @@ defmodule VmemoWeb.ChatLive do
         AshPhoenix.Form.for_create(
           Vmemo.Chat.Message,
           :create,
-          actor: socket.assigns.current_ash_user
+          actor: socket.assigns.current_user
         )
         |> to_form()
       end

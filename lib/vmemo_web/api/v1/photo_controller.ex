@@ -24,7 +24,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   - note: 备注 (optional)
   """
   def create(conn, params) do
-    current_user = conn.assigns.current_ash_user
+    current_user = conn.assigns.current_user
 
     case handle_file_upload(conn, params) do
       {:ok, %{path: path, filename: filename}} ->
@@ -41,7 +41,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   GET /api/v1/photos/:id
   """
   def show(conn, %{"id" => photo_id}) do
-    current_user = conn.assigns.current_ash_user
+    current_user = conn.assigns.current_user
 
     case Photo.get_with_notes(photo_id, current_user.id, actor: current_user) do
       {:ok, photo} ->
@@ -63,7 +63,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   DELETE /api/v1/photos/:id
   """
   def delete(conn, %{"id" => photo_id}) do
-    current_user = conn.assigns.current_ash_user
+    current_user = conn.assigns.current_user
 
     case Photo.get_with_notes(photo_id, current_user.id, actor: current_user) do
       {:ok, photo} ->
@@ -158,7 +158,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
              note: note,
              url: Path.join("/", dest),
              file_id: filename,
-             ash_user_id: user_id
+             user_id: user_id
            },
            actor: current_user
          ) do

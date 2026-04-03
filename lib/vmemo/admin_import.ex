@@ -1,6 +1,6 @@
 defmodule Vmemo.AdminImport do
   require Ash.Query
-  alias Vmemo.Account.AshUser
+  alias Vmemo.Account.User
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
@@ -167,7 +167,7 @@ defmodule Vmemo.AdminImport do
         true ->
           case normalize_user_id(user_id) do
             {:uuid, uuid} ->
-              case Ash.get(AshUser, uuid, actor: nil, authorize?: false) do
+              case Ash.get(User, uuid, actor: nil, authorize?: false) do
                 {:ok, existing} ->
                   {bump(stats, :skipped), Map.put(id_map, user_id, existing.id), errors}
 
@@ -208,7 +208,7 @@ defmodule Vmemo.AdminImport do
 
   defp create_or_remap_user(user_id, email, hashed_password, confirmed_at, stats, id_map, errors) do
     case get_user_by_email(email) do
-      {:ok, %AshUser{} = existing} ->
+      {:ok, %User{} = existing} ->
         {bump(stats, :remapped), Map.put(id_map, user_id, existing.id), errors}
 
       {:ok, nil} ->
@@ -237,7 +237,7 @@ defmodule Vmemo.AdminImport do
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Enum.into(%{})
 
-    case Ash.create(AshUser, params, action: :import, actor: nil, authorize?: false) do
+    case Ash.create(User, params, action: :import, actor: nil, authorize?: false) do
       {:ok, created} ->
         {bump(stats, :created), Map.put(id_map, user_id, created.id), errors}
 
@@ -258,8 +258,8 @@ defmodule Vmemo.AdminImport do
       note = pick_value(photo, ["note", :note])
       caption = pick_value(photo, ["caption", :caption])
       file_id = pick_value(photo, ["file_id", :file_id])
-      inserted_by = pick_value(photo, ["inserted_by", :inserted_by, "ash_user_id", :ash_user_id])
-      ash_user_id = map_user_id(user_id_map, inserted_by)
+      inserted_by = pick_value(photo, ["inserted_by", :inserted_by, "user_id", :user_id])
+      user_id = map_user_id(user_id_map, inserted_by)
 
       cond do
         is_nil(photo_id) or is_nil(url) ->
@@ -272,7 +272,7 @@ defmodule Vmemo.AdminImport do
             note,
             caption,
             file_id,
-            ash_user_id,
+            user_id,
             stats,
             ids,
             id_map,
@@ -294,8 +294,8 @@ defmodule Vmemo.AdminImport do
           |> pick_value(["text", :text])
           |> normalize_note_text()
 
-        belongs_to = pick_value(note, ["belongs_to", :belongs_to, "ash_user_id", :ash_user_id])
-        ash_user_id = map_user_id(user_id_map, belongs_to)
+        belongs_to = pick_value(note, ["belongs_to", :belongs_to, "user_id", :user_id])
+        user_id = map_user_id(user_id_map, belongs_to)
 
         photo_ids =
           note
@@ -313,7 +313,7 @@ defmodule Vmemo.AdminImport do
             import_note_record(
               note_id,
               text,
-              ash_user_id,
+              user_id,
               photo_ids,
               stats,
               ids,
@@ -461,7 +461,7 @@ defmodule Vmemo.AdminImport do
          note,
          caption,
          file_id,
-         ash_user_id,
+         user_id,
          stats,
          ids,
          id_map,
@@ -481,7 +481,7 @@ defmodule Vmemo.AdminImport do
               note,
               caption,
               file_id,
-              ash_user_id,
+              user_id,
               stats,
               ids,
               id_map,
@@ -494,7 +494,7 @@ defmodule Vmemo.AdminImport do
         end
 
       {:legacy, _legacy_id} ->
-        create_photo(nil, url, note, caption, file_id, ash_user_id, stats, ids, id_map, errors,
+        create_photo(nil, url, note, caption, file_id, user_id, stats, ids, id_map, errors,
           legacy_id: photo_id
         )
 
@@ -510,7 +510,7 @@ defmodule Vmemo.AdminImport do
          note,
          caption,
          file_id,
-         ash_user_id,
+         user_id,
          stats,
          ids,
          id_map,
@@ -524,7 +524,7 @@ defmodule Vmemo.AdminImport do
         note: note,
         caption: caption,
         file_id: file_id,
-        ash_user_id: ash_user_id
+        user_id: user_id
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Enum.into(%{})
@@ -548,7 +548,7 @@ defmodule Vmemo.AdminImport do
   defp import_note_record(
          note_id,
          text,
-         ash_user_id,
+         user_id,
          photo_ids,
          stats,
          ids,
@@ -564,7 +564,7 @@ defmodule Vmemo.AdminImport do
              Map.put(note_map, uuid, photo_ids), errors}
 
           {:error, %Ash.Error.Query.NotFound{}} ->
-            create_note(uuid, text, ash_user_id, photo_ids, stats, ids, id_map, note_map, errors)
+            create_note(uuid, text, user_id, photo_ids, stats, ids, id_map, note_map, errors)
 
           {:error, error} ->
             {bump(stats, :failed), ids, id_map, note_map,
@@ -572,7 +572,7 @@ defmodule Vmemo.AdminImport do
         end
 
       {:legacy, _legacy_id} ->
-        create_note(nil, text, ash_user_id, photo_ids, stats, ids, id_map, note_map, errors,
+        create_note(nil, text, user_id, photo_ids, stats, ids, id_map, note_map, errors,
           legacy_id: note_id
         )
 
@@ -585,7 +585,7 @@ defmodule Vmemo.AdminImport do
   defp create_note(
          uuid,
          text,
-         ash_user_id,
+         user_id,
          photo_ids,
          stats,
          ids,
@@ -598,7 +598,7 @@ defmodule Vmemo.AdminImport do
       %{
         id: uuid,
         text: text,
-        ash_user_id: ash_user_id
+        user_id: user_id
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Enum.into(%{})
@@ -664,7 +664,7 @@ defmodule Vmemo.AdminImport do
 
   defp get_user_by_email(email) do
     query =
-      AshUser
+      User
       |> Ash.Query.filter(email: email)
       |> Ash.Query.limit(1)
 

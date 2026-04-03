@@ -13,7 +13,7 @@ defmodule VmemoWeb.PhotosIndexLive do
 
   @impl true
   def handle_event("load-more", _, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     q = socket.assigns.q
     similar_photo_id = socket.assigns.similar_photo_id
 
@@ -49,7 +49,7 @@ defmodule VmemoWeb.PhotosIndexLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     q = Map.get(params, "q", "")
     similar_photo_id = Map.get(params, "similar_photo_id")

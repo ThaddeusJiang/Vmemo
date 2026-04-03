@@ -15,19 +15,19 @@ defmodule Vmemo.Ai.VisionRequest do
 
     references do
       reference :photo, on_delete: :delete
-      reference :ash_user, on_delete: :delete
+      reference :user, on_delete: :delete
     end
 
     custom_indexes do
       index [:photo_id]
-      index [:ash_user_id]
+      index [:user_id]
       index [:status]
       index [:inserted_at]
     end
   end
 
   admin do
-    table_columns([:id, :photo_id, :ash_user_id, :function_type, :status, :inserted_at])
+    table_columns([:id, :photo_id, :user_id, :function_type, :status, :inserted_at])
   end
 
   oban do
@@ -56,13 +56,13 @@ defmodule Vmemo.Ai.VisionRequest do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:photo_id, :ash_user_id, :function_type, :prompt]
+      accept [:photo_id, :user_id, :function_type, :prompt]
       change set_attribute(:status, "pending")
       change run_oban_trigger(:process)
     end
 
     create :create_caption do
-      accept [:photo_id, :ash_user_id]
+      accept [:photo_id, :user_id]
       change set_attribute(:status, "pending")
       change set_attribute(:function_type, "caption")
       change set_attribute(:prompt, nil)
@@ -151,7 +151,7 @@ defmodule Vmemo.Ai.VisionRequest do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :uuid do
+    attribute :user_id, :uuid do
       allow_nil? false
     end
 
@@ -182,7 +182,7 @@ defmodule Vmemo.Ai.VisionRequest do
       attribute_writable? true
     end
 
-    belongs_to :ash_user, Vmemo.Account.AshUser do
+    belongs_to :user, Vmemo.Account.User do
       allow_nil? false
       attribute_writable? true
       attribute_type :uuid

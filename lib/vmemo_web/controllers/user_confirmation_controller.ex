@@ -1,18 +1,18 @@
-defmodule VmemoWeb.AshUserConfirmationController do
+defmodule VmemoWeb.UserConfirmationController do
   use VmemoWeb, :controller
 
   alias Vmemo.Account
-  alias VmemoWeb.AshUserAuth
+  alias VmemoWeb.UserAuth
 
   def confirm(conn, %{"token" => token}) do
-    case Account.confirm_ash_user(token) do
-      {:ok, ash_user} ->
-        AshUserAuth.log_in_ash_user(conn, ash_user)
+    case Account.confirm_user(token) do
+      {:ok, user} ->
+        UserAuth.log_in_user(conn, user)
 
       {:error, :already_confirmed} ->
-        case Account.ash_user_from_confirmation_token(token) do
-          {:ok, ash_user} ->
-            AshUserAuth.log_in_ash_user(conn, ash_user)
+        case Account.user_from_confirmation_token(token) do
+          {:ok, user} ->
+            UserAuth.log_in_user(conn, user)
 
           {:error, _reason} ->
             invalid_confirmation(conn)

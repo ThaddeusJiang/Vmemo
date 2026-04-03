@@ -1,26 +1,26 @@
-defmodule VmemoWeb.AshUserAuth do
+defmodule VmemoWeb.UserAuth do
   use VmemoWeb, :verified_routes
 
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Vmemo.Account.AshUser
+  alias Vmemo.Account.User
 
   @doc """
-  Logs the Ash user in.
+  Logs the user in.
   """
-  def log_in_ash_user(conn, ash_user, params \\ %{}) do
+  def log_in_user(conn, user, params \\ %{}) do
     # Get user_return_to BEFORE renewing session (which clears it)
     user_return_to = get_session(conn, :user_return_to)
 
     # Delete old session token if it exists (important for password updates)
     if old_token = get_session(conn, :user_token) do
-      delete_ash_user_session_token(old_token)
+      delete_user_session_token(old_token)
     end
 
     # 使用 Ash Authentication 的 token 系统
     # Generate a NEW token for this login
-    token = generate_ash_user_session_token(ash_user)
+    token = generate_user_session_token(user)
 
     conn
     |> Phoenix.Controller.fetch_flash()
@@ -47,9 +47,9 @@ defmodule VmemoWeb.AshUserAuth do
 
   defp maybe_put_return_flash(conn, _), do: conn
 
-  defp generate_ash_user_session_token(ash_user) do
+  defp generate_user_session_token(user) do
     # 使用 Ash Authentication JWT 生成 session token
-    case AshAuthentication.Jwt.token_for_user(ash_user) do
+    case AshAuthentication.Jwt.token_for_user(user) do
       {:ok, token, _claims} ->
         token
 
@@ -87,11 +87,11 @@ defmodule VmemoWeb.AshUserAuth do
   end
 
   @doc """
-  Logs the Ash user out.
+  Logs the user out.
   """
-  def log_out_ash_user(conn, return_to \\ ~p"/") do
+  def log_out_user(conn, return_to \\ ~p"/") do
     user_token = get_session(conn, :user_token)
-    user_token && delete_ash_user_session_token(user_token)
+    user_token && delete_user_session_token(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       VmemoWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -104,9 +104,9 @@ defmodule VmemoWeb.AshUserAuth do
     |> redirect(to: return_to)
   end
 
-  defp delete_ash_user_session_token(token) do
+  defp delete_user_session_token(token) do
     # 使用 Ash Authentication JWT 验证 token
-    case AshAuthentication.Jwt.verify(token, AshUser) do
+    case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
         # 从 claims 中获取 jti (token ID) 并撤销 token
         case Map.get(claims, "jti") do
@@ -115,7 +115,7 @@ defmodule VmemoWeb.AshUserAuth do
 
           jti ->
             # 删除 token 记录
-            case Ash.get(Vmemo.Account.AshUserToken, jti) do
+            case Ash.get(Vmemo.Account.UserToken, jti) do
               {:ok, token_record} -> Ash.destroy(token_record)
               _ -> :ok
             end
@@ -127,12 +127,12 @@ defmodule VmemoWeb.AshUserAuth do
   end
 
   @doc """
-  Authenticates the Ash user by looking into the session.
+  Authenticates the user by looking into the session.
   """
-  def fetch_current_ash_user(conn, _opts) do
+  def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
-    ash_user = user_token && get_ash_user_by_session_token(user_token)
-    assign(conn, :current_ash_user, ash_user)
+    user = user_token && get_user_by_session_token(user_token)
+    assign(conn, :current_user, user)
   end
 
   defp ensure_user_token(conn) do
@@ -149,18 +149,18 @@ defmodule VmemoWeb.AshUserAuth do
     end
   end
 
-  defp get_ash_user_by_session_token(token) do
+  defp get_user_by_session_token(token) do
     # 使用 Ash Authentication JWT 验证 token
-    case AshAuthentication.Jwt.verify(token, AshUser) do
+    case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
         # 从 claims 中获取用户 ID
         case Map.get(claims, "sub") do
           nil ->
             nil
 
-          "ash_user?id=" <> user_id ->
-            case Ash.get(AshUser, user_id) do
-              {:ok, ash_user} -> ash_user
+          "user?id=" <> user_id ->
+            case Ash.get(User, user_id) do
+              {:ok, user} -> user
               _ -> nil
             end
 
@@ -173,8 +173,8 @@ defmodule VmemoWeb.AshUserAuth do
     end
   end
 
-  def require_authenticated_ash_user(conn, _opts) do
-    if conn.assigns[:current_ash_user] do
+  def require_authenticated_user(conn, _opts) do
+    if conn.assigns[:current_user] do
       conn
     else
       conn
@@ -189,8 +189,8 @@ defmodule VmemoWeb.AshUserAuth do
   @doc """
   Used for routes that require the user to not be authenticated.
   """
-  def redirect_if_ash_user_is_authenticated(conn, _opts) do
-    if conn.assigns[:current_ash_user] do
+  def redirect_if_user_is_authenticated(conn, _opts) do
+    if conn.assigns[:current_user] do
       conn
       |> redirect(to: signed_in_path(conn))
       |> halt()
@@ -206,16 +206,16 @@ defmodule VmemoWeb.AshUserAuth do
   defp maybe_store_return_to(conn), do: conn
 
   @doc """
-  Mounts the current Ash user.
+  Mounts the current user.
   """
-  def on_mount(:mount_current_ash_user, _params, session, socket) do
-    {:cont, mount_current_ash_user(socket, session)}
+  def on_mount(:mount_current_user, _params, session, socket) do
+    {:cont, mount_current_user(socket, session)}
   end
 
-  def on_mount(:ensure_authenticated_ash_user, _params, session, socket) do
-    socket = mount_current_ash_user(socket, session)
+  def on_mount(:ensure_authenticated_user, _params, session, socket) do
+    socket = mount_current_user(socket, session)
 
-    if socket.assigns.current_ash_user do
+    if socket.assigns.current_user do
       {:cont, socket}
     else
       socket =
@@ -227,20 +227,20 @@ defmodule VmemoWeb.AshUserAuth do
     end
   end
 
-  def on_mount(:redirect_if_ash_user_is_authenticated, _params, session, socket) do
-    socket = mount_current_ash_user(socket, session)
+  def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
+    socket = mount_current_user(socket, session)
 
-    if socket.assigns.current_ash_user do
+    if socket.assigns.current_user do
       {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
     else
       {:cont, socket}
     end
   end
 
-  defp mount_current_ash_user(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_ash_user, fn ->
+  defp mount_current_user(socket, session) do
+    Phoenix.Component.assign_new(socket, :current_user, fn ->
       if user_token = session["user_token"] do
-        get_ash_user_by_session_token(user_token)
+        get_user_by_session_token(user_token)
       end
     end)
   end

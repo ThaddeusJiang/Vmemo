@@ -8,6 +8,56 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
   use Ecto.Migration
 
   def up do
+    create table(:users, primary_key: false) do
+      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
+      add :email, :text, null: false
+      add :hashed_password, :text, null: false
+      add :confirmed_at, :utc_datetime
+
+      add :inserted_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :updated_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+    end
+
+    create unique_index(:users, [:email], name: "users_unique_email_index")
+
+    create table(:user_tokens, primary_key: false) do
+      add :created_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :extra_data, :map
+      add :purpose, :text, null: false
+      add :expires_at, :utc_datetime, null: false
+      add :subject, :text, null: false
+      add :jti, :text, null: false, primary_key: true
+      add :aud, :text
+      add :exp, :utc_datetime
+      add :iss, :text
+      add :sub, :text
+      add :typ, :text
+
+      add :user_id,
+          references(:users,
+            column: :id,
+            name: "user_tokens_user_id_fkey",
+            type: :uuid,
+            prefix: "public"
+          )
+
+      add :inserted_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :updated_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+    end
+
     create table(:photos_notes, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
 
@@ -39,7 +89,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
       add :caption, :text
       add :ts_ocr, :text
       add :file_id, :text
-      add :ash_user_id, :uuid
+      add :user_id, :uuid
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -66,7 +116,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
 
     alter table(:notes) do
       add :text, :text, null: false
-      add :ash_user_id, :uuid
+      add :user_id, :uuid
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -150,70 +200,13 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
         null: false,
         default: fragment("(now() AT TIME ZONE 'utc')")
 
-      add :user_id, :uuid, null: false
-    end
-
-    create table(:ash_users, primary_key: false) do
-      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
-    end
-
-    alter table(:conversations) do
-      modify :user_id,
-             references(:ash_users,
-               column: :id,
-               name: "conversations_user_id_fkey",
-               type: :uuid,
-               prefix: "public"
-             )
-    end
-
-    alter table(:ash_users) do
-      add :email, :text, null: false
-      add :hashed_password, :text, null: false
-      add :confirmed_at, :utc_datetime
-
-      add :inserted_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
-
-      add :updated_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
-    end
-
-    create unique_index(:ash_users, [:email], name: "ash_users_unique_email_index")
-
-    create table(:ash_user_tokens, primary_key: false) do
-      add :created_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
-
-      add :extra_data, :map
-      add :purpose, :text, null: false
-      add :expires_at, :utc_datetime, null: false
-      add :subject, :text, null: false
-      add :jti, :text, null: false, primary_key: true
-      add :aud, :text
-      add :exp, :utc_datetime
-      add :iss, :text
-      add :sub, :text
-      add :typ, :text
-
-      add :ash_user_id,
-          references(:ash_users,
+      add :user_id,
+          references(:users,
             column: :id,
-            name: "ash_user_tokens_ash_user_id_fkey",
+            name: "conversations_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          )
-
-      add :inserted_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
-
-      add :updated_at, :utc_datetime_usec,
-        null: false,
-        default: fragment("(now() AT TIME ZONE 'utc')")
+          ), null: false
     end
 
     create table(:api_tokens, primary_key: false) do
@@ -227,10 +220,10 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
       add :is_active, :boolean, default: true
       add :created_at, :utc_datetime, null: false
 
-      add :ash_user_id,
-          references(:ash_users,
+      add :user_id,
+          references(:users,
             column: :id,
-            name: "api_tokens_ash_user_id_fkey",
+            name: "api_tokens_user_id_fkey",
             type: :uuid,
             prefix: "public"
           ), null: false
@@ -245,7 +238,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     end
 
     create table(:ai_vision_requests, primary_key: false) do
-      add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
+      add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
 
       add :photo_id,
           references(:photos,
@@ -256,10 +249,10 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             on_delete: :delete_all
           ), null: false
 
-      add :ash_user_id,
-          references(:ash_users,
+      add :user_id,
+          references(:users,
             column: :id,
-            name: "ai_vision_requests_ash_user_id_fkey",
+            name: "ai_vision_requests_user_id_fkey",
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
@@ -279,40 +272,36 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
         null: false,
         default: fragment("(now() AT TIME ZONE 'utc')")
     end
+
+    create index(:ai_vision_requests, [:inserted_at])
+
+    create index(:ai_vision_requests, [:status])
+
+    create index(:ai_vision_requests, [:user_id])
+
+    create index(:ai_vision_requests, [:photo_id])
   end
 
   def down do
     drop constraint(:ai_vision_requests, "ai_vision_requests_photo_id_fkey")
 
-    drop constraint(:ai_vision_requests, "ai_vision_requests_ash_user_id_fkey")
+    drop constraint(:ai_vision_requests, "ai_vision_requests_user_id_fkey")
+
+    drop_if_exists index(:ai_vision_requests, [:photo_id])
+
+    drop_if_exists index(:ai_vision_requests, [:user_id])
+
+    drop_if_exists index(:ai_vision_requests, [:status])
+
+    drop_if_exists index(:ai_vision_requests, [:inserted_at])
 
     drop table(:ai_vision_requests)
 
-    drop constraint(:api_tokens, "api_tokens_ash_user_id_fkey")
+    drop constraint(:api_tokens, "api_tokens_user_id_fkey")
 
     drop table(:api_tokens)
 
-    drop constraint(:ash_user_tokens, "ash_user_tokens_ash_user_id_fkey")
-
-    drop table(:ash_user_tokens)
-
-    drop_if_exists unique_index(:ash_users, [:email], name: "ash_users_unique_email_index")
-
-    alter table(:ash_users) do
-      remove :updated_at
-      remove :inserted_at
-      remove :confirmed_at
-      remove :hashed_password
-      remove :email
-    end
-
     drop constraint(:conversations, "conversations_user_id_fkey")
-
-    alter table(:conversations) do
-      modify :user_id, :uuid
-    end
-
-    drop table(:ash_users)
 
     alter table(:conversations) do
       remove :user_id
@@ -340,7 +329,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     alter table(:notes) do
       remove :updated_at
       remove :inserted_at
-      remove :ash_user_id
+      remove :user_id
       remove :text
     end
 
@@ -355,7 +344,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     alter table(:photos) do
       remove :updated_at
       remove :inserted_at
-      remove :ash_user_id
+      remove :user_id
       remove :file_id
       remove :ts_ocr
       remove :caption
@@ -372,5 +361,13 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     drop table(:photos)
 
     drop table(:photos_notes)
+
+    drop constraint(:user_tokens, "user_tokens_user_id_fkey")
+
+    drop table(:user_tokens)
+
+    drop_if_exists unique_index(:users, [:email], name: "users_unique_email_index")
+
+    drop table(:users)
   end
 end
