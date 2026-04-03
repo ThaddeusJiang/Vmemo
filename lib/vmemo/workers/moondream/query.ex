@@ -8,7 +8,9 @@ defmodule Vmemo.Workers.Moondream.Query do
   alias SmallSdk.Moondream
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"request_id" => request_id}}) do
+  def perform(%Oban.Job{args: args}), do: execute(args)
+
+  def execute(%{"request_id" => request_id}) do
     case Ash.get(PhotoMoondreamRequest, request_id, actor: nil) do
       {:ok, request} ->
         process_request(request)
@@ -22,6 +24,8 @@ defmodule Vmemo.Workers.Moondream.Query do
         {:error, error}
     end
   end
+
+  def execute(_args), do: {:error, :invalid_moondream_request_args}
 
   defp process_request(request) do
     case update_request_status(request, "processing") do

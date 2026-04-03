@@ -2,7 +2,6 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   use VmemoWeb, :live_component
 
   alias Vmemo.Photos.PhotoMoondreamRequest
-  alias Vmemo.Workers.Moondream.Query
 
   @function_types ["query", "caption", "point", "detect", "segment"]
 
@@ -68,10 +67,6 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
              actor: user
            ) do
         {:ok, request} ->
-          %{request_id: request.id}
-          |> Query.new()
-          |> Oban.insert()
-
           loading_requests = MapSet.put(socket.assigns.loading_requests, request.id)
 
           send(self(), {:moondream_request_submitted, request})
@@ -95,19 +90,10 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     case Ash.get(PhotoMoondreamRequest, request_id, actor: user) do
       {:ok, request} ->
         if request.status == "failed" do
-          # Reset status to pending
-          case PhotoMoondreamRequest.update(request, %{status: "pending", error_message: nil},
-                 actor: user
-               ) do
+          case PhotoMoondreamRequest.retry(request, %{}, actor: user) do
             {:ok, updated_request} ->
-              # Create new Oban job
-              %{request_id: updated_request.id}
-              |> Query.new()
-              |> Oban.insert()
-
               loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)
 
-              # Immediately update the requests list in the component to hide error message
               updated_requests =
                 Enum.map(socket.assigns.requests, fn req ->
                   if req.id == updated_request.id do

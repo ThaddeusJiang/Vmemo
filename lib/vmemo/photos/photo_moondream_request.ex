@@ -2,7 +2,7 @@ defmodule Vmemo.Photos.PhotoMoondreamRequest do
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
 
@@ -15,10 +15,24 @@ defmodule Vmemo.Photos.PhotoMoondreamRequest do
     table_columns([:id, :photo_id, :ash_user_id, :function_type, :status, :inserted_at])
   end
 
+  oban do
+    triggers do
+      trigger :process do
+        action :process
+        queue :default
+        scheduler_cron false
+        where expr(status == "pending")
+        worker_module_name Vmemo.Photos.PhotoMoondreamRequest.Workers.Process
+        scheduler_module_name Vmemo.Photos.PhotoMoondreamRequest.Schedulers.Process
+      end
+    end
+  end
+
   code_interface do
     define :create
     define :read
     define :update
+    define :retry
     define :list_by_photo, args: [:photo_id]
   end
 
@@ -28,11 +42,42 @@ defmodule Vmemo.Photos.PhotoMoondreamRequest do
     create :create do
       accept [:photo_id, :ash_user_id, :function_type, :prompt]
       change set_attribute(:status, "pending")
+      change run_oban_trigger(:process)
     end
 
     update :update do
       accept [:status, :result, :error_message]
       require_atomic? false
+    end
+
+    update :retry do
+      accept []
+      require_atomic? false
+      change set_attribute(:status, "pending")
+      change set_attribute(:error_message, nil)
+      change set_attribute(:result, nil)
+      change run_oban_trigger(:process)
+    end
+
+    update :process do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, request, _context ->
+          case Vmemo.Workers.Moondream.Query.execute(%{"request_id" => request.id}) do
+            :ok ->
+              {:ok, request}
+
+            {:discard, _reason} ->
+              {:ok, request}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end)
+      end
     end
 
     read :list_by_photo do

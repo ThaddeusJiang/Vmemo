@@ -7,10 +7,12 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
   alias Vmemo.AdminImport
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"request_id" => request_id, "zip_path" => zip_path}}) do
+  def perform(%Oban.Job{args: args}), do: execute(args)
+
+  def execute(%{"request_id" => request_id}) do
     case Ash.get(ImportRequest, request_id, actor: nil) do
       {:ok, request} ->
-        process_request(request, zip_path)
+        process_request(request)
 
       {:error, %Ash.Error.Query.NotFound{}} ->
         Logger.warning("Import request #{request_id} not found")
@@ -22,7 +24,19 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
     end
   end
 
-  defp process_request(request, zip_path) do
+  def execute(_args), do: {:error, :invalid_import_request_args}
+
+  defp process_request(request) do
+    case request.import_zip_path do
+      path when is_binary(path) and path != "" ->
+        run_import(request, path)
+
+      _ ->
+        update_request_with_failure(request, "Import ZIP path is missing", %{})
+    end
+  end
+
+  defp run_import(request, zip_path) do
     case update_request(request, %{
            status: "processing",
            metadata: progress_metadata("Starting", 0)
@@ -50,7 +64,8 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
       status: "completed",
       metadata: result_metadata(result, "Completed", 100),
       result: result,
-      error_message: nil
+      error_message: nil,
+      import_zip_path: nil
     }
 
     case update_request(request, params) do
@@ -69,7 +84,8 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
       status: "failed",
       metadata: result_metadata(result, "Failed", 100),
       result: result,
-      error_message: error_message
+      error_message: error_message,
+      import_zip_path: nil
     }
 
     case update_request(request, params) do

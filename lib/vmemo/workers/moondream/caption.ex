@@ -8,7 +8,9 @@ defmodule Vmemo.Workers.Moondream.Caption do
   alias Vmemo.Workers.Moondream.Caption.Result.Request, as: RequestResult
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: args}) do
+  def perform(%Oban.Job{args: args}), do: execute(args)
+
+  def execute(args) when is_map(args) do
     with {:ok, call_handler, result_handler} <- resolve_handlers(args) do
       case call_handler.prepare(args) do
         {:ok, context, image_base64} ->

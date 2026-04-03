@@ -14,9 +14,8 @@ defmodule Vmemo.Photos.Photo do
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource, AshOban]
 
-  require Logger
   require Ash.Query
   alias Vmemo.PhotoService.TsPhoto
 
@@ -27,6 +26,28 @@ defmodule Vmemo.Photos.Photo do
 
   admin do
     table_columns([:id, :url, :note, :caption, :ts_ocr, :ash_user_id, :inserted_at])
+  end
+
+  oban do
+    triggers do
+      trigger :sync_typesense do
+        action :sync_typesense
+        queue :sync_typesense
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Photos.Photo.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Photos.Photo.Schedulers.SyncTypesense
+      end
+
+      trigger :generate_caption do
+        action :generate_caption
+        queue :default
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Photos.Photo.Workers.GenerateCaption
+        scheduler_module_name Vmemo.Photos.Photo.Schedulers.GenerateCaption
+      end
+    end
   end
 
   code_interface do
@@ -66,22 +87,59 @@ defmodule Vmemo.Photos.Photo do
 
     create :create_with_sync do
       accept [:url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
-
-      change after_action(fn _changeset, record, _context ->
-               enqueue_photo_sync_job(record.id)
-               enqueue_photo_caption_job(record.id)
-               {:ok, record}
-             end)
+      change run_oban_trigger(:sync_typesense)
+      change run_oban_trigger(:generate_caption)
     end
 
     update :update do
       accept [:note, :caption, :ts_ocr, :url]
       require_atomic? false
+      change run_oban_trigger(:sync_typesense)
+    end
 
-      change after_action(fn _changeset, record, _context ->
-               enqueue_photo_sync_job(record.id)
-               {:ok, record}
-             end)
+    update :sync_typesense do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
+          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
+            {:ok, true} ->
+              {:ok, record}
+
+            {:ok, false} ->
+              {:error, :sync_failed}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end)
+      end
+    end
+
+    update :generate_caption do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
+          case Vmemo.Workers.Moondream.Caption.execute(%{
+                 "photo_id" => record.id,
+                 "flow" => "photo"
+               }) do
+            :ok ->
+              {:ok, record}
+
+            {:discard, _reason} ->
+              {:ok, record}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end)
+      end
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -507,10 +565,7 @@ defmodule Vmemo.Photos.Photo do
         end
       end
 
-      change after_action(fn _changeset, record, _context ->
-               enqueue_photo_sync_job(record.id)
-               {:ok, record}
-             end)
+      change run_oban_trigger(:sync_typesense)
     end
   end
 
@@ -630,37 +685,5 @@ defmodule Vmemo.Photos.Photo do
 
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
-  end
-
-  defp enqueue_photo_sync_job(photo_id) do
-    case %{photo_id: photo_id}
-         |> Vmemo.Workers.Typesense.CreatePhoto.new()
-         |> Oban.insert() do
-      {:ok, _job} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error(
-          "Failed to enqueue Typesense.CreatePhoto for photo #{photo_id}: #{inspect(reason)}"
-        )
-
-        :error
-    end
-  end
-
-  defp enqueue_photo_caption_job(photo_id) do
-    case %{photo_id: photo_id, flow: "photo"}
-         |> Vmemo.Workers.Moondream.Caption.new()
-         |> Oban.insert() do
-      {:ok, _job} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error(
-          "Failed to enqueue Moondream.Caption for photo #{photo_id}: #{inspect(reason)}"
-        )
-
-        :error
-    end
   end
 end
