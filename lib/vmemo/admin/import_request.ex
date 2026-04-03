@@ -15,8 +15,8 @@ defmodule Vmemo.Admin.ImportRequest do
 
     form do
       field :import_zip do
-        max_file_size 1024 * 1024 * 1024
-        accepted_extensions [".zip", "application/zip"]
+        max_file_size(1024 * 1024 * 1024)
+        accepted_extensions([".zip", "application/zip"])
       end
     end
   end
@@ -63,7 +63,7 @@ defmodule Vmemo.Admin.ImportRequest do
 
                  zip_path ->
                    %{request_id: record.id, zip_path: zip_path}
-                   |> Vmemo.Workers.ProcessImportRequest.new()
+                   |> Vmemo.Workers.Import.ProcessRequest.new()
                    |> Oban.insert()
                    |> case do
                      {:ok, _job} -> {:ok, record}

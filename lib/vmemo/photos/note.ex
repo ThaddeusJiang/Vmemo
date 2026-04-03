@@ -105,14 +105,14 @@ defmodule Vmemo.Photos.Note do
 
   defp enqueue_note_sync_job(note_id) do
     case %{note_id: note_id}
-         |> Vmemo.Workers.SyncNoteToTypesense.new()
+         |> Vmemo.Workers.Typesense.CreateNote.new()
          |> Oban.insert() do
       {:ok, _job} ->
         :ok
 
       {:error, reason} ->
         Logger.error(
-          "Failed to enqueue SyncNoteToTypesense for note #{note_id}: #{inspect(reason)}"
+          "Failed to enqueue Typesense.CreateNote for note #{note_id}: #{inspect(reason)}"
         )
 
         :error

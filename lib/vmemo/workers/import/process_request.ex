@@ -1,4 +1,4 @@
-defmodule Vmemo.Workers.ProcessImportRequest do
+defmodule Vmemo.Workers.Import.ProcessRequest do
   use Oban.Worker, queue: :default, max_attempts: 3
 
   require Logger
@@ -23,7 +23,10 @@ defmodule Vmemo.Workers.ProcessImportRequest do
   end
 
   defp process_request(request, zip_path) do
-    case update_request(request, %{status: "processing", metadata: progress_metadata("Starting", 0)}) do
+    case update_request(request, %{
+           status: "processing",
+           metadata: progress_metadata("Starting", 0)
+         }) do
       {:ok, request} ->
         case AdminImport.import_zip(zip_path, &update_request_progress(request, &1)) do
           {:ok, result} ->
@@ -108,10 +111,10 @@ defmodule Vmemo.Workers.ProcessImportRequest do
       {:import_request_updated,
        %{
          request_id: request.id,
-          status: request.status,
-          result: request.result,
-          error_message: request.error_message,
-          metadata: request.metadata
+         status: request.status,
+         result: request.result,
+         error_message: request.error_message,
+         metadata: request.metadata
        }}
     )
   end

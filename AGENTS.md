@@ -192,6 +192,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
     - 可以避免 socket 连接失败导致任务失败
     - 用户离开页面后任务仍能继续执行
   - **示例**：Caption 生成、Moondream 请求、需要处理的文件上传
+- Worker 命名必须以工具/服务前缀开头，并优先使用分层模块命名（例如 `Typesense.CreatePhoto`、`Typesense.CreateNote`、`Moondream.Caption`、`Moondream.Query`），避免使用 `Process*` / `Sync*` 这类泛前缀
 
 **git 规范**
 

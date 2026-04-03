@@ -1,4 +1,4 @@
-defmodule Vmemo.Workers.ProcessMoondreamRequest do
+defmodule Vmemo.Workers.Moondream.Query do
   use Oban.Worker, queue: :default, max_attempts: 3
 
   require Logger

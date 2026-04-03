@@ -2,7 +2,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   use VmemoWeb, :live_component
 
   alias Vmemo.Photos.PhotoMoondreamRequest
-  alias Vmemo.Workers.ProcessMoondreamRequest
+  alias Vmemo.Workers.Moondream.Query
 
   @function_types ["query", "caption", "point", "detect", "segment"]
 
@@ -69,7 +69,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
            ) do
         {:ok, request} ->
           %{request_id: request.id}
-          |> ProcessMoondreamRequest.new()
+          |> Query.new()
           |> Oban.insert()
 
           loading_requests = MapSet.put(socket.assigns.loading_requests, request.id)
@@ -102,7 +102,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
             {:ok, updated_request} ->
               # Create new Oban job
               %{request_id: updated_request.id}
-              |> ProcessMoondreamRequest.new()
+              |> Query.new()
               |> Oban.insert()
 
               loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)

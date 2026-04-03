@@ -7,7 +7,7 @@ defmodule VmemoWeb.PhotoIdLive do
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoMoondreamRequest
   alias Vmemo.Photos.PhotoCaptionRequest
-  alias Vmemo.Workers.ProcessCaptionRequest
+  alias Vmemo.Workers.Moondream.Caption
 
   alias VmemoWeb.LiveComponents.Waterfall
   alias VmemoWeb.LiveComponents.MoondreamPanel
@@ -145,8 +145,8 @@ defmodule VmemoWeb.PhotoIdLive do
     case PhotoCaptionRequest.create(%{photo_id: photo.id, ash_user_id: user.id}, actor: user) do
       {:ok, request} ->
         # Create Oban job
-        %{request_id: request.id}
-        |> ProcessCaptionRequest.new()
+        %{request_id: request.id, flow: "request"}
+        |> Caption.new()
         |> Oban.insert()
 
         loading_requests = MapSet.put(socket.assigns.caption_loading_requests, request.id)
@@ -185,8 +185,8 @@ defmodule VmemoWeb.PhotoIdLive do
                ) do
             {:ok, updated_request} ->
               # Create new Oban job
-              %{request_id: updated_request.id}
-              |> ProcessCaptionRequest.new()
+              %{request_id: updated_request.id, flow: "request"}
+              |> Caption.new()
               |> Oban.insert()
 
               loading_requests =

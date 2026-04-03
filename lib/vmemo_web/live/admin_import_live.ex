@@ -168,7 +168,9 @@ defmodule VmemoWeb.AdminImportLive do
 
               <%= if is_list(errors) and errors != [] do %>
                 <div class="border border-base-300 rounded-md p-2 text-sm">
-                  <p class="font-medium">Errors (showing {min(length(errors), 10)} of {error_count})</p>
+                  <p class="font-medium">
+                    Errors (showing {min(length(errors), 10)} of {error_count})
+                  </p>
                   <ul class="space-y-1">
                     <li :for={error <- Enum.take(errors, 10)} class="text-error">
                       {error}
@@ -233,7 +235,7 @@ defmodule VmemoWeb.AdminImportLive do
 
                 job =
                   %{request_id: request.id, zip_path: zip_path}
-                  |> Vmemo.Workers.ProcessImportRequest.new()
+                  |> Vmemo.Workers.Import.ProcessRequest.new()
 
                 case Oban.insert(job) do
                   {:ok, _job} ->

@@ -69,6 +69,7 @@ defmodule Vmemo.Photos.Photo do
 
       change after_action(fn _changeset, record, _context ->
                enqueue_photo_sync_job(record.id)
+               enqueue_photo_caption_job(record.id)
                {:ok, record}
              end)
     end
@@ -633,14 +634,30 @@ defmodule Vmemo.Photos.Photo do
 
   defp enqueue_photo_sync_job(photo_id) do
     case %{photo_id: photo_id}
-         |> Vmemo.Workers.SyncPhotoToTypesense.new()
+         |> Vmemo.Workers.Typesense.CreatePhoto.new()
          |> Oban.insert() do
       {:ok, _job} ->
         :ok
 
       {:error, reason} ->
         Logger.error(
-          "Failed to enqueue SyncPhotoToTypesense for photo #{photo_id}: #{inspect(reason)}"
+          "Failed to enqueue Typesense.CreatePhoto for photo #{photo_id}: #{inspect(reason)}"
+        )
+
+        :error
+    end
+  end
+
+  defp enqueue_photo_caption_job(photo_id) do
+    case %{photo_id: photo_id, flow: "photo"}
+         |> Vmemo.Workers.Moondream.Caption.new()
+         |> Oban.insert() do
+      {:ok, _job} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to enqueue Moondream.Caption for photo #{photo_id}: #{inspect(reason)}"
         )
 
         :error
