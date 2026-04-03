@@ -358,14 +358,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
               case maybe_link_note_to_photos(note, photos, current_user) do
                 :ok ->
-                  # 通知父组件上传成功，传递图片列表
-                  if socket.parent_pid do
-                    send(socket.parent_pid, {:upload_success, photos})
-                  end
+                  send(self(), {:upload_success, photos})
 
-                  {:noreply,
-                   socket
-                   |> put_flash(:info, "Photos uploaded successfully")}
+                  {:noreply, socket}
 
                 {:error, _reason} ->
                   {:noreply,

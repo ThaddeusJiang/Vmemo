@@ -21,4 +21,18 @@ defmodule VmemoWeb.PhotoUploadLive do
     </section>
     """
   end
+
+  @impl true
+  def handle_info({:upload_success, photos}, socket) do
+    count = length(photos)
+
+    message =
+      case count do
+        0 -> "Photos uploaded successfully"
+        1 -> "1 photo uploaded successfully"
+        _ -> "#{count} photos uploaded successfully"
+      end
+
+    {:noreply, put_flash(socket, :info, message)}
+  end
 end
