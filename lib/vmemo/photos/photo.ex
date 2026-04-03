@@ -17,6 +17,7 @@ defmodule Vmemo.Photos.Photo do
     extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
+  alias SmallSdk.Moondream
   alias Vmemo.PhotoService.TsPhoto
 
   postgres do
@@ -125,10 +126,7 @@ defmodule Vmemo.Photos.Photo do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
-          case Vmemo.Workers.Moondream.Caption.execute(%{
-                 "photo_id" => record.id,
-                 "flow" => "photo"
-               }) do
+          case generate_caption_for_photo(record) do
             :ok ->
               {:ok, record}
 
@@ -685,5 +683,24 @@ defmodule Vmemo.Photos.Photo do
 
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
+  end
+
+  defp generate_caption_for_photo(photo) do
+    if is_nil(photo.caption) or photo.caption == "" do
+      with {:ok, image_base64} <- read_image_base64_for_typesense(photo.url),
+           {:ok, caption} <- Moondream.caption(image_base64),
+           {:ok, _updated_photo} <-
+             __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+        :ok
+      else
+        {:error, :file_not_found} ->
+          :ok
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      :ok
+    end
   end
 end

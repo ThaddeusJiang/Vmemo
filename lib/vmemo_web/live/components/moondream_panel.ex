@@ -1,7 +1,7 @@
 defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   use VmemoWeb, :live_component
 
-  alias Vmemo.Photos.PhotoMoondreamRequest
+  alias Vmemo.Ai.VisionRequest
 
   @function_types ["query", "caption", "point", "detect", "segment"]
 
@@ -57,7 +57,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     if is_segment_disabled?(function) do
       {:noreply, socket}
     else
-      case PhotoMoondreamRequest.create(
+      case VisionRequest.create(
              %{
                photo_id: photo.id,
                ash_user_id: user.id,
@@ -87,10 +87,10 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   def handle_event("retry-request", %{"request_id" => request_id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(PhotoMoondreamRequest, request_id, actor: user) do
+    case Ash.get(VisionRequest, request_id, actor: user) do
       {:ok, request} ->
         if request.status == "failed" do
-          case PhotoMoondreamRequest.retry(request, %{}, actor: user) do
+          case VisionRequest.retry(request, %{}, actor: user) do
             {:ok, updated_request} ->
               loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)
 
