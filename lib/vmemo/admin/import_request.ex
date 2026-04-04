@@ -87,7 +87,7 @@ defmodule Vmemo.Admin.ImportRequest do
       transaction? false
 
       change fn changeset, _context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, request, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, request ->
           case Vmemo.Workers.Import.ProcessRequest.execute(%{"request_id" => request.id}) do
             :ok ->
               {:ok, request}

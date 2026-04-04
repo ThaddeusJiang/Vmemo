@@ -89,7 +89,7 @@ defmodule Vmemo.Ai.VisionRequest do
       transaction? false
 
       change fn changeset, _context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, request, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, request ->
           case process_request(request) do
             :ok ->
               {:ok, request}
