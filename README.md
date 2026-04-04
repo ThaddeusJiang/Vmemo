@@ -22,27 +22,6 @@ Text-only journaling is easy to forget and hard to revisit. Vmemo focuses on vis
 - Public REST API for external integrations.
 - Responsive web UI for desktop and mobile.
 
-## Docker Image Platforms
-
-Vmemo provides architecture-specific Docker images:
-
-- `thaddeusjiang/vmemo:<version>-amd64`
-- `thaddeusjiang/vmemo:<version>-arm64`
-
-Pick the image by your host CPU:
-
-Apple Silicon (M1/M2/M3/M4/M5): use `-arm64`
-
-```bash
-docker pull thaddeusjiang/vmemo:2026.3.28-arm64
-```
-
-Intel/AMD CPUs: use `-amd64`
-
-```bash
-docker pull thaddeusjiang/vmemo:2026.3.28-amd64
-```
-
 ## Self-hosting
 
 You can also run Vmemo on your local machine or self-host it.
@@ -147,59 +126,26 @@ docker compose up -d
 
 Open `http://localhost:4000`.
 
-Startup flow in container:
-
-1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo start`
-
-Migration note:
-
-- Vmemo uses Ash + ash_postgres for data access and schema changes.
-- `Vmemo.Release.migrate()` is the preferred release entrypoint.
-- It runs both AshPostgres repo migrations and Typesense migrations.
-- For local setup/reset workflow, prefer `mix setup` and `mix reset`.
-- This project depends on both database and Typesense, so setup/reset should usually run both sides together.
-- Use standalone DB commands only for targeted maintenance.
-
-Remote IEx (release mode):
-
-```bash
-docker exec -it <container_name> /app/bin/vmemo remote
-```
-
-### Optional: Define a Public Domain via Cloudflare Tunnel
-
-Use the Cloudflare Tunnel CLI guide to complete the full tunnel setup, including tunnel creation, DNS route, domain mapping, and service run commands:
-
-- `docs/guides/deployment/cloudflare-tunnel-cli.md`
-
-## API Docs
-
-Public API documentation has been moved to:
-
-- [Public REST API](docs/features/public-rest-api.md)
-- [API Tokens Guide](docs/features/api-tokens.md)
-
 ## Environment Variables
 
-| Variable             | Required | Description                                        |
-| -------------------- | -------- | -------------------------------------------------- |
-| `DATABASE_URL`       | Yes      | PostgreSQL connection URL                          |
-| `ADMIN_PASSWORD`     | Yes      | Admin password for protected actions               |
-| `SECRET_KEY_BASE`    | Yes      | Phoenix secret key base                            |
-| `RESEND_API_KEY`     | Yes      | Resend API key for email                           |
-| `TYPESENSE_URL`      | Yes      | Typesense endpoint                                 |
-| `TYPESENSE_API_KEY`  | Yes      | Typesense API key                                  |
-| `MOONDREAM_URL`      | No       | Moondream API endpoint (`https://api.moondream.ai/v1/` default) |
-| `MOONDREAM_API_KEY`  | Yes      | Moondream API key                                  |
-| `OPENROUTER_API_KEY` | Yes      | OpenRouter API key for chat features               |
-| `SENTRY_DSN`         | Yes      | Sentry DSN                                         |
-| `SENTRY_ENV`         | No       | Sentry environment (`production`, `staging`, etc.; `prod` default) |
-| `PHX_SERVER`         | No       | Enable Phoenix server in runtime                   |
-| `PHX_HOST`           | No       | Public host name (`vmemo.app` default)             |
-| `PORT`               | No       | App port (`4000` default)                          |
-| `POOL_SIZE`          | No       | DB pool size (`10` default)                        |
-| `ECTO_IPV6`          | No       | Enable IPv6 when set to `true` or `1`              |
+| Variable             | Required | Description                                                        |
+| -------------------- | -------- | ------------------------------------------------------------------ |
+| `DATABASE_URL`       | Yes      | PostgreSQL connection URL                                          |
+| `TYPESENSE_URL`      | Yes      | Typesense endpoint                                                 |
+| `TYPESENSE_API_KEY`  | Yes      | Typesense API key                                                  |
+| `MOONDREAM_URL`      |          | Moondream API endpoint (`https://api.moondream.ai/v1/` default)    |
+| `MOONDREAM_API_KEY`  | Yes      | Moondream API key                                                  |
+| `OPENROUTER_API_KEY` | Yes      | OpenRouter API key for chat features                               |
+| `RESEND_API_KEY`     | Yes      | Resend API key for email                                           |
+| `SENTRY_DSN`         | Yes      | Sentry DSN                                                         |
+| `SENTRY_ENV`         |          | Sentry environment (`production`, `staging`, etc.; `prod` default) |
+| `SECRET_KEY_BASE`    | Yes      | Phoenix secret key base                                            |
+| `PHX_SERVER`         |          | Enable Phoenix server in runtime                                   |
+| `PHX_HOST`           |          | Public host name (`vmemo.app` default)                             |
+| `PORT`               |          | App port (`4000` default)                                          |
+| `POOL_SIZE`          |          | DB pool size (`10` default)                                        |
+| `ECTO_IPV6`          |          | Enable IPv6 when set to `true` or `1`                              |
+| `ADMIN_PASSWORD`     | Yes      | Admin password for protected actions                               |
 
 ## Tech Stack
 
