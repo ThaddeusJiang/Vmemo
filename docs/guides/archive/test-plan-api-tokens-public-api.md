@@ -1027,7 +1027,7 @@ services:
       --health-retries 5
 
   typesense:
-    image: typesense/typesense:27.1
+    image: typesense/typesense:30.1
     env:
       TYPESENSE_API_KEY: test_key
       TYPESENSE_DATA_DIR: /data

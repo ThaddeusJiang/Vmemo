@@ -50,14 +50,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       typesense:
-        image: typesense/typesense:27.1
+        image: typesense/typesense:30.1
+        volumes:
+          - /tmp/typesense-data:/data
         env:
           TYPESENSE_API_KEY: xyz
           TYPESENSE_DATA_DIR: /data
         ports:
           - 8108:8108
         options: >-
-          --tmpfs /data:rw,size=512m
+          --health-cmd "curl -fsS http://localhost:8108/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: e2e-test
