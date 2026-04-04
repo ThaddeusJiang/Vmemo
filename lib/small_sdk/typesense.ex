@@ -372,8 +372,6 @@ defmodule SmallSdk.Typesense do
   defp sanitize_value(value), do: value
 
   defp dev_log(message, metadata) do
-    if Application.get_env(:vmemo, :debug_external_requests, false) do
-      Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
-    end
+    Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
   end
 end

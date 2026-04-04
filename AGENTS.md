@@ -100,6 +100,8 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 ## Elixir 规范
 
 - Elixir 具有**模式匹配**特性
+- 外部请求调试日志直接使用 `Logger.debug`，不要增加 `if Application.get_env(:vmemo, :debug_external_requests, false)` 之类的运行时开关；通过不同环境的 Logger 配置控制生产环境是否输出 debug 日志
+- 日志实践遵循 Elixir Logger 风格与社区最佳实践，保持简洁一致
 - 公共 utils 模块（尤其是纯函数的 helper）**必须**有测试和文档：
   - `@moduledoc` 只做模块 summary，每个公开函数都写独立 `@doc`，并尽量附带 doctest example
   - 在 `test/**` 下为每个 utils 模块添加对应的 `doctest` 或单元测试文件
