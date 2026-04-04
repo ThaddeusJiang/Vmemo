@@ -1,5 +1,5 @@
 ---
-name: "Vmemo Tidewave"
+name: "Tidewave"
 description: "Use when working on Phoenix projects with Tidewave MCP. Prefer Tidewave tools for code discovery, docs lookup, runtime checks, and database verification instead of ad-hoc guessing."
 ---
 

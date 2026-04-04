@@ -1,5 +1,5 @@
 ---
-name: "local-development"
+name: "Local Development"
 description: "Skill for Vmemo local development workflows."
 ---
 
