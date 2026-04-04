@@ -316,14 +316,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               end)
             end
 
-          # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
-          results =
-            results
-            |> Enum.map(fn
-              {:ok, r} -> r
-              {:error, reason} -> {:error, reason}
-              other -> {:error, inspect(other)}
-            end)
+          results = Enum.map(results, &normalize_upload_result/1)
 
           case Enum.find(results, fn result -> match?({:error, _}, result) end) do
             {:error, %Ash.Error.Unknown{} = ash_error} ->
@@ -353,7 +346,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             nil ->
               photos =
                 results
-                |> Enum.filter(fn result -> match?({:ok, _}, result) end)
+                |> Enum.filter(&match?({:ok, _}, &1))
                 |> Enum.map(fn {:ok, photo} -> photo end)
 
               case maybe_link_note_to_photos(note, photos, current_user) do
@@ -379,6 +372,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   end
 
   defp maybe_focus_note_field(socket, false), do: socket
+
+  defp normalize_upload_result({:ok, %Photo{} = photo}), do: {:ok, photo}
+  defp normalize_upload_result({:error, _reason} = error), do: error
+  defp normalize_upload_result(%Photo{} = photo), do: {:ok, photo}
+  defp normalize_upload_result(other), do: {:error, inspect(other)}
 
   defp maybe_link_note_to_photos(nil, _photos, _current_user), do: :ok
 
