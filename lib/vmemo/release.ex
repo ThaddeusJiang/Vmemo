@@ -44,6 +44,18 @@ defmodule Vmemo.Release do
     _ = ensure_req_finch_started()
 
     Vmemo.Ts.migrate()
+  end
+
+  @doc """
+  Warm up Typesense image embedding model.
+  """
+  def ts_warmup do
+    load_app()
+
+    _ = Application.ensure_all_started(:telemetry)
+    _ = Application.ensure_all_started(@app)
+    _ = ensure_req_finch_started()
+
     Vmemo.Ts.Warmup.ensure_image_embedding_model_ready()
   end
 

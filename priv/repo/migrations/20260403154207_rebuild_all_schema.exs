@@ -206,7 +206,8 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             name: "conversations_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create table(:api_tokens, primary_key: false) do
@@ -226,7 +227,8 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             name: "api_tokens_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -247,7 +249,8 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), null: false
+          ),
+          null: false
 
       add :user_id,
           references(:users,
@@ -256,7 +259,8 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), null: false
+          ),
+          null: false
 
       add :function_type, :text, null: false
       add :prompt, :text
