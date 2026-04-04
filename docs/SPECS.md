@@ -160,9 +160,9 @@
 - Sentry: 错误上报
 
 ### 5.2 配置与环境变量（生产关键项）
-- 必需：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `SENTRY_DSN`, `RESEND_API_KEY`
-- 常用可选：`TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_URL`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`
-- 生产默认：`MOONDREAM_URL` 默认为 `https://api.moondream.ai/v1`
+- 必需：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
+- 常用可选：`MOONDREAM_URL`, `SENTRY_ENV`
+- 生产默认：`MOONDREAM_URL` 默认为 `https://api.moondream.ai/v1/`
 - 严格校验：数值类 env（如导入分片大小）不合法会直接 `raise`
 
 ### 5.3 CI/CD 依赖
@@ -264,9 +264,8 @@
 - [ ] 无阻塞级错误日志与已知回归
 
 ### 8.3 配置与密钥检查
-- [ ] 生产环境变量已配置完整：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `SENTRY_DSN`, `RESEND_API_KEY`
-- [ ] `TYPESENSE_URL` 与 `TYPESENSE_API_KEY` 可连通
-- [ ] `MOONDREAM_API_KEY`、`OPENROUTER_API_KEY`（如需 AI 能力）可用
+- [ ] 生产环境变量已配置完整：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
+- [ ] `SENTRY_ENV`（可选）已按环境配置
 - [ ] `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6` 符合部署环境
 - [ ] 关键 env 值格式校验通过（不会触发 runtime raise）
 

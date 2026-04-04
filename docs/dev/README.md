@@ -4,7 +4,7 @@ This page is kept as a compatibility entry.
 
 The canonical development guide is:
 
-- [docs/development/README.md](../development/README.md)
+- [docs/development.md](../development.md)
 
 Related tooling guide:
 

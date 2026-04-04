@@ -1,8 +1,5 @@
 # Vmemo
 
-[![GitHub Repository](https://img.shields.io/badge/GitHub-ThaddeusJiang%2FVmemo-181717?logo=github)](https://github.com/ThaddeusJiang/Vmemo)
-[![Last Commit](https://img.shields.io/github/last-commit/ThaddeusJiang/Vmemo)](https://github.com/ThaddeusJiang/Vmemo/commits)
-[![License](https://img.shields.io/github/license/ThaddeusJiang/Vmemo)](https://github.com/ThaddeusJiang/Vmemo/LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/thaddeusjiang/vmemo)](https://hub.docker.com/r/thaddeusjiang/vmemo)
 
 Vmemo is a visual memory app for capturing life with photos, searching with AI, and reviewing moments quickly without writing long text notes.
@@ -60,13 +57,13 @@ PHX_SERVER=true
 SECRET_KEY_BASE=replace_with_a_long_random_secret
 ADMIN_PASSWORD=replace_with_a_strong_admin_password
 
-# Optional AI integrations
-OPENROUTER_API_KEY=
-MOONDREAM_API_KEY=
+# Integrations
+OPENROUTER_API_KEY=replace_with_your_openrouter_api_key
+MOONDREAM_API_KEY=replace_with_your_moondream_api_key
 
 # DevOps
-RESEND_API_KEY=
-SENTRY_DSN=
+RESEND_API_KEY=replace_with_your_resend_api_key
+SENTRY_DSN=https://public@example.com/1
 ```
 
 Generate a secret with:
@@ -90,7 +87,6 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
-      SENTRY_DSN: ${SENTRY_DSN:?SENTRY_DSN is required}
     env_file:
       - .env
     ports:
@@ -177,93 +173,33 @@ Use the Cloudflare Tunnel CLI guide to complete the full tunnel setup, including
 
 - `docs/hexdocs/cloudflare-tunnel-cli.md`
 
-## Public API
+## API Docs
 
-Vmemo includes a token-based REST API for photo operations and integrations.
+Public API documentation has been moved to:
 
-### Authentication
+- [Public REST API](docs/public-rest-api/README.md)
+- [API Tokens Guide](docs/api-tokens.md)
 
-Include an API token in the `Authorization` header:
+## Environment Variables
 
-```bash
-Authorization: Bearer vmemo_your_token_here
-```
-
-Create a token in the web UI:
-
-1. Sign in to Vmemo.
-2. Open `/tokens`.
-3. Create a token.
-4. Copy the token immediately.
-
-### Base URL
-
-```text
-http://localhost:4000/api/v1
-```
-
-### Endpoints
-
-Upload a photo:
-
-```bash
-curl -X POST http://localhost:4000/api/v1/photos \
-  -H "Authorization: Bearer vmemo_your_token" \
-  -F "file=@/path/to/image.jpg" \
-  -F "note=My photo note"
-```
-
-Get a photo:
-
-```bash
-curl -X GET http://localhost:4000/api/v1/photos/photo-uuid \
-  -H "Authorization: Bearer vmemo_your_token"
-```
-
-Delete a photo:
-
-```bash
-curl -X DELETE http://localhost:4000/api/v1/photos/photo-uuid \
-  -H "Authorization: Bearer vmemo_your_token"
-```
-
-Example error response:
-
-```json
-{
-  "status": "error",
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Invalid or missing API token"
-  }
-}
-```
-
-## Required Environment Variables (Production)
-
-| Variable          | Description                                        |
-| ----------------- | -------------------------------------------------- |
-| `DATABASE_URL`    | PostgreSQL connection URL                          |
-| `ADMIN_PASSWORD`  | Admin password for protected actions               |
-| `SECRET_KEY_BASE` | Phoenix secret key base                            |
-| `SENTRY_DSN`      | Sentry DSN                                         |
-| `SENTRY_ENV`      | Sentry environment (`production`, `staging`, etc.) |
-| `RESEND_API_KEY`  | Resend API key for email                           |
-
-## Optional Environment Variables
-
-| Variable             | Description                            |
-| -------------------- | -------------------------------------- |
-| `TYPESENSE_URL`      | Typesense endpoint                     |
-| `TYPESENSE_API_KEY`  | Typesense API key                      |
-| `MOONDREAM_URL`      | Moondream API endpoint                 |
-| `MOONDREAM_API_KEY`  | Moondream API key                      |
-| `OPENROUTER_API_KEY` | OpenRouter API key for chat features   |
-| `PHX_HOST`           | Public host name (`vmemo.app` default) |
-| `PORT`               | App port (`4000` default)              |
-| `POOL_SIZE`          | DB pool size (`10` default)            |
-| `ECTO_IPV6`          | Enable IPv6 when set to `true` or `1`  |
-| `PHX_SERVER`         | Enable Phoenix server in runtime       |
+| Variable             | Required | Description                                        |
+| -------------------- | -------- | -------------------------------------------------- |
+| `DATABASE_URL`       | Yes      | PostgreSQL connection URL                          |
+| `ADMIN_PASSWORD`     | Yes      | Admin password for protected actions               |
+| `SECRET_KEY_BASE`    | Yes      | Phoenix secret key base                            |
+| `RESEND_API_KEY`     | Yes      | Resend API key for email                           |
+| `TYPESENSE_URL`      | Yes      | Typesense endpoint                                 |
+| `TYPESENSE_API_KEY`  | Yes      | Typesense API key                                  |
+| `MOONDREAM_URL`      | No       | Moondream API endpoint (`https://api.moondream.ai/v1/` default) |
+| `MOONDREAM_API_KEY`  | Yes      | Moondream API key                                  |
+| `OPENROUTER_API_KEY` | Yes      | OpenRouter API key for chat features               |
+| `SENTRY_DSN`         | Yes      | Sentry DSN                                         |
+| `SENTRY_ENV`         | No       | Sentry environment (`production`, `staging`, etc.; `prod` default) |
+| `PHX_SERVER`         | No       | Enable Phoenix server in runtime                   |
+| `PHX_HOST`           | No       | Public host name (`vmemo.app` default)             |
+| `PORT`               | No       | App port (`4000` default)                          |
+| `POOL_SIZE`          | No       | DB pool size (`10` default)                        |
+| `ECTO_IPV6`          | No       | Enable IPv6 when set to `true` or `1`              |
 
 ## Tech Stack
 

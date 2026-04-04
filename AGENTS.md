@@ -100,6 +100,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 ## Elixir 规范
 
 - Elixir 具有**模式匹配**特性
+- `config/runtime.exs` 等 Phoenix 配置文件**总是**优先遵循 Phoenix 官方模板风格（例如使用 `System.get_env("KEY") || raise """..."""`），避免引入不必要的自定义配置模式
 - 外部请求调试日志直接使用 `Logger.debug`，不要增加 `if Application.get_env(:vmemo, :debug_external_requests, false)` 之类的运行时开关；通过不同环境的 Logger 配置控制生产环境是否输出 debug 日志
 - 日志实践遵循 Elixir Logger 风格与社区最佳实践，保持简洁一致
 - 公共 utils 模块（尤其是纯函数的 helper）**必须**有测试和文档：

@@ -40,8 +40,12 @@ docker run -p 4000:4000 \
   -e DATABASE_URL=postgresql://user:pass@host:port/database \
   -e SECRET_KEY_BASE=your_secret_key_base \
   -e ADMIN_PASSWORD=your_admin_password \
-  -e SENTRY_DSN=your_sentry_dsn \
   -e RESEND_API_KEY=your_resend_key \
+  -e TYPESENSE_URL=http://typesense:8108 \
+  -e TYPESENSE_API_KEY=your_typesense_key \
+  -e OPENROUTER_API_KEY=your_openrouter_key \
+  -e MOONDREAM_API_KEY=your_moondream_key \
+  -e SENTRY_DSN=your_sentry_dsn \
   -e PHX_SERVER=true \
   vmemo:latest
 ```

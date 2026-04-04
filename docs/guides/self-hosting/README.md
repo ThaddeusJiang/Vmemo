@@ -28,11 +28,17 @@ cp .env.example .env
 - `SECRET_KEY_BASE`
 - `ADMIN_PASSWORD`
 - `DATABASE_URL`
+- `TYPESENSE_URL`
 - `TYPESENSE_API_KEY`
+- `MOONDREAM_API_KEY`
+- `OPENROUTER_API_KEY`
 - `RESEND_API_KEY`
 - `SENTRY_DSN`
 
-`SENTRY_DSN` 不能是空字符串（`""`），否则应用会在启动时直接退出。
+可选：
+
+- `SENTRY_ENV`
+- `MOONDREAM_URL`（默认 `https://api.moondream.ai/v1/`）
 
 如果你在本地运行 moondream，请在 `.env` 设置：
 
@@ -91,8 +97,9 @@ TYPESENSE_API_KEY=replace_with_a_strong_typesense_key
 RESEND_API_KEY=replace_with_your_resend_api_key
 SENTRY_DSN=https://public@example.com/1
 SENTRY_ENV=production
-OPENROUTER_API_KEY=
-MOONDREAM_API_KEY=
+OPENROUTER_API_KEY=replace_with_your_openrouter_key
+MOONDREAM_API_KEY=replace_with_your_moondream_key
+# Optional, default is https://api.moondream.ai/v1/
 MOONDREAM_URL=
 ```
 
