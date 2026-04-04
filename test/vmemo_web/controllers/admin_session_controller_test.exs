@@ -8,7 +8,7 @@ defmodule VmemoWeb.AdminSessionControllerTest do
       conn = post(conn, ~p"/admin/login", %{"admin" => %{"token" => "admin"}})
 
       assert redirected_to(conn) == "/admin"
-      assert get_flash(conn, :info) == "Admin login successful"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Admin login successful"
       assert admin_logged_in?(conn)
     end
 
@@ -16,7 +16,7 @@ defmodule VmemoWeb.AdminSessionControllerTest do
       conn = post(conn, ~p"/admin/login", %{"admin" => %{"token" => "wrong_token"}})
 
       assert redirected_to(conn) == "/admin/login"
-      assert get_flash(conn, :error) == "Invalid admin token"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid admin token"
       refute admin_logged_in?(conn)
     end
 
@@ -24,7 +24,7 @@ defmodule VmemoWeb.AdminSessionControllerTest do
       conn = post(conn, ~p"/admin/login", %{"admin" => %{}})
 
       assert redirected_to(conn) == "/admin/login"
-      assert get_flash(conn, :error) == "Please provide admin token"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Please provide admin token"
     end
   end
 
