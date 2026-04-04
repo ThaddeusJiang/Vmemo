@@ -163,7 +163,7 @@
 - 必需：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `SENTRY_DSN`, `RESEND_API_KEY`
 - 常用可选：`TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_URL`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`
 - 生产默认：`MOONDREAM_URL` 默认为 `https://api.moondream.ai/v1`
-- 严格校验：部分 env（如 `TYPESENSE_IMAGE_EMBEDDING`）不合法会直接 `raise`
+- 严格校验：数值类 env（如导入分片大小）不合法会直接 `raise`
 
 ### 5.3 CI/CD 依赖
 - Elixir checks：PR 自动跑 `mix test`
@@ -318,4 +318,3 @@
 - [ ] 记录线上问题与后续任务（docs/tasks）
 - [ ] 如有规范变化，更新 `AGENTS.md` / coding guidelines
 - [ ] 归档本次发布检查清单与结果
-

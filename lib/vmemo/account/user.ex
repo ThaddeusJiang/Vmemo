@@ -92,8 +92,8 @@ defmodule Vmemo.Account.User do
                  is_nil(password) ->
                    :ok
 
-                 String.length(password) < 12 ->
-                   {:error, field: :password, message: "should be at least 12 character(s)"}
+                 String.length(password) < 8 ->
+                   {:error, field: :password, message: "should be at least 8 character(s)"}
 
                  String.length(password) > 72 ->
                    {:error, field: :password, message: "should be at most 72 character(s)"}

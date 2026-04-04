@@ -44,6 +44,7 @@ defmodule Vmemo.Release do
     _ = ensure_req_finch_started()
 
     Vmemo.Ts.migrate()
+    Vmemo.Ts.Warmup.ensure_image_embedding_model_ready()
   end
 
   defp repos do

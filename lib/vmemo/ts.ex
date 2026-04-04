@@ -19,16 +19,9 @@ defmodule Vmemo.Ts do
       %{"name" => "inserted_by", "type" => "string"}
     ]
 
-    fields =
-      if image_embedding_enabled?() do
-        fields ++ [image_embedding_field()]
-      else
-        fields
-      end
-
     schema = %{
       "name" => "photos",
-      "fields" => fields,
+      "fields" => fields ++ [image_embedding_field()],
       "default_sorting_field" => "inserted_at"
     }
 
@@ -83,16 +76,9 @@ defmodule Vmemo.Ts do
   def change_4() do
     caption_field = %{"name" => "caption", "type" => "string", "optional" => true}
 
-    fields =
-      if image_embedding_enabled?() do
-        [caption_field, image_embedding_field()]
-      else
-        [caption_field]
-      end
-
     ensure_collection_fields(
       "photos",
-      fields,
+      [caption_field, image_embedding_field()],
       "update photos collection with caption and embedding fields"
     )
   end
@@ -249,10 +235,6 @@ defmodule Vmemo.Ts do
       {:error, "Conflict"} -> :ok
       {:error, reason} -> raise("Typesense record migration version failed: #{reason}")
     end
-  end
-
-  defp image_embedding_enabled? do
-    Application.get_env(:vmemo, :typesense_image_embedding, true)
   end
 
   defp image_embedding_field do

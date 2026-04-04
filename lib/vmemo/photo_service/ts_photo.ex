@@ -220,7 +220,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
         q -> q
       end
 
-    if vector_search_enabled?() and not is_nil(similar) do
+    if not is_nil(similar) do
       search_similar_photos(q, similar, user_id, page, per_page)
     else
       text_result = search_text_photos(q, user_id, page, per_page)
@@ -230,7 +230,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
           text_result
 
         _ ->
-          if vector_search_enabled?() and q != "*" do
+          if q != "*" do
             search_semantic_photos(q, user_id, page, per_page)
           else
             text_result
@@ -359,37 +359,32 @@ defmodule Vmemo.PhotoService.TsPhoto do
   end
 
   def list_similar_photos(id, opts \\ []) do
-    if vector_search_enabled?() do
-      user_id = Keyword.get(opts, :user_id, "")
-      limit = Keyword.get(opts, :limit, 50)
-      distance_threshold = 1.0 - @min_similarity_threshold
+    user_id = Keyword.get(opts, :user_id, "")
+    limit = Keyword.get(opts, :limit, 50)
+    distance_threshold = 1.0 - @min_similarity_threshold
 
-      req = Typesense.build_request("/multi_search")
+    req = Typesense.build_request("/multi_search")
 
-      payload = %{
-        "searches" => [
-          %{
-            "collection" => @collection_name,
-            "q" => "*",
-            "vector_query" =>
-              "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
-            "filter_by" => "inserted_by:#{user_id}",
-            "exclude_fields" => "image_embedding",
-            "sort_by" => "_vector_distance:asc",
-            "per_page" => limit
-          }
-        ]
-      }
+    payload = %{
+      "searches" => [
+        %{
+          "collection" => @collection_name,
+          "q" => "*",
+          "vector_query" =>
+            "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
+          "filter_by" => "inserted_by:#{user_id}",
+          "exclude_fields" => "image_embedding",
+          "sort_by" => "_vector_distance:asc",
+          "per_page" => limit
+        }
+      ]
+    }
 
-      res = post_multi_search(req, payload)
+    res = post_multi_search(req, payload)
 
-      {:ok, {photos, _found, _page}} = Typesense.handle_multi_search_res(res)
+    {:ok, {photos, _found, _page}} = Typesense.handle_multi_search_res(res)
 
-      photos |> Enum.map(&parse/1)
-    else
-      _ = id
-      []
-    end
+    photos |> Enum.map(&parse/1)
   end
 
   defp post_multi_search(req, payload, attempt \\ 0) do
@@ -402,10 +397,6 @@ defmodule Vmemo.PhotoService.TsPhoto do
       other ->
         other
     end
-  end
-
-  defp vector_search_enabled? do
-    Application.get_env(:vmemo, :typesense_image_embedding, false)
   end
 
   defp dev_log(message, metadata) do

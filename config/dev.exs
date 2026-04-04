@@ -15,7 +15,6 @@ config :vmemo, Vmemo.Repo,
 
 config :vmemo, typesense_url: "http://localhost:8766"
 config :vmemo, typesense_api_key: "xyz"
-config :vmemo, typesense_image_embedding: true
 config :vmemo, debug_external_requests: true
 
 config :vmemo, moondream_url: "http://localhost:2020/v1"

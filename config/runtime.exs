@@ -11,22 +11,6 @@ if api_key = System.get_env("TYPESENSE_API_KEY") do
   config :vmemo, typesense_api_key: api_key
 end
 
-if image_embedding = System.get_env("TYPESENSE_IMAGE_EMBEDDING") do
-  case image_embedding do
-    "true" ->
-      config :vmemo, typesense_image_embedding: true
-
-    "false" ->
-      config :vmemo, typesense_image_embedding: false
-
-    _ ->
-      raise """
-      environment variable TYPESENSE_IMAGE_EMBEDDING is invalid.
-      It must be either true or false.
-      """
-  end
-end
-
 # Moondream URL from env (overrides dev.exs / test.exs when set)
 if url = System.get_env("MOONDREAM_URL") do
   config :vmemo, moondream_url: url

@@ -136,8 +136,8 @@ defmodule VmemoWeb.UserResetPasswordLive do
       password != confirmation ->
         [password_confirmation: {"does not match password", []}]
 
-      String.length(password) < 12 ->
-        [password: {"should be at least 12 character(s)", []}]
+      String.length(password) < 8 ->
+        [password: {"should be at least 8 character(s)", []}]
 
       String.length(password) > 72 ->
         [password: {"should be at most 72 character(s)", []}]

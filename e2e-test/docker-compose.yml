@@ -41,7 +41,6 @@ services:
       DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
-      TYPESENSE_IMAGE_EMBEDDING: "false"
       OPENROUTER_API_KEY: ""
       MOONDREAM_URL: ""
       MOONDREAM_API_KEY: ""
