@@ -37,7 +37,7 @@ OPENROUTER_API_KEY = "your-openrouter-api-key"
 For full runtime variables, see:
 
 - `config/runtime.exs`
-- [docs/deploy/docker-prod-run.md](deploy/docker-prod-run.md)
+- [docs/guides/deployment/docker-prod-run.md](../deployment/docker-prod-run.md)
 
 ## 4. Install Dependencies and Prepare Database
 
@@ -78,6 +78,6 @@ mix format
 
 ## Related Docs
 
-- API docs: [public-rest-api/README.md](public-rest-api/README.md)
-- Prod Docker run: [deploy/docker-prod-run.md](deploy/docker-prod-run.md)
-- Tooling notes: [dev/tidewave.md](dev/tidewave.md)
+- API docs: [../../features/public-rest-api.md](../../features/public-rest-api.md)
+- Prod Docker run: [../deployment/docker-prod-run.md](../deployment/docker-prod-run.md)
+- Tooling notes: [tidewave.md](tidewave.md)

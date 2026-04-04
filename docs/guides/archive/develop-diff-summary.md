@@ -90,7 +90,7 @@ Public API 开发计划已实施完成。主要包含：
 
 **状态**: ✅ 已完成（75% 完成度，核心功能可用）
 
-[查看完整 API 文档](docs/public-api.md)
+[查看完整 API 文档](../../features/public-rest-api.md)
 
 ---
 
@@ -288,7 +288,7 @@ mix phx.routes
 - 测试评估
 - 安全评估
 
-[查看完整文档](docs/CODE-REVIEW.md)
+[查看完整文档](code-review-pr-40.md)
 
 </details>
 
@@ -301,7 +301,7 @@ mix phx.routes
 
 完整的迁移指南，包含详细的迁移步骤、数据迁移详解、回滚步骤等。
 
-[查看完整文档](docs/MIGRATION-GUIDE.md)
+[查看完整文档](migration-guide-api-tokens-public-api.md)
 
 </details>
 
@@ -314,7 +314,7 @@ mix phx.routes
 
 详细的发布说明文档。
 
-[查看完整文档](docs/RELEASE-NOTES.md)
+[查看完整文档](release-notes-api-tokens-public-api.md)
 
 </details>
 
@@ -327,7 +327,7 @@ mix phx.routes
 
 完整的测试计划文档，包含测试用例、测试策略等。
 
-[查看完整文档](docs/TEST-PLAN.md)
+[查看完整文档](test-plan-api-tokens-public-api.md)
 
 </details>
 
@@ -340,7 +340,7 @@ mix phx.routes
 
 用户指南文档，说明如何使用 API Token 功能。
 
-[查看完整文档](docs/api-tokens.md)
+[查看完整文档](../../features/api-tokens.md)
 
 </details>
 
@@ -353,7 +353,7 @@ mix phx.routes
 
 Public API 的完整参考文档。
 
-[查看完整文档](docs/public-api.md)
+[查看完整文档](../../features/public-rest-api.md)
 
 </details>
 

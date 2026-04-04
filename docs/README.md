@@ -1,9 +1,26 @@
-# 依赖
+# Vmemo Docs
 
-- [context7](https://github.com/upstash/context7)
+Top-level modules:
 
+- `decisions`
+- `features`
+- `guides`
 
-# 教训
+## decisions
 
-1. elixir file name 不应该使用单个字母，会出现双大写字母的情况，如 `VMmemo`，期待是 `Vmemo`。
-   1. 或许 vision_memory 会更好一些。
+- [Decisions Index](decisions/README.md)
+
+## features
+
+- [Features Index](features/README.md)
+- [Project Specs](features/specs.md)
+- [Data Models](features/data-models.md)
+- [Public REST API](features/public-rest-api.md)
+- [API Token Guide](features/api-tokens.md)
+
+## guides
+
+- [Guides Index](guides/README.md)
+- [Development](guides/development/README.md)
+- [Deployment](guides/deployment/README.md)
+- [Archive](guides/archive/README.md)

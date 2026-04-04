@@ -171,14 +171,14 @@ docker exec -it <container_name> /app/bin/vmemo remote
 
 Use the Cloudflare Tunnel CLI guide to complete the full tunnel setup, including tunnel creation, DNS route, domain mapping, and service run commands:
 
-- `docs/hexdocs/cloudflare-tunnel-cli.md`
+- `docs/guides/deployment/cloudflare-tunnel-cli.md`
 
 ## API Docs
 
 Public API documentation has been moved to:
 
-- [Public REST API](docs/public-rest-api/README.md)
-- [API Tokens Guide](docs/api-tokens.md)
+- [Public REST API](docs/features/public-rest-api.md)
+- [API Tokens Guide](docs/features/api-tokens.md)
 
 ## Environment Variables
 
