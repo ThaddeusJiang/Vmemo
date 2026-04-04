@@ -23,6 +23,8 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
         LangChain.Message.new_system!("""
         You are a helpful chat bot.
         Your job is to use the tools at your disposal to assist the user.
+        When you provide image URLs, always render them using Markdown image syntax: ![alt](url).
+        Do not use normal Markdown links for images.
         """)
 
       message_chain = message_chain(messages)
