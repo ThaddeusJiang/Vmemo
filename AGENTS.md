@@ -260,5 +260,6 @@ password = "password123456"
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
 - `Playwright` 与网页交互；做 UI/e2e visual testing 时优先采用 visual testing，必要时使用 **visual snapshots** 作为断言手段，不要把它和 DOM snapshot 混淆
+- `Codex Custom Prompts` 已弃用；可复用提示词/流程**总是**使用 skills 实现
 - **绝不**使用 `python` 运行脚本
 - 可以使用 `curl` `jq` `gh` 等
