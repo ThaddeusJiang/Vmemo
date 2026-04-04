@@ -25,11 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - name: Build and cache app image
+      - name: Build app image artifact
         uses: ./.github/actions/build-ci-image
         with:
           image_name: thaddeusjiang/vmemo:e2e
-          cache_key: vmemo-e2e-image-${{ hashFiles('Dockerfile', 'mix.exs', 'mix.lock', 'assets/**', 'config/**', 'lib/**', 'priv/**', 'rel/**') }}
 
   e2e:
     needs: build-image
