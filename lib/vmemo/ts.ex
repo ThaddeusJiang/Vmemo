@@ -77,6 +77,26 @@ defmodule Vmemo.Ts do
     )
   end
 
+  @doc """
+  add photos.caption and optional image embedding field
+  """
+  def change_4() do
+    caption_field = %{"name" => "caption", "type" => "string", "optional" => true}
+
+    fields =
+      if image_embedding_enabled?() do
+        [caption_field, image_embedding_field()]
+      else
+        [caption_field]
+      end
+
+    ensure_collection_fields(
+      "photos",
+      fields,
+      "update photos collection with caption and embedding fields"
+    )
+  end
+
   def reset do
     Typesense.drop_collection("photos")
     |> ensure_ok("drop photos collection")

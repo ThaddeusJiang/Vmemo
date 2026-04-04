@@ -104,7 +104,7 @@ defmodule Vmemo.Photos.Photo do
       transaction? false
 
       change fn changeset, _context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
           case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
             {:ok, true} ->
               {:ok, record}
@@ -125,7 +125,7 @@ defmodule Vmemo.Photos.Photo do
       transaction? false
 
       change fn changeset, _context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
           case generate_caption_for_photo(record) do
             :ok ->
               {:ok, record}
@@ -196,13 +196,7 @@ defmodule Vmemo.Photos.Photo do
             |> Enum.filter(&valid_uuid?/1)
 
           if photo_ids == [] do
-            per_page = 10
-            offset = (page - 1) * per_page
-
-            Ash.Query.filter(query, user_id == ^user_id)
-            |> Ash.Query.sort(inserted_at: :desc)
-            |> Ash.Query.offset(offset)
-            |> Ash.Query.limit(per_page)
+            Ash.Query.filter(query, id: [in: []])
           else
             query
             |> Ash.Query.filter(id: [in: photo_ids])
@@ -640,9 +634,57 @@ defmodule Vmemo.Photos.Photo do
     typesense_data = build_typesense_sync_payload(photo)
 
     case TsPhoto.get_photo(photo.id) do
-      nil -> TsPhoto.create(typesense_data)
+      nil -> sync_photo_with_typesense_retry(typesense_data, :create)
       {:error, reason} -> {:error, reason}
-      _existing -> TsPhoto.update_photo(typesense_data)
+      _existing -> sync_photo_with_typesense_retry(typesense_data, :update)
+    end
+  end
+
+  defp sync_photo_with_typesense_retry(typesense_data, :create) do
+    case TsPhoto.create(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, created} <- TsPhoto.create(typesense_data) do
+          {:ok, created}
+        end
+
+      result ->
+        result
+    end
+  end
+
+  defp sync_photo_with_typesense_retry(typesense_data, :update) do
+    case TsPhoto.update_photo(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, _updated} <- sync_photo_after_migration(typesense_data) do
+          {:ok, true}
+        end
+
+      {:ok, updated} ->
+        {:ok, updated}
+
+      error ->
+        error
+    end
+  end
+
+  defp sync_photo_after_migration(typesense_data) do
+    case TsPhoto.update_photo(typesense_data) do
+      {:error, "Not Found"} -> TsPhoto.create(typesense_data)
+      result -> result
+    end
+  end
+
+  defp migrate_typesense_schema do
+    try do
+      case Vmemo.Ts.migrate() do
+        :ok -> :ok
+        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
+      end
+    rescue
+      exception ->
+        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
     end
   end
 

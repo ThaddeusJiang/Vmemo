@@ -94,7 +94,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
     req = Typesense.build_request("/collections/notes/documents/search")
 
     res =
-      Req.get(req,
+      Typesense.request(:get, req,
         params: [
           q: "*",
           filter_by: "photo_ids:#{id}"
@@ -160,10 +160,10 @@ defmodule Vmemo.PhotoService.TsPhoto do
     req = Typesense.build_request("/collections/#{@collection_name}/documents/search")
 
     res =
-      Req.get(req,
+      Typesense.request(:get, req,
         params: [
           q: "",
-          query_by: "note",
+          query_by: "note,caption",
           exclude_fields: "image_embedding",
           filter_by: "inserted_by:#{user_id}",
           page: 1,
@@ -182,10 +182,10 @@ defmodule Vmemo.PhotoService.TsPhoto do
     req = Typesense.build_request("/collections/#{@collection_name}/documents/search")
 
     res =
-      Req.get(req,
+      Typesense.request(:get, req,
         params: [
           q: "*",
-          query_by: "note",
+          query_by: "note,caption",
           filter_by: "inserted_by:#{user_id}",
           per_page: 0
         ]
@@ -198,11 +198,21 @@ defmodule Vmemo.PhotoService.TsPhoto do
   end
 
   @min_similarity_threshold 0.75
+  @semantic_fallback_distance_threshold 0.95
+  @multi_search_retry_attempts 1
 
   def hybird_search_photos({q, similar}, opts \\ []) do
     user_id = Keyword.get(opts, :user_id, "")
     page = Keyword.get(opts, :page, 1)
     per_page = 10
+    raw_q = q
+
+    dev_log("vmemo.search.request",
+      raw_query: raw_q,
+      similar_photo_id: similar,
+      user_id: user_id,
+      page: page
+    )
 
     q =
       case String.trim(q) do
@@ -210,72 +220,197 @@ defmodule Vmemo.PhotoService.TsPhoto do
         q -> q
       end
 
-    {vector_query, sort_by} =
-      case similar do
-        nil ->
-          {"image_embedding:([], k: 200, distance_threshold: 0.79)",
-           "_text_match:desc,inserted_at:desc"}
+    if vector_search_enabled?() and not is_nil(similar) do
+      search_similar_photos(q, similar, user_id, page, per_page)
+    else
+      text_result = search_text_photos(q, user_id, page, per_page)
+
+      case text_result do
+        {_photos, found, _current_page} when found > 0 ->
+          text_result
 
         _ ->
-          distance_threshold = 1.0 - @min_similarity_threshold
-
-          {"image_embedding:([], k: 500, distance_threshold: #{distance_threshold}, id:#{similar})",
-           "_vector_distance:asc,_text_match:desc"}
+          if vector_search_enabled?() and q != "*" do
+            search_semantic_photos(q, user_id, page, per_page)
+          else
+            text_result
+          end
       end
-
-    req = Typesense.build_request("/multi_search")
-
-    res =
-      Req.post(req,
-        json: %{
-          "searches" => [
-            %{
-              "query_by" => "note,image_embedding",
-              "q" => q,
-              "vector_query" => vector_query,
-              "collection" => @collection_name,
-              "filter_by" => "inserted_by:#{user_id}",
-              "exclude_fields" => "image_embedding",
-              "sort_by" => sort_by,
-              "per_page" => per_page,
-              "page" => page
-            }
-          ]
-        }
-      )
-
-    {:ok, {photos, found, current_page}} = Typesense.handle_multi_search_res(res)
-
-    {photos |> Enum.map(&parse/1), found, current_page}
+    end
   end
 
-  def list_similar_photos(id, opts \\ []) do
-    user_id = Keyword.get(opts, :user_id, "")
-    limit = Keyword.get(opts, :limit, 50)
+  defp search_text_photos(q, user_id, page, per_page) do
+    params = [
+      q: q,
+      query_by: "note,caption",
+      filter_by: "inserted_by:#{user_id}",
+      sort_by: "inserted_at:desc",
+      exclude_fields: "image_embedding",
+      per_page: per_page,
+      page: page
+    ]
+
+    case Typesense.search_documents(@collection_name, params) do
+      {:ok, %{documents: photos, found: found, page: current_page}} ->
+        dev_log("vmemo.search.response",
+          search_mode: "text",
+          normalized_query: q,
+          found: found,
+          page: current_page,
+          result_ids: Enum.map(photos, &Map.get(&1, "id")) |> Enum.take(10)
+        )
+
+        {photos |> Enum.map(&parse/1), found, current_page}
+
+      {:error, _reason} ->
+        dev_log("vmemo.search.response",
+          search_mode: "text",
+          normalized_query: q,
+          found: 0,
+          page: page,
+          result_ids: []
+        )
+
+        {[], 0, page}
+    end
+  end
+
+  defp search_semantic_photos(q, user_id, page, per_page) do
+    req = Typesense.build_request("/multi_search")
+
+    payload = %{
+      "searches" => [
+        %{
+          "query_by" => "image_embedding",
+          "q" => q,
+          "vector_query" =>
+            "image_embedding:([], k: 200, distance_threshold: #{@semantic_fallback_distance_threshold})",
+          "collection" => @collection_name,
+          "filter_by" => "inserted_by:#{user_id}",
+          "exclude_fields" => "image_embedding",
+          "sort_by" => "_vector_distance:asc,inserted_at:desc",
+          "drop_tokens_threshold" => 0,
+          "per_page" => per_page,
+          "page" => page
+        }
+      ]
+    }
+
+    res = post_multi_search(req, payload)
+
+    case Typesense.handle_multi_search_res(res) do
+      {:ok, {photos, found, current_page}} ->
+        dev_log("vmemo.search.response",
+          search_mode: "semantic-fallback",
+          normalized_query: q,
+          found: found,
+          page: current_page,
+          result_ids: Enum.map(photos, &Map.get(&1, "id")) |> Enum.take(10)
+        )
+
+        {photos |> Enum.map(&parse/1), found, current_page}
+
+      _ ->
+        {[], 0, page}
+    end
+  end
+
+  defp search_similar_photos(q, similar, user_id, page, per_page) do
     distance_threshold = 1.0 - @min_similarity_threshold
 
     req = Typesense.build_request("/multi_search")
 
-    res =
-      Req.post(req,
-        json: %{
-          "searches" => [
-            %{
-              "collection" => @collection_name,
-              "q" => "*",
-              "vector_query" =>
-                "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
-              "filter_by" => "inserted_by:#{user_id}",
-              "exclude_fields" => "image_embedding",
-              "sort_by" => "_vector_distance:asc",
-              "per_page" => limit
-            }
-          ]
+    payload = %{
+      "searches" => [
+        %{
+          "query_by" => "note,caption",
+          "q" => q,
+          "vector_query" =>
+            "image_embedding:([], k: 500, distance_threshold: #{distance_threshold}, id:#{similar})",
+          "collection" => @collection_name,
+          "filter_by" => "inserted_by:#{user_id}",
+          "exclude_fields" => "image_embedding",
+          "sort_by" => "_vector_distance:asc,_text_match:desc",
+          "drop_tokens_threshold" => 0,
+          "per_page" => per_page,
+          "page" => page
         }
-      )
+      ]
+    }
 
-    {:ok, {photos, _found, _page}} = Typesense.handle_multi_search_res(res)
+    res = post_multi_search(req, payload)
 
-    photos |> Enum.map(&parse/1)
+    case Typesense.handle_multi_search_res(res) do
+      {:ok, {photos, found, current_page}} ->
+        dev_log("vmemo.search.response",
+          search_mode: "similar-photo",
+          normalized_query: q,
+          similar_photo_id: similar,
+          found: found,
+          page: current_page,
+          result_ids: Enum.map(photos, &Map.get(&1, "id")) |> Enum.take(10)
+        )
+
+        {photos |> Enum.map(&parse/1), found, current_page}
+
+      _ ->
+        {[], 0, page}
+    end
+  end
+
+  def list_similar_photos(id, opts \\ []) do
+    if vector_search_enabled?() do
+      user_id = Keyword.get(opts, :user_id, "")
+      limit = Keyword.get(opts, :limit, 50)
+      distance_threshold = 1.0 - @min_similarity_threshold
+
+      req = Typesense.build_request("/multi_search")
+
+      payload = %{
+        "searches" => [
+          %{
+            "collection" => @collection_name,
+            "q" => "*",
+            "vector_query" =>
+              "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
+            "filter_by" => "inserted_by:#{user_id}",
+            "exclude_fields" => "image_embedding",
+            "sort_by" => "_vector_distance:asc",
+            "per_page" => limit
+          }
+        ]
+      }
+
+      res = post_multi_search(req, payload)
+
+      {:ok, {photos, _found, _page}} = Typesense.handle_multi_search_res(res)
+
+      photos |> Enum.map(&parse/1)
+    else
+      _ = id
+      []
+    end
+  end
+
+  defp post_multi_search(req, payload, attempt \\ 0) do
+    case Typesense.request(:post, req, json: payload) do
+      {:error, %Req.TransportError{reason: :closed} = reason}
+      when attempt < @multi_search_retry_attempts ->
+        _ = reason
+        post_multi_search(req, payload, attempt + 1)
+
+      other ->
+        other
+    end
+  end
+
+  defp vector_search_enabled? do
+    Application.get_env(:vmemo, :typesense_image_embedding, false)
+  end
+
+  defp dev_log(message, metadata) do
+    if Application.get_env(:vmemo, :debug_external_requests, false) do
+      Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
+    end
   end
 end

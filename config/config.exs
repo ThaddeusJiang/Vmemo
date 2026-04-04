@@ -49,6 +49,7 @@ config :vmemo,
   ecto_repos: [Vmemo.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [Vmemo.Chat, Vmemo.Photos, Vmemo.Ai, Vmemo.AccountDomain, Vmemo.Admin],
+  debug_external_requests: false,
   user_data_import_typesense_chunk_size: 50,
   user_data_import_typesense_chunk_pause_ms: 50
 

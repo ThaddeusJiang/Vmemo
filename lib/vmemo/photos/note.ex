@@ -122,9 +122,57 @@ defmodule Vmemo.Photos.Note do
     }
 
     case TsNote.get(note.id) do
-      nil -> TsNote.create(typesense_data)
+      nil -> sync_note_with_typesense_retry(typesense_data, :create)
       {:error, reason} -> {:error, reason}
-      _existing -> TsNote.update(typesense_data)
+      _existing -> sync_note_with_typesense_retry(typesense_data, :update)
+    end
+  end
+
+  defp sync_note_with_typesense_retry(typesense_data, :create) do
+    case TsNote.create(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, created} <- TsNote.create(typesense_data) do
+          {:ok, created}
+        end
+
+      result ->
+        result
+    end
+  end
+
+  defp sync_note_with_typesense_retry(typesense_data, :update) do
+    case TsNote.update(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, _updated} <- sync_note_after_migration(typesense_data) do
+          {:ok, true}
+        end
+
+      {:ok, updated} ->
+        {:ok, updated}
+
+      error ->
+        error
+    end
+  end
+
+  defp sync_note_after_migration(typesense_data) do
+    case TsNote.update(typesense_data) do
+      {:error, "Not Found"} -> TsNote.create(typesense_data)
+      result -> result
+    end
+  end
+
+  defp migrate_typesense_schema do
+    try do
+      case Vmemo.Ts.migrate() do
+        :ok -> :ok
+        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
+      end
+    rescue
+      exception ->
+        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
     end
   end
 end
