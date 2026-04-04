@@ -1,6 +1,6 @@
 services:
   vmemo:
-    image: thaddeusjiang/vmemo:latest
+    image: thaddeusjiang/vmemo
     restart: on-failure
     env_file:
       - .env

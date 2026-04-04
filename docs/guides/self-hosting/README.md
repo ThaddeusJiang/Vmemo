@@ -14,7 +14,7 @@
 1. 进入目录：
 
 ```bash
-cd docs/guides/self-hosting
+cd docs/guides/self-hosting && cp docker-compose.example.yml docker-compose.yml
 ```
 
 2. 复制环境变量模板并填写必要变量：
@@ -31,6 +31,20 @@ cp .env.example .env
 - `TYPESENSE_API_KEY`
 - `RESEND_API_KEY`
 - `SENTRY_DSN`
+
+`SENTRY_DSN` 不能是空字符串（`""`），否则应用会在启动时直接退出。
+
+如果你在本地运行 moondream，请在 `.env` 设置：
+
+```env
+MOONDREAM_URL=http://host.docker.internal:2020/v1
+```
+
+如果你想使用本地刚 build 的镜像，在当前目录运行：
+
+```bash
+VMEMO_IMAGE=thaddeusjiang/vmemo:latest docker compose up -d
+```
 
 3. 启动服务：
 
@@ -173,5 +187,6 @@ CLI 方式请参考：
 ## Notes
 
 - 默认镜像标签是 `thaddeusjiang/vmemo:latest`；如需固定版本，可在 compose 文件改为具体 tag（例如 `v0.1.0`）。
+- 你也可以通过环境变量覆盖镜像：`VMEMO_IMAGE=your-image:tag docker compose up -d`。
 - compose 依赖容器启动时自动执行数据库迁移和 Typesense 迁移。
 - 如需公网访问，请在入口层或反向代理启用 HTTPS。

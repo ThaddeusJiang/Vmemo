@@ -1,8 +1,7 @@
 defmodule Vmemo.Ts do
   alias SmallSdk.Typesense
 
-  @migrations_glob "priv/ts/migrations/*.exs"
-  @migrations_collection "ts_schema_migrations"
+  @migrations_collection_file ".migrations_collection"
   @list_documents_page_size 100
 
   @doc """
@@ -84,26 +83,30 @@ defmodule Vmemo.Ts do
   end
 
   def reset do
+    migrations_collection = migrations_collection()
+
     Typesense.drop_collection("photos")
     |> ensure_ok("drop photos collection")
 
     Typesense.drop_collection("notes")
     |> ensure_ok("drop notes collection")
 
-    Typesense.drop_collection(@migrations_collection)
+    Typesense.drop_collection(migrations_collection)
     |> ensure_ok("drop typesense migration tracking collection")
   end
 
   def migrate do
-    ensure_migrations_collection()
-    applied_versions = applied_migration_versions()
+    migrations_collection = migrations_collection()
+
+    ensure_migrations_collection(migrations_collection)
+    applied_versions = applied_migration_versions(migrations_collection)
 
     migration_entries()
     |> validate_unique_migration_versions()
     |> pending_migrations(applied_versions)
     |> Enum.each(fn %{version: version, path: path} ->
       Code.eval_file(path)
-      record_migration_version(version)
+      record_migration_version(migrations_collection, version)
     end)
 
     :ok
@@ -144,7 +147,7 @@ defmodule Vmemo.Ts do
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
 
   defp migration_entries do
-    @migrations_glob
+    migrations_glob()
     |> Path.wildcard()
     |> Enum.sort()
     |> Enum.map(fn path ->
@@ -153,6 +156,28 @@ defmodule Vmemo.Ts do
         path: path
       }
     end)
+  end
+
+  defp migrations_glob, do: Path.join(migrations_dir(), "*.exs")
+
+  defp migrations_dir, do: Application.app_dir(:vmemo, "priv/ts/migrations")
+
+  defp migrations_collection do
+    path = Path.join(migrations_dir(), @migrations_collection_file)
+
+    case File.read(path) do
+      {:ok, value} ->
+        collection = String.trim(value)
+
+        if collection == "" do
+          raise("Typesense migrations collection config is empty: #{path}")
+        end
+
+        collection
+
+      {:error, reason} ->
+        raise("Typesense migrations collection config read failed: #{path} (#{inspect(reason)})")
+    end
   end
 
   @doc """
@@ -176,9 +201,9 @@ defmodule Vmemo.Ts do
     end
   end
 
-  defp ensure_migrations_collection do
+  defp ensure_migrations_collection(migrations_collection) do
     schema = %{
-      "name" => @migrations_collection,
+      "name" => migrations_collection,
       "fields" => [
         %{"name" => "version", "type" => "string"},
         %{"name" => "inserted_at", "type" => "int64"}
@@ -187,15 +212,15 @@ defmodule Vmemo.Ts do
     }
 
     Typesense.create_collection(schema)
-    |> ensure_collection_created(@migrations_collection)
+    |> ensure_collection_created(migrations_collection)
   end
 
-  defp applied_migration_versions do
-    load_applied_migration_versions(1, MapSet.new())
+  defp applied_migration_versions(migrations_collection) do
+    load_applied_migration_versions(migrations_collection, 1, MapSet.new())
   end
 
-  defp load_applied_migration_versions(page, acc) do
-    case Typesense.list_documents!(@migrations_collection, @list_documents_page_size, page) do
+  defp load_applied_migration_versions(migrations_collection, page, acc) do
+    case Typesense.list_documents!(migrations_collection, @list_documents_page_size, page) do
       {:ok, docs} when is_list(docs) ->
         next_acc =
           docs
@@ -209,7 +234,7 @@ defmodule Vmemo.Ts do
         if length(docs) < @list_documents_page_size do
           next_acc
         else
-          load_applied_migration_versions(page + 1, next_acc)
+          load_applied_migration_versions(migrations_collection, page + 1, next_acc)
         end
 
       {:ok, _other} ->
@@ -223,14 +248,14 @@ defmodule Vmemo.Ts do
     end
   end
 
-  defp record_migration_version(version) do
+  defp record_migration_version(migrations_collection, version) do
     document = %{
       "id" => version,
       "version" => version,
       "inserted_at" => System.system_time(:second)
     }
 
-    case Typesense.create_document(@migrations_collection, document) do
+    case Typesense.create_document(migrations_collection, document) do
       {:ok, _} -> :ok
       {:error, "Conflict"} -> :ok
       {:error, reason} -> raise("Typesense record migration version failed: #{reason}")
