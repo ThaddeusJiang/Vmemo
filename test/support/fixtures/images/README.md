@@ -14,6 +14,6 @@
 ## 使用示例
 
 ```elixir
-@test_image_path "test/testdata_files/wall-e.png"
+@test_image_path "test/support/fixtures/images/wall-e.png"
 File.read(@test_image_path)
 ```

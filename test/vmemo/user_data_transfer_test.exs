@@ -45,13 +45,13 @@ defmodule Vmemo.UserDataTransferTest do
     write_user_file_from_fixture!(
       source_user.id,
       "source-photo.png",
-      "test/testdata_files/test-red-image.png"
+      "test/support/fixtures/images/test-red-image.png"
     )
 
     write_user_file_from_fixture!(
       other_user.id,
       "other-photo.png",
-      "test/testdata_files/wall-e.png"
+      "test/support/fixtures/images/wall-e.png"
     )
 
     assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)
@@ -115,7 +115,7 @@ defmodule Vmemo.UserDataTransferTest do
     write_user_file_from_fixture!(
       source_user.id,
       "source-photo.png",
-      "test/testdata_files/test-red-image.png"
+      "test/support/fixtures/images/test-red-image.png"
     )
 
     assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)
