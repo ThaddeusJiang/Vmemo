@@ -30,7 +30,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
   defp create_test_user do
     email = "test@example.com"
-    password = "password123456"
+    password = "pass123456"
 
     case Account.get_user_by_email(email) do
       nil ->
