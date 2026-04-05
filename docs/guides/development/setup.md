@@ -18,6 +18,14 @@ mise install
 
 2. Start local dependencies:
 
+Create local compose file from the committed example:
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+```
+
+Then start local dependencies:
+
 ```bash
 docker compose up -d
 ```

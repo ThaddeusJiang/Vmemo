@@ -10,12 +10,18 @@ Vmemo keeps a single production-image path for Docker workflows.
 
 ## Local Dependency Services
 
-Use `_local/docker-compose.yml` for dependency services such as PostgreSQL and Typesense.
+Use the repository root compose files for dependency services such as PostgreSQL and Typesense.
+
+Create local compose file from the committed example:
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+```
 
 Start dependencies:
 
 ```bash
-docker compose -f _local/docker-compose.yml up -d postgres typesense
+docker compose -f docker-compose.yml up -d postgres typesense
 ```
 
 ## Build and Run the Production Image Locally

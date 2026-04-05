@@ -98,7 +98,7 @@ jobs:
 
       - name: Start app with compose
         run: |
-          docker compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.e2e.yml up -d
 
       - name: Wait for dependency services
         run: |
@@ -122,7 +122,7 @@ jobs:
           until curl -fsS http://localhost:4000/login >/dev/null; do
             if [ $count -ge $timeout ]; then
               echo "Timeout waiting for app"
-              docker compose -f docker-compose.yml logs vmemo || true
+              docker compose -f docker-compose.e2e.yml logs vmemo || true
               exit 1
             fi
             echo "Waiting for app... ($count/$timeout)"
@@ -170,8 +170,8 @@ jobs:
 
       - name: Print app logs
         if: failure()
-        run: docker compose -f docker-compose.yml logs vmemo || true
+        run: docker compose -f docker-compose.e2e.yml logs vmemo || true
 
       - name: Stop app container
         if: always()
-        run: docker compose -f docker-compose.yml down || true
+        run: docker compose -f docker-compose.e2e.yml down || true

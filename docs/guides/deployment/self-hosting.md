@@ -14,13 +14,13 @@
 1. 进入样板目录：
 
 ```bash
-cd docs/guides/deployment/self-hosting && cp self-hosting.docker-compose.example.yml self-hosting.docker-compose.yml
+cd docs/guides/deployment/self-hosting
 ```
 
 2. 复制环境变量模板并填写必要变量：
 
 ```bash
-cp self-hosting.env.example .env
+cp .env.example .env
 ```
 
 必填变量：
@@ -49,20 +49,20 @@ MOONDREAM_URL=http://host.docker.internal:2020/v1/
 如果你想使用本地刚 build 的镜像，在当前目录运行：
 
 ```bash
-VMEMO_IMAGE=thaddeusjiang/vmemo:latest docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml up -d
+VMEMO_IMAGE=thaddeusjiang/vmemo:latest docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
 ```
 
 3. 启动服务：
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml up -d
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
 ```
 
 4. 检查状态和日志：
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml ps
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml logs -f vmemo
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml ps
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml logs -f vmemo
 ```
 
 5. 打开：
@@ -80,7 +80,7 @@ http://localhost:14000
 你可以从模板开始：
 
 ```bash
-cp docs/guides/deployment/self-hosting/self-hosting.env.example .env
+cp docs/guides/deployment/self-hosting/.env.example .env
 ```
 
 示例：
@@ -111,10 +111,10 @@ openssl rand -hex 64
 
 ### 2) 准备 compose
 
-可直接复制 example 作为起点：
+本仓库已提交默认 compose 文件，可直接作为起点并按需编辑：
 
 ```bash
-cp docs/guides/deployment/self-hosting/self-hosting.docker-compose.example.yml docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml
+${EDITOR:-vi} docs/guides/deployment/self-hosting/docker-compose.yml
 ```
 
 重点确认 `vmemo` 的 storage volume：
@@ -129,8 +129,8 @@ services:
 ### 3) 启动和验证
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml up -d
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml ps
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml ps
 ```
 
 访问：
@@ -170,13 +170,13 @@ PHX_HOST=your.public.hostname
 3. 启动服务（包含 tunnel）：
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml up -d
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
 ```
 
 4. 验证：
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml ps
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml ps
 curl -I https://your.public.hostname
 ```
 
@@ -194,6 +194,6 @@ CLI 方式请参考：
 ## Notes
 
 - 默认镜像标签是 `thaddeusjiang/vmemo:latest`；如需固定版本，可在 compose 文件改为具体 tag（例如 `v0.1.0`）。
-- 你也可以通过环境变量覆盖镜像：`VMEMO_IMAGE=your-image:tag docker compose -f docs/guides/deployment/self-hosting/self-hosting.docker-compose.yml up -d`。
+- 你也可以通过环境变量覆盖镜像：`VMEMO_IMAGE=your-image:tag docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d`。
 - compose 依赖容器启动时自动执行数据库迁移和 Typesense 迁移。
 - 如需公网访问，请在入口层或反向代理启用 HTTPS。
