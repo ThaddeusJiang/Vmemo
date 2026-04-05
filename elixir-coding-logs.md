@@ -5,6 +5,41 @@
 
 ---
 
+## 2026-04-05 `mix credo --strict --only Refactor` 执行记录（第二轮 F 重构后）
+
+- 执行命令：`mix credo --strict --only Refactor`
+- 退出码：`8`（失败）
+- 结果总览：
+  - 重构机会（F）：56 条
+
+### 修复说明
+
+本轮继续针对 F 项做结构性重构（尽量保持行为不变）：
+
+1. `admin_import`：
+- 将 `import_photo_record/create_photo/import_note_record/create_note` 从高 arity 改为 `payload + state` 传参
+- 拆分 `import_photo_notes` 的条件分支与创建逻辑，降低嵌套和圈复杂度
+- 拆分 `import_users` 到 `import_user_record/import_user_by_id_type/import_existing_or_new_user`
+
+2. `user_data_transfer`：
+- 拆分 `import_photo_links` 为 `build_photo_note_pairs/append_photo_note_pairs/valid_photo_note_pair?`
+
+3. 低风险嵌套收敛：
+- `mix/tasks/ts.list_collections` 拆分输出逻辑
+- `release.ash_migrate` 拆分 repo migration helper
+- `seeds/test_users.create_test_user` 拆分新建与确认 helper
+
+### 关键输出翻译
+
+- `1012 mods/funs, found 56 refactoring opportunities.`：共分析 1012 个模块/函数，当前剩余 56 条重构机会。
+
+### 备注
+
+- F 总数从上一条记录的 68 条继续下降到 56 条。
+- 当前剩余 F 主要集中在 LiveView `handle_event/handle_info` 与少数高复杂度业务函数。
+
+---
+
 ## 2026-04-05 `mix credo --strict` 执行记录（首轮 F 机械修复后）
 
 - 执行命令：`mix credo --strict`

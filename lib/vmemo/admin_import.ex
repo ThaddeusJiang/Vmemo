@@ -155,53 +155,76 @@ defmodule Vmemo.AdminImport do
                                                                                         {stats,
                                                                                          id_map,
                                                                                          errors} ->
-      user_id = pick_value(user, ["id", :id])
-      email = pick_value(user, ["email", :email])
-      hashed_password = pick_value(user, ["hashed_password", :hashed_password])
-      confirmed_at = pick_value(user, ["confirmed_at", :confirmed_at])
-
-      if is_nil(email) do
-        {bump(stats, :failed), id_map, add_error(errors, "User missing id or email")}
-      else
-        case normalize_user_id(user_id) do
-          {:uuid, uuid} ->
-            case Ash.get(User, uuid, actor: nil, authorize?: false) do
-              {:ok, existing} ->
-                {bump(stats, :skipped), Map.put(id_map, user_id, existing.id), errors}
-
-              {:error, %Ash.Error.Query.NotFound{}} ->
-                create_or_remap_user(
-                  user_id,
-                  email,
-                  hashed_password,
-                  confirmed_at,
-                  stats,
-                  id_map,
-                  errors
-                )
-
-              {:error, error} ->
-                {bump(stats, :failed), id_map,
-                 add_error(errors, "User #{email} lookup failed: #{format_error(error)}")}
-            end
-
-          {:legacy, _legacy_id} ->
-            create_or_remap_user(
-              user_id,
-              email,
-              hashed_password,
-              confirmed_at,
-              stats,
-              id_map,
-              errors
-            )
-
-          :invalid ->
-            {bump(stats, :failed), id_map,
-             add_error(errors, "User #{email} has invalid id: #{inspect(user_id)}")}
-        end
-      end
+      import_user_record(user, %{stats: stats, id_map: id_map, errors: errors})
     end)
+  end
+
+  defp import_user_record(user, state) do
+    user_id = pick_value(user, ["id", :id])
+    email = pick_value(user, ["email", :email])
+    hashed_password = pick_value(user, ["hashed_password", :hashed_password])
+    confirmed_at = pick_value(user, ["confirmed_at", :confirmed_at])
+    %{stats: stats, id_map: id_map, errors: errors} = state
+
+    if is_nil(email) do
+      {bump(stats, :failed), id_map, add_error(errors, "User missing id or email")}
+    else
+      import_user_by_id_type(user_id, email, hashed_password, confirmed_at, stats, id_map, errors)
+    end
+  end
+
+  defp import_user_by_id_type(
+         user_id,
+         email,
+         hashed_password,
+         confirmed_at,
+         stats,
+         id_map,
+         errors
+       ) do
+    case normalize_user_id(user_id) do
+      {:uuid, uuid} ->
+        import_existing_or_new_user(
+          uuid,
+          user_id,
+          email,
+          hashed_password,
+          confirmed_at,
+          stats,
+          id_map,
+          errors
+        )
+
+      {:legacy, _legacy_id} ->
+        create_or_remap_user(user_id, email, hashed_password, confirmed_at, stats, id_map, errors)
+
+      :invalid ->
+        {bump(stats, :failed), id_map,
+         add_error(errors, "User #{email} has invalid id: #{inspect(user_id)}")}
+    end
+  end
+
+  defp import_existing_or_new_user(
+         uuid,
+         user_id,
+         email,
+         hashed_password,
+         confirmed_at,
+         stats,
+         id_map,
+         errors
+       ) do
+    case Ash.get(User, uuid, actor: nil, authorize?: false) do
+      {:ok, existing} ->
+        {bump(stats, :skipped), Map.put(id_map, user_id, existing.id), errors}
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        create_or_remap_user(user_id, email, hashed_password, confirmed_at, stats, id_map, errors)
+
+      {:error, error} ->
+        {bump(stats, :failed), id_map,
+         add_error(errors, "User #{email} lookup failed: #{format_error(error)}")}
+    end
   end
 
   defp create_or_remap_user(user_id, email, hashed_password, confirmed_at, stats, id_map, errors) do
@@ -263,16 +286,15 @@ defmodule Vmemo.AdminImport do
         {bump(stats, :failed), ids, id_map, add_error(errors, "Photo missing id or url")}
       else
         import_photo_record(
-          photo_id,
-          url,
-          note,
-          caption,
-          file_id,
-          user_id,
-          stats,
-          ids,
-          id_map,
-          errors
+          %{
+            photo_id: photo_id,
+            url: url,
+            note: note,
+            caption: caption,
+            file_id: file_id,
+            user_id: user_id
+          },
+          %{stats: stats, ids: ids, id_map: id_map, errors: errors}
         )
       end
     end)
@@ -305,15 +327,8 @@ defmodule Vmemo.AdminImport do
            add_error(errors, "Note missing id or text")}
         else
           import_note_record(
-            note_id,
-            text,
-            user_id,
-            photo_ids,
-            stats,
-            ids,
-            id_map,
-            note_map,
-            errors
+            %{note_id: note_id, text: text, user_id: user_id, photo_ids: photo_ids},
+            %{stats: stats, ids: ids, id_map: id_map, note_map: note_map, errors: errors}
           )
         end
       end
@@ -324,52 +339,67 @@ defmodule Vmemo.AdminImport do
     Enum.reduce(note_photo_map, {%{created: 0, skipped: 0, failed: 0}, []}, fn {note_id, ids},
                                                                                {stats, errors} ->
       Enum.reduce(ids, {stats, errors}, fn photo_id, {inner_stats, inner_errors} ->
-        note_id = map_note_id(note_id_map, note_id)
+        resolved_note_id = map_note_id(note_id_map, note_id)
 
-        cond do
-          is_nil(note_id) or not valid_uuid?(note_id) ->
-            {bump(inner_stats, :skipped), inner_errors}
-
-          not MapSet.member?(photo_ids, photo_id) ->
-            {bump(inner_stats, :skipped), inner_errors}
-
-          not MapSet.member?(note_ids, note_id) ->
-            {bump(inner_stats, :skipped), inner_errors}
-
-          true ->
-            case photo_note_exists?(photo_id, note_id) do
-              {:ok, true} ->
-                {bump(inner_stats, :skipped), inner_errors}
-
-              {:ok, false} ->
-                params = %{photo_id: photo_id, note_id: note_id}
-
-                case Ash.create(PhotoNote, params,
-                       action: :import,
-                       actor: nil,
-                       authorize?: false
-                     ) do
-                  {:ok, _created} ->
-                    {bump(inner_stats, :created), inner_errors}
-
-                  {:error, error} ->
-                    {bump(inner_stats, :failed),
-                     add_error(
-                       inner_errors,
-                       "Photo note link failed (#{photo_id}, #{note_id}): #{format_error(error)}"
-                     )}
-                end
-
-              {:error, error} ->
-                {bump(inner_stats, :failed),
-                 add_error(
-                   inner_errors,
-                   "Photo note link lookup failed (#{photo_id}, #{note_id}): #{format_error(error)}"
-                 )}
-            end
-        end
+        import_photo_note_link(
+          photo_id,
+          resolved_note_id,
+          %{stats: inner_stats, errors: inner_errors},
+          %{photo_ids: photo_ids, note_ids: note_ids}
+        )
       end)
     end)
+  end
+
+  defp import_photo_note_link(photo_id, note_id, state, valid_ids) do
+    %{stats: stats, errors: errors} = state
+    %{photo_ids: photo_ids, note_ids: note_ids} = valid_ids
+
+    if should_skip_photo_note_link?(photo_id, note_id, photo_ids, note_ids) do
+      {bump(stats, :skipped), errors}
+    else
+      create_photo_note_link(photo_id, note_id, stats, errors)
+    end
+  end
+
+  defp should_skip_photo_note_link?(photo_id, note_id, photo_ids, note_ids) do
+    is_nil(note_id) or
+      not valid_uuid?(note_id) or
+      not MapSet.member?(photo_ids, photo_id) or
+      not MapSet.member?(note_ids, note_id)
+  end
+
+  defp create_photo_note_link(photo_id, note_id, stats, errors) do
+    case photo_note_exists?(photo_id, note_id) do
+      {:ok, true} ->
+        {bump(stats, :skipped), errors}
+
+      {:ok, false} ->
+        do_create_photo_note_link(photo_id, note_id, stats, errors)
+
+      {:error, error} ->
+        {bump(stats, :failed),
+         add_error(
+           errors,
+           "Photo note link lookup failed (#{photo_id}, #{note_id}): #{format_error(error)}"
+         )}
+    end
+  end
+
+  defp do_create_photo_note_link(photo_id, note_id, stats, errors) do
+    params = %{photo_id: photo_id, note_id: note_id}
+
+    case Ash.create(PhotoNote, params, action: :import, actor: nil, authorize?: false) do
+      {:ok, _created} ->
+        {bump(stats, :created), errors}
+
+      {:error, error} ->
+        {bump(stats, :failed),
+         add_error(
+           errors,
+           "Photo note link failed (#{photo_id}, #{note_id}): #{format_error(error)}"
+         )}
+    end
   end
 
   defp photo_note_exists?(photo_id, note_id) do
@@ -449,18 +479,19 @@ defmodule Vmemo.AdminImport do
     Map.get(note_id_map, note_id, fallback_user_id(note_id, note_id_map))
   end
 
-  defp import_photo_record(
-         photo_id,
-         url,
-         note,
-         caption,
-         file_id,
-         user_id,
-         stats,
-         ids,
-         id_map,
-         errors
-       ) do
+  defp import_photo_record(photo_payload, state) do
+    %{
+      photo_id: photo_id,
+      url: url,
+      note: note,
+      caption: caption,
+      file_id: file_id,
+      user_id: user_id
+    } =
+      photo_payload
+
+    %{stats: stats, ids: ids, id_map: id_map, errors: errors} = state
+
     case normalize_record_id(photo_id) do
       {:uuid, uuid} ->
         case Ash.get(Photo, uuid, actor: nil, authorize?: false) do
@@ -470,16 +501,15 @@ defmodule Vmemo.AdminImport do
 
           {:error, %Ash.Error.Query.NotFound{}} ->
             create_photo(
-              uuid,
-              url,
-              note,
-              caption,
-              file_id,
-              user_id,
-              stats,
-              ids,
-              id_map,
-              errors
+              %{
+                id: uuid,
+                url: url,
+                note: note,
+                caption: caption,
+                file_id: file_id,
+                user_id: user_id
+              },
+              %{stats: stats, ids: ids, id_map: id_map, errors: errors}
             )
 
           {:error, error} ->
@@ -488,7 +518,9 @@ defmodule Vmemo.AdminImport do
         end
 
       {:legacy, _legacy_id} ->
-        create_photo(nil, url, note, caption, file_id, user_id, stats, ids, id_map, errors,
+        create_photo(
+          %{id: nil, url: url, note: note, caption: caption, file_id: file_id, user_id: user_id},
+          %{stats: stats, ids: ids, id_map: id_map, errors: errors},
           legacy_id: photo_id
         )
 
@@ -498,19 +530,12 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp create_photo(
-         uuid,
-         url,
-         note,
-         caption,
-         file_id,
-         user_id,
-         stats,
-         ids,
-         id_map,
-         errors,
-         opts \\ []
-       ) do
+  defp create_photo(photo_payload, state, opts \\ []) do
+    %{id: uuid, url: url, note: note, caption: caption, file_id: file_id, user_id: user_id} =
+      photo_payload
+
+    %{stats: stats, ids: ids, id_map: id_map, errors: errors} = state
+
     params =
       %{
         id: uuid,
@@ -539,17 +564,10 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp import_note_record(
-         note_id,
-         text,
-         user_id,
-         photo_ids,
-         stats,
-         ids,
-         id_map,
-         note_map,
-         errors
-       ) do
+  defp import_note_record(note_payload, state) do
+    %{note_id: note_id, text: text, user_id: user_id, photo_ids: photo_ids} = note_payload
+    %{stats: stats, ids: ids, id_map: id_map, note_map: note_map, errors: errors} = state
+
     case normalize_record_id(note_id) do
       {:uuid, uuid} ->
         case Ash.get(Note, uuid, actor: nil, authorize?: false) do
@@ -558,7 +576,10 @@ defmodule Vmemo.AdminImport do
              Map.put(note_map, uuid, photo_ids), errors}
 
           {:error, %Ash.Error.Query.NotFound{}} ->
-            create_note(uuid, text, user_id, photo_ids, stats, ids, id_map, note_map, errors)
+            create_note(
+              %{id: uuid, text: text, user_id: user_id, photo_ids: photo_ids},
+              %{stats: stats, ids: ids, id_map: id_map, note_map: note_map, errors: errors}
+            )
 
           {:error, error} ->
             {bump(stats, :failed), ids, id_map, note_map,
@@ -566,7 +587,9 @@ defmodule Vmemo.AdminImport do
         end
 
       {:legacy, _legacy_id} ->
-        create_note(nil, text, user_id, photo_ids, stats, ids, id_map, note_map, errors,
+        create_note(
+          %{id: nil, text: text, user_id: user_id, photo_ids: photo_ids},
+          %{stats: stats, ids: ids, id_map: id_map, note_map: note_map, errors: errors},
           legacy_id: note_id
         )
 
@@ -576,18 +599,10 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp create_note(
-         uuid,
-         text,
-         user_id,
-         photo_ids,
-         stats,
-         ids,
-         id_map,
-         note_map,
-         errors,
-         opts \\ []
-       ) do
+  defp create_note(note_payload, state, opts \\ []) do
+    %{id: uuid, text: text, user_id: user_id, photo_ids: photo_ids} = note_payload
+    %{stats: stats, ids: ids, id_map: id_map, note_map: note_map, errors: errors} = state
+
     params =
       %{
         id: uuid,

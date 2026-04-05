@@ -34,32 +34,37 @@ defmodule Vmemo.Seeds.TestUsers do
 
     case Account.get_user_by_email(email) do
       nil ->
-        case Account.register_user(%{email: email, password: password}) do
-          {:ok, user} ->
-            now = DateTime.utc_now() |> DateTime.truncate(:second)
-            user_id = Ecto.UUID.dump!(user.id)
-
-            case Repo.query("UPDATE users SET confirmed_at = $1 WHERE id = $2", [
-                   now,
-                   user_id
-                 ]) do
-              {:ok, _} ->
-                IO.puts("Created and confirmed user: #{email}")
-                Account.get_user_by_email(email)
-
-              {:error, error} ->
-                IO.puts("User created but confirmation failed: #{inspect(error)}")
-                user
-            end
-
-          {:error, changeset} ->
-            IO.puts("Failed to create user #{email}: #{inspect(changeset.errors)}")
-            nil
-        end
+        create_new_test_user(email, password)
 
       existing_user ->
         IO.puts("User already exists: #{email}")
         existing_user
+    end
+  end
+
+  defp create_new_test_user(email, password) do
+    case Account.register_user(%{email: email, password: password}) do
+      {:ok, user} ->
+        confirm_test_user(email, user)
+
+      {:error, changeset} ->
+        IO.puts("Failed to create user #{email}: #{inspect(changeset.errors)}")
+        nil
+    end
+  end
+
+  defp confirm_test_user(email, user) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    user_id = Ecto.UUID.dump!(user.id)
+
+    case Repo.query("UPDATE users SET confirmed_at = $1 WHERE id = $2", [now, user_id]) do
+      {:ok, _} ->
+        IO.puts("Created and confirmed user: #{email}")
+        Account.get_user_by_email(email)
+
+      {:error, error} ->
+        IO.puts("User created but confirmation failed: #{inspect(error)}")
+        user
     end
   end
 

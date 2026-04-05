@@ -27,36 +27,39 @@ defmodule Mix.Tasks.Ts.ListCollections do
   end
 
   defp print_collections(collections, opts) do
-    cond do
-      Keyword.get(opts, :json, false) ->
-        IO.puts(Jason.encode!(collections))
-
-      Keyword.get(opts, :names, false) ->
-        collections
-        |> Enum.map(&Map.get(&1, "name"))
-        |> Enum.reject(&is_nil/1)
-        |> Enum.each(&IO.puts/1)
-
-      true ->
-        case collections do
-          [] ->
-            Mix.shell().info("No collections found.")
-
-          _ ->
-            Enum.each(collections, fn collection ->
-              name = Map.get(collection, "name", "(unknown)")
-              docs = Map.get(collection, "num_documents")
-
-              line =
-                if is_integer(docs) do
-                  "#{name}\t#{docs}"
-                else
-                  name
-                end
-
-              IO.puts(line)
-            end)
-        end
+    if Keyword.get(opts, :json, false) do
+      IO.puts(Jason.encode!(collections))
+    else
+      if Keyword.get(opts, :names, false) do
+        print_collection_names(collections)
+      else
+        print_collection_table(collections)
+      end
     end
+  end
+
+  defp print_collection_names(collections) do
+    collections
+    |> Enum.map(&Map.get(&1, "name"))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.each(&IO.puts/1)
+  end
+
+  defp print_collection_table([]), do: Mix.shell().info("No collections found.")
+
+  defp print_collection_table(collections) do
+    Enum.each(collections, fn collection ->
+      name = Map.get(collection, "name", "(unknown)")
+      docs = Map.get(collection, "num_documents")
+
+      line =
+        if is_integer(docs) do
+          "#{name}\t#{docs}"
+        else
+          name
+        end
+
+      IO.puts(line)
+    end)
   end
 end
