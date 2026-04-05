@@ -1,16 +1,13 @@
-defmodule Mix.Tasks.Ts.Migrate do
+defmodule Mix.Tasks.Ts.Drop do
   use Mix.Task
 
-  @shortdoc "Run Typesense migrations"
-
-  @moduledoc """
-  Usage:
-    mix ts.migrate
-  """
+  @shortdoc "Drop Typesense collections"
+  @moduledoc false
 
   @impl Mix.Task
   def run(_args) do
     Mix.Task.run("app.start")
+
     _ = Application.ensure_all_started(:telemetry)
 
     case Finch.start_link(name: Req.Finch) do
@@ -18,7 +15,6 @@ defmodule Mix.Tasks.Ts.Migrate do
       {:error, {:already_started, _}} -> :ok
     end
 
-    Vmemo.Ts.migrate()
-    Vmemo.Ts.Warmup.ensure_image_embedding_model_ready()
+    Vmemo.Ts.reset()
   end
 end
