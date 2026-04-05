@@ -1,4 +1,5 @@
 defmodule SmallSdk.Typesense do
+  @moduledoc false
   require Logger
 
   alias SmallSdk.Utils
@@ -43,7 +44,7 @@ defmodule SmallSdk.Typesense do
     handle_response(res)
   end
 
-  def list_collections() do
+  def list_collections do
     req = build_request("/collections")
     res = request(:get, req)
 
@@ -155,7 +156,7 @@ defmodule SmallSdk.Typesense do
   # Documents end
   ###
 
-  def create_search_key() do
+  def create_search_key do
     {url, _} = get_env()
 
     req = build_request("/keys")
@@ -304,7 +305,7 @@ defmodule SmallSdk.Typesense do
     res
   end
 
-  defp get_env() do
+  defp get_env do
     url = Application.fetch_env!(:vmemo, :typesense_url) |> Utils.validate_url!()
 
     api_key = Application.fetch_env!(:vmemo, :typesense_api_key)

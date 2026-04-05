@@ -1,4 +1,5 @@
 defmodule Vmemo.Photos.Photo do
+  @moduledoc false
   @derive {Jason.Encoder,
            only: [
              :id,
@@ -664,15 +665,13 @@ defmodule Vmemo.Photos.Photo do
   end
 
   defp migrate_typesense_schema do
-    try do
-      case Vmemo.Ts.migrate() do
-        :ok -> :ok
-        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
-      end
-    rescue
-      exception ->
-        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
+    case Vmemo.Ts.migrate() do
+      :ok -> :ok
+      other -> {:error, "Typesense migration failed: #{inspect(other)}"}
     end
+  rescue
+    exception ->
+      {:error, "Typesense migration failed: #{Exception.message(exception)}"}
   end
 
   defp build_typesense_sync_payload(photo) do

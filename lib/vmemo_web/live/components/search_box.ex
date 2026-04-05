@@ -1,8 +1,9 @@
 defmodule VmemoWeb.LiveComponents.SearchBox do
+  @moduledoc false
   use VmemoWeb, :live_component
 
-  alias Vmemo.PhotoService
   alias Vmemo.Photos.Photo
+  alias Vmemo.PhotoService
 
   @impl true
   def mount(socket) do

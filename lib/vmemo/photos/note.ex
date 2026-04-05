@@ -1,4 +1,5 @@
 defmodule Vmemo.Photos.Note do
+  @moduledoc false
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
@@ -152,14 +153,12 @@ defmodule Vmemo.Photos.Note do
   end
 
   defp migrate_typesense_schema do
-    try do
-      case Vmemo.Ts.migrate() do
-        :ok -> :ok
-        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
-      end
-    rescue
-      exception ->
-        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
+    case Vmemo.Ts.migrate() do
+      :ok -> :ok
+      other -> {:error, "Typesense migration failed: #{inspect(other)}"}
     end
+  rescue
+    exception ->
+      {:error, "Typesense migration failed: #{Exception.message(exception)}"}
   end
 end

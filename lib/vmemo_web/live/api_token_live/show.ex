@@ -35,13 +35,13 @@ defmodule VmemoWeb.ApiTokenLive.Show do
               <div class="stat-title">Token Status</div>
               <div class="stat-value text-sm">
                 <span
-                  :if={@api_token.is_active && !is_expired?(@api_token)}
+                  :if={@api_token.is_active && !expired?(@api_token)}
                   class="badge badge-success"
                 >
                   Active
                 </span>
                 <span :if={!@api_token.is_active} class="badge badge-warning">Disabled</span>
-                <span :if={is_expired?(@api_token)} class="badge badge-error">Expired</span>
+                <span :if={expired?(@api_token)} class="badge badge-error">Expired</span>
               </div>
             </div>
 
@@ -298,7 +298,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   defp format_string("datetime"), do: "%Y-%m-%d %H:%M"
   defp format_string(custom), do: custom
 
-  defp is_expired?(token) do
+  defp expired?(token) do
     case token.expires_at do
       # 永不过期
       nil -> false

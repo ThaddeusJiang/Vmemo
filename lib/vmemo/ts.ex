@@ -1,4 +1,5 @@
 defmodule Vmemo.Ts do
+  @moduledoc false
   alias SmallSdk.Typesense
 
   @migrations_collection_file ".migrations_collection"
@@ -8,7 +9,7 @@ defmodule Vmemo.Ts do
   2024-12-20
   create photos collection
   """
-  def change_1() do
+  def change_1 do
     fields = [
       %{"name" => "image", "type" => "image", "store" => false},
       %{"name" => "note", "type" => "string", "optional" => true},
@@ -32,7 +33,7 @@ defmodule Vmemo.Ts do
   2024-12-20
   create notes collection, add note_ids to photos collection
   """
-  def change_2() do
+  def change_2 do
     notes_schema = %{
       "name" => "notes",
       "fields" => [
@@ -58,7 +59,7 @@ defmodule Vmemo.Ts do
   @doc """
   add photos.ocr
   """
-  def change_3() do
+  def change_3 do
     ensure_collection_fields(
       "photos",
       [
@@ -72,7 +73,7 @@ defmodule Vmemo.Ts do
   @doc """
   add photos.caption and optional image embedding field
   """
-  def change_4() do
+  def change_4 do
     caption_field = %{"name" => "caption", "type" => "string", "optional" => true}
 
     ensure_collection_fields(

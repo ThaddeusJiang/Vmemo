@@ -7,8 +7,8 @@ defmodule VmemoWeb.PhotoIdLive do
   alias Vmemo.Ai.VisionRequest
   alias Vmemo.Photos.Photo
 
-  alias VmemoWeb.LiveComponents.Waterfall
   alias VmemoWeb.LiveComponents.MoondreamPanel
+  alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
   def mount(%{"id" => id, "action" => _action}, _session, socket) do

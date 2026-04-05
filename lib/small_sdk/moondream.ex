@@ -1,4 +1,5 @@
 defmodule SmallSdk.Moondream do
+  @moduledoc false
   require Logger
 
   alias SmallSdk.Utils
@@ -42,7 +43,7 @@ defmodule SmallSdk.Moondream do
     handle_response(res)
   end
 
-  def get_env() do
+  def get_env do
     url =
       Application.fetch_env!(:vmemo, :moondream_url)
       |> Utils.validate_url!()

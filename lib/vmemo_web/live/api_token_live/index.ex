@@ -94,7 +94,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="flex items-center gap-2">
                   <span class="font-medium text-sm sm:text-base">{token.name}</span>
                   <span :if={!token.is_active} class="badge badge-warning badge-sm">Disabled</span>
-                  <span :if={is_expired?(token)} class="badge badge-error badge-sm">Expired</span>
+                  <span :if={expired?(token)} class="badge badge-error badge-sm">Expired</span>
                 </div>
               </:col>
               <:col :let={token} label="Token">
@@ -283,7 +283,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   defp format_string("datetime"), do: "%Y-%m-%d %H:%M"
   defp format_string(custom), do: custom
 
-  defp is_expired?(token) do
+  defp expired?(token) do
     case token.expires_at do
       # 永不过期
       nil -> false
@@ -293,13 +293,13 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   defp count_active_tokens(tokens) do
     tokens
-    |> Enum.filter(&(&1.is_active and !is_expired?(&1)))
+    |> Enum.filter(&(&1.is_active and !expired?(&1)))
     |> length()
   end
 
   defp count_expired_tokens(tokens) do
     tokens
-    |> Enum.filter(&is_expired?/1)
+    |> Enum.filter(&expired?/1)
     |> length()
   end
 end

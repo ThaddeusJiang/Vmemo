@@ -3,7 +3,7 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesCache do
 
   @key :vmemo_external_services_state
 
-  def get_state() do
+  def get_state do
     :persistent_term.get(@key, %{checked_at: nil, services: %{}})
   end
 

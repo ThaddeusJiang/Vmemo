@@ -1,4 +1,5 @@
 defmodule Vmemo.AdminImport do
+  @moduledoc false
   require Ash.Query
   alias Vmemo.Account.User
   alias Vmemo.Photos.Note
@@ -43,28 +44,30 @@ defmodule Vmemo.AdminImport do
   defp read_payload(tmp_dir) do
     data_dir = Path.join(tmp_dir, "data")
 
-    with {:ok, metadata} <- read_json(Path.join(data_dir, "metadata.json")) do
-      users = read_optional_json(Path.join(data_dir, "users.json"))
-      user = read_optional_json(Path.join(data_dir, "user.json"))
-      photos = read_optional_json(Path.join(data_dir, "photos.json"))
-      notes = read_optional_json(Path.join(data_dir, "notes.json"))
+    case read_json(Path.join(data_dir, "metadata.json")) do
+      {:ok, metadata} ->
+        users = read_optional_json(Path.join(data_dir, "users.json"))
+        user = read_optional_json(Path.join(data_dir, "user.json"))
+        photos = read_optional_json(Path.join(data_dir, "photos.json"))
+        notes = read_optional_json(Path.join(data_dir, "notes.json"))
 
-      users_list =
-        cond do
-          is_list(users) -> users
-          is_map(user) -> [user]
-          true -> []
-        end
+        users_list =
+          cond do
+            is_list(users) -> users
+            is_map(user) -> [user]
+            true -> []
+          end
 
-      {:ok,
-       %{
-         metadata: metadata,
-         users: users_list,
-         photos: normalize_list(photos),
-         notes: normalize_list(notes)
-       }}
-    else
-      {:error, reason} -> {:error, reason}
+        {:ok,
+         %{
+           metadata: metadata,
+           users: users_list,
+           photos: normalize_list(photos),
+           notes: normalize_list(notes)
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

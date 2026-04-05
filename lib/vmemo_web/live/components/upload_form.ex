@@ -1,14 +1,15 @@
 defmodule VmemoWeb.LiveComponents.UploadForm do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   import VmemoWeb.Live.FocusHelpers
 
   alias VmemoWeb.LiveComponents.Waterfall
 
-  alias Vmemo.PhotoService
-  alias Vmemo.Photos.Photo
   alias Vmemo.Photos.Note
+  alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
+  alias Vmemo.PhotoService
 
   @impl true
   def mount(socket) do

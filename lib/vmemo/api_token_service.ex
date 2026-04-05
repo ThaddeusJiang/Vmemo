@@ -4,7 +4,7 @@ defmodule Vmemo.ApiTokenService do
   """
 
   require Logger
-  alias Vmemo.Account.{ApiToken}
+  alias Vmemo.Account.ApiToken
 
   ## API Token functions
 

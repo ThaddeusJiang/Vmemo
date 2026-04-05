@@ -1,12 +1,13 @@
 defmodule Vmemo.UserDataTransfer do
+  @moduledoc false
   require Ash.Query
   require Logger
 
-  alias Vmemo.Repo
   alias Vmemo.Account.User
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Repo
 
   @error_limit 50
 
@@ -770,20 +771,22 @@ defmodule Vmemo.UserDataTransfer do
   defp read_import_payload(tmp_dir) do
     data_dir = Path.join(tmp_dir, "data")
 
-    with {:ok, metadata} <- read_json(Path.join(data_dir, "metadata.json")) do
-      {:ok,
-       %{
-         metadata: metadata,
-         user: read_optional_json(Path.join(data_dir, "user.json")) || %{},
-         photos: normalize_list(read_optional_json(Path.join(data_dir, "photos.json"))),
-         notes: normalize_list(read_optional_json(Path.join(data_dir, "notes.json"))),
-         typesense_photos:
-           normalize_list(read_optional_json(Path.join(data_dir, "typesense_photos.json"))),
-         typesense_notes:
-           normalize_list(read_optional_json(Path.join(data_dir, "typesense_notes.json")))
-       }}
-    else
-      {:error, reason} -> {:error, reason}
+    case read_json(Path.join(data_dir, "metadata.json")) do
+      {:ok, metadata} ->
+        {:ok,
+         %{
+           metadata: metadata,
+           user: read_optional_json(Path.join(data_dir, "user.json")) || %{},
+           photos: normalize_list(read_optional_json(Path.join(data_dir, "photos.json"))),
+           notes: normalize_list(read_optional_json(Path.join(data_dir, "notes.json"))),
+           typesense_photos:
+             normalize_list(read_optional_json(Path.join(data_dir, "typesense_photos.json"))),
+           typesense_notes:
+             normalize_list(read_optional_json(Path.join(data_dir, "typesense_notes.json")))
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
