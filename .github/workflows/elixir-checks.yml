@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
-      TYPESENSE_URL: http://localhost:8108
-      TYPESENSE_API_KEY: xyz
+      TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
+      TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
       POSTGRES_PORT: "5432"
 
     services:
@@ -26,16 +26,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      typesense:
-        image: typesense/typesense:27.1
-        ports:
-          - 8108:8108
-        env:
-          TYPESENSE_DATA_DIR: /data
-          TYPESENSE_API_KEY: xyz
-        options: >-
-          --tmpfs /data:rw,size=512m
-
     strategy:
       matrix:
         otp: ["28"]
@@ -48,18 +38,11 @@ jobs:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
 
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
-
       - name: Install dependencies
         run: mix deps.get
+
+      - name: Compile
+        run: mix compile
 
       - name: Wait for Postgres
         run: |
@@ -68,20 +51,8 @@ jobs:
             sleep 1
           done
 
-      - name: Wait for Typesense
-        run: |
-          timeout=60
-          count=0
-          until curl -fsS http://localhost:8108/health; do
-            if [ $count -ge $timeout ]; then
-              echo "Timeout waiting for Typesense"
-              exit 1
-            fi
-            echo "Waiting for typesense... ($count/$timeout)"
-            sleep 1
-            count=$((count + 1))
-          done
-          echo "Typesense is ready!"
+      - name: Reset Typesense
+        run: mix ts.reset
 
       - name: Run tests
         run: mix test

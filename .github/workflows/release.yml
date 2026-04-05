@@ -52,11 +52,9 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
-            cache_scope: release-amd64
             needs_qemu: false
           - arch: arm64
             platform: linux/arm64/v8
-            cache_scope: release-arm64
             needs_qemu: true
 
     steps:
@@ -86,8 +84,6 @@ jobs:
           push: true
           platforms: ${{ matrix.platform }}
           tags: thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}-${{ matrix.arch }}
-          cache-from: type=gha,scope=${{ matrix.cache_scope }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.cache_scope }}
 
   publish:
     runs-on: ubuntu-latest

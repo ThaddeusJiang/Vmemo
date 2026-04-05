@@ -100,6 +100,9 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 ## Elixir 规范
 
 - Elixir 具有**模式匹配**特性
+- `config/runtime.exs` 等 Phoenix 配置文件**总是**优先遵循 Phoenix 官方模板风格（例如使用 `System.get_env("KEY") || raise """..."""`），避免引入不必要的自定义配置模式
+- 外部请求调试日志直接使用 `Logger.debug`，不要增加 `if Application.get_env(:vmemo, :debug_external_requests, false)` 之类的运行时开关；通过不同环境的 Logger 配置控制生产环境是否输出 debug 日志
+- 日志实践遵循 Elixir Logger 风格与社区最佳实践，保持简洁一致
 - 公共 utils 模块（尤其是纯函数的 helper）**必须**有测试和文档：
   - `@moduledoc` 只做模块 summary，每个公开函数都写独立 `@doc`，并尽量附带 doctest example
   - 在 `test/**` 下为每个 utils 模块添加对应的 `doctest` 或单元测试文件
@@ -192,6 +195,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
     - 可以避免 socket 连接失败导致任务失败
     - 用户离开页面后任务仍能继续执行
   - **示例**：Caption 生成、Moondream 请求、需要处理的文件上传
+- Worker 命名必须以工具/服务前缀开头，并优先使用分层模块命名（例如 `Typesense.CreatePhoto`、`Typesense.CreateNote`、`Moondream.Caption`、`Moondream.Query`），避免使用 `Process*` / `Sync*` 这类泛前缀
 
 **git 规范**
 
@@ -247,6 +251,7 @@ password = "password123456"
 ## 项目规范
 
 - **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`mise.toml` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+- **本地 reset 流程**：执行 reset 时先关闭 `mix phx.server`，再执行 `docker compose down -v` 清空数据，随后执行 `docker compose up -d`，最后运行 `mix setup` 初始化数据库定义、Typesense 定义与 local development smoke testing 数据。
 - 每次从没有 diff 的状态开始写代码时，先创建一个新的 branch，不要直接在 `develop` 或 `main` 上开始工作。
 - 在非 `develop` 和 `main` 分支提交代码后，可以直接 push 到 remote。
 - 在非 `develop` 和 `main` 分支上，如果当前分支还没有 PR，应创建对应 PR。
@@ -258,5 +263,6 @@ password = "password123456"
 - `Tidewave` 是全栈 Web 应用开发的编码代理，深度集成 Phoenix，从数据库到 UI
 - `Context7` MCP 拉取最新的、特定版本的文档和代码示例
 - `Playwright` 与网页交互；做 UI/e2e visual testing 时优先采用 visual testing，必要时使用 **visual snapshots** 作为断言手段，不要把它和 DOM snapshot 混淆
+- `Codex Custom Prompts` 已弃用；可复用提示词/流程**总是**使用 skills 实现
 - **绝不**使用 `python` 运行脚本
 - 可以使用 `curl` `jq` `gh` 等

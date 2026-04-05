@@ -93,7 +93,7 @@ defmodule Vmemo.ApiTokenService do
       |> Map.new()
 
     attrs_with_expires = Map.put(attrs_atoms, :expires_at, expires_at)
-    attrs_with_user = Map.put(attrs_with_expires, :ash_user_id, user.id)
+    attrs_with_user = Map.put(attrs_with_expires, :user_id, user.id)
 
     # 生成 token
     {raw_token, hash} = Vmemo.Account.ApiToken.generate_token()
@@ -168,8 +168,8 @@ defmodule Vmemo.ApiTokenService do
         else
           # 更新最后使用时间和使用计数
           update_token_usage(api_token)
-          # 加载 ash_user
-          api_token = Ash.load!(api_token, :ash_user)
+          # load user
+          api_token = Ash.load!(api_token, :user)
           {:ok, api_token}
         end
 
@@ -247,7 +247,7 @@ defmodule Vmemo.ApiTokenService do
 
   defp log_token_usage(api_token, action, _conn, metadata) do
     Logger.info(
-      "API Token #{action}: token_id=#{api_token.id}, ash_user_id=#{api_token.ash_user_id}, metadata=#{inspect(metadata)}"
+      "API Token #{action}: token_id=#{api_token.id}, user_id=#{api_token.user_id}, metadata=#{inspect(metadata)}"
     )
   end
 end

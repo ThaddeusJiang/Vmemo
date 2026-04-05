@@ -13,7 +13,7 @@ defmodule VmemoWeb.NoteIdLive do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    actor = socket.assigns.current_ash_user
+    actor = socket.assigns.current_user
 
     case Ash.get(Note, id, actor: actor, load: [:photos]) do
       {:ok, note} ->
@@ -41,7 +41,7 @@ defmodule VmemoWeb.NoteIdLive do
           note={@note}
           photos={@photos}
           patch={~p"/notes/#{@note.id}"}
-          current_ash_user={@current_ash_user}
+          current_user={@current_user}
         />
       <% else %>
         <.not_found />

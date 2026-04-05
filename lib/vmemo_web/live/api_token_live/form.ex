@@ -124,7 +124,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   end
 
   def handle_event("save-token", params, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     # 处理表单参数
     form_params =

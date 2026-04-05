@@ -65,6 +65,6 @@ defmodule VmemoWeb.ConnCase do
       :live_socket_id,
       "users_sessions:#{System.unique_integer([:positive])}"
     )
-    |> Plug.Conn.assign(:current_ash_user, user)
+    |> Plug.Conn.assign(:current_user, user)
   end
 end

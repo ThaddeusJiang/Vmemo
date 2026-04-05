@@ -2,9 +2,8 @@ defmodule Vmemo.Photos.Note do
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource, AshOban]
 
-  require Logger
   alias Vmemo.PhotoService.TsNote
 
   postgres do
@@ -13,7 +12,20 @@ defmodule Vmemo.Photos.Note do
   end
 
   admin do
-    table_columns([:id, :text, :ash_user_id, :inserted_at, :updated_at])
+    table_columns([:id, :text, :user_id, :inserted_at, :updated_at])
+  end
+
+  oban do
+    triggers do
+      trigger :sync_typesense do
+        action :sync_typesense
+        queue :sync_typesense
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Photos.Note.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Photos.Note.Schedulers.SyncTypesense
+      end
+    end
   end
 
   code_interface do
@@ -28,26 +40,39 @@ defmodule Vmemo.Photos.Note do
     defaults [:read, :destroy]
 
     create :create_with_sync do
-      accept [:text, :ash_user_id]
-
-      change after_action(fn _changeset, record, _context ->
-               enqueue_note_sync_job(record.id)
-               {:ok, record}
-             end)
+      accept [:text, :user_id]
+      change run_oban_trigger(:sync_typesense)
     end
 
     create :import do
-      accept [:id, :text, :ash_user_id]
+      accept [:id, :text, :user_id]
     end
 
     update :update do
       accept [:text]
       require_atomic? false
+      change run_oban_trigger(:sync_typesense)
+    end
 
-      change after_action(fn _changeset, record, _context ->
-               enqueue_note_sync_job(record.id)
-               {:ok, record}
-             end)
+    update :sync_typesense do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
+          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
+            {:ok, true} ->
+              {:ok, record}
+
+            {:ok, false} ->
+              {:error, :sync_failed}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end)
+      end
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -72,7 +97,7 @@ defmodule Vmemo.Photos.Note do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :uuid
+    attribute :user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at
@@ -90,32 +115,64 @@ defmodule Vmemo.Photos.Note do
     typesense_data = %{
       id: note.id,
       text: note.text,
-      belongs_to: note.ash_user_id,
+      belongs_to: note.user_id,
       photo_ids: Enum.map(note.photos || [], & &1.id),
       inserted_at: DateTime.to_unix(note.inserted_at),
       updated_at: DateTime.to_unix(note.updated_at)
     }
 
     case TsNote.get(note.id) do
-      nil -> TsNote.create(typesense_data)
+      nil -> sync_note_with_typesense_retry(typesense_data, :create)
       {:error, reason} -> {:error, reason}
-      _existing -> TsNote.update(typesense_data)
+      _existing -> sync_note_with_typesense_retry(typesense_data, :update)
     end
   end
 
-  defp enqueue_note_sync_job(note_id) do
-    case %{note_id: note_id}
-         |> Vmemo.Workers.SyncNoteToTypesense.new()
-         |> Oban.insert() do
-      {:ok, _job} ->
-        :ok
+  defp sync_note_with_typesense_retry(typesense_data, :create) do
+    case TsNote.create(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, created} <- TsNote.create(typesense_data) do
+          {:ok, created}
+        end
 
-      {:error, reason} ->
-        Logger.error(
-          "Failed to enqueue SyncNoteToTypesense for note #{note_id}: #{inspect(reason)}"
-        )
+      result ->
+        result
+    end
+  end
 
-        :error
+  defp sync_note_with_typesense_retry(typesense_data, :update) do
+    case TsNote.update(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, _updated} <- sync_note_after_migration(typesense_data) do
+          {:ok, true}
+        end
+
+      {:ok, updated} ->
+        {:ok, updated}
+
+      error ->
+        error
+    end
+  end
+
+  defp sync_note_after_migration(typesense_data) do
+    case TsNote.update(typesense_data) do
+      {:error, "Not Found"} -> TsNote.create(typesense_data)
+      result -> result
+    end
+  end
+
+  defp migrate_typesense_schema do
+    try do
+      case Vmemo.Ts.migrate() do
+        :ok -> :ok
+        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
+      end
+    rescue
+      exception ->
+        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
     end
   end
 end

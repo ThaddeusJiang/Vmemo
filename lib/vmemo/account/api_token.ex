@@ -12,6 +12,8 @@ defmodule Vmemo.Account.ApiToken do
   end
 
   admin do
+    name "Account"
+
     table_columns([
       :id,
       :name,
@@ -19,7 +21,7 @@ defmodule Vmemo.Account.ApiToken do
       :is_active,
       :expires_at,
       :last_used_at,
-      :ash_user_id,
+      :user_id,
       :inserted_at
     ])
   end
@@ -30,20 +32,20 @@ defmodule Vmemo.Account.ApiToken do
     define :update
     define :destroy
     define :get_by_id, args: [:id]
-    define :get_by_user_and_id, args: [:id, :ash_user_id]
-    define :list_by_user, args: [:ash_user_id]
+    define :get_by_user_and_id, args: [:id, :user_id]
+    define :list_by_user, args: [:user_id]
     define :verify_token, args: [:token]
     define :toggle_status, args: [:id]
-    define :get_expiring_tokens, args: [:ash_user_id, :days]
-    define :get_expired_tokens, args: [:ash_user_id]
-    define :get_today_used_tokens, args: [:ash_user_id]
+    define :get_expiring_tokens, args: [:user_id, :days]
+    define :get_expired_tokens, args: [:user_id]
+    define :get_today_used_tokens, args: [:user_id]
   end
 
   actions do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:name, :description, :expires_at, :ash_user_id, :token_hash]
+      accept [:name, :description, :expires_at, :user_id, :token_hash]
 
       change fn changeset, _context ->
         changeset
@@ -89,15 +91,15 @@ defmodule Vmemo.Account.ApiToken do
     read :get_by_user_and_id do
       get? true
       argument :id, :uuid, allow_nil?: false
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
-      filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
+      filter expr(id == ^arg(:id) and user_id == ^arg(:user_id))
     end
 
     read :list_by_user do
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
-      filter expr(ash_user_id == ^arg(:ash_user_id))
+      filter expr(user_id == ^arg(:user_id))
     end
 
     read :verify_token do
@@ -131,16 +133,16 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_expiring_tokens do
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
       argument :days, :integer, default: 7
 
       prepare fn query, _context ->
-        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
+        user_id = Ash.Query.get_argument(query, :user_id)
         days = Ash.Query.get_argument(query, :days)
         cutoff_date = DateTime.utc_now() |> DateTime.add(days * 24 * 60 * 60, :second)
 
         Ash.Query.filter(query,
-          ash_user_id: ash_user_id,
+          user_id: user_id,
           is_active: true,
           expires_at: [less_than_or_equal_to: cutoff_date, greater_than: DateTime.utc_now()]
         )
@@ -149,13 +151,13 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_expired_tokens do
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
       prepare fn query, _context ->
-        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
+        user_id = Ash.Query.get_argument(query, :user_id)
 
         Ash.Query.filter(query,
-          ash_user_id: ash_user_id,
+          user_id: user_id,
           is_active: true,
           expires_at: [less_than_or_equal_to: DateTime.utc_now()]
         )
@@ -164,18 +166,18 @@ defmodule Vmemo.Account.ApiToken do
     end
 
     read :get_today_used_tokens do
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
       prepare fn query, _context ->
         require Ash.Query
 
-        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
+        user_id = Ash.Query.get_argument(query, :user_id)
         today = Date.utc_today()
         today_start = DateTime.new!(today, ~T[00:00:00], "Etc/UTC")
         today_end = DateTime.new!(today, ~T[23:59:59.999999], "Etc/UTC")
 
         query
-        |> Ash.Query.filter(ash_user_id == ^ash_user_id)
+        |> Ash.Query.filter(user_id == ^user_id)
         |> Ash.Query.filter(
           expr(
             not is_nil(last_used_at) and last_used_at >= ^today_start and
@@ -219,7 +221,7 @@ defmodule Vmemo.Account.ApiToken do
       allow_nil? false
     end
 
-    attribute :ash_user_id, :uuid do
+    attribute :user_id, :uuid do
       allow_nil? false
     end
 
@@ -228,7 +230,7 @@ defmodule Vmemo.Account.ApiToken do
   end
 
   relationships do
-    belongs_to :ash_user, Vmemo.Account.AshUser do
+    belongs_to :user, Vmemo.Account.User do
       attribute_type :string
       attribute_writable? true
     end

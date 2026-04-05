@@ -4,7 +4,7 @@ defmodule VmemoWeb.UserDataController do
   alias Vmemo.UserDataTransfer
 
   def export(conn, _params) do
-    user = conn.assigns.current_ash_user
+    user = conn.assigns.current_user
 
     case UserDataTransfer.export_user_zip(user.id) do
       {:ok, %{binary: binary, filename: filename}} ->

@@ -20,5 +20,6 @@ defmodule Mix.Tasks.Ts.Migrate do
     end
 
     Vmemo.Ts.migrate()
+    Vmemo.Ts.Warmup.ensure_image_embedding_model_ready()
   end
 end

@@ -22,5 +22,5 @@ Status: superseded by [002-use-elixir-release.md](./002-use-elixir-release.md)
 
 ## Others
 
-- 构建与运行说明见 [build_and_run.md](../build_and_run.md)。
+- 构建与运行说明见 [docker-prod-run.md](../deploy/docker-prod-run.md)。
 - 若日后部署规模或安全策略要求「容器内不可有 Mix」，再评估引入 Release 或混合方案。

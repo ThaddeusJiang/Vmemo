@@ -2,6 +2,8 @@ defmodule SmallSdk.Typesense do
   require Logger
 
   alias SmallSdk.Utils
+  @debug_log_max_items 5
+  @debug_log_max_chars 200
 
   ###
   # Collections start
@@ -12,7 +14,7 @@ defmodule SmallSdk.Typesense do
     req = build_request("/collections")
 
     res =
-      Req.post(req,
+      request(:post, req,
         json: schema,
         receive_timeout: @create_collection_receive_timeout
       )
@@ -22,28 +24,28 @@ defmodule SmallSdk.Typesense do
 
   def get_collection(collection_name) do
     req = build_request("/collections/#{collection_name}")
-    res = Req.get(req)
+    res = request(:get, req)
 
     handle_response(res)
   end
 
   def update_collection(collection_name, schema) do
     req = build_request("/collections/#{collection_name}")
-    res = Req.patch(req, json: schema)
+    res = request(:patch, req, json: schema)
 
     handle_response(res)
   end
 
   def drop_collection(collection_name) do
     req = build_request("/collections/#{collection_name}")
-    res = Req.delete(req)
+    res = request(:delete, req)
 
     handle_response(res)
   end
 
   def list_collections() do
     req = build_request("/collections")
-    res = Req.get(req)
+    res = request(:get, req)
 
     handle_response(res)
   end
@@ -58,14 +60,14 @@ defmodule SmallSdk.Typesense do
 
   def create_document(collection_name, document) do
     req = build_request("/collections/#{collection_name}/documents")
-    res = Req.post(req, json: document)
+    res = request(:post, req, json: document)
 
     handle_response(res)
   end
 
   def get_document(collection_name, document_id) do
     req = build_request("/collections/#{collection_name}/documents/#{document_id}")
-    res = Req.get(req)
+    res = request(:get, req)
 
     case handle_response(res) do
       {:ok, data} -> {:ok, data}
@@ -81,28 +83,28 @@ defmodule SmallSdk.Typesense do
   """
   def update_document(collection_name, document) do
     req = build_request("/collections/#{collection_name}/documents/#{document[:id]}")
-    res = Req.patch(req, json: document)
+    res = request(:patch, req, json: document)
 
     handle_response(res)
   end
 
   def delete_document(collection_name, document_id) do
     req = build_request("/collections/#{collection_name}/documents/#{document_id}")
-    res = Req.delete(req)
+    res = request(:delete, req)
 
     handle_response(res)
   end
 
   def list_documents!(collection_name, per_page \\ 100, page \\ 1) do
     req = build_request("/collections/#{collection_name}/documents")
-    res = Req.get(req, params: [per_page: per_page, page: page])
+    res = request(:get, req, params: [per_page: per_page, page: page])
 
     handle_response(res)
   end
 
   def search_documents(collection_name, params) when is_list(params) do
     req = build_request("/collections/#{collection_name}/documents/search")
-    res = Req.get(req, params: params)
+    res = request(:get, req, params: params)
 
     case handle_response(res) do
       {:ok, %{"hits" => hits} = body} when is_list(hits) ->
@@ -132,7 +134,7 @@ defmodule SmallSdk.Typesense do
       req = build_request("/collections/#{collection_name}/documents/import")
 
       res =
-        Req.post(req,
+        request(:post, req,
           params: [action: action],
           headers: [{"Content-Type", "text/plain"}],
           body: body
@@ -161,7 +163,7 @@ defmodule SmallSdk.Typesense do
     req = build_request("/keys")
 
     res =
-      Req.post(req,
+      request(:post, req,
         json: %{
           "description" => "Search-only photos key",
           "actions" => ["documents:search"],
@@ -256,6 +258,13 @@ defmodule SmallSdk.Typesense do
       {:error, "Not Found"} ->
         {:ok, {[], 0, 1}}
 
+      {:error, reason} = error when is_binary(reason) ->
+        if not String.contains?(reason, "Req.TransportError") do
+          Logger.warning("Typesense multi search failed: #{inspect(error)}")
+        end
+
+        {:ok, {[], 0, 1}}
+
       error ->
         Logger.warning("Typesense multi search failed: #{inspect(error)}")
         {:ok, {[], 0, 1}}
@@ -268,11 +277,30 @@ defmodule SmallSdk.Typesense do
     Req.new(
       base_url: url,
       url: path,
+      retry: :transient,
+      max_retries: 2,
+      retry_log_level: false,
       headers: [
         {"Content-Type", "application/json"},
         {"X-TYPESENSE-API-KEY", api_key}
       ]
     )
+  end
+
+  def request(method, req, opts \\ []) when method in [:get, :post, :patch, :delete] do
+    dev_log("typesense.request",
+      method: method,
+      path: request_path(req),
+      params: sanitize_value(Keyword.get(opts, :params)),
+      json: sanitize_value(Keyword.get(opts, :json)),
+      body: sanitize_value(Keyword.get(opts, :body))
+    )
+
+    res = apply(Req, method, [req, opts])
+
+    dev_log("typesense.response", response: sanitize_response(res))
+
+    res
   end
 
   defp get_env() do
@@ -298,5 +326,52 @@ defmodule SmallSdk.Typesense do
     failed = length(items) - success
 
     %{success: success, failed: failed, items: items}
+  end
+
+  defp request_path(%Req.Request{url: %URI{} = url}) do
+    url.path
+  end
+
+  defp request_path(_), do: nil
+
+  defp sanitize_response({:ok, %{status: status, body: body}}) do
+    %{status: status, body: sanitize_value(body)}
+  end
+
+  defp sanitize_response({:error, reason}) do
+    %{error: inspect(reason, limit: 20, printable_limit: @debug_log_max_chars)}
+  end
+
+  defp sanitize_response(other) do
+    %{other: inspect(other, limit: 20, printable_limit: @debug_log_max_chars)}
+  end
+
+  defp sanitize_value(nil), do: nil
+
+  defp sanitize_value(data_url) when is_binary(data_url) do
+    if String.starts_with?(data_url, "data:") and String.contains?(data_url, ";base64,") do
+      [meta | _] = String.split(data_url, ",", parts: 2)
+      "#{meta},[BASE64_REDACTED length=#{byte_size(data_url)}]"
+    else
+      String.slice(data_url, 0, @debug_log_max_chars)
+    end
+  end
+
+  defp sanitize_value(value) when is_list(value) do
+    value
+    |> Enum.take(@debug_log_max_items)
+    |> Enum.map(&sanitize_value/1)
+  end
+
+  defp sanitize_value(value) when is_map(value) do
+    value
+    |> Enum.take(@debug_log_max_items)
+    |> Enum.into(%{}, fn {k, v} -> {k, sanitize_value(v)} end)
+  end
+
+  defp sanitize_value(value), do: value
+
+  defp dev_log(message, metadata) do
+    Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
   end
 end

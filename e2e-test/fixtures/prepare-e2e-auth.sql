@@ -4,7 +4,7 @@
 BEGIN;
 
 WITH target_user AS (
-  INSERT INTO ash_users (
+  INSERT INTO users (
     id,
     email,
     hashed_password,
@@ -29,7 +29,7 @@ WITH target_user AS (
 selected_user AS (
   SELECT id FROM target_user
   UNION ALL
-  SELECT id FROM ash_users WHERE email = 'test@example.com'
+  SELECT id FROM users WHERE email = 'test@example.com'
   LIMIT 1
 )
 INSERT INTO api_tokens (
@@ -38,7 +38,7 @@ INSERT INTO api_tokens (
   description,
   expires_at,
   token_hash,
-  ash_user_id,
+  user_id,
   created_at,
   inserted_at,
   updated_at,
@@ -62,14 +62,14 @@ DO UPDATE SET
   is_active = true;
 
 WITH selected_user AS (
-  SELECT id FROM ash_users WHERE email = 'test@example.com' LIMIT 1
+  SELECT id FROM users WHERE email = 'test@example.com' LIMIT 1
 )
 INSERT INTO photos (
   id,
   url,
   note,
   file_id,
-  ash_user_id,
+  user_id,
   inserted_at,
   updated_at
 )
@@ -87,12 +87,12 @@ DO UPDATE SET
   updated_at = timezone('utc', now());
 
 WITH selected_user AS (
-  SELECT id FROM ash_users WHERE email = 'test@example.com' LIMIT 1
+  SELECT id FROM users WHERE email = 'test@example.com' LIMIT 1
 )
 INSERT INTO notes (
   id,
   text,
-  ash_user_id,
+  user_id,
   inserted_at,
   updated_at
 )

@@ -177,16 +177,14 @@ CI runs the same specs against a prod-like target:
 
 ### Typesense Stability In CI
 
-In E2E CI, `TYPESENSE_IMAGE_EMBEDDING` is set to `false`.
+Image embedding is always enabled.
 
-Reason:
+To avoid flaky first-request model downloads during test execution, the app now warms up the
+Typesense embedding model in the ts migration entrypoints (`mix ts.migrate` and release migrate)
+right after schema migrations.
 
-- when image embedding is enabled in prod runtime, Typesense may try to download model files
-- this external download can intermittently fail in GitHub Actions (`503` / timeout)
-- the app then restarts during tests, causing random `ERR_CONNECTION_*` failures in Playwright
-
-This is why previous runs could sometimes pass and sometimes fail even with no code changes.
-Disabling image embedding in CI removes that flaky external dependency and keeps E2E deterministic.
+This means both local Docker runs and GitHub Actions start from the same state before Playwright
+tests begin.
 
 Local development can run the same specs against either:
 

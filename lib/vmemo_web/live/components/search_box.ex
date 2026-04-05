@@ -79,7 +79,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @impl true
   def handle_event("search-by-photo", _, socket) do
     current_user =
-      Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
+      Map.get(socket.assigns, :current_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket}
@@ -113,7 +113,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                    note: "",
                    url: Path.join("/", dest),
                    file_id: filename,
-                   ash_user_id: current_user.id
+                   user_id: current_user.id
                  },
                  actor: current_user
                ) do

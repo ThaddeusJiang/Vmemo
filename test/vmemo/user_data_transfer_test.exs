@@ -27,7 +27,7 @@ defmodule Vmemo.UserDataTransferTest do
         note: "source photo",
         caption: "source caption",
         file_id: "source-file",
-        ash_user_id: source_user.id
+        user_id: source_user.id
       })
 
     _other_photo =
@@ -36,22 +36,22 @@ defmodule Vmemo.UserDataTransferTest do
         note: "other photo",
         caption: "other caption",
         file_id: "other-file",
-        ash_user_id: other_user.id
+        user_id: other_user.id
       })
 
-    source_note = create_note!(%{text: "source note", ash_user_id: source_user.id})
+    source_note = create_note!(%{text: "source note", user_id: source_user.id})
     create_photo_note!(source_photo.id, source_note.id)
 
     write_user_file_from_fixture!(
       source_user.id,
       "source-photo.png",
-      "test/testdata_files/test-red-image.png"
+      "test/support/fixtures/images/test-red-image.png"
     )
 
     write_user_file_from_fixture!(
       other_user.id,
       "other-photo.png",
-      "test/testdata_files/wall-e.png"
+      "test/support/fixtures/images/wall-e.png"
     )
 
     assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)
@@ -77,7 +77,7 @@ defmodule Vmemo.UserDataTransferTest do
 
     target_photos =
       Photo
-      |> Ash.Query.filter(ash_user_id == ^target_user.id)
+      |> Ash.Query.filter(user_id == ^target_user.id)
       |> Ash.read!(actor: nil, authorize?: false)
 
     assert length(target_photos) == 1
@@ -85,7 +85,7 @@ defmodule Vmemo.UserDataTransferTest do
 
     target_notes =
       Note
-      |> Ash.Query.filter(ash_user_id == ^target_user.id)
+      |> Ash.Query.filter(user_id == ^target_user.id)
       |> Ash.read!(actor: nil, authorize?: false)
 
     assert length(target_notes) == 1
@@ -106,16 +106,16 @@ defmodule Vmemo.UserDataTransferTest do
         note: "source photo",
         caption: "source caption",
         file_id: "source-file",
-        ash_user_id: source_user.id
+        user_id: source_user.id
       })
 
-    source_note = create_note!(%{text: "source note", ash_user_id: source_user.id})
+    source_note = create_note!(%{text: "source note", user_id: source_user.id})
     create_photo_note!(source_photo.id, source_note.id)
 
     write_user_file_from_fixture!(
       source_user.id,
       "source-photo.png",
-      "test/testdata_files/test-red-image.png"
+      "test/support/fixtures/images/test-red-image.png"
     )
 
     assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)

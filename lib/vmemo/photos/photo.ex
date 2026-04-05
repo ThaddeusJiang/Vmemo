@@ -7,17 +7,17 @@ defmodule Vmemo.Photos.Photo do
              :caption,
              :ts_ocr,
              :file_id,
-             :ash_user_id,
+             :user_id,
              :inserted_at,
              :updated_at
            ]}
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource, AshOban]
 
-  require Logger
   require Ash.Query
+  alias SmallSdk.Moondream
   alias Vmemo.PhotoService.TsPhoto
 
   postgres do
@@ -26,7 +26,29 @@ defmodule Vmemo.Photos.Photo do
   end
 
   admin do
-    table_columns([:id, :url, :note, :caption, :ts_ocr, :ash_user_id, :inserted_at])
+    table_columns([:id, :url, :note, :caption, :ts_ocr, :user_id, :inserted_at])
+  end
+
+  oban do
+    triggers do
+      trigger :sync_typesense do
+        action :sync_typesense
+        queue :sync_typesense
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Photos.Photo.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Photos.Photo.Schedulers.SyncTypesense
+      end
+
+      trigger :generate_caption do
+        action :generate_caption
+        queue :default
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Photos.Photo.Workers.GenerateCaption
+        scheduler_module_name Vmemo.Photos.Photo.Schedulers.GenerateCaption
+      end
+    end
   end
 
   code_interface do
@@ -35,10 +57,10 @@ defmodule Vmemo.Photos.Photo do
     define :read
     define :update
     define :destroy
-    define :get_with_notes, args: [:id, :ash_user_id]
-    define :hybrid_search, args: [:query, :similar_photo_id, :ash_user_id, :page]
-    define :hybrid_search_count, args: [:query, :similar_photo_id, :ash_user_id]
-    define :list_similar, args: [:photo_id, :ash_user_id]
+    define :get_with_notes, args: [:id, :user_id]
+    define :hybrid_search, args: [:query, :similar_photo_id, :user_id, :page]
+    define :hybrid_search_count, args: [:query, :similar_photo_id, :user_id]
+    define :list_similar, args: [:photo_id, :user_id]
     define :gen_description
     define :sync_typesense_by_id, args: [:photo_id]
   end
@@ -57,30 +79,65 @@ defmodule Vmemo.Photos.Photo do
     defaults [:read, :destroy]
 
     create :create_immediate do
-      accept [:url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
+      accept [:url, :note, :caption, :ts_ocr, :file_id, :user_id]
     end
 
     create :import do
-      accept [:id, :url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
+      accept [:id, :url, :note, :caption, :ts_ocr, :file_id, :user_id]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :caption, :ts_ocr, :file_id, :ash_user_id]
-
-      change after_action(fn _changeset, record, _context ->
-               enqueue_photo_sync_job(record.id)
-               {:ok, record}
-             end)
+      accept [:url, :note, :caption, :ts_ocr, :file_id, :user_id]
+      change run_oban_trigger(:sync_typesense)
+      change run_oban_trigger(:generate_caption)
     end
 
     update :update do
       accept [:note, :caption, :ts_ocr, :url]
       require_atomic? false
+      change run_oban_trigger(:sync_typesense)
+    end
 
-      change after_action(fn _changeset, record, _context ->
-               enqueue_photo_sync_job(record.id)
-               {:ok, record}
-             end)
+    update :sync_typesense do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
+            {:ok, true} ->
+              {:ok, record}
+
+            {:ok, false} ->
+              {:error, :sync_failed}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end)
+      end
+    end
+
+    update :generate_caption do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          case generate_caption_for_photo(record) do
+            :ok ->
+              {:ok, record}
+
+            {:discard, _reason} ->
+              {:ok, record}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end)
+      end
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -100,9 +157,9 @@ defmodule Vmemo.Photos.Photo do
     read :get_with_notes do
       get? true
       argument :id, :string, allow_nil?: false
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
-      filter expr(id == ^arg(:id) and ash_user_id == ^arg(:ash_user_id))
+      filter expr(id == ^arg(:id) and user_id == ^arg(:user_id))
 
       prepare fn query, _context ->
         Ash.Query.load(query, :notes)
@@ -112,26 +169,26 @@ defmodule Vmemo.Photos.Photo do
     read :hybrid_search do
       argument :query, :string
       argument :similar_photo_id, :string
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
       argument :page, :integer, default: 1
 
       prepare fn query, _context ->
         q = Ash.Query.get_argument(query, :query) || ""
         similar = Ash.Query.get_argument(query, :similar_photo_id)
-        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
+        user_id = Ash.Query.get_argument(query, :user_id)
         page = Ash.Query.get_argument(query, :page)
 
         if blank_query_without_similar?(q, similar) do
           per_page = 10
           offset = (page - 1) * per_page
 
-          Ash.Query.filter(query, ash_user_id == ^ash_user_id)
+          Ash.Query.filter(query, user_id == ^user_id)
           |> Ash.Query.sort(inserted_at: :desc)
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
         else
           {photos, _found, _current_page} =
-            typesense_hybrid_search(q, similar, ash_user_id, page)
+            typesense_hybrid_search(q, similar, user_id, page)
 
           photo_ids =
             photos
@@ -139,13 +196,7 @@ defmodule Vmemo.Photos.Photo do
             |> Enum.filter(&valid_uuid?/1)
 
           if photo_ids == [] do
-            per_page = 10
-            offset = (page - 1) * per_page
-
-            Ash.Query.filter(query, ash_user_id == ^ash_user_id)
-            |> Ash.Query.sort(inserted_at: :desc)
-            |> Ash.Query.offset(offset)
-            |> Ash.Query.limit(per_page)
+            Ash.Query.filter(query, id: [in: []])
           else
             query
             |> Ash.Query.filter(id: [in: photo_ids])
@@ -181,20 +232,20 @@ defmodule Vmemo.Photos.Photo do
     action :hybrid_search_count, :integer do
       argument :query, :string
       argument :similar_photo_id, :string
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
       run fn input, context ->
         q = Ash.ActionInput.get_argument(input, :query) || ""
         similar = Ash.ActionInput.get_argument(input, :similar_photo_id)
-        ash_user_id = Ash.ActionInput.get_argument(input, :ash_user_id)
+        user_id = Ash.ActionInput.get_argument(input, :user_id)
 
         if blank_query_without_similar?(q, similar) do
           __MODULE__
-          |> Ash.Query.filter(ash_user_id == ^ash_user_id)
+          |> Ash.Query.filter(user_id == ^user_id)
           |> Ash.count(actor: context.actor)
         else
           {_photos, found, _current_page} =
-            typesense_hybrid_search(q, similar, ash_user_id, 1)
+            typesense_hybrid_search(q, similar, user_id, 1)
 
           {:ok, found}
         end
@@ -215,14 +266,14 @@ defmodule Vmemo.Photos.Photo do
 
         # Get actor from context
         actor = Map.get(context, :actor)
-        ash_user_id = if actor, do: actor.id, else: nil
+        user_id = if actor, do: actor.id, else: nil
 
-        if is_nil(ash_user_id) do
+        if is_nil(user_id) do
           {:error, "Actor is required for photo search"}
         else
           {photos, _found, _current_page} =
             TsPhoto.hybird_search_photos({q, similar},
-              user_id: ash_user_id,
+              user_id: user_id,
               page: page
             )
 
@@ -458,13 +509,13 @@ defmodule Vmemo.Photos.Photo do
 
     read :list_similar do
       argument :photo_id, :uuid, allow_nil?: false
-      argument :ash_user_id, :uuid, allow_nil?: false
+      argument :user_id, :uuid, allow_nil?: false
 
       prepare fn query, _context ->
         photo_id = Ash.Query.get_argument(query, :photo_id)
-        ash_user_id = Ash.Query.get_argument(query, :ash_user_id)
+        user_id = Ash.Query.get_argument(query, :user_id)
 
-        photos = TsPhoto.list_similar_photos(photo_id, user_id: ash_user_id)
+        photos = TsPhoto.list_similar_photos(photo_id, user_id: user_id)
 
         photo_ids =
           photos
@@ -506,10 +557,7 @@ defmodule Vmemo.Photos.Photo do
         end
       end
 
-      change after_action(fn _changeset, record, _context ->
-               enqueue_photo_sync_job(record.id)
-               {:ok, record}
-             end)
+      change run_oban_trigger(:sync_typesense)
     end
   end
 
@@ -524,7 +572,7 @@ defmodule Vmemo.Photos.Photo do
     attribute :caption, :string
     attribute :ts_ocr, :string
     attribute :file_id, :string
-    attribute :ash_user_id, :uuid
+    attribute :user_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at
@@ -575,9 +623,9 @@ defmodule Vmemo.Photos.Photo do
     end
   end
 
-  defp typesense_hybrid_search(q, similar, ash_user_id, page) do
+  defp typesense_hybrid_search(q, similar, user_id, page) do
     TsPhoto.hybird_search_photos({q, similar},
-      user_id: ash_user_id,
+      user_id: user_id,
       page: page
     )
   end
@@ -586,9 +634,57 @@ defmodule Vmemo.Photos.Photo do
     typesense_data = build_typesense_sync_payload(photo)
 
     case TsPhoto.get_photo(photo.id) do
-      nil -> TsPhoto.create(typesense_data)
+      nil -> sync_photo_with_typesense_retry(typesense_data, :create)
       {:error, reason} -> {:error, reason}
-      _existing -> TsPhoto.update_photo(typesense_data)
+      _existing -> sync_photo_with_typesense_retry(typesense_data, :update)
+    end
+  end
+
+  defp sync_photo_with_typesense_retry(typesense_data, :create) do
+    case TsPhoto.create(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, created} <- TsPhoto.create(typesense_data) do
+          {:ok, created}
+        end
+
+      result ->
+        result
+    end
+  end
+
+  defp sync_photo_with_typesense_retry(typesense_data, :update) do
+    case TsPhoto.update_photo(typesense_data) do
+      {:error, "Not Found"} ->
+        with :ok <- migrate_typesense_schema(),
+             {:ok, _updated} <- sync_photo_after_migration(typesense_data) do
+          {:ok, true}
+        end
+
+      {:ok, updated} ->
+        {:ok, updated}
+
+      error ->
+        error
+    end
+  end
+
+  defp sync_photo_after_migration(typesense_data) do
+    case TsPhoto.update_photo(typesense_data) do
+      {:error, "Not Found"} -> TsPhoto.create(typesense_data)
+      result -> result
+    end
+  end
+
+  defp migrate_typesense_schema do
+    try do
+      case Vmemo.Ts.migrate() do
+        :ok -> :ok
+        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
+      end
+    rescue
+      exception ->
+        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
     end
   end
 
@@ -601,7 +697,7 @@ defmodule Vmemo.Photos.Photo do
       url: photo.url,
       file_id: photo.file_id,
       inserted_at: to_unix_timestamp(photo.inserted_at),
-      inserted_by: photo.ash_user_id,
+      inserted_by: photo.user_id,
       _gen_ocr: photo.ts_ocr
     }
 
@@ -631,19 +727,22 @@ defmodule Vmemo.Photos.Photo do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
   end
 
-  defp enqueue_photo_sync_job(photo_id) do
-    case %{photo_id: photo_id}
-         |> Vmemo.Workers.SyncPhotoToTypesense.new()
-         |> Oban.insert() do
-      {:ok, _job} ->
+  defp generate_caption_for_photo(photo) do
+    if is_nil(photo.caption) or photo.caption == "" do
+      with {:ok, image_base64} <- read_image_base64_for_typesense(photo.url),
+           {:ok, caption} <- Moondream.caption(image_base64),
+           {:ok, _updated_photo} <-
+             __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
         :ok
+      else
+        {:error, :file_not_found} ->
+          :ok
 
-      {:error, reason} ->
-        Logger.error(
-          "Failed to enqueue SyncPhotoToTypesense for photo #{photo_id}: #{inspect(reason)}"
-        )
-
-        :error
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      :ok
     end
   end
 end

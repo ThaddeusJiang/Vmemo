@@ -13,12 +13,12 @@ defmodule VmemoWeb.PhotosIndexLive do
 
   @impl true
   def handle_event("load-more", _, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     q = socket.assigns.q
     similar_photo_id = socket.assigns.similar_photo_id
 
     page = socket.assigns.page + 1
-    {more_photos, _found} = load_photos_with_count(q, similar_photo_id, page, user)
+    more_photos = load_photos(q, similar_photo_id, page, user)
 
     {:noreply,
      socket
@@ -31,30 +31,29 @@ defmodule VmemoWeb.PhotosIndexLive do
     {:noreply, push_navigate(socket, to: ~p"/home")}
   end
 
-  defp load_photos_with_count(q, similar_photo_id, page, user) do
-    photos =
-      case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
-        {:ok, records} -> records
-        _ -> []
-      end
+  defp load_photos(q, similar_photo_id, page, user) do
+    case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
+      {:ok, records} -> records
+      _ -> []
+    end
+  end
 
-    total_count =
-      case Photo.hybrid_search_count(q, similar_photo_id, user.id, actor: user) do
-        {:ok, count} -> count
-        _ -> 0
-      end
-
-    {photos, total_count}
+  defp load_total_count(q, similar_photo_id, user) do
+    case Photo.hybrid_search_count(q, similar_photo_id, user.id, actor: user) do
+      {:ok, count} -> count
+      _ -> 0
+    end
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     q = Map.get(params, "q", "")
     similar_photo_id = Map.get(params, "similar_photo_id")
 
-    {photos, total_count} = load_photos_with_count(q, similar_photo_id, 1, user)
+    photos = load_photos(q, similar_photo_id, 1, user)
+    total_count = load_total_count(q, similar_photo_id, user)
     similar_photo = load_similar_photo(similar_photo_id, user)
 
     Logger.info(

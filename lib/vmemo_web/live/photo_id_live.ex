@@ -4,10 +4,8 @@ defmodule VmemoWeb.PhotoIdLive do
 
   use VmemoWeb, :live_view
 
+  alias Vmemo.Ai.VisionRequest
   alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoMoondreamRequest
-  alias Vmemo.Photos.PhotoCaptionRequest
-  alias Vmemo.Workers.ProcessCaptionRequest
 
   alias VmemoWeb.LiveComponents.Waterfall
   alias VmemoWeb.LiveComponents.MoondreamPanel
@@ -22,7 +20,7 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   defp mount_photo(id, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Photo.get_with_notes(id, user.id, actor: user) do
       {:ok, photo} ->
@@ -30,19 +28,14 @@ defmodule VmemoWeb.PhotoIdLive do
 
         case Photo.list_similar(photo.id, user.id, actor: user) do
           {:ok, photos} ->
-            # Load moondream requests
-            moondream_requests =
-              case PhotoMoondreamRequest.list_by_photo(photo.id, actor: user) do
+            vision_requests =
+              case VisionRequest.list_by_photo(photo.id, actor: user) do
                 {:ok, requests} -> requests
                 _ -> []
               end
 
-            # Load caption requests
-            caption_requests =
-              case PhotoCaptionRequest.list_by_photo(photo.id, actor: user) do
-                {:ok, requests} -> requests
-                _ -> []
-              end
+            moondream_requests = vision_requests
+            caption_requests = caption_requests_from(vision_requests)
 
             latest_caption_request =
               caption_requests
@@ -69,8 +62,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
             # Subscribe to PubSub
             if connected?(socket) do
-              Phoenix.PubSub.subscribe(Vmemo.PubSub, "photo_moondream_request:#{photo.id}")
-              Phoenix.PubSub.subscribe(Vmemo.PubSub, "photo_caption_request:#{photo.id}")
+              Phoenix.PubSub.subscribe(Vmemo.PubSub, "vision_request:#{photo.id}")
             end
 
             {:ok, socket}
@@ -92,7 +84,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("delete-photo", %{"id" => id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case Ash.get(Photo, id, actor: user) do
       {:ok, photo} ->
@@ -112,7 +104,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("save", params, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     note = Map.get(params, "note", socket.assigns.photo.note)
     caption = Map.get(params, "caption", socket.assigns.photo.caption)
 
@@ -139,16 +131,11 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("gen-description", _, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
     photo = socket.assigns.photo
 
-    case PhotoCaptionRequest.create(%{photo_id: photo.id, ash_user_id: user.id}, actor: user) do
+    case VisionRequest.create_caption(%{photo_id: photo.id, user_id: user.id}, actor: user) do
       {:ok, request} ->
-        # Create Oban job
-        %{request_id: request.id}
-        |> ProcessCaptionRequest.new()
-        |> Oban.insert()
-
         loading_requests = MapSet.put(socket.assigns.caption_loading_requests, request.id)
 
         # Update requests list
@@ -174,21 +161,13 @@ defmodule VmemoWeb.PhotoIdLive do
 
   @impl true
   def handle_event("retry-caption-request", %{"request_id" => request_id}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
-    case Ash.get(PhotoCaptionRequest, request_id, actor: user) do
+    case Ash.get(VisionRequest, request_id, actor: user) do
       {:ok, request} ->
         if request.status == "failed" do
-          # Reset status to pending
-          case PhotoCaptionRequest.update(request, %{status: "pending", error_message: nil},
-                 actor: user
-               ) do
+          case VisionRequest.retry(request, %{}, actor: user) do
             {:ok, updated_request} ->
-              # Create new Oban job
-              %{request_id: updated_request.id}
-              |> ProcessCaptionRequest.new()
-              |> Oban.insert()
-
               loading_requests =
                 MapSet.put(socket.assigns.caption_loading_requests, updated_request.id)
 
@@ -233,14 +212,17 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
-  def handle_info({:caption_request_updated, payload}, socket) do
-    user = socket.assigns.current_ash_user
+  def handle_info({:vision_request_updated, payload}, socket) do
+    user = socket.assigns.current_user
 
-    caption_requests =
-      case PhotoCaptionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+    vision_requests =
+      case VisionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
         {:ok, requests} -> requests
-        _ -> socket.assigns.caption_requests
+        _ -> socket.assigns.moondream_requests
       end
+
+    moondream_requests = vision_requests
+    caption_requests = caption_requests_from(vision_requests)
 
     latest_caption_request =
       caption_requests
@@ -251,9 +233,19 @@ defmodule VmemoWeb.PhotoIdLive do
       socket.assigns.caption_loading_requests
       |> MapSet.delete(payload.request_id)
 
+    moondream_loading_requests =
+      socket.assigns.moondream_loading_requests
+      |> MapSet.delete(payload.request_id)
+
+    send_update(MoondreamPanel,
+      id: "moondream-panel",
+      requests: moondream_requests,
+      loading_requests: moondream_loading_requests
+    )
+
     # Update photo if caption was generated
     socket =
-      if payload.status == "completed" && payload.caption do
+      if payload.status == "completed" && payload.function_type == "caption" do
         case Photo.get_with_notes(socket.assigns.photo.id, user.id, actor: user) do
           {:ok, updated_photo} ->
             current_note = socket.assigns.form[:note].value || updated_photo.note
@@ -278,43 +270,19 @@ defmodule VmemoWeb.PhotoIdLive do
 
     {:noreply,
      socket
+     |> assign(:moondream_requests, moondream_requests)
+     |> assign(:moondream_loading_requests, moondream_loading_requests)
      |> assign(:caption_requests, caption_requests)
      |> assign(:caption_loading_requests, loading_requests)
      |> assign(:latest_caption_request, latest_caption_request)}
   end
 
   @impl true
-  def handle_info({:moondream_request_updated, payload}, socket) do
-    user = socket.assigns.current_ash_user
-
-    moondream_requests =
-      case PhotoMoondreamRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
-        {:ok, requests} -> requests
-        _ -> socket.assigns.moondream_requests
-      end
-
-    loading_requests =
-      socket.assigns.moondream_loading_requests
-      |> MapSet.delete(payload.request_id)
-
-    send_update(MoondreamPanel,
-      id: "moondream-panel",
-      requests: moondream_requests,
-      loading_requests: loading_requests
-    )
-
-    {:noreply,
-     socket
-     |> assign(moondream_requests: moondream_requests)
-     |> assign(moondream_loading_requests: loading_requests)}
-  end
-
-  @impl true
   def handle_info({:moondream_request_submitted, request}, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     moondream_requests =
-      case PhotoMoondreamRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+      case VisionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
         {:ok, requests} -> requests
         _ -> socket.assigns.moondream_requests
       end
@@ -530,7 +498,7 @@ defmodule VmemoWeb.PhotoIdLive do
             id="moondream-panel"
             module={MoondreamPanel}
             photo={@photo}
-            current_user={@current_ash_user}
+            current_user={@current_user}
             requests={@moondream_requests}
             loading_requests={@moondream_loading_requests}
           />
@@ -596,4 +564,8 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   defp format_error_message(_), do: "Unknown error"
+
+  defp caption_requests_from(requests) do
+    Enum.filter(requests, &(&1.function_type == "caption"))
+  end
 end

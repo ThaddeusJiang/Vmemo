@@ -2,6 +2,8 @@ defmodule SmallSdk.Moondream do
   require Logger
 
   alias SmallSdk.Utils
+  @debug_log_max_items 5
+  @debug_log_max_chars 200
 
   @doc """
   Generate a caption for an image using Moondream Station.
@@ -29,14 +31,13 @@ defmodule SmallSdk.Moondream do
 
     req = build_request("/caption")
 
-    res =
-      Req.post(req,
-        json: %{
-          image_url: "data:#{mime_type};base64,#{image_base64}",
-          length: length,
-          stream: false
-        }
-      )
+    payload = %{
+      image_url: "data:#{mime_type};base64,#{image_base64}",
+      length: length,
+      stream: false
+    }
+
+    res = post(req, payload, :caption)
 
     handle_response(res)
   end
@@ -87,14 +88,13 @@ defmodule SmallSdk.Moondream do
 
     req = build_request("/query")
 
-    res =
-      Req.post(req,
-        json: %{
-          image_url: "data:#{mime_type};base64,#{image_base64}",
-          question: prompt,
-          stream: false
-        }
-      )
+    payload = %{
+      image_url: "data:#{mime_type};base64,#{image_base64}",
+      question: prompt,
+      stream: false
+    }
+
+    res = post(req, payload, :query)
 
     handle_response(res, :query)
   end
@@ -121,14 +121,13 @@ defmodule SmallSdk.Moondream do
 
     req = build_request("/point")
 
-    res =
-      Req.post(req,
-        json: %{
-          image_url: "data:#{mime_type};base64,#{image_base64}",
-          object: prompt,
-          stream: false
-        }
-      )
+    payload = %{
+      image_url: "data:#{mime_type};base64,#{image_base64}",
+      object: prompt,
+      stream: false
+    }
+
+    res = post(req, payload, :point)
 
     handle_response(res, :point)
   end
@@ -155,14 +154,13 @@ defmodule SmallSdk.Moondream do
 
     req = build_request("/detect")
 
-    res =
-      Req.post(req,
-        json: %{
-          image_url: "data:#{mime_type};base64,#{image_base64}",
-          object: prompt,
-          stream: false
-        }
-      )
+    payload = %{
+      image_url: "data:#{mime_type};base64,#{image_base64}",
+      object: prompt,
+      stream: false
+    }
+
+    res = post(req, payload, :detect)
 
     handle_response(res, :detect)
   end
@@ -189,14 +187,13 @@ defmodule SmallSdk.Moondream do
 
     req = build_request("/segment")
 
-    res =
-      Req.post(req,
-        json: %{
-          image_url: "data:#{mime_type};base64,#{image_base64}",
-          prompt: prompt,
-          stream: false
-        }
-      )
+    payload = %{
+      image_url: "data:#{mime_type};base64,#{image_base64}",
+      prompt: prompt,
+      stream: false
+    }
+
+    res = post(req, payload, :segment)
 
     handle_response(res, :segment)
   end
@@ -271,5 +268,66 @@ defmodule SmallSdk.Moondream do
   defp extract_result(body, :segment) do
     # Segment returns mask or segmentation data
     body["mask"] || body["segmentation"] || body["result"] || body
+  end
+
+  defp post(req, payload, action) do
+    dev_log("moondream.request",
+      action: action,
+      path: request_path(req),
+      json: sanitize_value(payload)
+    )
+
+    res = Req.post(req, json: payload)
+
+    dev_log("moondream.response", action: action, response: sanitize_response(res))
+
+    res
+  end
+
+  defp request_path(%Req.Request{url: %URI{} = url}) do
+    url.path
+  end
+
+  defp request_path(_), do: nil
+
+  defp sanitize_response({:ok, %{status: status, body: body}}) do
+    %{status: status, body: sanitize_value(body)}
+  end
+
+  defp sanitize_response({:error, reason}) do
+    %{error: inspect(reason, limit: 20, printable_limit: @debug_log_max_chars)}
+  end
+
+  defp sanitize_response(other) do
+    %{other: inspect(other, limit: 20, printable_limit: @debug_log_max_chars)}
+  end
+
+  defp sanitize_value(nil), do: nil
+
+  defp sanitize_value(data_url) when is_binary(data_url) do
+    if String.starts_with?(data_url, "data:") and String.contains?(data_url, ";base64,") do
+      [meta | _] = String.split(data_url, ",", parts: 2)
+      "#{meta},[BASE64_REDACTED length=#{byte_size(data_url)}]"
+    else
+      String.slice(data_url, 0, @debug_log_max_chars)
+    end
+  end
+
+  defp sanitize_value(value) when is_list(value) do
+    value
+    |> Enum.take(@debug_log_max_items)
+    |> Enum.map(&sanitize_value/1)
+  end
+
+  defp sanitize_value(value) when is_map(value) do
+    value
+    |> Enum.take(@debug_log_max_items)
+    |> Enum.into(%{}, fn {k, v} -> {k, sanitize_value(v)} end)
+  end
+
+  defp sanitize_value(value), do: value
+
+  defp dev_log(message, metadata) do
+    Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
   end
 end

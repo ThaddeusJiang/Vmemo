@@ -3,7 +3,7 @@ defmodule Vmemo.UserDataTransfer do
   require Logger
 
   alias Vmemo.Repo
-  alias Vmemo.Account.AshUser
+  alias Vmemo.Account.User
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
@@ -46,7 +46,7 @@ defmodule Vmemo.UserDataTransfer do
   end
 
   defp fetch_user(user_id) do
-    case Ash.get(AshUser, user_id, actor: nil, authorize?: false) do
+    case Ash.get(User, user_id, actor: nil, authorize?: false) do
       {:ok, user} -> {:ok, user}
       {:error, %Ash.Error.Query.NotFound{}} -> {:error, "User not found"}
       {:error, error} -> {:error, format_error(error)}
@@ -56,7 +56,7 @@ defmodule Vmemo.UserDataTransfer do
   defp list_user_photos(user_id) do
     query =
       Photo
-      |> Ash.Query.filter(ash_user_id == ^user_id)
+      |> Ash.Query.filter(user_id == ^user_id)
       |> Ash.Query.sort(inserted_at: :desc)
 
     case Ash.read(query, actor: nil, authorize?: false) do
@@ -68,7 +68,7 @@ defmodule Vmemo.UserDataTransfer do
   defp list_user_notes(user_id) do
     query =
       Note
-      |> Ash.Query.filter(ash_user_id == ^user_id)
+      |> Ash.Query.filter(user_id == ^user_id)
       |> Ash.Query.sort(inserted_at: :desc)
 
     case Ash.read(query, actor: nil, authorize?: false) do
@@ -129,7 +129,7 @@ defmodule Vmemo.UserDataTransfer do
           caption: photo.caption,
           ts_ocr: Map.get(photo, :ts_ocr),
           file_id: photo.file_id,
-          ash_user_id: photo.ash_user_id,
+          user_id: photo.user_id,
           inserted_at: to_iso8601(photo.inserted_at),
           updated_at: to_iso8601(photo.updated_at)
         }
@@ -140,7 +140,7 @@ defmodule Vmemo.UserDataTransfer do
         %{
           id: note.id,
           text: note.text,
-          ash_user_id: note.ash_user_id,
+          user_id: note.user_id,
           photo_ids: Map.get(links, note.id, []) |> Enum.uniq(),
           inserted_at: to_iso8601(note.inserted_at),
           updated_at: to_iso8601(note.updated_at)
@@ -275,7 +275,7 @@ defmodule Vmemo.UserDataTransfer do
               caption: pick_value(photo, ["caption", :caption]),
               ts_ocr: pick_value(photo, ["ts_ocr", :ts_ocr]),
               file_id: pick_value(photo, ["file_id", :file_id]),
-              ash_user_id: target_user_id,
+              user_id: target_user_id,
               inserted_at:
                 parse_iso_datetime(pick_value(photo, ["inserted_at", :inserted_at]), now),
               updated_at: parse_iso_datetime(pick_value(photo, ["updated_at", :updated_at]), now)
@@ -302,7 +302,7 @@ defmodule Vmemo.UserDataTransfer do
           valid_id ->
             case Map.get(existing_owner_map, valid_id) do
               nil -> false
-              owner_id -> owner_id != row.ash_user_id
+              owner_id -> owner_id != row.user_id
             end
         end
       end)
@@ -321,12 +321,12 @@ defmodule Vmemo.UserDataTransfer do
                   row
                   |> Map.drop([:legacy_id, :raw_id])
                   |> Map.put(:id, uuid_to_db(valid_id))
-                  |> Map.update!(:ash_user_id, &uuid_to_db/1)
+                  |> Map.update!(:user_id, &uuid_to_db/1)
 
                 {[db_row | insert_rows], Map.put(map, row.legacy_id, valid_id),
                  MapSet.put(id_set, valid_id), skipped, gen_ids}
 
-              owner_id when owner_id == row.ash_user_id ->
+              owner_id when owner_id == row.user_id ->
                 {insert_rows, Map.put(map, row.legacy_id, valid_id), MapSet.put(id_set, valid_id),
                  skipped + 1, gen_ids}
 
@@ -337,7 +337,7 @@ defmodule Vmemo.UserDataTransfer do
                   row
                   |> Map.drop([:legacy_id, :raw_id])
                   |> Map.put(:id, uuid_to_db(new_id))
-                  |> Map.update!(:ash_user_id, &uuid_to_db/1)
+                  |> Map.update!(:user_id, &uuid_to_db/1)
 
                 {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
                  MapSet.put(id_set, new_id), skipped, tail}
@@ -350,7 +350,7 @@ defmodule Vmemo.UserDataTransfer do
               row
               |> Map.drop([:legacy_id, :raw_id])
               |> Map.put(:id, uuid_to_db(new_id))
-              |> Map.update!(:ash_user_id, &uuid_to_db/1)
+              |> Map.update!(:user_id, &uuid_to_db/1)
 
             {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
              MapSet.put(id_set, new_id), skipped, tail}
@@ -400,7 +400,7 @@ defmodule Vmemo.UserDataTransfer do
             legacy_id: legacy_id,
             raw_id: legacy_id,
             text: text,
-            ash_user_id: target_user_id,
+            user_id: target_user_id,
             photo_ids: photo_ids,
             inserted_at: parse_iso_datetime(pick_value(note, ["inserted_at", :inserted_at]), now),
             updated_at: parse_iso_datetime(pick_value(note, ["updated_at", :updated_at]), now)
@@ -427,7 +427,7 @@ defmodule Vmemo.UserDataTransfer do
           valid_id ->
             case Map.get(existing_owner_map, valid_id) do
               nil -> false
-              owner_id -> owner_id != row.ash_user_id
+              owner_id -> owner_id != row.user_id
             end
         end
       end)
@@ -446,13 +446,13 @@ defmodule Vmemo.UserDataTransfer do
                   row
                   |> Map.drop([:legacy_id, :raw_id, :photo_ids])
                   |> Map.put(:id, uuid_to_db(valid_id))
-                  |> Map.update!(:ash_user_id, &uuid_to_db/1)
+                  |> Map.update!(:user_id, &uuid_to_db/1)
 
                 {[db_row | insert_rows], Map.put(map, row.legacy_id, valid_id),
                  Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, valid_id),
                  skipped, gen_ids}
 
-              owner_id when owner_id == row.ash_user_id ->
+              owner_id when owner_id == row.user_id ->
                 {insert_rows, Map.put(map, row.legacy_id, valid_id),
                  Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, valid_id),
                  skipped + 1, gen_ids}
@@ -464,7 +464,7 @@ defmodule Vmemo.UserDataTransfer do
                   row
                   |> Map.drop([:legacy_id, :raw_id, :photo_ids])
                   |> Map.put(:id, uuid_to_db(new_id))
-                  |> Map.update!(:ash_user_id, &uuid_to_db/1)
+                  |> Map.update!(:user_id, &uuid_to_db/1)
 
                 {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
                  Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, new_id),
@@ -478,7 +478,7 @@ defmodule Vmemo.UserDataTransfer do
               row
               |> Map.drop([:legacy_id, :raw_id, :photo_ids])
               |> Map.put(:id, uuid_to_db(new_id))
-              |> Map.update!(:ash_user_id, &uuid_to_db/1)
+              |> Map.update!(:user_id, &uuid_to_db/1)
 
             {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
              Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, new_id), skipped,
@@ -995,7 +995,7 @@ defmodule Vmemo.UserDataTransfer do
   defp fetch_existing_owner_map(_table, []), do: %{}
 
   defp fetch_existing_owner_map(table, ids) when table in ["photos", "notes"] do
-    query = "SELECT id::text, ash_user_id::text FROM #{table} WHERE id::text = ANY($1::text[])"
+    query = "SELECT id::text, user_id::text FROM #{table} WHERE id::text = ANY($1::text[])"
 
     case Repo.query(query, [ids]) do
       {:ok, %{rows: rows}} ->

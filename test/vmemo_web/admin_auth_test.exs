@@ -55,7 +55,7 @@ defmodule VmemoWeb.AdminAuthTest do
 
       assert conn.halted
       assert redirected_to(conn) == "/admin/login"
-      refute get_flash(conn, :error)
+      refute Phoenix.Flash.get(conn.assigns.flash, :error)
     end
   end
 
@@ -75,7 +75,7 @@ defmodule VmemoWeb.AdminAuthTest do
 
       assert conn.halted
       assert redirected_to(conn) == "/admin/login"
-      refute get_flash(conn, :error)
+      refute Phoenix.Flash.get(conn.assigns.flash, :error)
     end
   end
 end

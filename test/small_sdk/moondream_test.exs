@@ -4,7 +4,7 @@ defmodule SmallSdk.MoondreamTest do
   alias SmallSdk.Moondream
   alias SmallSdk.FileSystem
 
-  @test_image_path "test/testdata_files/wall-e.png"
+  @test_image_path "test/support/fixtures/images/wall-e.png"
   @moduletag :integration
 
   setup do

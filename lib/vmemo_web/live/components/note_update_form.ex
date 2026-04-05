@@ -58,7 +58,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
   @impl true
   def handle_event("save", %{"note" => note_text}, socket) do
-    actor = socket.assigns.current_ash_user
+    actor = socket.assigns.current_user
 
     case Ash.update(socket.assigns.note, %{text: note_text}, actor: actor, load: [:photos]) do
       {:ok, note} ->
@@ -76,7 +76,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
   @impl true
   def handle_event("delete-note", _params, socket) do
-    actor = socket.assigns.current_ash_user
+    actor = socket.assigns.current_user
 
     case Note.destroy(socket.assigns.note, actor: actor) do
       {:ok, _note} ->

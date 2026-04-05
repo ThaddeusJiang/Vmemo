@@ -208,7 +208,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   end
 
   def mount(%{"id" => id}, _session, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     case ApiTokenService.get_user_api_token!(user, id) do
       api_token ->

@@ -1,8 +1,7 @@
 defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   use VmemoWeb, :live_component
 
-  alias Vmemo.Photos.PhotoMoondreamRequest
-  alias Vmemo.Workers.ProcessMoondreamRequest
+  alias Vmemo.Ai.VisionRequest
 
   @function_types ["query", "caption", "point", "detect", "segment"]
 
@@ -58,20 +57,16 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     if is_segment_disabled?(function) do
       {:noreply, socket}
     else
-      case PhotoMoondreamRequest.create(
+      case VisionRequest.create(
              %{
                photo_id: photo.id,
-               ash_user_id: user.id,
+               user_id: user.id,
                function_type: function,
                prompt: prompt
              },
              actor: user
            ) do
         {:ok, request} ->
-          %{request_id: request.id}
-          |> ProcessMoondreamRequest.new()
-          |> Oban.insert()
-
           loading_requests = MapSet.put(socket.assigns.loading_requests, request.id)
 
           send(self(), {:moondream_request_submitted, request})
@@ -92,22 +87,13 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   def handle_event("retry-request", %{"request_id" => request_id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(PhotoMoondreamRequest, request_id, actor: user) do
+    case Ash.get(VisionRequest, request_id, actor: user) do
       {:ok, request} ->
         if request.status == "failed" do
-          # Reset status to pending
-          case PhotoMoondreamRequest.update(request, %{status: "pending", error_message: nil},
-                 actor: user
-               ) do
+          case VisionRequest.retry(request, %{}, actor: user) do
             {:ok, updated_request} ->
-              # Create new Oban job
-              %{request_id: updated_request.id}
-              |> ProcessMoondreamRequest.new()
-              |> Oban.insert()
-
               loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)
 
-              # Immediately update the requests list in the component to hide error message
               updated_requests =
                 Enum.map(socket.assigns.requests, fn req ->
                   if req.id == updated_request.id do

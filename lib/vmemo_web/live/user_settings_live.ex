@@ -199,7 +199,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Account.update_ash_user_email(socket.assigns.current_ash_user, token) do
+      case Account.update_user_email(socket.assigns.current_user, token) do
         {:ok, _user} ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -211,7 +211,7 @@ defmodule VmemoWeb.UserSettingsLive do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     socket =
       socket
@@ -266,7 +266,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
         case uploaded do
           [%{path: zip_path}] ->
-            case UserDataTransfer.import_user_zip(socket.assigns.current_ash_user.id, zip_path) do
+            case UserDataTransfer.import_user_zip(socket.assigns.current_user.id, zip_path) do
               {:ok, result} ->
                 {:noreply,
                  socket
@@ -298,10 +298,10 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def handle_event("validate-email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     email_form =
-      case Account.apply_ash_user_email(user, password, user_params) do
+      case Account.apply_user_email(user, password, user_params) do
         {:ok, _applied_user} ->
           to_form(user_params, as: :user)
 
@@ -314,11 +314,11 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def handle_event("update-email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
-    case Account.apply_ash_user_email(user, password, user_params) do
+    case Account.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
-        Account.deliver_ash_user_update_email_instructions(
+        Account.deliver_user_update_email_instructions(
           applied_user,
           user.email,
           &url(~p"/settings/confirm_email/#{&1}")
@@ -337,10 +337,10 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def handle_event("validate-password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
     password_form =
-      case Account.update_ash_user_password(user, password, user_params) do
+      case Account.update_user_password(user, password, user_params) do
         {:ok, _user} ->
           to_form(user_params, as: :user)
 
@@ -353,9 +353,9 @@ defmodule VmemoWeb.UserSettingsLive do
 
   def handle_event("update-password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_ash_user
+    user = socket.assigns.current_user
 
-    case Account.update_ash_user_password(user, password, user_params) do
+    case Account.update_user_password(user, password, user_params) do
       {:ok, _user} ->
         password_form = to_form(user_params, as: :user)
 

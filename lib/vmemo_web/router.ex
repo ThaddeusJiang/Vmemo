@@ -1,7 +1,7 @@
 defmodule VmemoWeb.Router do
   use VmemoWeb, :router
 
-  import VmemoWeb.AshUserAuth
+  import VmemoWeb.UserAuth
   import VmemoWeb.AdminAuth
   import AshAdmin.Router
 
@@ -12,7 +12,7 @@ defmodule VmemoWeb.Router do
     plug :put_root_layout, html: {VmemoWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :fetch_current_ash_user
+    plug :fetch_current_user
   end
 
   pipeline :api do
@@ -72,7 +72,7 @@ defmodule VmemoWeb.Router do
       oban_dashboard("/oban")
 
       live_session :dev_ui,
-        on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do
+        on_mount: [{VmemoWeb.UserAuth, :mount_current_user}] do
         live "/ui", Live.UiPlayground
       end
     end
@@ -85,30 +85,30 @@ defmodule VmemoWeb.Router do
 
     # 注册和登录页面允许已登录用户访问（会显示提示信息）
     live_session :auth_pages,
-      on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do
+      on_mount: [{VmemoWeb.UserAuth, :mount_current_user}] do
       live "/register", UserRegistrationLive, :new
       live "/login", UserSessionLive, :new
     end
 
-    post "/login", AshUserSessionController, :create
+    post "/login", UserSessionController, :create
   end
 
   scope "/", VmemoWeb do
-    pipe_through [:browser, :redirect_if_ash_user_is_authenticated]
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     # 密码重置页面不允许已登录用户访问
-    live_session :redirect_if_ash_user_is_authenticated,
-      on_mount: [{VmemoWeb.AshUserAuth, :redirect_if_ash_user_is_authenticated}] do
+    live_session :redirect_if_user_is_authenticated,
+      on_mount: [{VmemoWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/reset-password", UserForgotPasswordLive, :new
       live "/reset-password/:token", UserResetPasswordLive, :edit
     end
   end
 
   scope "/", VmemoWeb do
-    pipe_through [:browser, :require_authenticated_ash_user]
+    pipe_through [:browser, :require_authenticated_user]
 
-    live_session :require_authenticated_ash_user,
-      on_mount: [{VmemoWeb.AshUserAuth, :ensure_authenticated_ash_user}] do
+    live_session :require_authenticated_user,
+      on_mount: [{VmemoWeb.UserAuth, :ensure_authenticated_user}] do
       live "/home", HomePageLive, :index
       live "/photos", PhotosIndexLive, :index
       live "/photos/upload", PhotoUploadLive
@@ -130,17 +130,17 @@ defmodule VmemoWeb.Router do
     end
 
     get "/settings/export", UserDataController, :export
-    post "/users/update-password", AshUserSettingsController, :update
+    post "/users/update-password", UserSettingsController, :update
   end
 
   scope "/", VmemoWeb do
     pipe_through [:browser]
 
-    delete "/users/logout", AshUserSessionController, :delete
-    get "/users/confirm-login/:token", AshUserConfirmationController, :confirm
+    delete "/users/logout", UserSessionController, :delete
+    get "/users/confirm-login/:token", UserConfirmationController, :confirm
 
-    live_session :current_ash_user,
-      on_mount: [{VmemoWeb.AshUserAuth, :mount_current_ash_user}] do
+    live_session :current_user,
+      on_mount: [{VmemoWeb.UserAuth, :mount_current_user}] do
       live "/users/confirm/:token", UserConfirmationLive, :edit
       live "/users/confirm", UserConfirmationInstructionsLive, :new
     end

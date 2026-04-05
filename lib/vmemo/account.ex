@@ -3,136 +3,136 @@ defmodule Vmemo.Account do
   The Account context.
   """
 
-  alias Vmemo.Account.AshUser
+  alias Vmemo.Account.User
 
   @doc """
-  Returns the list of ash_users.
+  Returns the list of users.
 
   ## Examples
 
-      iex> list_ash_users()
-      [%AshUser{}, ...]
+      iex> list_users()
+      [%User{}, ...]
 
   """
-  def list_ash_users do
-    Ash.read!(AshUser)
+  def list_users do
+    Ash.read!(User)
   end
 
   @doc """
-  Gets a single ash_user.
+  Gets a single user.
 
-  Raises `Ecto.NoResultsError` if the AshUser does not exist.
+  Raises `Ecto.NoResultsError` if the User does not exist.
 
   ## Examples
 
-      iex> get_ash_user!(123)
-      %AshUser{}
+      iex> get_user!(123)
+      %User{}
 
-      iex> get_ash_user!(456)
+      iex> get_user!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_ash_user!(id), do: Ash.get!(AshUser, id)
+  def get_user!(id), do: Ash.get!(User, id)
 
   @doc """
-  Gets a single ash_user by email.
+  Gets a single user by email.
 
   ## Examples
 
-      iex> get_ash_user_by_email("user@example.com")
-      %AshUser{}
+      iex> get_user_by_email("user@example.com")
+      %User{}
 
-      iex> get_ash_user_by_email("nonexistent@example.com")
+      iex> get_user_by_email("nonexistent@example.com")
       nil
 
   """
-  def get_ash_user_by_email(email) do
+  def get_user_by_email(email) do
     require Ash.Query
 
-    case AshUser
+    case User
          |> Ash.Query.filter(email == ^email)
          |> Ash.read_one() do
-      {:ok, ash_user} -> ash_user
+      {:ok, user} -> user
       {:error, _} -> nil
     end
   end
 
   @doc """
-  Creates an ash_user.
+  Creates an user.
 
   ## Examples
 
-      iex> create_ash_user(%{field: value})
-      {:ok, %AshUser{}}
+      iex> create_user(%{field: value})
+      {:ok, %User{}}
 
-      iex> create_ash_user(%{field: bad_value})
+      iex> create_user(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_ash_user(attrs \\ %{}) do
-    AshUser
+  def create_user(attrs \\ %{}) do
+    User
     |> Ash.Changeset.for_create(:register, attrs)
     |> Ash.create()
   end
 
   @doc """
-  Updates an ash_user.
+  Updates an user.
 
   ## Examples
 
-      iex> update_ash_user(ash_user, %{field: new_value})
-      {:ok, %AshUser{}}
+      iex> update_user(user, %{field: new_value})
+      {:ok, %User{}}
 
-      iex> update_ash_user(ash_user, %{field: bad_value})
+      iex> update_user(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_ash_user(%AshUser{} = ash_user, attrs) do
-    ash_user
+  def update_user(%User{} = user, attrs) do
+    user
     |> Ash.Changeset.for_update(:update_profile, attrs)
     |> Ash.update()
   end
 
   @doc """
-  Deletes an ash_user.
+  Deletes an user.
 
   ## Examples
 
-      iex> delete_ash_user(ash_user)
-      {:ok, %AshUser{}}
+      iex> delete_user(user)
+      {:ok, %User{}}
 
-      iex> delete_ash_user(ash_user)
+      iex> delete_user(user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_ash_user(%AshUser{} = ash_user) do
-    Ash.destroy(ash_user)
+  def delete_user(%User{} = user) do
+    Ash.destroy(user)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking ash_user changes.
+  Returns an `%Ecto.Changeset{}` for tracking user changes.
 
   ## Examples
 
-      iex> change_ash_user(ash_user)
-      %Ecto.Changeset{data: %AshUser{}}
+      iex> change_user(user)
+      %Ecto.Changeset{data: %User{}}
 
   """
-  def change_ash_user(%AshUser{} = ash_user, attrs \\ %{}) do
-    Ash.Changeset.for_update(ash_user, :update_profile, attrs)
+  def change_user(%User{} = user, attrs \\ %{}) do
+    Ash.Changeset.for_update(user, :update_profile, attrs)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for changing the ash_user email.
+  Returns an `%Ecto.Changeset{}` for changing the user email.
 
   ## Examples
 
-      iex> change_ash_user_email(ash_user)
-      %Ecto.Changeset{data: %AshUser{}}
+      iex> change_user_email(user)
+      %Ecto.Changeset{data: %User{}}
 
   """
-  def change_ash_user_email(ash_user, attrs \\ %{}) do
-    Ash.Changeset.for_update(ash_user, :update_profile, attrs)
+  def change_user_email(user, attrs \\ %{}) do
+    Ash.Changeset.for_update(user, :update_profile, attrs)
   end
 
   @doc """
@@ -141,16 +141,16 @@ defmodule Vmemo.Account do
 
   ## Examples
 
-      iex> apply_ash_user_email(ash_user, "valid password", %{email: ...})
-      {:ok, %AshUser{}}
+      iex> apply_user_email(user, "valid password", %{email: ...})
+      {:ok, %User{}}
 
-      iex> apply_ash_user_email(ash_user, "invalid password", %{email: ...})
+      iex> apply_user_email(user, "invalid password", %{email: ...})
       {:error, %Ecto.Changeset{}}
 
   """
-  def apply_ash_user_email(ash_user, password, attrs) do
+  def apply_user_email(user, password, attrs) do
     # First validate the email using Ash changeset
-    changeset = Ash.Changeset.for_update(ash_user, :update_profile, attrs)
+    changeset = Ash.Changeset.for_update(user, :update_profile, attrs)
 
     # Collect validation errors
     validation_errors =
@@ -168,18 +168,18 @@ defmodule Vmemo.Account do
     new_email = Map.get(attrs, "email") || Map.get(attrs, :email)
 
     email_change_errors =
-      if new_email == ash_user.email do
+      if new_email == user.email do
         [email: {"did not change", []}]
       else
         []
       end
 
     # Verify current password
-    strategy = AshAuthentication.Info.strategy!(AshUser, :password)
+    strategy = AshAuthentication.Info.strategy!(User, :password)
 
     password_errors =
       case AshAuthentication.Strategy.action(strategy, :sign_in, %{
-             "email" => ash_user.email,
+             "email" => user.email,
              "password" => password
            }) do
         {:ok, _user} ->
@@ -193,26 +193,26 @@ defmodule Vmemo.Account do
     all_errors = validation_errors ++ email_change_errors ++ password_errors
 
     if Enum.empty?(all_errors) do
-      {:ok, Map.merge(ash_user, attrs)}
+      {:ok, Map.merge(user, attrs)}
     else
       {:error, %{errors: all_errors}}
     end
   end
 
   @doc """
-  Updates the ash_user email using the given token.
+  Updates the user email using the given token.
 
-  If the token matches, the ash_user email is updated and the token is deleted.
+  If the token matches, the user email is updated and the token is deleted.
   The confirmation success response is returned, otherwise the error is returned.
   """
-  def update_ash_user_email(ash_user, token) do
+  def update_user_email(user, token) do
     # Verify the token and extract the payload
     case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_email", token, max_age: 86400) do
       {:ok, %{user_id: user_id, current_email: current_email, new_email: new_email}} ->
         # Verify the token is for this user and the current email matches
-        if ash_user.id == user_id and ash_user.email == current_email do
+        if user.id == user_id and user.email == current_email do
           # Update the email to the new email
-          case update_ash_user(ash_user, %{email: new_email}) do
+          case update_user(user, %{email: new_email}) do
             {:ok, updated_user} ->
               {:ok, updated_user}
 
@@ -230,50 +230,50 @@ defmodule Vmemo.Account do
   end
 
   @doc """
-  Delivers the confirmation email instructions to the given ash_user.
+  Delivers the confirmation email instructions to the given user.
 
   ## Examples
 
-      iex> deliver_ash_user_confirmation_instructions(ash_user, fn _ -> "url" end)
+      iex> deliver_user_confirmation_instructions(user, fn _ -> "url" end)
       {:ok, %{to: ..., body: ...}}
 
-      iex> deliver_ash_user_confirmation_instructions(confirmed_ash_user, fn _ -> "url" end)
+      iex> deliver_user_confirmation_instructions(confirmed_user, fn _ -> "url" end)
       {:error, :already_confirmed}
 
   """
-  def deliver_ash_user_confirmation_instructions(%AshUser{} = ash_user, confirmation_url_fun)
+  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
-    if ash_user.confirmed_at do
+    if user.confirmed_at do
       {:error, :already_confirmed}
     else
       # Generate a signed token containing user_id for confirmation
       token =
         Phoenix.Token.sign(VmemoWeb.Endpoint, "user_confirmation", %{
-          user_id: ash_user.id
+          user_id: user.id
         })
 
       confirmation_url = confirmation_url_fun.(token)
 
       # 使用 UserNotifier 实际发送邮件
-      Vmemo.Account.UserNotifier.deliver_confirmation_instructions(ash_user, confirmation_url)
+      Vmemo.Account.UserNotifier.deliver_confirmation_instructions(user, confirmation_url)
     end
   end
 
   @doc """
-  Confirms the ash_user by setting `confirmed_at` to the current time.
+  Confirms the user by setting `confirmed_at` to the current time.
   """
-  def confirm_ash_user(token) do
+  def confirm_user(token) do
     # Verify the token and extract the payload
     case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86400) do
       {:ok, %{user_id: user_id}} ->
-        case Ash.get(AshUser, user_id) do
-          {:ok, ash_user} ->
+        case Ash.get(User, user_id) do
+          {:ok, user} ->
             # Check if user is already confirmed
-            if ash_user.confirmed_at do
+            if user.confirmed_at do
               {:error, :already_confirmed}
             else
               # 更新 confirmed_at
-              case update_ash_user(ash_user, %{confirmed_at: DateTime.utc_now()}) do
+              case update_user(user, %{confirmed_at: DateTime.utc_now()}) do
                 {:ok, updated_user} ->
                   {:ok, updated_user}
 
@@ -291,10 +291,10 @@ defmodule Vmemo.Account do
     end
   end
 
-  def ash_user_from_confirmation_token(token) do
+  def user_from_confirmation_token(token) do
     case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86400) do
       {:ok, %{user_id: user_id}} ->
-        Ash.get(AshUser, user_id)
+        Ash.get(User, user_id)
 
       _ ->
         {:error, :invalid_token}
@@ -302,57 +302,57 @@ defmodule Vmemo.Account do
   end
 
   @doc """
-  Delivers the reset password email to the given ash_user.
+  Delivers the reset password email to the given user.
 
   ## Examples
 
-      iex> deliver_ash_user_reset_password_instructions(ash_user, fn _ -> "url" end)
+      iex> deliver_user_reset_password_instructions(user, fn _ -> "url" end)
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_ash_user_reset_password_instructions(%AshUser{} = ash_user, reset_password_url_fun)
+  def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    case AshAuthentication.Jwt.token_for_user(ash_user) do
+    case AshAuthentication.Jwt.token_for_user(user) do
       {:ok, token, _claims} ->
-        store_reset_password_token(ash_user, token)
+        store_reset_password_token(user, token)
         reset_url = reset_password_url_fun.(token)
-        Vmemo.Account.UserNotifier.deliver_reset_password_instructions(ash_user, reset_url)
+        Vmemo.Account.UserNotifier.deliver_reset_password_instructions(user, reset_url)
 
       _ ->
         {:error, :token_generation_failed}
     end
   end
 
-  defp store_reset_password_token(ash_user, token) do
+  defp store_reset_password_token(user, token) do
     context_patch = %{
       private: %{ash_authentication?: true}
     }
 
     with :ok <-
            AshAuthentication.TokenResource.Actions.store_token(
-             Vmemo.Account.AshUserToken,
+             Vmemo.Account.UserToken,
              %{"token" => token, "purpose" => "reset_password"},
              context: context_patch
            ),
          {:ok, %{"jti" => jti}} <- AshAuthentication.Jwt.peek(token),
-         {:ok, token_record} <- Ash.get(Vmemo.Account.AshUserToken, jti) do
-      Ash.update(token_record, %{ash_user_id: ash_user.id}, action: :update_user_id)
+         {:ok, token_record} <- Ash.get(Vmemo.Account.UserToken, jti) do
+      Ash.update(token_record, %{user_id: user.id}, action: :update_user_id)
     end
   end
 
   @doc """
-  Gets the ash_user by reset password token.
+  Gets the user by reset password token.
 
   ## Examples
 
-      iex> get_ash_user_by_reset_password_token("validtoken")
-      %AshUser{}
+      iex> get_user_by_reset_password_token("validtoken")
+      %User{}
 
-      iex> get_ash_user_by_reset_password_token("invalidtoken")
+      iex> get_user_by_reset_password_token("invalidtoken")
       nil
 
   """
-  def get_ash_user_by_reset_password_token(token) do
+  def get_user_by_reset_password_token(token) do
     case verify_reset_password_token(token) do
       {:ok, user} -> user
       {:error, _} -> nil
@@ -365,7 +365,7 @@ defmodule Vmemo.Account do
   ## Examples
 
       iex> verify_reset_password_token("validtoken")
-      {:ok, %AshUser{}}
+      {:ok, %User{}}
 
       iex> verify_reset_password_token("invalidtoken")
       {:error, :invalid_token}
@@ -376,7 +376,7 @@ defmodule Vmemo.Account do
   """
   def verify_reset_password_token(token) do
     # Step 1: Verify JWT token signature
-    case AshAuthentication.Jwt.verify(token, AshUser) do
+    case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
         # Step 2: Check if token exists in database (not revoked)
         jti = Map.get(claims, "jti")
@@ -384,7 +384,7 @@ defmodule Vmemo.Account do
         if is_nil(jti) do
           {:error, :invalid_token}
         else
-          case Ash.get(Vmemo.Account.AshUserToken, jti) do
+          case Ash.get(Vmemo.Account.UserToken, jti) do
             {:ok, _token_record} ->
               # Step 3: Check if token is expired
               exp = Map.get(claims, "exp")
@@ -402,9 +402,9 @@ defmodule Vmemo.Account do
                     nil ->
                       {:error, :invalid_token}
 
-                    "ash_user?id=" <> user_id ->
-                      case Ash.get(AshUser, user_id) do
-                        {:ok, ash_user} -> {:ok, ash_user}
+                    "user?id=" <> user_id ->
+                      case Ash.get(User, user_id) do
+                        {:ok, user} -> {:ok, user}
                         _ -> {:error, :user_not_found}
                       end
 
@@ -429,42 +429,42 @@ defmodule Vmemo.Account do
   end
 
   @doc """
-  Resets the ash_user password.
+  Resets the user password.
 
   ## Examples
 
-      iex> reset_ash_user_password(ash_user, %{password: "new long password"})
-      {:ok, %AshUser{}}
+      iex> reset_user_password(user, %{password: "new long password"})
+      {:ok, %User{}}
 
-      iex> reset_ash_user_password(ash_user, %{password: "not valid"})
+      iex> reset_user_password(user, %{password: "not valid"})
       {:error, %Ecto.Changeset{}}
 
   """
-  def reset_ash_user_password(ash_user, attrs) do
-    ash_user
+  def reset_user_password(user, attrs) do
+    user
     |> Ash.Changeset.for_update(:reset_password, attrs)
     |> Ash.update()
   end
 
   @doc """
-  Updates the ash_user password.
+  Updates the user password.
 
   ## Examples
 
-      iex> update_ash_user_password(ash_user, "valid password", %{password: "new long password"})
-      {:ok, %AshUser{}}
+      iex> update_user_password(user, "valid password", %{password: "new long password"})
+      {:ok, %User{}}
 
-      iex> update_ash_user_password(ash_user, "invalid password", %{password: "new long password"})
+      iex> update_user_password(user, "invalid password", %{password: "new long password"})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_ash_user_password(ash_user, password, attrs) do
+  def update_user_password(user, password, attrs) do
     # Filter out email from attrs since change_password action doesn't accept it
     password_attrs =
       Map.take(attrs, ["password", "password_confirmation", :password, :password_confirmation])
 
     # First validate the password using Ash changeset
-    changeset = Ash.Changeset.for_update(ash_user, :change_password, password_attrs)
+    changeset = Ash.Changeset.for_update(user, :change_password, password_attrs)
 
     # Collect validation errors
     validation_errors =
@@ -479,11 +479,11 @@ defmodule Vmemo.Account do
       end
 
     # Verify current password
-    strategy = AshAuthentication.Info.strategy!(AshUser, :password)
+    strategy = AshAuthentication.Info.strategy!(User, :password)
 
     password_errors =
       case AshAuthentication.Strategy.action(strategy, :sign_in, %{
-             "email" => ash_user.email,
+             "email" => user.email,
              "password" => password
            }) do
         {:ok, _user} ->
@@ -498,62 +498,62 @@ defmodule Vmemo.Account do
 
     if Enum.empty?(all_errors) do
       # All validations passed, update password
-      reset_ash_user_password(ash_user, password_attrs)
+      reset_user_password(user, password_attrs)
     else
       {:error, %{errors: all_errors}}
     end
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for changing the ash_user password.
+  Returns an `%Ecto.Changeset{}` for changing the user password.
 
   ## Examples
 
-      iex> change_ash_user_password(ash_user)
-      %Ecto.Changeset{data: %AshUser{}}
+      iex> change_user_password(user)
+      %Ecto.Changeset{data: %User{}}
 
   """
-  def change_ash_user_password(ash_user, attrs \\ %{}) do
-    Ash.Changeset.for_update(ash_user, :change_password, attrs)
+  def change_user_password(user, attrs \\ %{}) do
+    Ash.Changeset.for_update(user, :change_password, attrs)
   end
 
   @doc """
-  Gets a single ash_user by email and password.
+  Gets a single user by email and password.
 
   ## Examples
 
-      iex> get_ash_user_by_email_and_password("user@example.com", "valid password")
-      %AshUser{}
+      iex> get_user_by_email_and_password("user@example.com", "valid password")
+      %User{}
 
-      iex> get_ash_user_by_email_and_password("user@example.com", "invalid password")
+      iex> get_user_by_email_and_password("user@example.com", "invalid password")
       nil
 
   """
-  def get_ash_user_by_email_and_password(email, password) do
+  def get_user_by_email_and_password(email, password) do
     # 使用 Ash Authentication 验证密码
-    strategy = AshAuthentication.Info.strategy!(AshUser, :password)
+    strategy = AshAuthentication.Info.strategy!(User, :password)
 
     case AshAuthentication.Strategy.action(strategy, :sign_in, %{
            "email" => email,
            "password" => password
          }) do
-      {:ok, ash_user} -> ash_user
+      {:ok, user} -> user
       {:error, _reason} -> nil
     end
   end
 
   @doc """
-  Generates a session token for the given ash_user.
+  Generates a session token for the given user.
 
   ## Examples
 
-      iex> generate_user_session_token(ash_user)
+      iex> generate_user_session_token(user)
       "token"
 
   """
-  def generate_user_session_token(%AshUser{} = ash_user) do
+  def generate_user_session_token(%User{} = user) do
     # 使用 Ash Authentication JWT 生成 session token
-    case AshAuthentication.Jwt.token_for_user(ash_user) do
+    case AshAuthentication.Jwt.token_for_user(user) do
       {:ok, token, _claims} ->
         token
 
@@ -567,28 +567,28 @@ defmodule Vmemo.Account do
   end
 
   @doc """
-  Gets the ash_user with the corresponding session token.
+  Gets the user with the corresponding session token.
 
   ## Examples
 
       iex> get_user_by_session_token("token")
-      %AshUser{}
+      %User{}
 
       iex> get_user_by_session_token("invalid")
       nil
 
   """
   def get_user_by_session_token(token) do
-    case AshAuthentication.Jwt.verify(token, AshUser) do
+    case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
         # 从 claims 中获取用户 ID
         case Map.get(claims, "sub") do
           nil ->
             nil
 
-          "ash_user?id=" <> user_id ->
-            case Ash.get(AshUser, user_id) do
-              {:ok, ash_user} -> ash_user
+          "user?id=" <> user_id ->
+            case Ash.get(User, user_id) do
+              {:ok, user} -> user
               _ -> nil
             end
 
@@ -602,7 +602,7 @@ defmodule Vmemo.Account do
   end
 
   @doc """
-  Deletes the session token for the given ash_user.
+  Deletes the session token for the given user.
 
   ## Examples
 
@@ -613,41 +613,41 @@ defmodule Vmemo.Account do
   def delete_user_session_token(token) do
     # Ash Authentication 的 token 是自包含的，不需要显式删除
     # 但我们可以验证 token 是否有效
-    case AshAuthentication.Jwt.verify(token, AshUser) do
+    case AshAuthentication.Jwt.verify(token, User) do
       {:ok, _claims, _resource} -> :ok
       _ -> :ok
     end
   end
 
   @doc """
-  Registers a new ash_user.
+  Registers a new user.
 
   ## Examples
 
       iex> register_user(%{email: "user@example.com", password: "password"})
-      {:ok, %AshUser{}}
+      {:ok, %User{}}
 
       iex> register_user(%{email: "invalid"})
       {:error, %Ecto.Changeset{}}
 
   """
   def register_user(attrs \\ %{}) do
-    AshUser
+    User
     |> Ash.Changeset.for_create(:register, attrs)
     |> Ash.create()
   end
 
   @doc """
-  Delivers the update email instructions to the given AshUser.
+  Delivers the update email instructions to the given User.
 
   ## Examples
 
-      iex> deliver_ash_user_update_email_instructions(ash_user, current_email, fn _ -> "url" end)
+      iex> deliver_user_update_email_instructions(user, current_email, fn _ -> "url" end)
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_ash_user_update_email_instructions(
-        %AshUser{} = ash_user,
+  def deliver_user_update_email_instructions(
+        %User{} = user,
         current_email,
         update_email_url_fun
       )
@@ -656,14 +656,14 @@ defmodule Vmemo.Account do
     # This ensures the token can only be used once and for the correct email change
     token =
       Phoenix.Token.sign(VmemoWeb.Endpoint, "user_email", %{
-        user_id: ash_user.id,
+        user_id: user.id,
         current_email: current_email,
-        new_email: ash_user.email
+        new_email: user.email
       })
 
     update_url = update_email_url_fun.(token)
 
     # 使用 UserNotifier 实际发送邮件
-    Vmemo.Account.UserNotifier.deliver_update_email_instructions(ash_user, update_url)
+    Vmemo.Account.UserNotifier.deliver_update_email_instructions(user, update_url)
   end
 end

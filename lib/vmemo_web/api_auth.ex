@@ -28,7 +28,7 @@ defmodule VmemoWeb.ApiAuth do
         # 将用户信息添加到连接中
         conn
         |> assign(:current_api_token, api_token)
-        |> assign(:current_ash_user, api_token.ash_user)
+        |> assign(:current_user, api_token.user)
 
       {:error, reason} ->
         Logger.warning("API token verification failed: #{reason}")

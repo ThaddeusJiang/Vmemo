@@ -20,7 +20,7 @@ defmodule VmemoWeb.UserConfirmationLiveTest do
     test "confirms the given token once", %{conn: conn, user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_ash_user_confirmation_instructions(user, url)
+          Account.deliver_user_confirmation_instructions(user, url)
         end)
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
@@ -45,7 +45,7 @@ defmodule VmemoWeb.UserConfirmationLiveTest do
       flash_info = Phoenix.Flash.get(conn.assigns.flash, :info)
       assert flash_info == nil or flash_info =~ "Welcome back!"
 
-      assert Account.get_ash_user!(user.id).confirmed_at
+      assert Account.get_user!(user.id).confirmed_at
       assert get_session(conn, :user_token)
       # Token verification removed - Ash uses JWT tokens instead of UserToken records
       # assert Repo.all(Account.UserToken) == []
@@ -114,7 +114,7 @@ defmodule VmemoWeb.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                "User confirmation link is invalid or it has expired"
 
-      refute Account.get_ash_user!(user.id).confirmed_at
+      refute Account.get_user!(user.id).confirmed_at
     end
   end
 end

@@ -168,7 +168,9 @@ defmodule VmemoWeb.AdminImportLive do
 
               <%= if is_list(errors) and errors != [] do %>
                 <div class="border border-base-300 rounded-md p-2 text-sm">
-                  <p class="font-medium">Errors (showing {min(length(errors), 10)} of {error_count})</p>
+                  <p class="font-medium">
+                    Errors (showing {min(length(errors), 10)} of {error_count})
+                  </p>
                   <ul class="space-y-1">
                     <li :for={error <- Enum.take(errors, 10)} class="text-error">
                       {error}
@@ -227,29 +229,13 @@ defmodule VmemoWeb.AdminImportLive do
 
         case uploaded do
           [%{path: zip_path, filename: filename}] ->
-            case ImportRequest.create(%{source_filename: filename}, actor: nil) do
+            case ImportRequest.create_with_zip(
+                   %{source_filename: filename, zip_path: zip_path},
+                   actor: nil
+                 ) do
               {:ok, request} ->
                 Phoenix.PubSub.subscribe(Vmemo.PubSub, "admin_import_request:#{request.id}")
-
-                job =
-                  %{request_id: request.id, zip_path: zip_path}
-                  |> Vmemo.Workers.ProcessImportRequest.new()
-
-                case Oban.insert(job) do
-                  {:ok, _job} ->
-                    {:noreply,
-                     socket
-                     |> assign(is_submitting: false)
-                     |> assign(request: request)}
-
-                  {:error, error} ->
-                    {:noreply,
-                     socket
-                     |> assign(is_submitting: false)
-                     |> assign(
-                       submit_error: "Failed to enqueue import job: #{format_error(error)}"
-                     )}
-                end
+                {:noreply, socket |> assign(is_submitting: false) |> assign(request: request)}
 
               {:error, error} ->
                 {:noreply,

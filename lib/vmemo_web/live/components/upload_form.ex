@@ -267,12 +267,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         socket
       ) do
     current_user =
-      Map.get(socket.assigns, :current_ash_user) || Map.get(socket.assigns, :current_user)
+      Map.get(socket.assigns, :current_user) || Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket |> put_flash(:error, "User not found")}
     else
-      ash_user_id = current_user.id
+      user_id = current_user.id
 
       note =
         case is_whole do
@@ -280,7 +280,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             case Note.create_with_sync(
                    %{
                      text: note_text,
-                     ash_user_id: ash_user_id
+                     user_id: user_id
                    },
                    actor: current_user
                  ) do
@@ -299,14 +299,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               consume_uploaded_entry(socket, entry, fn %{path: path} ->
                 filename = entry.uuid <> Path.extname(entry.client_name)
 
-                {:ok, dest} = PhotoService.cp_file(path, ash_user_id, filename)
+                {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
 
                 case Photo.create_with_sync(
                        %{
                          note: note_text,
                          url: Path.join("/", dest),
                          file_id: filename,
-                         ash_user_id: ash_user_id
+                         user_id: user_id
                        },
                        actor: current_user
                      ) do
@@ -316,14 +316,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               end)
             end
 
-          # Handle results: can be {:ok, {:ok, photo}}, {:ok, {:error, reason}}, or {:error, reason}
-          results =
-            results
-            |> Enum.map(fn
-              {:ok, r} -> r
-              {:error, reason} -> {:error, reason}
-              other -> {:error, inspect(other)}
-            end)
+          results = Enum.map(results, &normalize_upload_result/1)
 
           case Enum.find(results, fn result -> match?({:error, _}, result) end) do
             {:error, %Ash.Error.Unknown{} = ash_error} ->
@@ -353,19 +346,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             nil ->
               photos =
                 results
-                |> Enum.filter(fn result -> match?({:ok, _}, result) end)
+                |> Enum.filter(&match?({:ok, _}, &1))
                 |> Enum.map(fn {:ok, photo} -> photo end)
 
               case maybe_link_note_to_photos(note, photos, current_user) do
                 :ok ->
-                  # 通知父组件上传成功，传递图片列表
-                  if socket.parent_pid do
-                    send(socket.parent_pid, {:upload_success, photos})
-                  end
+                  send(self(), {:upload_success, photos})
 
-                  {:noreply,
-                   socket
-                   |> put_flash(:info, "Photos uploaded successfully")}
+                  {:noreply, socket}
 
                 {:error, _reason} ->
                   {:noreply,
@@ -384,6 +372,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   end
 
   defp maybe_focus_note_field(socket, false), do: socket
+
+  defp normalize_upload_result({:ok, %Photo{} = photo}), do: {:ok, photo}
+  defp normalize_upload_result({:error, _reason} = error), do: error
+  defp normalize_upload_result(%Photo{} = photo), do: {:ok, photo}
+  defp normalize_upload_result(other), do: {:error, inspect(other)}
 
   defp maybe_link_note_to_photos(nil, _photos, _current_user), do: :ok
 
