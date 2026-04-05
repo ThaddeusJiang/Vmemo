@@ -20,6 +20,7 @@ defmodule Vmemo.Photos.Note do
       trigger :sync_typesense do
         action :sync_typesense
         queue :sync_typesense
+        lock_for_update? false
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Photos.Note.Workers.SyncTypesense
@@ -58,21 +59,7 @@ defmodule Vmemo.Photos.Note do
       accept []
       require_atomic? false
       transaction? false
-
-      change fn changeset, _context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
-          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
-            {:ok, true} ->
-              {:ok, record}
-
-            {:ok, false} ->
-              {:error, :sync_failed}
-
-            {:error, reason} ->
-              {:error, reason}
-          end
-        end)
-      end
+      change Vmemo.Photos.Note.Changes.SyncTypesense
     end
 
     action :sync_typesense_by_id, :boolean do

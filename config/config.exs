@@ -7,7 +7,14 @@
 # General application configuration
 import Config
 
-config :vmemo, Oban, queues: [chat_responses: [limit: 10], conversations: [limit: 10]]
+config :vmemo, Oban,
+  queues: [
+    chat_responses: [limit: 10],
+    conversations: [limit: 10],
+    sync_typesense: [limit: 10],
+    ai_vision: [limit: 10],
+    import_requests: [limit: 10]
+  ]
 
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,

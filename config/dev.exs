@@ -25,7 +25,13 @@ config :vmemo, Oban,
   repo: Vmemo.Repo,
   notifier: Oban.Notifiers.PG,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10, sync_typesense: 5]
+  queues: [
+    chat_responses: 10,
+    conversations: 10,
+    sync_typesense: 10,
+    ai_vision: 10,
+    import_requests: 10
+  ]
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

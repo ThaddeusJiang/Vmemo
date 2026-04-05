@@ -34,7 +34,7 @@ defmodule Vmemo.Ai.VisionRequest do
     triggers do
       trigger :process do
         action :process
-        queue :default
+        queue :ai_vision
         scheduler_cron false
         where expr(status == "pending")
         worker_module_name Vmemo.Ai.VisionRequest.Workers.Process
