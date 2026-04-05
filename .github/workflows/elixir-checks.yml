@@ -4,7 +4,39 @@ on:
   pull_request:
 
 jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      matrix:
+        otp: ["28"]
+        elixir: ["1.19.5"]
+    name: Static Checks / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Static checks
+        run: |
+          mix format --check-formatted
+          mix compile --warnings-as-errors
+          mix xref graph --format cycles --label compile-connected --fail-above 0
+
+      - name: Static checks (report only)
+        continue-on-error: true
+        run: |
+          mix credo --strict
+          mix sobelow --config
+
   test:
+    needs: static-checks
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
@@ -30,7 +62,7 @@ jobs:
       matrix:
         otp: ["28"]
         elixir: ["1.19.5"]
-    name: Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+    name: Tests / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: erlef/setup-beam@v1.23.0
@@ -42,7 +74,7 @@ jobs:
         run: mix deps.get
 
       - name: Compile
-        run: mix compile
+        run: mix compile --warnings-as-errors
 
       - name: Wait for Postgres
         run: |
@@ -54,11 +86,5 @@ jobs:
       - name: Reset Typesense
         run: mix ts.reset
 
-      - name: Static checks (report only)
-        continue-on-error: true
-        run: |
-          mix format --check-formatted
-          mix compile --force
-
       - name: Run tests
-        run: mix test
+        run: mix test --warnings-as-errors

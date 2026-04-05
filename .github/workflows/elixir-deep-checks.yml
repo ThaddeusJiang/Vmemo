@@ -1,0 +1,50 @@
+name: Elixir Deep Checks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 20 * * 1"
+
+jobs:
+  deep-static-checks:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: dev
+    strategy:
+      matrix:
+        otp: ["28"]
+        elixir: ["1.19.5"]
+    name: Deep Checks / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+
+      - name: Cache PLTs
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build/dev
+            priv/plts
+          key: ${{ runner.os }}-deep-checks-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deep-checks-${{ matrix.elixir }}-${{ matrix.otp }}-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
+      - name: Run Dialyzer
+        run: mix dialyzer --format github
+
+      - name: Dependency security audit
+        run: mix hex.audit
+
+      - name: Check unused deps locks
+        run: mix deps.unlock --check-unused
