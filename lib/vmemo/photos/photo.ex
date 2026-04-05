@@ -34,6 +34,7 @@ defmodule Vmemo.Photos.Photo do
       trigger :sync_typesense do
         action :sync_typesense
         queue :sync_typesense
+        lock_for_update? false
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Photos.Photo.Workers.SyncTypesense
@@ -42,7 +43,7 @@ defmodule Vmemo.Photos.Photo do
 
       trigger :generate_caption do
         action :generate_caption
-        queue :default
+        queue :ai_vision
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Photos.Photo.Workers.GenerateCaption
@@ -102,21 +103,7 @@ defmodule Vmemo.Photos.Photo do
       accept []
       require_atomic? false
       transaction? false
-
-      change fn changeset, _context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, record ->
-          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
-            {:ok, true} ->
-              {:ok, record}
-
-            {:ok, false} ->
-              {:error, :sync_failed}
-
-            {:error, reason} ->
-              {:error, reason}
-          end
-        end)
-      end
+      change Vmemo.Photos.Photo.Changes.SyncTypesense
     end
 
     update :generate_caption do

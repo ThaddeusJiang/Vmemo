@@ -22,7 +22,7 @@ config :vmemo, Vmemo.Repo,
 config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
-config :vmemo, moondream_url: "http://localhost:2020/v1"
+config :vmemo, moondream_url: "http://localhost:2020/v1/"
 
 # Admin token for test
 config :vmemo, admin_token: "admin"

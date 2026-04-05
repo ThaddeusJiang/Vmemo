@@ -138,7 +138,14 @@ if config_env() == :prod do
   config :vmemo, Oban,
     repo: Vmemo.Repo,
     plugins: [Oban.Plugins.Pruner],
-    queues: [default: 10, sync_typesense: 5]
+    queues: [
+      default: 10,
+      chat_responses: 10,
+      conversations: 10,
+      sync_typesense: 10,
+      ai_vision: 10,
+      import_requests: 10
+    ]
 
   config :sentry,
     dsn: sentry_dsn,
