@@ -46,6 +46,9 @@ jobs:
   build:
     runs-on: ${{ matrix.runner }}
     needs: prepare
+    env:
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+      DOCKER_BUILD_SUMMARY: "false"
     strategy:
       fail-fast: false
       matrix:
