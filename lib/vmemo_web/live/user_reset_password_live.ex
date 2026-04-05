@@ -79,49 +79,9 @@ defmodule VmemoWeb.UserResetPasswordLive do
   defp get_error_message(_reason), do: "Reset password link is invalid or it has expired."
 
   def handle_event("reset-password", %{"user" => user_params}, socket) do
-    # 再次验证 token，确保在提交时 token 仍然有效
     case socket.assigns.token do
-      nil ->
-        {:noreply,
-         socket
-         |> assign(:token_error, "Reset password link is missing.")
-         |> assign(:form, to_form(user_params, as: "user"))}
-
-      token ->
-        case Account.verify_reset_password_token(token) do
-          {:ok, user} ->
-            errors = validate_password(user_params)
-
-            if Enum.empty?(errors) do
-              case Account.reset_user_password(user, user_params) do
-                {:ok, _user} ->
-                  # 撤销 token，使其无法再次使用
-                  revoke_reset_password_token(token)
-
-                  {:noreply,
-                   socket
-                   |> put_flash(:info, "Password reset successfully.")
-                   |> redirect(to: ~p"/login")}
-
-                {:error, _changeset} ->
-                  {:noreply,
-                   socket
-                   |> put_flash(:error, "Failed to reset password. Please try again.")
-                   |> redirect(to: ~p"/")}
-              end
-            else
-              form = to_form(user_params, as: "user", errors: errors)
-              {:noreply, assign(socket, form: form)}
-            end
-
-          {:error, reason} ->
-            error_message = get_error_message(reason)
-
-            {:noreply,
-             socket
-             |> assign(:token_error, error_message)
-             |> assign(:form, to_form(user_params, as: "user"))}
-        end
+      nil -> {:noreply, assign_missing_token_error(socket, user_params)}
+      token -> handle_reset_with_token(token, user_params, socket)
     end
   end
 
@@ -151,22 +111,61 @@ defmodule VmemoWeb.UserResetPasswordLive do
 
   defp revoke_reset_password_token(token) do
     case AshAuthentication.Jwt.verify(token, Vmemo.Account.User) do
-      {:ok, claims, _resource} ->
-        # 从 claims 中获取 jti (token ID) 并撤销 token
-        case Map.get(claims, "jti") do
-          nil ->
-            :ok
+      {:ok, claims, _resource} -> claims |> Map.get("jti") |> destroy_user_token_by_jti()
+      _ -> :ok
+    end
+  end
 
-          jti ->
-            # 删除 token 记录
-            case Ash.get(Vmemo.Account.UserToken, jti) do
-              {:ok, token_record} -> Ash.destroy(token_record)
-              _ -> :ok
-            end
-        end
+  defp handle_reset_with_token(token, user_params, socket) do
+    case Account.verify_reset_password_token(token) do
+      {:ok, user} -> maybe_reset_password(user, token, user_params, socket)
+      {:error, reason} -> {:noreply, assign_token_error(socket, user_params, reason)}
+    end
+  end
 
-      _ ->
-        :ok
+  defp maybe_reset_password(user, token, user_params, socket) do
+    case validate_password(user_params) do
+      [] -> do_reset_password(user, token, user_params, socket)
+      errors -> {:noreply, assign(socket, form: to_form(user_params, as: "user", errors: errors))}
+    end
+  end
+
+  defp do_reset_password(user, token, user_params, socket) do
+    case Account.reset_user_password(user, user_params) do
+      {:ok, _user} ->
+        revoke_reset_password_token(token)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Password reset successfully.")
+         |> redirect(to: ~p"/login")}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to reset password. Please try again.")
+         |> assign(:form, to_form(user_params, as: "user"))}
+    end
+  end
+
+  defp assign_missing_token_error(socket, user_params) do
+    socket
+    |> assign(:token_error, "Reset password link is missing.")
+    |> assign(:form, to_form(user_params, as: "user"))
+  end
+
+  defp assign_token_error(socket, user_params, reason) do
+    socket
+    |> assign(:token_error, get_error_message(reason))
+    |> assign(:form, to_form(user_params, as: "user"))
+  end
+
+  defp destroy_user_token_by_jti(nil), do: :ok
+
+  defp destroy_user_token_by_jti(jti) do
+    case Ash.get(Vmemo.Account.UserToken, jti) do
+      {:ok, token_record} -> Ash.destroy(token_record)
+      _ -> :ok
     end
   end
 end

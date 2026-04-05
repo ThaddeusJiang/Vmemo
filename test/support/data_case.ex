@@ -72,9 +72,7 @@ defmodule Vmemo.DataCase do
       # For Ecto-style changesets (if still used)
       %Ecto.Changeset{errors: _errors} ->
         Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
-          Regex.replace(~r"%{(\w+)}", message, fn _, key ->
-            opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-          end)
+          interpolate_error_message(message, opts)
         end)
 
       _ ->
@@ -121,4 +119,13 @@ defmodule Vmemo.DataCase do
   defp normalize_vars(vars) when is_map(vars), do: vars
   defp normalize_vars(vars) when is_list(vars), do: Enum.into(vars, %{})
   defp normalize_vars(_), do: %{}
+
+  defp interpolate_error_message(message, opts) do
+    Regex.replace(~r"%{(\w+)}", message, fn _, key ->
+      key
+      |> String.to_existing_atom()
+      |> then(&Keyword.get(opts, &1, key))
+      |> to_string()
+    end)
+  end
 end

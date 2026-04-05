@@ -22,63 +22,11 @@ defmodule VmemoWeb.PhotoIdLive do
   defp mount_photo(id, socket) do
     user = socket.assigns.current_user
 
-    case Photo.get_with_notes(id, user.id, actor: user) do
-      {:ok, photo} ->
-        notes = photo.notes || []
-
-        case Photo.list_similar(photo.id, user.id, actor: user) do
-          {:ok, photos} ->
-            vision_requests =
-              case VisionRequest.list_by_photo(photo.id, actor: user) do
-                {:ok, requests} -> requests
-                _ -> []
-              end
-
-            moondream_requests = vision_requests
-            caption_requests = caption_requests_from(vision_requests)
-
-            latest_caption_request =
-              caption_requests
-              |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
-              |> List.first()
-
-            socket =
-              socket
-              |> assign(photo: photo)
-              |> assign(notes: notes)
-              |> assign(show_expanded: false)
-              |> assign(photos: photos)
-              |> assign(moondream_requests: moondream_requests)
-              |> assign(moondream_loading_requests: MapSet.new())
-              |> assign(caption_requests: caption_requests)
-              |> assign(caption_loading_requests: MapSet.new())
-              |> assign(latest_caption_request: latest_caption_request)
-              |> assign_new(:form, fn ->
-                to_form(%{
-                  "note" => photo.note,
-                  "caption" => photo.caption
-                })
-              end)
-
-            # Subscribe to PubSub
-            if connected?(socket) do
-              Phoenix.PubSub.subscribe(Vmemo.PubSub, "vision_request:#{photo.id}")
-            end
-
-            {:ok, socket}
-
-          _ ->
-            {:ok,
-             socket
-             |> assign(photo: nil)
-             |> assign(notes: [])}
-        end
-
-      _ ->
-        {:ok,
-         socket
-         |> assign(photo: nil)
-         |> assign(notes: [])}
+    with {:ok, photo} <- Photo.get_with_notes(id, user.id, actor: user),
+         {:ok, photos} <- Photo.list_similar(photo.id, user.id, actor: user) do
+      {:ok, assign_loaded_photo(socket, user, photo, photos)}
+    else
+      _ -> {:ok, assign_photo_not_found(socket)}
     end
   end
 
@@ -163,41 +111,22 @@ defmodule VmemoWeb.PhotoIdLive do
   def handle_event("retry-caption-request", %{"request_id" => request_id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(VisionRequest, request_id, actor: user) do
-      {:ok, request} ->
-        if request.status == "failed" do
-          case VisionRequest.retry(request, %{}, actor: user) do
-            {:ok, updated_request} ->
-              loading_requests =
-                MapSet.put(socket.assigns.caption_loading_requests, updated_request.id)
+    with {:ok, request} <- Ash.get(VisionRequest, request_id, actor: user),
+         true <- request.status == "failed",
+         {:ok, updated_request} <- VisionRequest.retry(request, %{}, actor: user) do
+      updated_requests =
+        reset_caption_request_status(socket.assigns.caption_requests, updated_request.id)
 
-              # Update requests list
-              updated_requests =
-                Enum.map(socket.assigns.caption_requests, fn req ->
-                  if req.id == updated_request.id do
-                    Map.merge(req, %{status: "pending", error_message: nil})
-                  else
-                    req
-                  end
-                end)
+      latest_caption_request = latest_caption_request_from(updated_requests)
+      loading_requests = MapSet.put(socket.assigns.caption_loading_requests, updated_request.id)
 
-              latest_caption_request =
-                updated_requests
-                |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
-                |> List.first()
-
-              {:noreply,
-               socket
-               |> assign(:caption_loading_requests, loading_requests)
-               |> assign(:caption_requests, updated_requests)
-               |> assign(:latest_caption_request, latest_caption_request)}
-          end
-        else
-          {:noreply, socket}
-        end
-
-      {:error, _} ->
-        {:noreply, socket}
+      {:noreply,
+       socket
+       |> assign(:caption_loading_requests, loading_requests)
+       |> assign(:caption_requests, updated_requests)
+       |> assign(:latest_caption_request, latest_caption_request)}
+    else
+      _ -> {:noreply, socket}
     end
   end
 
@@ -564,6 +493,67 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   defp format_error_message(_), do: "Unknown error"
+
+  defp assign_loaded_photo(socket, user, photo, photos) do
+    vision_requests = list_vision_requests(photo.id, user)
+    caption_requests = caption_requests_from(vision_requests)
+    latest_caption_request = latest_caption_request_from(caption_requests)
+
+    socket
+    |> assign(photo: photo)
+    |> assign(notes: photo.notes || [])
+    |> assign(show_expanded: false)
+    |> assign(photos: photos)
+    |> assign(moondream_requests: vision_requests)
+    |> assign(moondream_loading_requests: MapSet.new())
+    |> assign(caption_requests: caption_requests)
+    |> assign(caption_loading_requests: MapSet.new())
+    |> assign(latest_caption_request: latest_caption_request)
+    |> assign_new(:form, fn ->
+      to_form(%{
+        "note" => photo.note,
+        "caption" => photo.caption
+      })
+    end)
+    |> maybe_subscribe_vision_request(photo.id)
+  end
+
+  defp assign_photo_not_found(socket) do
+    socket
+    |> assign(photo: nil)
+    |> assign(notes: [])
+  end
+
+  defp list_vision_requests(photo_id, user) do
+    case VisionRequest.list_by_photo(photo_id, actor: user) do
+      {:ok, requests} -> requests
+      _ -> []
+    end
+  end
+
+  defp maybe_subscribe_vision_request(socket, photo_id) do
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Vmemo.PubSub, "vision_request:#{photo_id}")
+    end
+
+    socket
+  end
+
+  defp latest_caption_request_from(caption_requests) do
+    caption_requests
+    |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
+    |> List.first()
+  end
+
+  defp reset_caption_request_status(caption_requests, request_id) do
+    Enum.map(caption_requests, fn req ->
+      if req.id == request_id do
+        Map.merge(req, %{status: "pending", error_message: nil})
+      else
+        req
+      end
+    end)
+  end
 
   defp caption_requests_from(requests) do
     Enum.filter(requests, &(&1.function_type == "caption"))

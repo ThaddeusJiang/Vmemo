@@ -47,40 +47,47 @@ defmodule Vmemo.AccountFixtures do
 
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
-    # captured_email is a map with :to and :body keys
-    body = Map.get(captured_email, :body, captured_email)
-    # If body is a map, try to get text_body or html_body, otherwise use the body
-    email_content =
-      cond do
-        is_map(body) -> Map.get(body, :text_body) || Map.get(body, :html_body) || inspect(body)
-        is_binary(body) -> body
-        true -> inspect(body)
-      end
 
-    # Extract token from URL format
-    # For JWT tokens used with ash_authentication, they might be in the URL directly
+    captured_email
+    |> Map.get(:body, captured_email)
+    |> normalize_email_content()
+    |> parse_token_from_email_content()
+  end
+
+  defp normalize_email_content(body) when is_map(body) do
+    Map.get(body, :text_body) || Map.get(body, :html_body) || inspect(body)
+  end
+
+  defp normalize_email_content(body) when is_binary(body), do: body
+  defp normalize_email_content(body), do: inspect(body)
+
+  defp parse_token_from_email_content(email_content) do
     if String.contains?(email_content, "[TOKEN]") do
       [_, token | _] = String.split(email_content, "[TOKEN]")
       token
     else
-      # If no [TOKEN] markers, try to extract from URL query param or fragment
-      # The token might be the last part of the URL
-      url_parts = URI.parse(email_content)
-      # Extract token from path or query
-      token =
-        if url_parts.path && String.contains?(url_parts.path, "/") do
-          String.split(url_parts.path, "/") |> List.last()
-        else
-          email_content
-        end
-
-      # For JWT tokens, they start with "ey" (base64url encoded)
-      if String.starts_with?(token, "ey") do
-        token
-      else
-        # Fallback: try to find JWT-like token in the content
-        email_content
-      end
+      email_content
+      |> extract_token_from_url_path()
+      |> jwt_token_or_content(email_content)
     end
   end
+
+  defp extract_token_from_url_path(email_content) do
+    case URI.parse(email_content) do
+      %{path: path} when is_binary(path) and path != "" ->
+        path
+        |> String.split("/")
+        |> List.last()
+
+      _ ->
+        email_content
+    end
+  end
+
+  defp jwt_token_or_content(token, email_content)
+       when is_binary(token) and byte_size(token) > 1 do
+    if String.starts_with?(token, "ey"), do: token, else: email_content
+  end
+
+  defp jwt_token_or_content(_token, email_content), do: email_content
 end
