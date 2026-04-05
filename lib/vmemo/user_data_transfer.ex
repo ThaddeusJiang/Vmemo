@@ -3,6 +3,7 @@ defmodule Vmemo.UserDataTransfer do
   require Logger
 
   alias Vmemo.Repo
+  alias Vmemo.Repo.RLS
   alias Vmemo.Account.User
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
@@ -11,38 +12,42 @@ defmodule Vmemo.UserDataTransfer do
   @error_limit 50
 
   def export_user_zip(user_id) when is_binary(user_id) do
-    tmp_dir = build_tmp_dir("vmemo-user-export")
+    RLS.with_bypass(fn ->
+      tmp_dir = build_tmp_dir("vmemo-user-export")
 
-    result =
-      with {:ok, user} <- fetch_user(user_id),
-           {:ok, photos} <- list_user_photos(user_id),
-           {:ok, notes} <- list_user_notes(user_id),
-           {:ok, links} <- list_note_links(notes),
-           :ok <- write_export_payload(tmp_dir, user, photos, notes, links),
-           files <- copy_user_storage_for_export(tmp_dir, user_id),
-           {:ok, binary, filename} <- build_zip_binary(tmp_dir) do
-        {:ok, %{binary: binary, filename: filename, files: files}}
-      end
+      result =
+        with {:ok, user} <- fetch_user(user_id),
+             {:ok, photos} <- list_user_photos(user_id),
+             {:ok, notes} <- list_user_notes(user_id),
+             {:ok, links} <- list_note_links(notes),
+             :ok <- write_export_payload(tmp_dir, user, photos, notes, links),
+             files <- copy_user_storage_for_export(tmp_dir, user_id),
+             {:ok, binary, filename} <- build_zip_binary(tmp_dir) do
+          {:ok, %{binary: binary, filename: filename, files: files}}
+        end
 
-    File.rm_rf(tmp_dir)
-    result
+      File.rm_rf(tmp_dir)
+      result
+    end)
   end
 
   def import_user_zip(user_id, zip_path) when is_binary(user_id) and is_binary(zip_path) do
-    tmp_dir = build_tmp_dir("vmemo-user-import")
+    RLS.with_bypass(fn ->
+      tmp_dir = build_tmp_dir("vmemo-user-import")
 
-    result =
-      with :ok <- extract_zip(zip_path, tmp_dir),
-           {:ok, payload} <- read_import_payload(tmp_dir),
-           {:ok, import_result} <- import_payload_for_user(payload, tmp_dir, user_id) do
-        {:ok, import_result}
-      else
-        {:error, %{} = result} -> {:error, result}
-        {:error, reason} -> {:error, reason}
-      end
+      result =
+        with :ok <- extract_zip(zip_path, tmp_dir),
+             {:ok, payload} <- read_import_payload(tmp_dir),
+             {:ok, import_result} <- import_payload_for_user(payload, tmp_dir, user_id) do
+          {:ok, import_result}
+        else
+          {:error, %{} = result} -> {:error, result}
+          {:error, reason} -> {:error, reason}
+        end
 
-    File.rm_rf(tmp_dir)
-    result
+      File.rm_rf(tmp_dir)
+      result
+    end)
   end
 
   defp fetch_user(user_id) do

@@ -5,23 +5,26 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
 
   alias Vmemo.Admin.ImportRequest
   alias Vmemo.AdminImport
+  alias Vmemo.Repo.RLS
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}), do: execute(args)
 
   def execute(%{"request_id" => request_id}) do
-    case Ash.get(ImportRequest, request_id, actor: nil) do
-      {:ok, request} ->
-        process_request(request)
+    RLS.with_bypass(fn ->
+      case Ash.get(ImportRequest, request_id, actor: nil) do
+        {:ok, request} ->
+          process_request(request)
 
-      {:error, %Ash.Error.Query.NotFound{}} ->
-        Logger.warning("Import request #{request_id} not found")
-        {:discard, :request_not_found}
+        {:error, %Ash.Error.Query.NotFound{}} ->
+          Logger.warning("Import request #{request_id} not found")
+          {:discard, :request_not_found}
 
-      {:error, error} ->
-        Logger.error("Failed to get import request #{request_id}: #{inspect(error)}")
-        {:error, error}
-    end
+        {:error, error} ->
+          Logger.error("Failed to get import request #{request_id}: #{inspect(error)}")
+          {:error, error}
+      end
+    end)
   end
 
   def execute(_args), do: {:error, :invalid_import_request_args}
@@ -100,7 +103,9 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
   end
 
   defp update_request(request, params) do
-    ImportRequest.update(request, params, actor: nil)
+    RLS.with_bypass(fn ->
+      ImportRequest.update(request, params, actor: nil)
+    end)
   end
 
   defp update_request_progress(request, progress) do

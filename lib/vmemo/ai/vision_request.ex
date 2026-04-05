@@ -8,10 +8,40 @@ defmodule Vmemo.Ai.VisionRequest do
   require Logger
   alias SmallSdk.Moondream
   alias Vmemo.Photos.Photo
+  alias Vmemo.Repo.RLS
 
   postgres do
     table "ai_vision_requests"
     repo Vmemo.Repo
+
+    custom_statements do
+      statement :rls_ai_vision_requests_isolation do
+        up """
+        ALTER TABLE ai_vision_requests ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE ai_vision_requests FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS ai_vision_requests_rls_isolation ON ai_vision_requests;
+        CREATE POLICY ai_vision_requests_rls_isolation ON ai_vision_requests
+          USING (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          )
+          WITH CHECK (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          );
+        """
+
+        down """
+        DROP POLICY IF EXISTS ai_vision_requests_rls_isolation ON ai_vision_requests;
+        ALTER TABLE ai_vision_requests NO FORCE ROW LEVEL SECURITY;
+        ALTER TABLE ai_vision_requests DISABLE ROW LEVEL SECURITY;
+        """
+      end
+    end
 
     references do
       reference :photo, on_delete: :delete
@@ -191,32 +221,34 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   defp process_request(request) do
-    case update_request_status(request, "processing") do
-      {:ok, request} ->
-        case Ash.get(Photo, request.photo_id, actor: nil) do
-          {:ok, photo} ->
-            case read_image_as_base64(photo.url) do
-              {:ok, image_base64} ->
-                call_moondream_api(request, image_base64)
+    RLS.with_bypass(fn ->
+      case update_request_status(request, "processing") do
+        {:ok, request} ->
+          case Ash.get(Photo, request.photo_id, actor: nil) do
+            {:ok, photo} ->
+              case read_image_as_base64(photo.url) do
+                {:ok, image_base64} ->
+                  call_moondream_api(request, image_base64)
 
-              {:error, reason} ->
-                Logger.error("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
-                update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
-            end
+                {:error, reason} ->
+                  Logger.error("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
+                  update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
+              end
 
-          {:error, %Ash.Error.Query.NotFound{}} ->
-            Logger.warning("Photo #{request.photo_id} not found")
-            update_request_with_error(request, "Photo not found")
+            {:error, %Ash.Error.Query.NotFound{}} ->
+              Logger.warning("Photo #{request.photo_id} not found")
+              update_request_with_error(request, "Photo not found")
 
-          {:error, error} ->
-            Logger.error("Failed to get photo #{request.photo_id}: #{inspect(error)}")
-            update_request_with_error(request, "Failed to get photo: #{inspect(error)}")
-        end
+            {:error, error} ->
+              Logger.error("Failed to get photo #{request.photo_id}: #{inspect(error)}")
+              update_request_with_error(request, "Failed to get photo: #{inspect(error)}")
+          end
 
-      {:error, error} ->
-        Logger.error("Failed to update request status to processing: #{inspect(error)}")
-        {:error, error}
-    end
+        {:error, error} ->
+          Logger.error("Failed to update request status to processing: #{inspect(error)}")
+          {:error, error}
+      end
+    end)
   end
 
   defp call_moondream_api(request, image_base64) do
@@ -277,7 +309,9 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   defp update_request_status(request, status) do
-    __MODULE__.update(request, %{status: status}, actor: nil)
+    RLS.with_bypass(fn ->
+      __MODULE__.update(request, %{status: status}, actor: nil)
+    end)
   end
 
   defp update_request_with_result(request, result) do
@@ -289,46 +323,52 @@ defmodule Vmemo.Ai.VisionRequest do
         other -> %{result: other}
       end
 
-    with :ok <- maybe_update_photo_caption(request, result_map),
-         {:ok, updated_request} <-
-           __MODULE__.update(
-             request,
-             %{status: "completed", result: result_map, error_message: nil},
-             actor: nil
-           ) do
-      broadcast_update(updated_request)
-      :ok
-    else
-      {:error, error} ->
-        Logger.error("Failed to update request with result: #{inspect(error)}")
-        {:error, error}
-    end
+    RLS.with_bypass(fn ->
+      with :ok <- maybe_update_photo_caption(request, result_map),
+           {:ok, updated_request} <-
+             __MODULE__.update(
+               request,
+               %{status: "completed", result: result_map, error_message: nil},
+               actor: nil
+             ) do
+        broadcast_update(updated_request)
+        :ok
+      else
+        {:error, error} ->
+          Logger.error("Failed to update request with result: #{inspect(error)}")
+          {:error, error}
+      end
+    end)
   end
 
   defp update_request_with_error(request, error_message) do
-    case __MODULE__.update(
-           request,
-           %{status: "failed", error_message: error_message},
-           actor: nil
-         ) do
-      {:ok, updated_request} ->
-        broadcast_update(updated_request)
-        :ok
+    RLS.with_bypass(fn ->
+      case __MODULE__.update(
+             request,
+             %{status: "failed", error_message: error_message},
+             actor: nil
+           ) do
+        {:ok, updated_request} ->
+          broadcast_update(updated_request)
+          :ok
 
-      {:error, error} ->
-        Logger.error("Failed to update request with error: #{inspect(error)}")
-        {:error, error}
-    end
+        {:error, error} ->
+          Logger.error("Failed to update request with error: #{inspect(error)}")
+          {:error, error}
+      end
+    end)
   end
 
   defp maybe_update_photo_caption(%{function_type: "caption", photo_id: photo_id}, result_map) do
     case extract_caption(result_map) do
       caption when is_binary(caption) and caption != "" ->
-        with {:ok, photo} <- Ash.get(Photo, photo_id, actor: nil),
-             {:ok, _updated_photo} <-
-               Photo.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
-          :ok
-        end
+        RLS.with_bypass(fn ->
+          with {:ok, photo} <- Ash.get(Photo, photo_id, actor: nil),
+               {:ok, _updated_photo} <-
+                 Photo.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+            :ok
+          end
+        end)
 
       _ ->
         :ok

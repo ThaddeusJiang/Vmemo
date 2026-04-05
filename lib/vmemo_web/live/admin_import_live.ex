@@ -2,6 +2,7 @@ defmodule VmemoWeb.AdminImportLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Admin.ImportRequest
+  alias Vmemo.Repo.RLS
   alias VmemoWeb.Uploads.ImportZipWriter
 
   @impl true
@@ -229,10 +230,12 @@ defmodule VmemoWeb.AdminImportLive do
 
         case uploaded do
           [%{path: zip_path, filename: filename}] ->
-            case ImportRequest.create_with_zip(
-                   %{source_filename: filename, zip_path: zip_path},
-                   actor: nil
-                 ) do
+            case RLS.with_bypass(fn ->
+                   ImportRequest.create_with_zip(
+                     %{source_filename: filename, zip_path: zip_path},
+                     actor: nil
+                   )
+                 end) do
               {:ok, request} ->
                 Phoenix.PubSub.subscribe(Vmemo.PubSub, "admin_import_request:#{request.id}")
                 {:noreply, socket |> assign(is_submitting: false) |> assign(request: request)}

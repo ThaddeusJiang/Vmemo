@@ -18,11 +18,43 @@ defmodule Vmemo.Photos.Photo do
 
   require Ash.Query
   alias SmallSdk.Moondream
+  alias Vmemo.Repo.RLS
   alias Vmemo.PhotoService.TsPhoto
 
   postgres do
     table "photos"
     repo Vmemo.Repo
+
+    custom_statements do
+      statement :rls_photos_isolation do
+        up """
+        ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE photos FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS photos_rls_isolation ON photos;
+        CREATE POLICY photos_rls_isolation ON photos
+          USING (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id IS NOT NULL
+                   AND user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          )
+          WITH CHECK (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id IS NOT NULL
+                   AND user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          );
+        """
+
+        down """
+        DROP POLICY IF EXISTS photos_rls_isolation ON photos;
+        ALTER TABLE photos NO FORCE ROW LEVEL SECURITY;
+        ALTER TABLE photos DISABLE ROW LEVEL SECURITY;
+        """
+      end
+    end
   end
 
   admin do
@@ -105,16 +137,18 @@ defmodule Vmemo.Photos.Photo do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record ->
-          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
-            {:ok, true} ->
-              {:ok, record}
+          RLS.with_bypass(fn ->
+            case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
+              {:ok, true} ->
+                {:ok, record}
 
-            {:ok, false} ->
-              {:error, :sync_failed}
+              {:ok, false} ->
+                {:error, :sync_failed}
 
-            {:error, reason} ->
-              {:error, reason}
-          end
+              {:error, reason} ->
+                {:error, reason}
+            end
+          end)
         end)
       end
     end
@@ -146,11 +180,13 @@ defmodule Vmemo.Photos.Photo do
       run fn input, _context ->
         photo_id = Ash.ActionInput.get_argument(input, :photo_id)
 
-        with {:ok, photo} <- Ash.get(__MODULE__, photo_id, actor: nil, authorize?: false),
-             {:ok, photo_with_notes} <- Ash.load(photo, :notes, actor: nil, authorize?: false),
-             {:ok, _} <- upsert_typesense_photo(photo_with_notes) do
-          {:ok, true}
-        end
+        RLS.with_bypass(fn ->
+          with {:ok, photo} <- Ash.get(__MODULE__, photo_id, actor: nil, authorize?: false),
+               {:ok, photo_with_notes} <- Ash.load(photo, :notes, actor: nil, authorize?: false),
+               {:ok, _} <- upsert_typesense_photo(photo_with_notes) do
+            {:ok, true}
+          end
+        end)
       end
     end
 
@@ -729,18 +765,20 @@ defmodule Vmemo.Photos.Photo do
 
   defp generate_caption_for_photo(photo) do
     if is_nil(photo.caption) or photo.caption == "" do
-      with {:ok, image_base64} <- read_image_base64_for_typesense(photo.url),
-           {:ok, caption} <- Moondream.caption(image_base64),
-           {:ok, _updated_photo} <-
-             __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
-        :ok
-      else
-        {:error, :file_not_found} ->
+      RLS.with_bypass(fn ->
+        with {:ok, image_base64} <- read_image_base64_for_typesense(photo.url),
+             {:ok, caption} <- Moondream.caption(image_base64),
+             {:ok, _updated_photo} <-
+               __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
           :ok
+        else
+          {:error, :file_not_found} ->
+            :ok
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end)
     else
       :ok
     end

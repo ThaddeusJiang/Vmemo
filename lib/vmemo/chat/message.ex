@@ -25,6 +25,45 @@ defmodule Vmemo.Chat.Message do
     table "messages"
     repo Vmemo.Repo
 
+    custom_statements do
+      statement :rls_messages_isolation do
+        up """
+        ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE messages FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS messages_rls_isolation ON messages;
+        CREATE POLICY messages_rls_isolation ON messages
+          USING (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE EXISTS (
+                SELECT 1
+                FROM conversations
+                WHERE conversations.id = messages.conversation_id
+                  AND conversations.user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+              )
+            END
+          )
+          WITH CHECK (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE EXISTS (
+                SELECT 1
+                FROM conversations
+                WHERE conversations.id = messages.conversation_id
+                  AND conversations.user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+              )
+            END
+          );
+        """
+
+        down """
+        DROP POLICY IF EXISTS messages_rls_isolation ON messages;
+        ALTER TABLE messages NO FORCE ROW LEVEL SECURITY;
+        ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
+        """
+      end
+    end
+
     references do
       reference :conversation, on_delete: :delete
       reference :response_to, on_delete: :delete

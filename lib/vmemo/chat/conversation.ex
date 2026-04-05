@@ -22,6 +22,35 @@ defmodule Vmemo.Chat.Conversation do
   postgres do
     table "conversations"
     repo Vmemo.Repo
+
+    custom_statements do
+      statement :rls_conversations_isolation do
+        up """
+        ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE conversations FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS conversations_rls_isolation ON conversations;
+        CREATE POLICY conversations_rls_isolation ON conversations
+          USING (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          )
+          WITH CHECK (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          );
+        """
+
+        down """
+        DROP POLICY IF EXISTS conversations_rls_isolation ON conversations;
+        ALTER TABLE conversations NO FORCE ROW LEVEL SECURITY;
+        ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
+        """
+      end
+    end
   end
 
   actions do

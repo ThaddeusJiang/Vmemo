@@ -9,6 +9,7 @@ defmodule VmemoWeb.ApiAuth do
   import Phoenix.Controller
 
   require Logger
+  alias Vmemo.Repo.RLS
 
   def init(opts), do: opts
 
@@ -26,6 +27,8 @@ defmodule VmemoWeb.ApiAuth do
     case Vmemo.ApiTokenService.verify_api_token(token) do
       {:ok, api_token} ->
         # 将用户信息添加到连接中
+        RLS.put_actor(api_token.user)
+
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_user, api_token.user)
@@ -37,6 +40,8 @@ defmodule VmemoWeb.ApiAuth do
   end
 
   defp unauthorized(conn) do
+    RLS.clear_actor()
+
     conn
     |> put_status(401)
     |> json(%{

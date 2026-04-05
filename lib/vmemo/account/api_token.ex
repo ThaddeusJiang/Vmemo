@@ -9,6 +9,35 @@ defmodule Vmemo.Account.ApiToken do
   postgres do
     table "api_tokens"
     repo Vmemo.Repo
+
+    custom_statements do
+      statement :rls_api_tokens_isolation do
+        up """
+        ALTER TABLE api_tokens ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE api_tokens FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS api_tokens_rls_isolation ON api_tokens;
+        CREATE POLICY api_tokens_rls_isolation ON api_tokens
+          USING (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          )
+          WITH CHECK (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          );
+        """
+
+        down """
+        DROP POLICY IF EXISTS api_tokens_rls_isolation ON api_tokens;
+        ALTER TABLE api_tokens NO FORCE ROW LEVEL SECURITY;
+        ALTER TABLE api_tokens DISABLE ROW LEVEL SECURITY;
+        """
+      end
+    end
   end
 
   admin do

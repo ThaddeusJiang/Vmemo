@@ -5,6 +5,7 @@ defmodule VmemoWeb.UserAuth do
   import Phoenix.Controller
 
   alias Vmemo.Account.User
+  alias Vmemo.Repo.RLS
 
   @doc """
   Logs the user in.
@@ -132,6 +133,7 @@ defmodule VmemoWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && get_user_by_session_token(user_token)
+    RLS.put_actor(user)
     assign(conn, :current_user, user)
   end
 
@@ -238,11 +240,15 @@ defmodule VmemoWeb.UserAuth do
   end
 
   defp mount_current_user(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_user, fn ->
-      if user_token = session["user_token"] do
-        get_user_by_session_token(user_token)
-      end
-    end)
+    socket =
+      Phoenix.Component.assign_new(socket, :current_user, fn ->
+        if user_token = session["user_token"] do
+          get_user_by_session_token(user_token)
+        end
+      end)
+
+    RLS.put_actor(socket.assigns.current_user)
+    socket
   end
 
   defp signed_in_path(_conn), do: ~p"/home"

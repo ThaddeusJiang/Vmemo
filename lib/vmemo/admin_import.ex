@@ -1,5 +1,6 @@
 defmodule Vmemo.AdminImport do
   require Ash.Query
+  alias Vmemo.Repo.RLS
   alias Vmemo.Account.User
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
@@ -8,29 +9,31 @@ defmodule Vmemo.AdminImport do
   @error_limit 50
 
   def import_zip(zip_path, progress_fun \\ fn _progress -> :ok end) do
-    tmp_dir = build_tmp_dir()
+    RLS.with_bypass(fn ->
+      tmp_dir = build_tmp_dir()
 
-    result =
-      with :ok <-
-             report_progress(progress_fun, "Extracting zip", 10, fn ->
-               extract_zip(zip_path, tmp_dir)
-             end),
-           {:ok, payload} <-
-             report_progress(progress_fun, "Reading payload", 25, fn ->
-               read_payload(tmp_dir)
-             end),
-           {:ok, import_result} <-
-             report_progress(progress_fun, "Importing data", 40, fn ->
-               import_payload(payload, tmp_dir, progress_fun)
-             end) do
-        {:ok, import_result}
-      else
-        {:error, reason} ->
-          {:error, reason}
-      end
+      result =
+        with :ok <-
+               report_progress(progress_fun, "Extracting zip", 10, fn ->
+                 extract_zip(zip_path, tmp_dir)
+               end),
+             {:ok, payload} <-
+               report_progress(progress_fun, "Reading payload", 25, fn ->
+                 read_payload(tmp_dir)
+               end),
+             {:ok, import_result} <-
+               report_progress(progress_fun, "Importing data", 40, fn ->
+                 import_payload(payload, tmp_dir, progress_fun)
+               end) do
+          {:ok, import_result}
+        else
+          {:error, reason} ->
+            {:error, reason}
+        end
 
-    File.rm_rf(tmp_dir)
-    result
+      File.rm_rf(tmp_dir)
+      result
+    end)
   end
 
   defp extract_zip(zip_path, tmp_dir) do

@@ -9,6 +9,7 @@ defmodule VmemoWeb.McpAuth do
   import Plug.Conn
 
   require Logger
+  alias Vmemo.Repo.RLS
 
   def init(opts), do: opts
 
@@ -34,6 +35,7 @@ defmodule VmemoWeb.McpAuth do
 
         _ ->
           # Allow unauthenticated access for public tools
+          RLS.clear_actor()
           conn
       end
     end
@@ -44,6 +46,8 @@ defmodule VmemoWeb.McpAuth do
       {:ok, api_token} ->
         # Set actor if token is valid
         # Use Ash.PlugHelpers.set_actor/2 to store actor in conn.private[:ash][:actor]
+        RLS.put_actor(api_token.user)
+
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_user, api_token.user)
@@ -52,6 +56,7 @@ defmodule VmemoWeb.McpAuth do
       {:error, reason} ->
         Logger.warning("MCP API token verification failed: #{reason}")
         # Still allow connection, but without actor
+        RLS.clear_actor()
         conn
     end
   end

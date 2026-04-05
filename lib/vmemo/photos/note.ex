@@ -5,10 +5,42 @@ defmodule Vmemo.Photos.Note do
     extensions: [AshAdmin.Resource, AshOban]
 
   alias Vmemo.PhotoService.TsNote
+  alias Vmemo.Repo.RLS
 
   postgres do
     table "notes"
     repo Vmemo.Repo
+
+    custom_statements do
+      statement :rls_notes_isolation do
+        up """
+        ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE notes FORCE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS notes_rls_isolation ON notes;
+        CREATE POLICY notes_rls_isolation ON notes
+          USING (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id IS NOT NULL
+                   AND user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          )
+          WITH CHECK (
+            CASE
+              WHEN current_setting('vmemo.rls_bypass', true) = 'on' THEN true
+              ELSE user_id IS NOT NULL
+                   AND user_id = nullif(current_setting('vmemo.current_actor_id', true), '')::uuid
+            END
+          );
+        """
+
+        down """
+        DROP POLICY IF EXISTS notes_rls_isolation ON notes;
+        ALTER TABLE notes NO FORCE ROW LEVEL SECURITY;
+        ALTER TABLE notes DISABLE ROW LEVEL SECURITY;
+        """
+      end
+    end
   end
 
   admin do
@@ -61,16 +93,18 @@ defmodule Vmemo.Photos.Note do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
-          case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
-            {:ok, true} ->
-              {:ok, record}
+          RLS.with_bypass(fn ->
+            case __MODULE__.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
+              {:ok, true} ->
+                {:ok, record}
 
-            {:ok, false} ->
-              {:error, :sync_failed}
+              {:ok, false} ->
+                {:error, :sync_failed}
 
-            {:error, reason} ->
-              {:error, reason}
-          end
+              {:error, reason} ->
+                {:error, reason}
+            end
+          end)
         end)
       end
     end
@@ -81,11 +115,13 @@ defmodule Vmemo.Photos.Note do
       run fn input, _context ->
         note_id = Ash.ActionInput.get_argument(input, :note_id)
 
-        with {:ok, note} <- Ash.get(__MODULE__, note_id, actor: nil, authorize?: false),
-             {:ok, note_with_photos} <- Ash.load(note, :photos, actor: nil, authorize?: false),
-             {:ok, _} <- upsert_typesense_note(note_with_photos) do
-          {:ok, true}
-        end
+        RLS.with_bypass(fn ->
+          with {:ok, note} <- Ash.get(__MODULE__, note_id, actor: nil, authorize?: false),
+               {:ok, note_with_photos} <- Ash.load(note, :photos, actor: nil, authorize?: false),
+               {:ok, _} <- upsert_typesense_note(note_with_photos) do
+            {:ok, true}
+          end
+        end)
       end
     end
   end
