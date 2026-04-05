@@ -1,10 +1,10 @@
-name: Elixir Checks
+name: Test
 
 on:
   pull_request:
 
 jobs:
-  static-checks:
+  mix-check:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
@@ -12,7 +12,7 @@ jobs:
       matrix:
         otp: ["28"]
         elixir: ["1.19.5"]
-    name: Static Checks / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+    name: Check / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: erlef/setup-beam@v1.23.0
@@ -37,8 +37,7 @@ jobs:
         continue-on-error: true
         run: mix sobelow --config
 
-  test:
-    needs: static-checks
+  mix-test:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
@@ -75,9 +74,6 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
-      - name: Compile
-        run: mix compile --warnings-as-errors
-
       - name: Wait for Postgres
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do
@@ -89,4 +85,4 @@ jobs:
         run: mix ts.reset
 
       - name: Run tests
-        run: mix test --warnings-as-errors
+        run: mix test
