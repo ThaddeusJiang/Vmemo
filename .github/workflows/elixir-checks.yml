@@ -29,11 +29,13 @@ jobs:
           mix compile --warnings-as-errors
           mix xref graph --format cycles --label compile-connected --fail-above 0
 
-      - name: Static checks (report only)
+      - name: Credo (report only)
         continue-on-error: true
-        run: |
-          mix credo --strict
-          mix sobelow --config
+        run: mix credo --strict
+
+      - name: Sobelow (report only)
+        continue-on-error: true
+        run: mix sobelow --config
 
   test:
     needs: static-checks
