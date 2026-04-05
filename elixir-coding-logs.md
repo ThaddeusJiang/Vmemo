@@ -532,17 +532,6 @@
 82. [F] 函数体嵌套过深（max depth is 2, was 3）。
 文件：`lib/vmemo/release.ex:29:11 #(Vmemo.Release.ash_migrate)`
 
-#### W - 警告（4 条）
-
-1. [W] `||` 左右两侧存在相同子表达式。
-文件：`lib/vmemo_web/live/components/upload_form.ex:270:46 #(VmemoWeb.LiveComponents.UploadForm.handle_event)`
-2. [W] `||` 左右两侧存在相同子表达式。
-文件：`lib/vmemo_web/live/components/search_box.ex:82:46 #(VmemoWeb.LiveComponents.SearchBox.handle_event)`
-3. [W] 不应调用 `IO.inspect/1`。
-文件：`test/support/fixtures/account_fixtures.ex:43:13 #(Vmemo.AccountFixtures.user_fixture)`
-4. [W] 使用 `length/1` 开销较高，建议直接与空列表比较。
-文件：`lib/vmemo/chat/message/changes/respond.ex:208:23 #(Vmemo.Chat.Message.Changes.Respond.patch_tool_schemas)`
-
 ### 备注
 
 - 以上为 `mix check` 中 Credo 输出的所有问题逐条中文翻译（含文件位置）。
