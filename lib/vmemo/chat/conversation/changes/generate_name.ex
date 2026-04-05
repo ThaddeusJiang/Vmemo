@@ -1,4 +1,5 @@
 defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
+  @moduledoc false
   use Ash.Resource.Change
   require Ash.Query
 

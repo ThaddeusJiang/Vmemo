@@ -1,4 +1,5 @@
 defmodule Vmemo.Ai do
+  @moduledoc false
   use Ash.Domain,
     extensions: [AshAdmin.Domain]
 

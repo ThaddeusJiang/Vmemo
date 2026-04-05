@@ -1,4 +1,5 @@
 defmodule Vmemo.Photos do
+  @moduledoc false
   use Ash.Domain,
     extensions: [AshAdmin.Domain, AshAi]
 

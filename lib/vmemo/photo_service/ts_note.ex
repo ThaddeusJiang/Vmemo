@@ -1,4 +1,5 @@
 defmodule Vmemo.PhotoService.TsNote do
+  @moduledoc false
   require Logger
   alias SmallSdk.Typesense
 

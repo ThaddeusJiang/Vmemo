@@ -1,4 +1,5 @@
 defmodule VmemoWeb.Uploads.ImportZipWriter do
+  @moduledoc false
   @behaviour Phoenix.LiveView.UploadWriter
 
   @impl true

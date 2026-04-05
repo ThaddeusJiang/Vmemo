@@ -1,4 +1,5 @@
 defmodule Vmemo.Policy.OwnerCheck do
+  @moduledoc false
   use Ash.Policy.SimpleCheck
 
   def describe(_opts) do

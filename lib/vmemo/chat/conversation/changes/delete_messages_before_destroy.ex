@@ -1,4 +1,5 @@
 defmodule Vmemo.Chat.Conversation.Changes.DeleteMessagesBeforeDestroy do
+  @moduledoc false
   use Ash.Resource.Change
 
   @impl true

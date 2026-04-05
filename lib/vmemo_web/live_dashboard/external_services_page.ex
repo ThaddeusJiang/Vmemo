@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
+  @moduledoc false
   use Phoenix.LiveDashboard.PageBuilder
 
   alias SmallSdk.Moondream

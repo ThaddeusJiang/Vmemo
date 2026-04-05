@@ -1,4 +1,5 @@
 defmodule VmemoWeb.UserAuth do
+  @moduledoc false
   use VmemoWeb, :verified_routes
 
   import Plug.Conn

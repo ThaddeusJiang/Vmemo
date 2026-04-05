@@ -1,4 +1,5 @@
 defmodule Vmemo.Account.User do
+  @moduledoc false
   use Ash.Resource,
     domain: Vmemo.AccountDomain,
     data_layer: AshPostgres.DataLayer,

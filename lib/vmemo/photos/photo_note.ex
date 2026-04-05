@@ -1,4 +1,5 @@
 defmodule Vmemo.Photos.PhotoNote do
+  @moduledoc false
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,

@@ -1,4 +1,5 @@
 defmodule Vmemo.Ai.VisionRequest do
+  @moduledoc false
   use Ash.Resource,
     domain: Vmemo.Ai,
     data_layer: AshPostgres.DataLayer,

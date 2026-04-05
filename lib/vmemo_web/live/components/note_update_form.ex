@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   alias Ash

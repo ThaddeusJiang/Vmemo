@@ -1,4 +1,5 @@
 defmodule Vmemo.Workers.Typesense.CreatePhoto do
+  @moduledoc false
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
   require Logger

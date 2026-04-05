@@ -1,4 +1,5 @@
 defmodule Vmemo.PhotoService do
+  @moduledoc false
   alias SmallSdk.FileSystem
 
   def cp_file(src, user_id, filename) do
