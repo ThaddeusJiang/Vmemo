@@ -24,7 +24,7 @@ jobs:
         run: mix deps.get
 
       - name: Compile
-        run: ｜
+        run: |
           mix compile --warnings-as-errors
           mix xref graph --format cycles --label compile-connected --fail-above 0
 
