@@ -71,9 +71,12 @@ mix format
 Reset local DB + Typesense state when needed:
 
 ```bash
-mix reset
 mix ts.reset
 ```
+
+For a full local reset workflow, use the Local Development reset sequence
+(`pkill -f "mix phx.server" || true`, `docker compose down -v`,
+`docker compose up -d`, `mix setup`).
 
 ## Local Environment Variables
 
