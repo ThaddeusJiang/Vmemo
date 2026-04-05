@@ -220,9 +220,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
         q -> q
       end
 
-    if not is_nil(similar) do
-      search_similar_photos(q, similar, user_id, page, per_page)
-    else
+    if is_nil(similar) do
       text_result = search_text_photos(q, user_id, page, per_page)
 
       case text_result do
@@ -236,6 +234,8 @@ defmodule Vmemo.PhotoService.TsPhoto do
             text_result
           end
       end
+    else
+      search_similar_photos(q, similar, user_id, page, per_page)
     end
   end
 

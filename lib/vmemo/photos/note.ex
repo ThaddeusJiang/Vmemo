@@ -118,9 +118,9 @@ defmodule Vmemo.Photos.Note do
   defp sync_note_with_typesense_retry(typesense_data, :create) do
     case TsNote.create(typesense_data) do
       {:error, "Not Found"} ->
-        with :ok <- migrate_typesense_schema(),
-             {:ok, created} <- TsNote.create(typesense_data) do
-          {:ok, created}
+        case migrate_typesense_schema() do
+          :ok -> TsNote.create(typesense_data)
+          error -> error
         end
 
       result ->

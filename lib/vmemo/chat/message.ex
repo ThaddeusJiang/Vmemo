@@ -91,7 +91,9 @@ defmodule Vmemo.Chat.Message do
                :tool_calls,
                {:atomic,
                 expr(
-                  if not is_nil(^arg(:tool_calls)) do
+                  if is_nil(^arg(:tool_calls)) do
+                    ^atomic_ref(:tool_calls)
+                  else
                     fragment(
                       "? || ?",
                       ^atomic_ref(:tool_calls),
@@ -100,8 +102,6 @@ defmodule Vmemo.Chat.Message do
                         {:array, :map}
                       )
                     )
-                  else
-                    ^atomic_ref(:tool_calls)
                   end
                 )}
              )
@@ -110,7 +110,9 @@ defmodule Vmemo.Chat.Message do
                :tool_results,
                {:atomic,
                 expr(
-                  if not is_nil(^arg(:tool_results)) do
+                  if is_nil(^arg(:tool_results)) do
+                    ^atomic_ref(:tool_results)
+                  else
                     fragment(
                       "? || ?",
                       ^atomic_ref(:tool_results),
@@ -119,8 +121,6 @@ defmodule Vmemo.Chat.Message do
                         {:array, :map}
                       )
                     )
-                  else
-                    ^atomic_ref(:tool_results)
                   end
                 )}
              )

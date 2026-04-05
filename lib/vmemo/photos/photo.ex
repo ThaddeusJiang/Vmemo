@@ -630,9 +630,9 @@ defmodule Vmemo.Photos.Photo do
   defp sync_photo_with_typesense_retry(typesense_data, :create) do
     case TsPhoto.create(typesense_data) do
       {:error, "Not Found"} ->
-        with :ok <- migrate_typesense_schema(),
-             {:ok, created} <- TsPhoto.create(typesense_data) do
-          {:ok, created}
+        case migrate_typesense_schema() do
+          :ok -> TsPhoto.create(typesense_data)
+          error -> error
         end
 
       result ->

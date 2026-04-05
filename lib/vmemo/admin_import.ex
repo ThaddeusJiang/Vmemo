@@ -160,48 +160,46 @@ defmodule Vmemo.AdminImport do
       hashed_password = pick_value(user, ["hashed_password", :hashed_password])
       confirmed_at = pick_value(user, ["confirmed_at", :confirmed_at])
 
-      cond do
-        is_nil(email) ->
-          {bump(stats, :failed), id_map, add_error(errors, "User missing id or email")}
+      if is_nil(email) do
+        {bump(stats, :failed), id_map, add_error(errors, "User missing id or email")}
+      else
+        case normalize_user_id(user_id) do
+          {:uuid, uuid} ->
+            case Ash.get(User, uuid, actor: nil, authorize?: false) do
+              {:ok, existing} ->
+                {bump(stats, :skipped), Map.put(id_map, user_id, existing.id), errors}
 
-        true ->
-          case normalize_user_id(user_id) do
-            {:uuid, uuid} ->
-              case Ash.get(User, uuid, actor: nil, authorize?: false) do
-                {:ok, existing} ->
-                  {bump(stats, :skipped), Map.put(id_map, user_id, existing.id), errors}
+              {:error, %Ash.Error.Query.NotFound{}} ->
+                create_or_remap_user(
+                  user_id,
+                  email,
+                  hashed_password,
+                  confirmed_at,
+                  stats,
+                  id_map,
+                  errors
+                )
 
-                {:error, %Ash.Error.Query.NotFound{}} ->
-                  create_or_remap_user(
-                    user_id,
-                    email,
-                    hashed_password,
-                    confirmed_at,
-                    stats,
-                    id_map,
-                    errors
-                  )
+              {:error, error} ->
+                {bump(stats, :failed), id_map,
+                 add_error(errors, "User #{email} lookup failed: #{format_error(error)}")}
+            end
 
-                {:error, error} ->
-                  {bump(stats, :failed), id_map,
-                   add_error(errors, "User #{email} lookup failed: #{format_error(error)}")}
-              end
+          {:legacy, _legacy_id} ->
+            create_or_remap_user(
+              user_id,
+              email,
+              hashed_password,
+              confirmed_at,
+              stats,
+              id_map,
+              errors
+            )
 
-            {:legacy, _legacy_id} ->
-              create_or_remap_user(
-                user_id,
-                email,
-                hashed_password,
-                confirmed_at,
-                stats,
-                id_map,
-                errors
-              )
-
-            :invalid ->
-              {bump(stats, :failed), id_map,
-               add_error(errors, "User #{email} has invalid id: #{inspect(user_id)}")}
-          end
+          :invalid ->
+            {bump(stats, :failed), id_map,
+             add_error(errors, "User #{email} has invalid id: #{inspect(user_id)}")}
+        end
       end
     end)
   end
@@ -261,23 +259,21 @@ defmodule Vmemo.AdminImport do
       inserted_by = pick_value(photo, ["inserted_by", :inserted_by, "user_id", :user_id])
       user_id = map_user_id(user_id_map, inserted_by)
 
-      cond do
-        is_nil(photo_id) or is_nil(url) ->
-          {bump(stats, :failed), ids, id_map, add_error(errors, "Photo missing id or url")}
-
-        true ->
-          import_photo_record(
-            photo_id,
-            url,
-            note,
-            caption,
-            file_id,
-            user_id,
-            stats,
-            ids,
-            id_map,
-            errors
-          )
+      if is_nil(photo_id) or is_nil(url) do
+        {bump(stats, :failed), ids, id_map, add_error(errors, "Photo missing id or url")}
+      else
+        import_photo_record(
+          photo_id,
+          url,
+          note,
+          caption,
+          file_id,
+          user_id,
+          stats,
+          ids,
+          id_map,
+          errors
+        )
       end
     end)
   end
@@ -304,23 +300,21 @@ defmodule Vmemo.AdminImport do
           |> Enum.map(&map_photo_id(photo_id_map, &1))
           |> Enum.reject(&is_nil/1)
 
-        cond do
-          is_nil(note_id) ->
-            {bump(stats, :failed), ids, id_map, note_map,
-             add_error(errors, "Note missing id or text")}
-
-          true ->
-            import_note_record(
-              note_id,
-              text,
-              user_id,
-              photo_ids,
-              stats,
-              ids,
-              id_map,
-              note_map,
-              errors
-            )
+        if is_nil(note_id) do
+          {bump(stats, :failed), ids, id_map, note_map,
+           add_error(errors, "Note missing id or text")}
+        else
+          import_note_record(
+            note_id,
+            text,
+            user_id,
+            photo_ids,
+            stats,
+            ids,
+            id_map,
+            note_map,
+            errors
+          )
         end
       end
     )

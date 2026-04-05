@@ -127,9 +127,7 @@ defmodule SmallSdk.Typesense do
       action = Keyword.get(opts, :action, "upsert")
 
       body =
-        documents
-        |> Enum.map(&Jason.encode!/1)
-        |> Enum.join("\n")
+        Enum.map_join(documents, "\n", &Jason.encode!/1)
 
       req = build_request("/collections/#{collection_name}/documents/import")
 

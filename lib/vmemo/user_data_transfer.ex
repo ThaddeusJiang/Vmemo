@@ -150,14 +150,20 @@ defmodule Vmemo.UserDataTransfer do
     typesense_photos = build_typesense_photo_docs(photos, links, user.id)
     typesense_notes = build_typesense_note_docs(notes_data, user.id)
 
-    with :ok <- write_json(Path.join(data_dir, "metadata.json"), metadata),
-         :ok <- write_json(Path.join(data_dir, "user.json"), user_data),
-         :ok <- write_json(Path.join(data_dir, "photos.json"), photos_data),
-         :ok <- write_json(Path.join(data_dir, "notes.json"), notes_data),
-         :ok <- write_json(Path.join(data_dir, "typesense_photos.json"), typesense_photos),
-         :ok <- write_json(Path.join(data_dir, "typesense_notes.json"), typesense_notes) do
-      :ok
-    end
+    [
+      {"metadata.json", metadata},
+      {"user.json", user_data},
+      {"photos.json", photos_data},
+      {"notes.json", notes_data},
+      {"typesense_photos.json", typesense_photos},
+      {"typesense_notes.json", typesense_notes}
+    ]
+    |> Enum.reduce_while(:ok, fn {filename, payload}, :ok ->
+      case write_json(Path.join(data_dir, filename), payload) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp copy_user_storage_for_export(tmp_dir, user_id) do

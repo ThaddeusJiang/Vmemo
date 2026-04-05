@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-04-05 `mix credo --strict` 执行记录（首轮 F 机械修复后）
+
+- 执行命令：`mix credo --strict`
+- 退出码：`14`（失败）
+- 结果总览：
+  - 软件设计建议（D）：69 条
+  - 可读性问题（R）：80 条
+  - 重构机会（F）：68 条
+
+### 修复说明
+
+本轮已完成可机械等价替换的 F 类问题修复（不改变业务行为）：
+
+1. `Enum.map/2 |> Enum.join/2` 改为 `Enum.map_join/3`
+2. `cond`（仅单一条件 + `true`）改为 `if`
+3. `if not ...` 改为正向条件
+4. 冗余 `with` 末子句改为等价结构
+
+### 关键输出翻译
+
+- `996 mods/funs, found 68 refactoring opportunities, 80 code readability issues, 69 software design suggestions.`：共分析 996 个模块/函数，当前剩余 68 条重构机会、80 条可读性问题、69 条软件设计建议。
+
+### 备注
+
+- F 总数从上一条记录的 82 条下降到 68 条。
+- 当前剩余 F 主要集中在高复杂度、深层嵌套和高参数函数，需要后续进行结构性重构。
+
+---
+
 ## 2026-04-05 `mix check` 执行记录（修复 W 后）
 
 - 执行命令：`mix check`

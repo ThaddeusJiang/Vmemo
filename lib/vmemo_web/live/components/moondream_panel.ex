@@ -129,8 +129,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   defp format_changeset_errors(changeset) do
     case changeset do
       %Ash.Error.Invalid{errors: errors} ->
-        errors
-        |> Enum.map(fn error ->
+        Enum.map_join(errors, "; ", fn error ->
           case error do
             %Ash.Error.Changes.Required{field: field} ->
               "#{field} is required"
@@ -142,7 +141,6 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
               "Validation failed"
           end
         end)
-        |> Enum.join("; ")
 
       _ ->
         "Failed to create request"
@@ -249,13 +247,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   defp format_result(result, _function_type), do: inspect(result)
 
   defp format_detection_result(%{"objects" => objects}) when is_list(objects) do
-    objects
-    |> Enum.map(fn obj ->
+    Enum.map_join(objects, "\n", fn obj ->
       label = Map.get(obj, "label", "unknown")
       count = Map.get(obj, "count", 1)
       "#{label}: #{count}"
     end)
-    |> Enum.join("\n")
   end
 
   defp format_detection_result(result), do: Jason.encode!(result, pretty: true)

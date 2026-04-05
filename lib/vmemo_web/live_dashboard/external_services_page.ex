@@ -157,38 +157,36 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
   defp check_service(service) do
     base = init_service(service)
 
-    cond do
-      base.status in ["Not configured", "Invalid URL"] ->
-        base
+    if base.status in ["Not configured", "Invalid URL"] do
+      base
+    else
+      case check_health(base, base.url) do
+        {:ok, _detail, response_time_ms} ->
+          ExternalServicesCache.update_service(base.id, %{
+            status: "ok",
+            detail: nil,
+            response_time_ms: response_time_ms
+          })
 
-      true ->
-        case check_health(base, base.url) do
-          {:ok, _detail, response_time_ms} ->
-            ExternalServicesCache.update_service(base.id, %{
-              status: "ok",
-              detail: nil,
-              response_time_ms: response_time_ms
-            })
+          Map.merge(base, %{
+            status: "ok",
+            detail: nil,
+            response_time_ms: response_time_ms
+          })
 
-            Map.merge(base, %{
-              status: "ok",
-              detail: nil,
-              response_time_ms: response_time_ms
-            })
+        {:error, detail, response_time_ms} ->
+          ExternalServicesCache.update_service(base.id, %{
+            status: "error",
+            detail: detail,
+            response_time_ms: response_time_ms
+          })
 
-          {:error, detail, response_time_ms} ->
-            ExternalServicesCache.update_service(base.id, %{
-              status: "error",
-              detail: detail,
-              response_time_ms: response_time_ms
-            })
-
-            Map.merge(base, %{
-              status: "error",
-              detail: detail,
-              response_time_ms: response_time_ms
-            })
-        end
+          Map.merge(base, %{
+            status: "error",
+            detail: detail,
+            response_time_ms: response_time_ms
+          })
+      end
     end
   end
 
@@ -263,14 +261,12 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
   defp format_health_url(%{url: url} = service) when is_binary(url) do
     path = Map.get(service, :health_path, "/")
 
-    cond do
-      is_nil(path) or path in ["", "/"] ->
-        url
-
-      true ->
-        base = String.trim_trailing(url, "/")
-        rel = String.trim_leading(path, "/")
-        base <> "/" <> rel
+    if is_nil(path) or path in ["", "/"] do
+      url
+    else
+      base = String.trim_trailing(url, "/")
+      rel = String.trim_leading(path, "/")
+      base <> "/" <> rel
     end
   end
 
