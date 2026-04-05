@@ -44,7 +44,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     needs: prepare
     strategy:
       fail-fast: false
@@ -52,10 +52,10 @@ jobs:
         include:
           - arch: amd64
             platform: linux/amd64
-            needs_qemu: false
+            runner: ubuntu-24.04
           - arch: arm64
             platform: linux/arm64/v8
-            needs_qemu: true
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout repository
@@ -71,10 +71,6 @@ jobs:
         with:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set up QEMU
-        if: ${{ matrix.needs_qemu }}
-        uses: docker/setup-qemu-action@v4.0.0
 
       - name: Build and push image
         uses: docker/build-push-action@v7.0.0
