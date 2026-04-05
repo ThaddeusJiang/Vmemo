@@ -11,7 +11,6 @@ defmodule Mix.Tasks.Ts.Migrate do
   @impl Mix.Task
   def run(_args) do
     Mix.Task.run("app.start")
-
     _ = Application.ensure_all_started(:telemetry)
 
     case Finch.start_link(name: Req.Finch) do

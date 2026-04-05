@@ -72,4 +72,5 @@ Run directly on host for development:
 iex -S mix phx.server
 ```
 
-One-off setup or maintenance tasks can still be run from host shell, for example `mix ts.setup` and `mix ts.reset`.
+One-off setup or maintenance tasks can still be run from host shell, for example
+`mix ts.setup`, `mix ts.reset`, and `mix ts.migrate`.
