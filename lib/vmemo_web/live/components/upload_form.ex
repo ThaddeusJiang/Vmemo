@@ -266,8 +266,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         %{"note" => note_text, "is_whole" => is_whole},
         socket
       ) do
-    current_user =
-      Map.get(socket.assigns, :current_user) || Map.get(socket.assigns, :current_user)
+    current_user = Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket |> put_flash(:error, "User not found")}

@@ -40,7 +40,6 @@ defmodule Vmemo.AccountFixtures do
             user
 
           {:error, error} ->
-            IO.inspect(error, label: "User registration error")
             raise "Failed to create user: #{inspect(error)}"
         end
     end

@@ -205,20 +205,22 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
 
   # Patch tool schemas to add additionalProperties: false for Azure OpenAI compatibility
   defp patch_tool_schemas(chain) do
-    if chain.tools && length(chain.tools) > 0 do
-      patched_tools =
-        Enum.map(chain.tools, fn tool ->
-          if tool.parameters_schema do
-            patched_schema = patch_schema(tool.parameters_schema)
-            struct(tool, parameters_schema: patched_schema)
-          else
-            tool
-          end
-        end)
+    case chain.tools do
+      [_ | _] = tools ->
+        patched_tools =
+          Enum.map(tools, fn tool ->
+            if tool.parameters_schema do
+              patched_schema = patch_schema(tool.parameters_schema)
+              struct(tool, parameters_schema: patched_schema)
+            else
+              tool
+            end
+          end)
 
-      struct(chain, tools: patched_tools)
-    else
-      chain
+        struct(chain, tools: patched_tools)
+
+      _ ->
+        chain
     end
   end
 
