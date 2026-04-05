@@ -69,6 +69,7 @@ defmodule VmemoWeb.Router do
         additional_pages: [
           external_services: VmemoWeb.LiveDashboard.ExternalServicesPage
         ]
+
       oban_dashboard("/oban")
 
       live_session :dev_ui,

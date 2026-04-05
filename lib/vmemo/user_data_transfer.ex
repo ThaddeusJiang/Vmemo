@@ -1,12 +1,13 @@
 defmodule Vmemo.UserDataTransfer do
+  @moduledoc false
   require Ash.Query
   require Logger
 
-  alias Vmemo.Repo
   alias Vmemo.Account.User
   alias Vmemo.Photos.Note
   alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Repo
 
   @error_limit 50
 
@@ -150,14 +151,20 @@ defmodule Vmemo.UserDataTransfer do
     typesense_photos = build_typesense_photo_docs(photos, links, user.id)
     typesense_notes = build_typesense_note_docs(notes_data, user.id)
 
-    with :ok <- write_json(Path.join(data_dir, "metadata.json"), metadata),
-         :ok <- write_json(Path.join(data_dir, "user.json"), user_data),
-         :ok <- write_json(Path.join(data_dir, "photos.json"), photos_data),
-         :ok <- write_json(Path.join(data_dir, "notes.json"), notes_data),
-         :ok <- write_json(Path.join(data_dir, "typesense_photos.json"), typesense_photos),
-         :ok <- write_json(Path.join(data_dir, "typesense_notes.json"), typesense_notes) do
-      :ok
-    end
+    [
+      {"metadata.json", metadata},
+      {"user.json", user_data},
+      {"photos.json", photos_data},
+      {"notes.json", notes_data},
+      {"typesense_photos.json", typesense_photos},
+      {"typesense_notes.json", typesense_notes}
+    ]
+    |> Enum.reduce_while(:ok, fn {filename, payload}, :ok ->
+      case write_json(Path.join(data_dir, filename), payload) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp copy_user_storage_for_export(tmp_dir, user_id) do
@@ -514,25 +521,7 @@ defmodule Vmemo.UserDataTransfer do
   defp import_photo_links(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
-    pairs =
-      Enum.reduce(note_photo_map, MapSet.new(), fn {legacy_note_id, legacy_photo_ids}, acc ->
-        note_id = Map.get(note_id_map, legacy_note_id)
-
-        Enum.reduce(legacy_photo_ids, acc, fn legacy_photo_id, inner ->
-          photo_id = Map.get(photo_id_map, legacy_photo_id)
-
-          cond do
-            is_nil(note_id) or is_nil(photo_id) ->
-              inner
-
-            not MapSet.member?(note_ids, note_id) or not MapSet.member?(photo_ids, photo_id) ->
-              inner
-
-            true ->
-              MapSet.put(inner, {photo_id, note_id})
-          end
-        end)
-      end)
+    pairs = build_photo_note_pairs(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids)
 
     pair_list = MapSet.to_list(pairs)
     existing_pairs = fetch_existing_photo_note_pairs(pair_list)
@@ -572,6 +561,40 @@ defmodule Vmemo.UserDataTransfer do
       MapSet.size(existing_pairs) + max(length(rows_to_insert) - inserted_count, 0)
 
     {%{created: inserted_count, skipped: skipped, failed: length(insert_errors)}, insert_errors}
+  end
+
+  defp build_photo_note_pairs(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids) do
+    Enum.reduce(note_photo_map, MapSet.new(), fn pair, acc ->
+      append_photo_note_pairs(pair, acc, photo_id_map, note_id_map, photo_ids, note_ids)
+    end)
+  end
+
+  defp append_photo_note_pairs(
+         {legacy_note_id, legacy_photo_ids},
+         acc,
+         photo_id_map,
+         note_id_map,
+         photo_ids,
+         note_ids
+       ) do
+    note_id = Map.get(note_id_map, legacy_note_id)
+
+    Enum.reduce(legacy_photo_ids, acc, fn legacy_photo_id, inner ->
+      photo_id = Map.get(photo_id_map, legacy_photo_id)
+
+      if valid_photo_note_pair?(photo_id, note_id, photo_ids, note_ids) do
+        MapSet.put(inner, {photo_id, note_id})
+      else
+        inner
+      end
+    end)
+  end
+
+  defp valid_photo_note_pair?(photo_id, note_id, photo_ids, note_ids) do
+    not is_nil(note_id) and
+      not is_nil(photo_id) and
+      MapSet.member?(note_ids, note_id) and
+      MapSet.member?(photo_ids, photo_id)
   end
 
   defp sync_imported_typesense_documents(photo_ids, note_ids) do
@@ -748,20 +771,22 @@ defmodule Vmemo.UserDataTransfer do
   defp read_import_payload(tmp_dir) do
     data_dir = Path.join(tmp_dir, "data")
 
-    with {:ok, metadata} <- read_json(Path.join(data_dir, "metadata.json")) do
-      {:ok,
-       %{
-         metadata: metadata,
-         user: read_optional_json(Path.join(data_dir, "user.json")) || %{},
-         photos: normalize_list(read_optional_json(Path.join(data_dir, "photos.json"))),
-         notes: normalize_list(read_optional_json(Path.join(data_dir, "notes.json"))),
-         typesense_photos:
-           normalize_list(read_optional_json(Path.join(data_dir, "typesense_photos.json"))),
-         typesense_notes:
-           normalize_list(read_optional_json(Path.join(data_dir, "typesense_notes.json")))
-       }}
-    else
-      {:error, reason} -> {:error, reason}
+    case read_json(Path.join(data_dir, "metadata.json")) do
+      {:ok, metadata} ->
+        {:ok,
+         %{
+           metadata: metadata,
+           user: read_optional_json(Path.join(data_dir, "user.json")) || %{},
+           photos: normalize_list(read_optional_json(Path.join(data_dir, "photos.json"))),
+           notes: normalize_list(read_optional_json(Path.join(data_dir, "notes.json"))),
+           typesense_photos:
+             normalize_list(read_optional_json(Path.join(data_dir, "typesense_photos.json"))),
+           typesense_notes:
+             normalize_list(read_optional_json(Path.join(data_dir, "typesense_notes.json")))
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.MarkdownContent do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   @impl true

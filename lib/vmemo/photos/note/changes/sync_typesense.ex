@@ -1,4 +1,5 @@
 defmodule Vmemo.Photos.Note.Changes.SyncTypesense do
+  @moduledoc false
   use Ash.Resource.Change
 
   @impl true

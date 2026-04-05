@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.PhotoCard do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   @impl true

@@ -220,23 +220,30 @@ defmodule Vmemo.PhotoService.TsPhoto do
         q -> q
       end
 
-    if not is_nil(similar) do
-      search_similar_photos(q, similar, user_id, page, per_page)
+    if is_nil(similar) do
+      choose_text_or_semantic_result(q, user_id, page, per_page)
     else
-      text_result = search_text_photos(q, user_id, page, per_page)
-
-      case text_result do
-        {_photos, found, _current_page} when found > 0 ->
-          text_result
-
-        _ ->
-          if q != "*" do
-            search_semantic_photos(q, user_id, page, per_page)
-          else
-            text_result
-          end
-      end
+      search_similar_photos(q, similar, user_id, page, per_page)
     end
+  end
+
+  defp choose_text_or_semantic_result(q, user_id, page, per_page) do
+    text_result = search_text_photos(q, user_id, page, per_page)
+
+    if has_text_hits?(text_result) do
+      text_result
+    else
+      fallback_to_semantic_or_text(q, user_id, page, per_page, text_result)
+    end
+  end
+
+  defp has_text_hits?({_photos, found, _current_page}) when found > 0, do: true
+  defp has_text_hits?(_), do: false
+
+  defp fallback_to_semantic_or_text("*", _user_id, _page, _per_page, text_result), do: text_result
+
+  defp fallback_to_semantic_or_text(q, user_id, page, per_page, _text_result) do
+    search_semantic_photos(q, user_id, page, per_page)
   end
 
   defp search_text_photos(q, user_id, page, per_page) do

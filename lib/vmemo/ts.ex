@@ -1,4 +1,5 @@
 defmodule Vmemo.Ts do
+  @moduledoc false
   alias SmallSdk.Typesense
 
   @migrations_collection_file ".migrations_collection"
@@ -8,7 +9,7 @@ defmodule Vmemo.Ts do
   2024-12-20
   create photos collection
   """
-  def change_1() do
+  def change_1 do
     fields = [
       %{"name" => "image", "type" => "image", "store" => false},
       %{"name" => "note", "type" => "string", "optional" => true},
@@ -32,7 +33,7 @@ defmodule Vmemo.Ts do
   2024-12-20
   create notes collection, add note_ids to photos collection
   """
-  def change_2() do
+  def change_2 do
     notes_schema = %{
       "name" => "notes",
       "fields" => [
@@ -58,7 +59,7 @@ defmodule Vmemo.Ts do
   @doc """
   add photos.ocr
   """
-  def change_3() do
+  def change_3 do
     ensure_collection_fields(
       "photos",
       [
@@ -72,7 +73,7 @@ defmodule Vmemo.Ts do
   @doc """
   add photos.caption and optional image embedding field
   """
-  def change_4() do
+  def change_4 do
     caption_field = %{"name" => "caption", "type" => "string", "optional" => true}
 
     ensure_collection_fields(
@@ -222,20 +223,8 @@ defmodule Vmemo.Ts do
   defp load_applied_migration_versions(migrations_collection, page, acc) do
     case Typesense.list_documents!(migrations_collection, @list_documents_page_size, page) do
       {:ok, docs} when is_list(docs) ->
-        next_acc =
-          docs
-          |> Enum.reduce(acc, fn doc, set ->
-            case Map.get(doc, "version") do
-              version when is_binary(version) -> MapSet.put(set, version)
-              _ -> set
-            end
-          end)
-
-        if length(docs) < @list_documents_page_size do
-          next_acc
-        else
-          load_applied_migration_versions(migrations_collection, page + 1, next_acc)
-        end
+        next_acc = Enum.reduce(docs, acc, &put_migration_version/2)
+        maybe_load_next_migration_page(migrations_collection, page, docs, next_acc)
 
       {:ok, _other} ->
         acc
@@ -245,6 +234,21 @@ defmodule Vmemo.Ts do
 
       {:error, reason} ->
         raise("Typesense list migration versions failed: #{reason}")
+    end
+  end
+
+  defp put_migration_version(doc, set) do
+    case Map.get(doc, "version") do
+      version when is_binary(version) -> MapSet.put(set, version)
+      _ -> set
+    end
+  end
+
+  defp maybe_load_next_migration_page(migrations_collection, page, docs, acc) do
+    if length(docs) < @list_documents_page_size do
+      acc
+    else
+      load_applied_migration_versions(migrations_collection, page + 1, acc)
     end
   end
 

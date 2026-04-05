@@ -1,4 +1,5 @@
 defmodule Vmemo.AccountDomain do
+  @moduledoc false
   use Ash.Domain,
     extensions: [
       AshAdmin.Domain,

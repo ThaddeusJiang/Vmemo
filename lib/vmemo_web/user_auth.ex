@@ -1,4 +1,5 @@
 defmodule VmemoWeb.UserAuth do
+  @moduledoc false
   use VmemoWeb, :verified_routes
 
   import Plug.Conn
@@ -108,21 +109,19 @@ defmodule VmemoWeb.UserAuth do
     # 使用 Ash Authentication JWT 验证 token
     case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
-        # 从 claims 中获取 jti (token ID) 并撤销 token
-        case Map.get(claims, "jti") do
-          nil ->
-            :ok
-
-          jti ->
-            # 删除 token 记录
-            case Ash.get(Vmemo.Account.UserToken, jti) do
-              {:ok, token_record} -> Ash.destroy(token_record)
-              _ -> :ok
-            end
-        end
+        revoke_token_by_jti(Map.get(claims, "jti"))
 
       _ ->
         :ok
+    end
+  end
+
+  defp revoke_token_by_jti(nil), do: :ok
+
+  defp revoke_token_by_jti(jti) do
+    case Ash.get(Vmemo.Account.UserToken, jti) do
+      {:ok, token_record} -> Ash.destroy(token_record)
+      _ -> :ok
     end
   end
 
@@ -153,25 +152,23 @@ defmodule VmemoWeb.UserAuth do
     # 使用 Ash Authentication JWT 验证 token
     case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
-        # 从 claims 中获取用户 ID
-        case Map.get(claims, "sub") do
-          nil ->
-            nil
-
-          "user?id=" <> user_id ->
-            case Ash.get(User, user_id) do
-              {:ok, user} -> user
-              _ -> nil
-            end
-
-          _ ->
-            nil
-        end
+        claims
+        |> Map.get("sub")
+        |> fetch_user_from_sub_claim()
 
       _ ->
         nil
     end
   end
+
+  defp fetch_user_from_sub_claim("user?id=" <> user_id) do
+    case Ash.get(User, user_id) do
+      {:ok, user} -> user
+      _ -> nil
+    end
+  end
+
+  defp fetch_user_from_sub_claim(_), do: nil
 
   def require_authenticated_user(conn, _opts) do
     if conn.assigns[:current_user] do

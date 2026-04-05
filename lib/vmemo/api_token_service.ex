@@ -4,7 +4,7 @@ defmodule Vmemo.ApiTokenService do
   """
 
   require Logger
-  alias Vmemo.Account.{ApiToken}
+  alias Vmemo.Account.ApiToken
 
   ## API Token functions
 
@@ -42,51 +42,8 @@ defmodule Vmemo.ApiTokenService do
   Creates an API token.
   """
   def create_api_token(user, attrs) do
-    # 处理过期时间选项
-    expires_at =
-      attrs
-      |> Map.get("expires_at")
-      |> case do
-        "30" ->
-          DateTime.utc_now()
-          |> DateTime.add(30 * 24 * 60 * 60, :second)
-          |> DateTime.truncate(:second)
+    expires_at = attrs |> Map.get("expires_at") |> parse_expires_at()
 
-        "90" ->
-          DateTime.utc_now()
-          |> DateTime.add(90 * 24 * 60 * 60, :second)
-          |> DateTime.truncate(:second)
-
-        "180" ->
-          DateTime.utc_now()
-          |> DateTime.add(180 * 24 * 60 * 60, :second)
-          |> DateTime.truncate(:second)
-
-        "never" ->
-          nil
-
-        # 默认90天
-        nil ->
-          DateTime.utc_now()
-          |> DateTime.add(90 * 24 * 60 * 60, :second)
-          |> DateTime.truncate(:second)
-
-        date when is_binary(date) ->
-          case DateTime.from_iso8601(date <> ":00") do
-            {:ok, datetime, _} ->
-              DateTime.truncate(datetime, :second)
-
-            {:error, _} ->
-              DateTime.utc_now()
-              |> DateTime.add(90 * 24 * 60 * 60, :second)
-              |> DateTime.truncate(:second)
-          end
-
-        date ->
-          DateTime.truncate(date, :second)
-      end
-
-    # 转换字符串键为原子键
     attrs_atoms =
       attrs
       |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
@@ -95,19 +52,39 @@ defmodule Vmemo.ApiTokenService do
     attrs_with_expires = Map.put(attrs_atoms, :expires_at, expires_at)
     attrs_with_user = Map.put(attrs_with_expires, :user_id, user.id)
 
-    # 生成 token
     {raw_token, hash} = Vmemo.Account.ApiToken.generate_token()
     attrs_with_hash = Map.put(attrs_with_user, :token_hash, hash)
 
     case ApiToken.create(attrs_with_hash, actor: user) do
       {:ok, api_token} ->
-        # 记录创建日志
         log_token_usage(api_token, "create", nil, %{})
         {:ok, api_token, raw_token}
 
       {:error, changeset} ->
         {:error, changeset}
     end
+  end
+
+  defp parse_expires_at("30"), do: expires_in_days(30)
+  defp parse_expires_at("90"), do: expires_in_days(90)
+  defp parse_expires_at("180"), do: expires_in_days(180)
+  defp parse_expires_at("never"), do: nil
+  defp parse_expires_at(nil), do: expires_in_days(90)
+
+  defp parse_expires_at(date) when is_binary(date) do
+    case DateTime.from_iso8601(date <> ":00") do
+      {:ok, datetime, _} -> DateTime.truncate(datetime, :second)
+      {:error, _} -> expires_in_days(90)
+    end
+  end
+
+  defp parse_expires_at(%DateTime{} = date), do: DateTime.truncate(date, :second)
+  defp parse_expires_at(_), do: expires_in_days(90)
+
+  defp expires_in_days(days) do
+    DateTime.utc_now()
+    |> DateTime.add(days * 24 * 60 * 60, :second)
+    |> DateTime.truncate(:second)
   end
 
   @doc """

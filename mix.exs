@@ -11,6 +11,7 @@ defmodule Vmemo.MixProject do
       consolidate_protocols: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      dialyzer: dialyzer(),
       docs: &docs/0,
       compilers: Mix.compilers() ++ [],
       listeners: [Phoenix.CodeReloader]
@@ -85,7 +86,18 @@ defmodule Vmemo.MixProject do
       {:oban_met, "~> 1.0"},
       {:owl, "~> 0.13"},
       {:spark, "~> 2.3"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40", only: :dev, runtime: false, warn_if_outdated: true}
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_file: {:no_warn, "priv/plts/project.plt"},
+      plt_add_deps: :app_tree,
+      plt_add_apps: [:mix]
     ]
   end
 
@@ -120,6 +132,17 @@ defmodule Vmemo.MixProject do
       "db.seed": ["run priv/repo/seeds.exs"],
       "db.setup": ["db.create", "db.migrate", "db.seed"],
       "db.reset": ["db.drop", "db.setup"],
+      check: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "xref graph --format cycles --label compile-connected --fail-above 0",
+        "credo --strict",
+        "sobelow --config",
+        "hex.audit",
+        "deps.unlock --check-unused",
+        "cmd MIX_ENV=test mix test --warnings-as-errors",
+        "cmd MIX_ENV=dev mix dialyzer --format short"
+      ],
       "ts.setup": ["ts.migrate"],
       "ts.reset": ["ts.drop", "ts.setup"],
       test: ["ash_postgres.create --quiet", "ash.migrate --quiet", "ts.migrate", "test"],

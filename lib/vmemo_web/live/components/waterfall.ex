@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.Waterfall do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   @impl true

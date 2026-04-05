@@ -1,4 +1,5 @@
 defmodule Vmemo.Chat.Conversation do
+  @moduledoc false
   use Ash.Resource,
     otp_app: :vmemo,
     domain: Vmemo.Chat,

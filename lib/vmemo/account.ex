@@ -207,7 +207,7 @@ defmodule Vmemo.Account do
   """
   def update_user_email(user, token) do
     # Verify the token and extract the payload
-    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_email", token, max_age: 86400) do
+    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_email", token, max_age: 86_400) do
       {:ok, %{user_id: user_id, current_email: current_email, new_email: new_email}} ->
         # Verify the token is for this user and the current email matches
         if user.id == user_id and user.email == current_email do
@@ -264,7 +264,7 @@ defmodule Vmemo.Account do
   """
   def confirm_user(token) do
     # Verify the token and extract the payload
-    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86400) do
+    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86_400) do
       {:ok, %{user_id: user_id}} ->
         case Ash.get(User, user_id) do
           {:ok, user} ->
@@ -292,7 +292,7 @@ defmodule Vmemo.Account do
   end
 
   def user_from_confirmation_token(token) do
-    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86400) do
+    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86_400) do
       {:ok, %{user_id: user_id}} ->
         Ash.get(User, user_id)
 

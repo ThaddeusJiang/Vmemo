@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.MoondreamPanel do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   alias Vmemo.Ai.VisionRequest
@@ -31,7 +32,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     prompt = Map.get(params, "prompt", socket.assigns.prompt)
     function = Map.get(params, "function", socket.assigns.function)
 
-    if is_segment_disabled?(function) do
+    if segment_disabled?(function) do
       {:noreply, socket}
     else
       {:noreply,
@@ -54,7 +55,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     prompt = Map.get(params, "prompt", "") |> String.trim()
     prompt = if prompt == "", do: socket.assigns.prompt, else: prompt
 
-    if is_segment_disabled?(function) do
+    if segment_disabled?(function) do
       {:noreply, socket}
     else
       case VisionRequest.create(
@@ -124,13 +125,12 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     {:noreply, socket}
   end
 
-  defp is_segment_disabled?(function), do: function == "segment"
+  defp segment_disabled?(function), do: function == "segment"
 
   defp format_changeset_errors(changeset) do
     case changeset do
       %Ash.Error.Invalid{errors: errors} ->
-        errors
-        |> Enum.map(fn error ->
+        Enum.map_join(errors, "; ", fn error ->
           case error do
             %Ash.Error.Changes.Required{field: field} ->
               "#{field} is required"
@@ -142,7 +142,6 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
               "Validation failed"
           end
         end)
-        |> Enum.join("; ")
 
       _ ->
         "Failed to create request"
@@ -249,13 +248,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   defp format_result(result, _function_type), do: inspect(result)
 
   defp format_detection_result(%{"objects" => objects}) when is_list(objects) do
-    objects
-    |> Enum.map(fn obj ->
+    Enum.map_join(objects, "\n", fn obj ->
       label = Map.get(obj, "label", "unknown")
       count = Map.get(obj, "count", 1)
       "#{label}: #{count}"
     end)
-    |> Enum.join("\n")
   end
 
   defp format_detection_result(result), do: Jason.encode!(result, pretty: true)
@@ -429,14 +426,12 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
             class={[
               "btn rounded-lg",
               if(@function == func, do: "btn-neutral", else: "btn-outline"),
-              if(is_segment_disabled?(func),
+              if(segment_disabled?(func),
                 do: "opacity-50 cursor-not-allowed",
                 else: "cursor-pointer"
               )
             ]}
-            title={
-              if(is_segment_disabled?(func), do: "Segment function is not available yet", else: "")
-            }
+            title={if(segment_disabled?(func), do: "Segment function is not available yet", else: "")}
           >
             <input
               type="radio"
@@ -444,7 +439,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
               value={func}
               class="hidden"
               checked={@function == func}
-              disabled={is_segment_disabled?(func)}
+              disabled={segment_disabled?(func)}
             />
             {String.capitalize(func)}
           </label>

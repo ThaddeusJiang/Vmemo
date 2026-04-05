@@ -1,4 +1,5 @@
 defmodule Vmemo.Photos.Note do
+  @moduledoc false
   use Ash.Resource,
     domain: Vmemo.Photos,
     data_layer: AshPostgres.DataLayer,
@@ -118,9 +119,9 @@ defmodule Vmemo.Photos.Note do
   defp sync_note_with_typesense_retry(typesense_data, :create) do
     case TsNote.create(typesense_data) do
       {:error, "Not Found"} ->
-        with :ok <- migrate_typesense_schema(),
-             {:ok, created} <- TsNote.create(typesense_data) do
-          {:ok, created}
+        case migrate_typesense_schema() do
+          :ok -> TsNote.create(typesense_data)
+          error -> error
         end
 
       result ->
@@ -152,14 +153,12 @@ defmodule Vmemo.Photos.Note do
   end
 
   defp migrate_typesense_schema do
-    try do
-      case Vmemo.Ts.migrate() do
-        :ok -> :ok
-        other -> {:error, "Typesense migration failed: #{inspect(other)}"}
-      end
-    rescue
-      exception ->
-        {:error, "Typesense migration failed: #{Exception.message(exception)}"}
+    case Vmemo.Ts.migrate() do
+      :ok -> :ok
+      other -> {:error, "Typesense migration failed: #{inspect(other)}"}
     end
+  rescue
+    exception ->
+      {:error, "Typesense migration failed: #{Exception.message(exception)}"}
   end
 end

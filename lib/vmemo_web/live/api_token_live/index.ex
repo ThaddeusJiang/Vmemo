@@ -94,7 +94,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="flex items-center gap-2">
                   <span class="font-medium text-sm sm:text-base">{token.name}</span>
                   <span :if={!token.is_active} class="badge badge-warning badge-sm">Disabled</span>
-                  <span :if={is_expired?(token)} class="badge badge-error badge-sm">Expired</span>
+                  <span :if={expired?(token)} class="badge badge-error badge-sm">Expired</span>
                 </div>
               </:col>
               <:col :let={token} label="Token">
@@ -228,30 +228,24 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     user = socket.assigns.current_user
 
     socket = assign(socket, :loading, true)
+    token = ApiTokenService.get_user_api_token!(user, id)
 
-    case ApiTokenService.get_user_api_token!(user, id) do
-      token ->
-        case ApiTokenService.toggle_api_token_status(token) do
-          {:ok, updated_token} ->
-            updated_tokens =
-              Enum.map(socket.assigns.api_tokens, fn t ->
-                if t.id == updated_token.id, do: updated_token, else: t
-              end)
+    case ApiTokenService.toggle_api_token_status(token) do
+      {:ok, updated_token} ->
+        updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
+        status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
 
-            status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
+        {:noreply,
+         socket
+         |> assign(:api_tokens, updated_tokens)
+         |> assign(:loading, false)
+         |> put_flash(:info, "Token #{status_text}")}
 
-            {:noreply,
-             socket
-             |> assign(:api_tokens, updated_tokens)
-             |> assign(:loading, false)
-             |> put_flash(:info, "Token #{status_text}")}
-
-          {:error, _changeset} ->
-            {:noreply,
-             socket
-             |> assign(:loading, false)
-             |> assign(:error_message, "状态切换失败")}
-        end
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> assign(:loading, false)
+         |> assign(:error_message, "状态切换失败")}
     end
   end
 
@@ -283,7 +277,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   defp format_string("datetime"), do: "%Y-%m-%d %H:%M"
   defp format_string(custom), do: custom
 
-  defp is_expired?(token) do
+  defp expired?(token) do
     case token.expires_at do
       # 永不过期
       nil -> false
@@ -293,13 +287,19 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   defp count_active_tokens(tokens) do
     tokens
-    |> Enum.filter(&(&1.is_active and !is_expired?(&1)))
+    |> Enum.filter(&(&1.is_active and !expired?(&1)))
     |> length()
   end
 
   defp count_expired_tokens(tokens) do
     tokens
-    |> Enum.filter(&is_expired?/1)
+    |> Enum.filter(&expired?/1)
     |> length()
+  end
+
+  defp replace_token(tokens, updated_token) do
+    Enum.map(tokens, fn token ->
+      if token.id == updated_token.id, do: updated_token, else: token
+    end)
   end
 end

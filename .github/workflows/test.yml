@@ -1,10 +1,46 @@
-name: Elixir Checks
+name: Test
 
 on:
   pull_request:
 
 jobs:
-  test:
+  mix-check:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      matrix:
+        otp: ["28"]
+        elixir: ["1.19.5"]
+    name: Check / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: |
+          mix compile --warnings-as-errors
+          mix xref graph --format cycles --label compile-connected --fail-above 0
+
+      - name: Format
+        run: |
+          mix format --check-formatted
+
+      - name: Credo
+        continue-on-error: true
+        run: mix credo --strict
+
+      - name: Sobelow
+        continue-on-error: true
+        run: mix sobelow --config
+
+  mix-test:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
@@ -30,7 +66,7 @@ jobs:
       matrix:
         otp: ["28"]
         elixir: ["1.19.5"]
-    name: Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+    name: Tests / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: erlef/setup-beam@v1.23.0

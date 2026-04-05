@@ -1,4 +1,5 @@
 defmodule Vmemo.Workers.Typesense.CreateNote do
+  @moduledoc false
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
   alias Vmemo.Photos.Note

@@ -1,4 +1,5 @@
 defmodule VmemoWeb.Live.UiPlayground do
+  @moduledoc false
   use VmemoWeb, :live_view
 
   def render(assigns) do

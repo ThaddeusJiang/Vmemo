@@ -1,4 +1,5 @@
 defmodule Vmemo.Ts.Warmup do
+  @moduledoc false
   alias SmallSdk.Typesense
 
   @embedding_warmup_receive_timeout 300_000

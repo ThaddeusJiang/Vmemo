@@ -1,24 +1,23 @@
 defmodule Vmemo.PhotoService.Ai do
+  @moduledoc false
   require Logger
 
   alias SmallSdk.FileSystem
   alias SmallSdk.Moondream
 
   def gen_description(image_path) do
-    try do
-      image_base64 = FileSystem.read_image_base64(Path.join([".", image_path]))
+    image_base64 = FileSystem.read_image_base64(Path.join([".", image_path]))
 
-      if image_base64 == nil do
-        {:error, "Failed to read image file"}
-      else
-        case Moondream.caption(image_base64) do
-          {:ok, caption} -> {:ok, caption}
-          {:error, reason} -> {:error, reason}
-        end
+    if image_base64 == nil do
+      {:error, "Failed to read image file"}
+    else
+      case Moondream.caption(image_base64) do
+        {:ok, caption} -> {:ok, caption}
+        {:error, reason} -> {:error, reason}
       end
-    rescue
-      e -> {:error, e}
     end
+  rescue
+    e -> {:error, e}
   end
 
   def gen_description!(image_path) do

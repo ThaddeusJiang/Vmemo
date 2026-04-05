@@ -1,4 +1,5 @@
 defmodule Vmemo.AiAgentActorPersister do
+  @moduledoc false
   use AshOban.ActorPersister
 
   def store(%Vmemo.Account.User{id: id}), do: %{"type" => "user", "id" => id}

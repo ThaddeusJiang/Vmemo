@@ -3,4 +3,3 @@ defmodule VmemoWeb.Utils.DatetimeTest do
 
   doctest VmemoWeb.Utils.Datetime
 end
-

@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   alias Vmemo.Chat

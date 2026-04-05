@@ -1,8 +1,8 @@
 defmodule VmemoWeb.UserSessionController do
   use VmemoWeb, :controller
 
-  alias VmemoWeb.UserAuth
   alias Vmemo.Account.User
+  alias VmemoWeb.UserAuth
 
   def create(conn, %{"_action" => action, "user" => user_params}) do
     %{"email" => email, "password" => password} = user_params

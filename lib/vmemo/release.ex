@@ -23,14 +23,16 @@ defmodule Vmemo.Release do
   def ash_migrate do
     load_app()
 
-    for repo <- repos() do
-      {:ok, _, _} =
-        Ecto.Migrator.with_repo(repo, fn repo ->
-          for path <- migration_paths(repo) do
-            Ecto.Migrator.run(repo, path, :up, all: true)
-          end
+    Enum.each(repos(), &run_repo_migrations/1)
+  end
+
+  defp run_repo_migrations(repo) do
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(repo, fn repo ->
+        Enum.each(migration_paths(repo), fn path ->
+          Ecto.Migrator.run(repo, path, :up, all: true)
         end)
-    end
+      end)
   end
 
   @doc """

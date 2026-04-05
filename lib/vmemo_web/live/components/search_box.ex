@@ -1,8 +1,9 @@
 defmodule VmemoWeb.LiveComponents.SearchBox do
+  @moduledoc false
   use VmemoWeb, :live_component
 
-  alias Vmemo.PhotoService
   alias Vmemo.Photos.Photo
+  alias Vmemo.PhotoService
 
   @impl true
   def mount(socket) do
@@ -78,8 +79,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   @impl true
   def handle_event("search-by-photo", _, socket) do
-    current_user =
-      Map.get(socket.assigns, :current_user) || Map.get(socket.assigns, :current_user)
+    current_user = Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket}

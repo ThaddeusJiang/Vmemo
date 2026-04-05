@@ -1,4 +1,5 @@
 defmodule Vmemo.Chat.Message.Changes.CreateConversationIfNotProvided do
+  @moduledoc false
   use Ash.Resource.Change
 
   @impl true

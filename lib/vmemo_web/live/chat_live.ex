@@ -79,7 +79,7 @@ defmodule VmemoWeb.ChatLive do
           >
             <%= for {id, message} <- @streams.messages do %>
               <% photos = extract_photos_from_message(message) %>
-              <% is_thinking = is_thinking?(message) %>
+              <% is_thinking = thinking?(message) %>
               <div
                 id={id}
                 class={[
@@ -556,7 +556,7 @@ defmodule VmemoWeb.ChatLive do
 
   defp extract_photos_from_message(message) do
     # If message is not complete (still thinking), don't show photos
-    if is_thinking?(message) do
+    if thinking?(message) do
       []
     else
       case Map.get(message, :tool_results) do
@@ -644,7 +644,7 @@ defmodule VmemoWeb.ChatLive do
 
   defp normalize_photo(_), do: nil
 
-  defp is_thinking?(message) do
+  defp thinking?(message) do
     # Message is thinking if it's not complete yet
     complete = Map.get(message, :complete)
     complete == false || is_nil(complete)

@@ -1,4 +1,5 @@
 defmodule Vmemo.Workers.Import.ProcessRequest do
+  @moduledoc false
   use Oban.Worker, queue: :import_requests, max_attempts: 3
 
   require Logger

@@ -1,4 +1,5 @@
 defmodule Vmemo.Admin.ImportRequest do
+  @moduledoc false
   use Ash.Resource,
     domain: Vmemo.Admin,
     data_layer: AshPostgres.DataLayer,
@@ -167,15 +168,16 @@ defmodule Vmemo.Admin.ImportRequest do
         filename = file_source_filename(file)
         dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
 
-        with {:ok, source} <- Ash.Type.File.open(file, [:read, :binary]) do
-          result = copy_stream(source, dest_path)
-          File.close(source)
+        case Ash.Type.File.open(file, [:read, :binary]) do
+          {:ok, source} ->
+            result = copy_stream(source, dest_path)
+            File.close(source)
 
-          case result do
-            :ok -> {:ok, filename, dest_path}
-            {:error, reason} -> {:error, reason}
-          end
-        else
+            case result do
+              :ok -> {:ok, filename, dest_path}
+              {:error, reason} -> {:error, reason}
+            end
+
           {:error, reason} ->
             {:error, reason}
         end

@@ -1,14 +1,15 @@
 defmodule VmemoWeb.LiveComponents.UploadForm do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   import VmemoWeb.Live.FocusHelpers
 
   alias VmemoWeb.LiveComponents.Waterfall
 
-  alias Vmemo.PhotoService
-  alias Vmemo.Photos.Photo
   alias Vmemo.Photos.Note
+  alias Vmemo.Photos.Photo
   alias Vmemo.Photos.PhotoNote
+  alias Vmemo.PhotoService
 
   @impl true
   def mount(socket) do
@@ -266,8 +267,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         %{"note" => note_text, "is_whole" => is_whole},
         socket
       ) do
-    current_user =
-      Map.get(socket.assigns, :current_user) || Map.get(socket.assigns, :current_user)
+    current_user = Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket |> put_flash(:error, "User not found")}

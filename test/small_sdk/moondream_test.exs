@@ -1,8 +1,8 @@
 defmodule SmallSdk.MoondreamTest do
   use ExUnit.Case, async: false
 
-  alias SmallSdk.Moondream
   alias SmallSdk.FileSystem
+  alias SmallSdk.Moondream
 
   @test_image_path "test/support/fixtures/images/wall-e.png"
   @moduletag :integration
