@@ -139,6 +139,7 @@ if config_env() == :prod do
     repo: Vmemo.Repo,
     plugins: [Oban.Plugins.Pruner],
     queues: [
+      default: 10,
       chat_responses: 10,
       conversations: 10,
       sync_typesense: 10,

@@ -9,6 +9,7 @@ import Config
 
 config :vmemo, Oban,
   queues: [
+    default: [limit: 10],
     chat_responses: [limit: 10],
     conversations: [limit: 10],
     sync_typesense: [limit: 10],
