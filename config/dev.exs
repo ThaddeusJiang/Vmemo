@@ -16,7 +16,7 @@ config :vmemo, Vmemo.Repo,
 config :vmemo, typesense_url: "http://localhost:8766"
 config :vmemo, typesense_api_key: "xyz"
 
-config :vmemo, moondream_url: "http://localhost:2020/v1"
+config :vmemo, moondream_url: "http://localhost:2020/v1/"
 
 # Admin token for development
 config :vmemo, admin_token: "admin"

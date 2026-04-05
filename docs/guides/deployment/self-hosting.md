@@ -43,7 +43,7 @@ cp self-hosting.env.example .env
 如果你在本地运行 moondream，请在 `.env` 设置：
 
 ```env
-MOONDREAM_URL=http://host.docker.internal:2020/v1
+MOONDREAM_URL=http://host.docker.internal:2020/v1/
 ```
 
 如果你想使用本地刚 build 的镜像，在当前目录运行：

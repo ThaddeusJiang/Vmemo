@@ -1,6 +1,6 @@
 services:
   e2e-seed:
-    image: postgres:17
+    image: postgres:18
     restart: "no"
     extra_hosts:
       - "host.docker.internal:host-gateway"
