@@ -38,7 +38,7 @@ E2E_BASE_URL=http://localhost:4000 bun run e2e
 
 ## Prod-Like Mode
 
-Start the prod-like app stack from `e2e-test/docker-compose.yml`.
+Start the prod-like app stack from `e2e-test/docker-compose.e2e.yml`.
 This compose file manages:
 
 - `e2e-seed` (one-shot SQL seed service)
@@ -47,13 +47,13 @@ This compose file manages:
 PostgreSQL and Typesense must already be available outside this compose file.
 
 ```bash
-docker compose -f docker-compose.yml up -d --pull never
+docker compose -f docker-compose.e2e.yml up -d --pull never
 ```
 
 Stop and remove the stack after testing:
 
 ```bash
-docker compose -f docker-compose.yml down -v
+docker compose -f docker-compose.e2e.yml down -v
 ```
 
 By default, both `e2e-seed` and app container connect to:
@@ -171,7 +171,7 @@ CI runs the same specs against a prod-like target:
 
 - build image from current branch
 - start `postgres` and `typesense` with GitHub Actions `services`
-- start the app with `docker compose -f docker-compose.yml up -d`
+- start the app with `docker compose -f docker-compose.e2e.yml up -d`
 - run Playwright tests against `http://localhost:4000`
 - upload `test-results` and snapshot artifacts
 
@@ -189,6 +189,6 @@ tests begin.
 Local development can run the same specs against either:
 
 - an already running dev server
-- the local Docker prod-like app from `e2e-test/docker-compose.yml` with external PostgreSQL and Typesense
+- the local Docker prod-like app from `e2e-test/docker-compose.e2e.yml` with external PostgreSQL and Typesense
 
 Use local runs to debug quickly. Use CI results to decide whether visual changes are acceptable for the team.

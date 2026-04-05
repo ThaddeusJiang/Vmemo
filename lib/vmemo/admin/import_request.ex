@@ -25,7 +25,7 @@ defmodule Vmemo.Admin.ImportRequest do
     triggers do
       trigger :process do
         action :process
-        queue :default
+        queue :import_requests
         scheduler_cron false
         where expr(status == "pending" and not is_nil(import_zip_path))
         worker_module_name Vmemo.Admin.ImportRequest.Workers.Process

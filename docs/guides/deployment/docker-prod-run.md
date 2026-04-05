@@ -1,30 +1,38 @@
-# 构建和运行
+# Deployment
 
-Docker 只保留单一的 prod 镜像入口：
+Vmemo keeps a single production-image path for Docker workflows.
 
-- 根目录 [`Dockerfile`](/Users/amami/git/my-personal-2026/Vmemo/Dockerfile) 同时用于本地 Docker 运行和 GitHub Actions publish，统一使用 `MIX_ENV=prod`
+## Image Policy
 
-不再维护单独的 dev Docker 环境或额外的 Dockerfile 变体。
+- Use the root `Dockerfile` for both local production-like runs and CI image publishing.
+- Build and run with `MIX_ENV=prod`.
+- Do not maintain a separate development Docker image path.
 
-## 本地依赖服务
+## Local Dependency Services
 
-[`_local/docker-compose.yml`](/Users/amami/git/my-personal-2026/Vmemo/_local/docker-compose.yml) 用于启动本地依赖服务；应用可以运行在宿主机上，也可以单独以 prod 容器方式运行。
+Use the repository root compose files for dependency services such as PostgreSQL and Typesense.
 
-启动依赖服务：
+Create local compose file from the committed example:
 
 ```bash
-docker compose -f _local/docker-compose.yml up -d postgres typesense
+cp docker-compose.example.yml docker-compose.yml
 ```
 
-## 本地运行 prod 容器
+Start dependencies:
 
-先构建 prod 镜像：
+```bash
+docker compose -f docker-compose.yml up -d postgres typesense
+```
+
+## Build and Run the Production Image Locally
+
+Build:
 
 ```bash
 docker build -t vmemo:local .
 ```
 
-然后运行：
+Run:
 
 ```bash
 docker run --rm -p 4000:4000 \
@@ -32,38 +40,37 @@ docker run --rm -p 4000:4000 \
   vmemo:local
 ```
 
-容器会先在 release 中执行迁移，再运行 `bin/vmemo start`。
+The release runs migrations first, then starts the app.
 
-## Release 模式远程登录 IEx
+## Remote IEx for Release Runtime
 
-当应用以 release 方式运行（`bin/vmemo start`）时，可以通过 release 命令远程连接到正在运行的节点。
-
-先找到容器名：
+Find the running container:
 
 ```bash
 docker ps --format '{{.Names}}'
 ```
 
-然后远程进入 IEx：
+Connect to a running release:
 
 ```bash
 docker exec -it <container_name> /app/bin/vmemo remote
 ```
 
-连接成功后即可执行 Elixir 代码，例如：
+Example command after connecting:
 
 ```elixir
 Vmemo.Release.migrate()
 ```
 
-退出远程 IEx 使用 `Ctrl+C` 两次。
+Exit remote IEx with `Ctrl+C` twice.
 
-## 宿主机运行应用
+## Host-Mode App Runtime
 
-在项目根目录直接运行：
+Run directly on host for development:
 
 ```bash
 iex -S mix phx.server
 ```
 
-`mix ts.setup`、`mix ts.reset`、`mix ts.migrate` 等一次性任务仍然建议直接在宿主机上执行。
+One-off setup or maintenance tasks can still be run from host shell, for example
+`mix ts.setup`, `mix ts.reset`, and `mix ts.migrate`.

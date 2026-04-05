@@ -251,6 +251,7 @@ password = "password123456"
 ## 项目规范
 
 - **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`mise.toml` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+- 本地 compose 约定：默认只提交 `*.example.yml`，所有非 `example` 的 compose 文件都通过复制 example 在本地生成并使用（例如 `cp docker-compose.example.yml docker-compose.yml`），不纳入 git 跟踪；`e2e-test/docker-compose.e2e.yml` 与 `docs/guides/deployment/self-hosting/docker-compose.yml` 作为固定入口例外，允许提交到仓库并在本地与 CI 直接使用。
 - **本地 reset 流程**：执行 reset 时先关闭 `mix phx.server`，再执行 `docker compose down -v` 清空数据，随后执行 `docker compose up -d`，最后运行 `mix setup` 初始化数据库定义、Typesense 定义与 local development smoke testing 数据。
 - 每次从没有 diff 的状态开始写代码时，先创建一个新的 branch，不要直接在 `develop` 或 `main` 上开始工作。
 - 在非 `develop` 和 `main` 分支提交代码后，可以直接 push 到 remote。

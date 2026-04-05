@@ -69,3 +69,5 @@ node_modules
 test-results
 *-darwin.png
 _local_docs/
+/docker-compose.yml
+/e2e-test/docker-compose.yml

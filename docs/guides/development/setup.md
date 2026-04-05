@@ -1,88 +1,102 @@
 # Development Setup
 
-This guide explains how to set up a local Vmemo development environment.
+This guide is written in a practical contributor style and focuses on getting a local Vmemo environment ready quickly.
 
 ## Prerequisites
 
-- macOS host environment.
-- `mise` installed for Elixir/Erlang version management.
-- Docker Desktop (or compatible local Docker runtime).
+- macOS or Linux
+- Docker runtime
+- `mise` for Elixir/Erlang version management
 
-## 1. Install Toolchain
+## Quickstart
 
-Install project-defined Elixir/Erlang versions:
+1. Install toolchain versions from `mise.toml`:
 
 ```bash
 mise install
 ```
 
-## 2. Start Dependencies
+2. Start local dependencies:
 
-Start local infrastructure services:
+Create local compose file from the committed example:
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+```
+
+Then start local dependencies:
 
 ```bash
 docker compose up -d
 ```
 
-## 3. Configure Local Environment
-
-Create local environment overrides when needed:
-
-```toml
-# mise.local.toml
-[env]
-OPENROUTER_API_KEY = "your-openrouter-api-key"
-```
-
-For full runtime variables, see:
-
-- `config/runtime.exs`
-- [docs/guides/deployment/docker-prod-run.md](../deployment/docker-prod-run.md)
-
-## 4. Install Dependencies and Prepare Database
+3. Install dependencies and initialize the app:
 
 ```bash
 mix setup
 ```
 
-`mix setup` prepares both database and Typesense in this project:
-
-- Database setup and migrations
-- Typesense schema setup and migrations
-
-For daily maintenance, prefer:
-
-```bash
-mix reset
-```
-
-`mix reset` resets database state only.
-
-For Typesense, use `mix ts.reset` when you need a full schema reset.
-For local Docker troubleshooting, restarting the Typesense container is also valid.
-
-Use standalone `mix db.*` or `mix ts.*` commands only for targeted fixes.
-
-## 5. Run the App
-
-Run the Phoenix server in local development:
+4. Run the app locally:
 
 ```bash
 iex -S mix phx.server
 ```
 
-Open `http://localhost:4000`.
+5. Open the app:
 
-## Useful Commands
+```text
+http://localhost:4000
+```
+
+## Daily Workflow
+
+Run the test suite:
 
 ```bash
 mix test
+```
+
+Inspect routes:
+
+```bash
 mix phx.routes
+```
+
+Format code:
+
+```bash
 mix format
 ```
 
+Reset local DB + Typesense state when needed:
+
+```bash
+mix reset
+mix ts.reset
+```
+
+## Local Environment Variables
+
+If needed, set local overrides in `mise.local.toml`:
+
+```toml
+[env]
+OPENROUTER_API_KEY = "your-openrouter-api-key"
+```
+
+Runtime environment keys are defined in `config/runtime.exs`.
+
+## Contributor Checklist
+
+Before opening a pull request:
+
+1. Run `mix format`.
+2. Run `mix test`.
+3. Validate the feature path manually in the browser.
+4. Update docs for any user-facing or developer-facing behavior changes.
+
 ## Related Docs
 
-- API docs: [../../features/public-rest-api.md](../../features/public-rest-api.md)
-- Prod Docker run: [../deployment/docker-prod-run.md](../deployment/docker-prod-run.md)
-- Tooling notes: [tidewave.md](tidewave.md)
+- Public REST API: `docs/features/public-rest-api.md`
+- API Token Guide: `docs/features/api-tokens.md`
+- Deployment: `docs/guides/deployment/docker-prod-run.md`

@@ -1,6 +1,6 @@
 ---
 name: "create-pr"
-description: "Create GitHub pull requests with smart base branch inference, default draft mode, conventional-style PR title prefixes, and structured PR content including visuals."
+description: "Create GitHub pull requests with smart base branch inference, conventional-style PR title prefixes, and structured PR content including visuals."
 ---
 
 # create-pr Skill
@@ -11,7 +11,6 @@ Use this skill when the user asks to create a pull request.
 
 Create a high-quality PR with:
 
-- `draft` mode by default
 - Smart base branch inference (not blind default-branch targeting)
 - PR title that starts with a conventional prefix like `feat(...)`, `fix(...)`, `ci(...)`, `chore(...)`
 - A structured PR body containing:
@@ -29,7 +28,7 @@ Create a high-quality PR with:
 3. Infer base branch intelligently.
 4. Build a conventional-style PR title.
 5. Build a structured PR body (with optional visuals).
-6. Create a draft PR.
+6. Create PR.
 7. Return PR URL and a short summary.
 
 ## Step 1: Branch safety checks
@@ -171,20 +170,17 @@ Rules:
 - If no related issues/pulls are found, write `- None`.
 - If no visuals are available, keep `## Visual Evidence` and write `- None` under it.
 
-## Step 6: Create PR (draft by default)
-
-Always default to draft unless user explicitly asks for a ready PR.
+## Step 6: Create PR
 
 ```bash
 gh pr create \
   --base "$BASE" \
   --head "$CURRENT_BRANCH" \
   --title "$PR_TITLE" \
-  --body-file "$PR_BODY_FILE" \
-  --draft
+  --body-file "$PR_BODY_FILE"
 ```
 
-If user explicitly asks non-draft, remove `--draft`.
+If user explicitly asks for draft PR, add `--draft`.
 
 ## Step 7: Final response format
 
@@ -192,7 +188,6 @@ Return:
 
 - PR URL
 - Base branch used and why it was selected
-- Whether draft mode was used
 - The exact PR title used (including prefix)
 - A 3-5 bullet summary of the PR body
 

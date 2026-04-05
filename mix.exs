@@ -11,6 +11,7 @@ defmodule Vmemo.MixProject do
       consolidate_protocols: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      docs: &docs/0,
       compilers: Mix.compilers() ++ [],
       listeners: [Phoenix.CodeReloader]
     ]
@@ -83,7 +84,23 @@ defmodule Vmemo.MixProject do
       {:open_api_spex, "~> 3.22"},
       {:oban_met, "~> 1.0"},
       {:owl, "~> 0.13"},
-      {:spark, "~> 2.3"}
+      {:spark, "~> 2.3"},
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false, warn_if_outdated: true}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "home",
+      api_reference: false,
+      extras: [
+        {"README.md", [filename: "home", title: "Home"]},
+        "docs/features/data-models.en.md",
+        "docs/features/public-rest-api.md",
+        "docs/features/api-tokens.md",
+        "docs/guides/development/setup.md",
+        "docs/guides/deployment/docker-prod-run.md"
+      ]
     ]
   end
 

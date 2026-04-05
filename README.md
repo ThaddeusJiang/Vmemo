@@ -79,7 +79,7 @@ services:
         condition: service_healthy
 
   postgres:
-    image: postgres:17
+    image: postgres:18
     restart: on-failure
     hostname: postgres
     ports:
@@ -98,7 +98,7 @@ services:
       POSTGRES_DB: vmemo
 
   typesense:
-    image: typesense/typesense:27.1
+    image: typesense/typesense:30.1
     restart: on-failure
     hostname: typesense
     ports:

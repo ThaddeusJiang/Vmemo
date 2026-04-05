@@ -66,7 +66,7 @@ spec:
       template: PREBUILT_V2
       spec:
         source:
-          image: postgres:17
+          image: postgres:18
           command:
             - docker-entrypoint.sh
             - -c
@@ -165,7 +165,7 @@ spec:
       template: PREBUILT_V2
       spec:
         source:
-          image: typesense/typesense:27.1
+          image: typesense/typesense:30.1
         ports:
           - id: web
             port: 8108

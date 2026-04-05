@@ -16,7 +16,7 @@ config :vmemo, Vmemo.Repo,
 config :vmemo, typesense_url: "http://localhost:8766"
 config :vmemo, typesense_api_key: "xyz"
 
-config :vmemo, moondream_url: "http://localhost:2020/v1"
+config :vmemo, moondream_url: "http://localhost:2020/v1/"
 
 # Admin token for development
 config :vmemo, admin_token: "admin"
@@ -25,7 +25,14 @@ config :vmemo, Oban,
   repo: Vmemo.Repo,
   notifier: Oban.Notifiers.PG,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10, sync_typesense: 5]
+  queues: [
+    default: 10,
+    chat_responses: 10,
+    conversations: 10,
+    sync_typesense: 10,
+    ai_vision: 10,
+    import_requests: 10
+  ]
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
