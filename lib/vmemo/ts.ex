@@ -222,20 +222,8 @@ defmodule Vmemo.Ts do
   defp load_applied_migration_versions(migrations_collection, page, acc) do
     case Typesense.list_documents!(migrations_collection, @list_documents_page_size, page) do
       {:ok, docs} when is_list(docs) ->
-        next_acc =
-          docs
-          |> Enum.reduce(acc, fn doc, set ->
-            case Map.get(doc, "version") do
-              version when is_binary(version) -> MapSet.put(set, version)
-              _ -> set
-            end
-          end)
-
-        if length(docs) < @list_documents_page_size do
-          next_acc
-        else
-          load_applied_migration_versions(migrations_collection, page + 1, next_acc)
-        end
+        next_acc = Enum.reduce(docs, acc, &put_migration_version/2)
+        maybe_load_next_migration_page(migrations_collection, page, docs, next_acc)
 
       {:ok, _other} ->
         acc
@@ -245,6 +233,21 @@ defmodule Vmemo.Ts do
 
       {:error, reason} ->
         raise("Typesense list migration versions failed: #{reason}")
+    end
+  end
+
+  defp put_migration_version(doc, set) do
+    case Map.get(doc, "version") do
+      version when is_binary(version) -> MapSet.put(set, version)
+      _ -> set
+    end
+  end
+
+  defp maybe_load_next_migration_page(migrations_collection, page, docs, acc) do
+    if length(docs) < @list_documents_page_size do
+      acc
+    else
+      load_applied_migration_versions(migrations_collection, page + 1, acc)
     end
   end
 

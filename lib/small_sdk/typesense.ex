@@ -232,32 +232,13 @@ defmodule SmallSdk.Typesense do
   def handle_multi_search_res(res) do
     case handle_response(res) do
       {:ok, data} ->
-        case data["results"] do
-          [%{"hits" => hits, "found" => found, "page" => page} | _] when is_list(hits) ->
-            documents =
-              hits
-              |> Enum.map(fn hit ->
-                document = Map.get(hit, "document")
-
-                vector_distance = get_in(hit, ["vector_distance"])
-                text_match_info = get_in(hit, ["text_match_info"])
-
-                document
-                |> Map.put("_vector_distance", vector_distance)
-                |> Map.put("_text_match_info", text_match_info)
-              end)
-
-            {:ok, {documents, found, page}}
-
-          _ ->
-            {:ok, {[], 0, 1}}
-        end
+        build_multi_search_result(data["results"])
 
       {:error, "Not Found"} ->
         {:ok, {[], 0, 1}}
 
       {:error, reason} = error when is_binary(reason) ->
-        if not String.contains?(reason, "Req.TransportError") do
+        if should_log_multi_search_error?(reason) do
           Logger.warning("Typesense multi search failed: #{inspect(error)}")
         end
 
@@ -267,6 +248,28 @@ defmodule SmallSdk.Typesense do
         Logger.warning("Typesense multi search failed: #{inspect(error)}")
         {:ok, {[], 0, 1}}
     end
+  end
+
+  defp build_multi_search_result([%{"hits" => hits, "found" => found, "page" => page} | _])
+       when is_list(hits) do
+    documents = Enum.map(hits, &decorate_multi_search_hit/1)
+    {:ok, {documents, found, page}}
+  end
+
+  defp build_multi_search_result(_), do: {:ok, {[], 0, 1}}
+
+  defp decorate_multi_search_hit(hit) do
+    document = Map.get(hit, "document")
+    vector_distance = get_in(hit, ["vector_distance"])
+    text_match_info = get_in(hit, ["text_match_info"])
+
+    document
+    |> Map.put("_vector_distance", vector_distance)
+    |> Map.put("_text_match_info", text_match_info)
+  end
+
+  defp should_log_multi_search_error?(reason) do
+    not String.contains?(reason, "Req.TransportError")
   end
 
   def build_request(path) do

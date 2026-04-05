@@ -66,15 +66,7 @@ defmodule Vmemo.DataCase do
 
       %Ash.Error.Invalid{errors: errors} ->
         errors
-        |> Enum.flat_map(fn
-          error when is_struct(error) ->
-            field = Map.get(error, :field) || Map.get(error, :input) || :base
-            msg = format_ash_error(error)
-            [{field, [msg]}]
-
-          _ ->
-            []
-        end)
+        |> Enum.flat_map(&build_invalid_error_entry/1)
         |> Map.new()
 
       # For Ecto-style changesets (if still used)
@@ -93,35 +85,38 @@ defmodule Vmemo.DataCase do
   defp format_ash_error(error) do
     case error do
       %{field: _field} = error ->
-        message = Map.get(error, :message) || Ash.ErrorKind.message(error)
-
-        case Map.get(error, :vars) do
-          vars when not is_nil(vars) ->
-            Enum.reduce(normalize_vars(vars), message, fn {key, value}, acc ->
-              String.replace(acc, "%{#{key}}", to_string(value))
-            end)
-
-          _ ->
-            message
-        end
+        error
+        |> base_error_message()
+        |> format_message_with_vars(Map.get(error, :vars))
 
       %{input: input} when is_atom(input) ->
         Ash.ErrorKind.message(error)
 
       _ ->
-        message = Map.get(error, :message) || Ash.ErrorKind.message(error)
-
-        case Map.get(error, :vars) do
-          vars when not is_nil(vars) ->
-            Enum.reduce(normalize_vars(vars), message, fn {key, value}, acc ->
-              String.replace(acc, "%{#{key}}", to_string(value))
-            end)
-
-          _ ->
-            message
-        end
+        error
+        |> base_error_message()
+        |> format_message_with_vars(Map.get(error, :vars))
     end
   end
+
+  defp build_invalid_error_entry(error) when is_struct(error) do
+    field = Map.get(error, :field) || Map.get(error, :input) || :base
+    [{field, [format_ash_error(error)]}]
+  end
+
+  defp build_invalid_error_entry(_), do: []
+
+  defp base_error_message(error) do
+    Map.get(error, :message) || Ash.ErrorKind.message(error)
+  end
+
+  defp format_message_with_vars(message, vars) when not is_nil(vars) do
+    Enum.reduce(normalize_vars(vars), message, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
+    end)
+  end
+
+  defp format_message_with_vars(message, _vars), do: message
 
   defp normalize_vars(vars) when is_map(vars), do: vars
   defp normalize_vars(vars) when is_list(vars), do: Enum.into(vars, %{})
