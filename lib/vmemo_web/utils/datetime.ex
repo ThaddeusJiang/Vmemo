@@ -87,4 +87,3 @@ defmodule VmemoWeb.Utils.Datetime do
     |> DateTime.to_iso8601()
   end
 end
-

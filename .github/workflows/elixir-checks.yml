@@ -54,5 +54,11 @@ jobs:
       - name: Reset Typesense
         run: mix ts.reset
 
+      - name: Static checks (report only)
+        continue-on-error: true
+        run: |
+          mix format --check-formatted
+          mix compile --force
+
       - name: Run tests
         run: mix test

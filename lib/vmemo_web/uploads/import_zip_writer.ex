@@ -36,7 +36,9 @@ defmodule VmemoWeb.Uploads.ImportZipWriter do
     File.close(state.io)
 
     case reason do
-      :done -> {:ok, state}
+      :done ->
+        {:ok, state}
+
       _ ->
         File.rm(state.path)
         {:ok, state}

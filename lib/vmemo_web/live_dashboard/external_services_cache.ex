@@ -20,4 +20,3 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesCache do
     :ok
   end
 end
-
