@@ -12,7 +12,7 @@ Status: superseded by [002-use-elixir-release.md](./002-use-elixir-release.md)
 
 ## Decision
 
-**不使用 Elixir Release。** Runner 容器使用 Elixir 官方镜像，在容器内继续使用 Mix 运行应用（`mix phx.server`、`mix ash.migrate`）和一次性任务（如 `mix ts.reset`），与本地开发体验一致。
+**不使用 Elixir Release。** Runner 容器使用 Elixir 官方镜像，在容器内继续使用 Mix 运行应用（`mix phx.server`、`mix ash.migrate`）和一次性任务（如 `mix ts.migrate`），与本地开发体验一致。
 
 原因简要归纳：
 

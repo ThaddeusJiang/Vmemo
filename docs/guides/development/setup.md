@@ -56,6 +56,10 @@ For daily maintenance, prefer:
 mix reset
 ```
 
+`mix reset` resets database state only.
+
+If you need to reset local Typesense state, restart the Typesense container.
+
 Use standalone `mix db.*` or `mix ts.*` commands only for targeted fixes.
 
 ## 5. Run the App

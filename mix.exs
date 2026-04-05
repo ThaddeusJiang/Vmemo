@@ -96,8 +96,7 @@ defmodule Vmemo.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "db.setup", "ts.setup", "assets.setup", "assets.build"],
-      clean: ["clean.all"],
-      reset: ["db.reset", "ts.reset", "storage.reset"],
+      reset: ["db.reset"],
       "db.create": ["ash_postgres.create"],
       "db.drop": ["ash_postgres.drop"],
       "db.migrate": ["ash.migrate"],
@@ -106,7 +105,6 @@ defmodule Vmemo.MixProject do
       "db.setup": ["db.create", "db.migrate", "db.seed"],
       "db.reset": ["db.drop", "db.setup"],
       "ts.setup": ["ts.migrate"],
-      "ts.reset": ["ts.drop", "ts.setup"],
       test: ["ash_postgres.create --quiet", "ash.migrate --quiet", "ts.migrate", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind vmemo", "esbuild vmemo"],
