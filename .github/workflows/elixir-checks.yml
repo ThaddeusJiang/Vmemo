@@ -29,11 +29,11 @@ jobs:
           mix compile --warnings-as-errors
           mix xref graph --format cycles --label compile-connected --fail-above 0
 
-      - name: Credo (report only)
+      - name: Credo
         continue-on-error: true
         run: mix credo --strict
 
-      - name: Sobelow (report only)
+      - name: Sobelow
         continue-on-error: true
         run: mix sobelow --config
 
