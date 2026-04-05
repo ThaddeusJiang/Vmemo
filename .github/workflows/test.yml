@@ -23,11 +23,14 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
-      - name: Static checks
-        run: |
-          mix format --check-formatted
+      - name: Compile
+        run: ｜
           mix compile --warnings-as-errors
           mix xref graph --format cycles --label compile-connected --fail-above 0
+
+      - name: Format
+        run: |
+          mix format --check-formatted
 
       - name: Credo
         continue-on-error: true
@@ -73,6 +76,9 @@ jobs:
 
       - name: Install dependencies
         run: mix deps.get
+
+      - name: Compile
+        run: mix compile
 
       - name: Wait for Postgres
         run: |
