@@ -105,6 +105,7 @@ defmodule Vmemo.MixProject do
       "db.setup": ["db.create", "db.migrate", "db.seed"],
       "db.reset": ["db.drop", "db.setup"],
       "ts.setup": ["ts.migrate"],
+      "ts.reset": ["ts.migrate --reset"],
       test: ["ash_postgres.create --quiet", "ash.migrate --quiet", "ts.migrate", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind vmemo", "esbuild vmemo"],

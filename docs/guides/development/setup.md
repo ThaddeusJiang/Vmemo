@@ -58,7 +58,8 @@ mix reset
 
 `mix reset` resets database state only.
 
-If you need to reset local Typesense state, restart the Typesense container.
+For Typesense, use `mix ts.reset` when you need a full schema reset.
+For local Docker troubleshooting, restarting the Typesense container is also valid.
 
 Use standalone `mix db.*` or `mix ts.*` commands only for targeted fixes.
 

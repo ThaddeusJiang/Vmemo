@@ -66,4 +66,4 @@ Vmemo.Release.migrate()
 iex -S mix phx.server
 ```
 
-`mix ts.setup`、`mix ts.migrate` 等一次性任务仍然建议直接在宿主机上执行。
+`mix ts.setup`、`mix ts.reset`、`mix ts.migrate` 等一次性任务仍然建议直接在宿主机上执行。
