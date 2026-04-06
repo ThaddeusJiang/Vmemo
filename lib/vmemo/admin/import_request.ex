@@ -29,7 +29,7 @@ defmodule Vmemo.Admin.ImportRequest do
         queue :import_requests
         scheduler_cron false
         where expr(status == "pending" and not is_nil(import_zip_path))
-        worker_module_name Vmemo.Admin.ImportRequest.Workers.Process
+        worker_module_name Vmemo.Admin.ImportRequest.Workers.ProcessRequest
         scheduler_module_name Vmemo.Admin.ImportRequest.Schedulers.Process
       end
     end
@@ -89,7 +89,9 @@ defmodule Vmemo.Admin.ImportRequest do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, request ->
-          case Vmemo.Workers.Import.ProcessRequest.execute(%{"request_id" => request.id}) do
+          case Vmemo.Admin.ImportRequest.ProcessRunner.execute(%{
+                 "request_id" => request.id
+               }) do
             :ok ->
               {:ok, request}
 

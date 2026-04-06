@@ -26,7 +26,7 @@ All queues are configured with `limit: 10` for the initial rollout.
 - `Vmemo.Photos.Photo` trigger `:generate_caption` -> `ai_vision`
 - `Vmemo.Ai.VisionRequest` trigger `:process` -> `ai_vision`
 - `Vmemo.Admin.ImportRequest` trigger `:process` -> `import_requests`
-- `Vmemo.Workers.Import.ProcessRequest` worker default queue -> `import_requests`
+- `Vmemo.Admin.ImportRequest.Workers.ProcessRequest` worker default queue -> `import_requests`
 
 ## Environment Configuration
 
