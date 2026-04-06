@@ -3,7 +3,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   use VmemoWeb, :live_component
 
   alias Vmemo.Memo.Photo
-  alias Vmemo.PhotoStorage
+  alias Vmemo.Memo.PhotoStorage
 
   @impl true
   def mount(socket) do

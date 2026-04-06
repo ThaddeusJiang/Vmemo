@@ -1,7 +1,7 @@
 defmodule VmemoWeb.ApiTokenLive.Form do
   use VmemoWeb, :live_view
 
-  alias Vmemo.ApiTokenService
+  alias Vmemo.Account.ApiTokens
 
   def render(assigns) do
     ~H"""
@@ -137,7 +137,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     socket = assign(socket, :loading, true)
 
     # 使用 ApiTokenService 创建 token（包含 token 生成逻辑）
-    case ApiTokenService.create_api_token(user, form_params) do
+    case ApiTokens.create_api_token(user, form_params) do
       {:ok, token, raw_token} ->
         {:noreply,
          socket

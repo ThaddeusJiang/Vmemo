@@ -1,4 +1,4 @@
-defmodule Vmemo.AiAgentActorPersister do
+defmodule Vmemo.Chat.ActorPersister do
   @moduledoc false
   use AshOban.ActorPersister
 

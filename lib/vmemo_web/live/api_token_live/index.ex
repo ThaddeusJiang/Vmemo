@@ -1,7 +1,7 @@
 defmodule VmemoWeb.ApiTokenLive.Index do
   use VmemoWeb, :live_view
 
-  alias Vmemo.ApiTokenService
+  alias Vmemo.Account.ApiTokens
 
   def render(assigns) do
     ~H"""
@@ -172,10 +172,10 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    api_tokens = ApiTokenService.list_user_api_tokens(user)
-    expiring_tokens = ApiTokenService.get_expiring_tokens(user.id)
-    expired_tokens = ApiTokenService.get_expired_tokens(user.id)
-    today_usage_count = ApiTokenService.count_today_usage(user.id)
+    api_tokens = ApiTokens.list_user_api_tokens(user)
+    expiring_tokens = ApiTokens.get_expiring_tokens(user.id)
+    expired_tokens = ApiTokens.get_expired_tokens(user.id)
+    today_usage_count = ApiTokens.count_today_usage(user.id)
 
     {:ok,
      socket
@@ -193,7 +193,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def handle_event("delete-token", %{"id" => id}, socket) do
     user = socket.assigns.current_user
-    token = ApiTokenService.get_user_api_token!(user, id)
+    token = ApiTokens.get_user_api_token!(user, id)
 
     {:noreply,
      socket
@@ -206,7 +206,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokenService.delete_api_token(token) do
+    case ApiTokens.delete_api_token(token) do
       :ok ->
         {:noreply,
          socket
@@ -228,9 +228,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     user = socket.assigns.current_user
 
     socket = assign(socket, :loading, true)
-    token = ApiTokenService.get_user_api_token!(user, id)
+    token = ApiTokens.get_user_api_token!(user, id)
 
-    case ApiTokenService.toggle_api_token_status(token) do
+    case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
         updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
         status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
