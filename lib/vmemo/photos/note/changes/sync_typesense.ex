@@ -4,7 +4,7 @@ defmodule Vmemo.Photos.Note.Changes.SyncTypesense do
 
   @impl true
   def change(changeset, _opts, _context) do
-    Ash.Changeset.after_action(changeset, fn _changeset, record, _context ->
+    Ash.Changeset.after_action(changeset, fn _changeset, record ->
       case Vmemo.Photos.Note.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
         {:ok, true} ->
           {:ok, record}

@@ -44,10 +44,7 @@ defmodule SmallSdk.Moondream do
   end
 
   def get_env do
-    url =
-      Application.fetch_env!(:vmemo, :moondream_url)
-      |> Utils.validate_url!()
-
+    url = Application.fetch_env!(:vmemo, :moondream_url)
     api_key = Application.fetch_env!(:vmemo, :moondream_api_key)
 
     {url, api_key}

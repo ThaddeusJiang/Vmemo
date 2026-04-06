@@ -98,7 +98,11 @@ if config_env() == :prod do
       environment variable TYPESENSE_API_KEY is missing.
       """
 
-  moondream_url = System.get_env("MOONDREAM_URL") || "https://api.moondream.ai/v1/"
+  moondream_url =
+    System.get_env("MOONDREAM_URL") ||
+      raise """
+      environment variable MOONDREAM_URL is missing.
+      """
 
   moondream_api_key =
     System.get_env("MOONDREAM_API_KEY") ||

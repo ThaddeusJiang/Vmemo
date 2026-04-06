@@ -18,7 +18,7 @@ defmodule Vmemo.Photos.Photo do
     extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
-  alias SmallSdk.Moondream
+  alias Vmemo.PhotoService.Ai
   alias Vmemo.PhotoService.TsPhoto
 
   postgres do
@@ -714,21 +714,28 @@ defmodule Vmemo.Photos.Photo do
   end
 
   defp generate_caption_for_photo(photo) do
-    if is_nil(photo.caption) or photo.caption == "" do
-      with {:ok, image_base64} <- read_image_base64_for_typesense(photo.url),
-           {:ok, caption} <- Moondream.caption(image_base64),
-           {:ok, _updated_photo} <-
-             __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
-        :ok
-      else
-        {:error, :file_not_found} ->
-          :ok
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    else
-      :ok
+    cond do
+      has_caption?(photo.caption) -> :ok
+      true -> do_generate_caption(photo)
     end
   end
+
+  defp do_generate_caption(photo) do
+    with {:ok, caption} <- Ai.generate_caption_from_url(photo.url),
+         {:ok, _updated_photo} <-
+           __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+      :ok
+    else
+      {:discard, :file_not_found} ->
+        :ok
+
+      {:discard, reason} ->
+        {:discard, reason}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp has_caption?(caption), do: is_binary(caption) and caption != ""
 end
