@@ -15,18 +15,22 @@ When the user asks to run `reset`, execute these steps in order:
 2. Run `mise install`.
 3. Stop `mix phx.server`.
 4. Run `docker compose down -v` to remove containers and volumes.
-5. Run `docker compose up -d` to restart required services.
-6. Run `mix setup`.
-7. Ask user whether to run `iex -S mix phx.server` (default answer is `N`).
-8. Only if user answers `Y`, run `iex -S mix phx.server`.
+5. Delete the local storage directory at the repository root: `storage/`.
+6. Run `docker compose up -d` to restart required services.
+7. Run `mix setup`.
+8. Ask user whether to run `iex -S mix phx.server` (default answer is `N`).
+9. Only if user answers `Y`, run `iex -S mix phx.server`.
 
 ## Command sequence
+
+Run from the repository root:
 
 ```bash
 mise trust
 mise install
 pkill -f "mix phx.server" || true
 docker compose down -v
+rm -rf storage
 docker compose up -d
 mix setup
 ```
@@ -48,6 +52,7 @@ iex -S mix phx.server
 - Local database is recreated from current definitions.
 - Typesense definitions are initialized from project setup tasks.
 - Local development smoke testing data is reloaded by `mix setup`.
+- On-disk uploads under `storage/` are cleared; no orphaned files remain after DB reset.
 - Runtime/toolchain is prepared by `mise trust` and `mise install` before running scripts.
 - User is asked whether to start Phoenix server in IEx after reset (default `N`).
 
@@ -57,6 +62,7 @@ iex -S mix phx.server
 - Always run `mise trust` and `mise install` before executing project scripts.
 - Default script execution should use direct commands (for example, `mix setup`) without `mise exec`.
 - If commands fail in sandbox due to toolchain/version issues, rerun `mise trust` and `mise install` first.
+- Do not skip `rm -rf storage` during reset unless the user explicitly wants to keep local uploads.
 - Do not skip `mix setup` after containers are recreated.
 - After reset, ask user whether to run `iex -S mix phx.server` (default `N`).
 - Only run `iex -S mix phx.server` when user explicitly answers `Y`.
