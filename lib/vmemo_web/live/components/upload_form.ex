@@ -9,7 +9,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias Vmemo.Memo.Note
   alias Vmemo.Memo.Photo
   alias Vmemo.Memo.PhotoNote
-  alias Vmemo.PhotoService
+  alias Vmemo.PhotoStorage
 
   @impl true
   def mount(socket) do
@@ -306,7 +306,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               consume_uploaded_entry(socket, entry, fn %{path: path} ->
                 filename = entry.uuid <> Path.extname(entry.client_name)
 
-                {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
+                {:ok, dest} = PhotoStorage.cp_file(path, user_id, filename)
 
                 case Photo.create_with_sync(
                        %{

@@ -1,4 +1,4 @@
-defmodule Vmemo.PhotoService.TsPhoto do
+defmodule Vmemo.SearchEngine.TsPhoto do
   @moduledoc """
   A module to interact with the photo collection in Typesense.
 
@@ -8,7 +8,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
   require Logger
   alias SmallSdk.Typesense
 
-  alias Vmemo.PhotoService.Ai
+  alias Vmemo.Ai.Caption
 
   @collection_name "photos"
 
@@ -103,7 +103,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
 
     {:ok, notes} = Typesense.handle_search_res(res)
 
-    {:ok, %{photo: photo, notes: notes |> Enum.map(&Vmemo.PhotoService.TsNote.parse/1)}}
+    {:ok, %{photo: photo, notes: notes |> Enum.map(&Vmemo.SearchEngine.TsNote.parse/1)}}
   end
 
   def update_photo(photo) do
@@ -148,7 +148,7 @@ defmodule Vmemo.PhotoService.TsPhoto do
         {:error, reason}
 
       photo ->
-        case Ai.gen_description(photo.url) do
+        case Caption.gen_description(photo.url) do
           {:ok, description} -> {:ok, description}
           {:error, reason} -> {:error, reason}
         end

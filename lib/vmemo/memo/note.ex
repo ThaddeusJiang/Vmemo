@@ -5,7 +5,7 @@ defmodule Vmemo.Memo.Note do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
-  alias Vmemo.PhotoService.TsNote
+  alias Vmemo.SearchEngine.TsNote
 
   postgres do
     table "memo_notes"

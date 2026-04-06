@@ -1,4 +1,4 @@
-defmodule Vmemo.PhotoService do
+defmodule Vmemo.PhotoStorage do
   @moduledoc false
   alias SmallSdk.FileSystem
 

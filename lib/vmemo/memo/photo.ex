@@ -18,8 +18,8 @@ defmodule Vmemo.Memo.Photo do
     extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
-  alias Vmemo.PhotoService.Ai
-  alias Vmemo.PhotoService.TsPhoto
+  alias Vmemo.Ai.Caption
+  alias Vmemo.SearchEngine.TsPhoto
 
   postgres do
     table "memo_images"
@@ -716,7 +716,7 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp do_generate_caption(photo) do
-    with {:ok, caption} <- Ai.generate_caption_from_url(photo.url),
+    with {:ok, caption} <- Caption.generate_caption_from_url(photo.url),
          {:ok, _updated_photo} <-
            __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
       :ok

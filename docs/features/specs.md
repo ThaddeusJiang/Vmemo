@@ -181,7 +181,7 @@
 ### 6.1 模块分层
 - Web 层：`VmemoWeb.Router`, LiveViews, Controllers, Plugs
 - Domain 层：`Vmemo.*`（Ash Domain + Resource）
-- Service 层：`Vmemo.PhotoService`, `Vmemo.ApiTokenService`, `Vmemo.UserDataTransfer`, `Vmemo.AdminImport`
+- Service 层：`Vmemo.SearchEngine.TsPhoto`, `Vmemo.SearchEngine.TsNote`, `Vmemo.PhotoStorage`, `Vmemo.ApiTokenService`, `Vmemo.UserDataTransfer`, `Vmemo.AdminImport`
 - Worker 层：`Vmemo.Workers.*`
 - SDK 层：`SmallSdk.Typesense`, `SmallSdk.Moondream`, `SmallSdk.FileSystem`
 

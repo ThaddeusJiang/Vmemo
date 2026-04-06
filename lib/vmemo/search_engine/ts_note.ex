@@ -1,4 +1,4 @@
-defmodule Vmemo.PhotoService.TsNote do
+defmodule Vmemo.SearchEngine.TsNote do
   @moduledoc false
   require Logger
   alias SmallSdk.Typesense
@@ -62,7 +62,7 @@ defmodule Vmemo.PhotoService.TsNote do
 
     {:ok, photos} = Typesense.handle_search_res(res)
 
-    {:ok, %{note: note, photos: photos |> Enum.map(&Vmemo.PhotoService.TsPhoto.parse/1)}}
+    {:ok, %{note: note, photos: photos |> Enum.map(&Vmemo.SearchEngine.TsPhoto.parse/1)}}
   end
 
   # TODO: renaming to read?
