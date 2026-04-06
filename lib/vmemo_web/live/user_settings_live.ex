@@ -2,7 +2,7 @@ defmodule VmemoWeb.UserSettingsLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Account
-  alias Vmemo.UserDataTransfer
+  alias Vmemo.UserSettings
   alias VmemoWeb.Uploads.ImportZipWriter
 
   def render(assigns) do
@@ -266,7 +266,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
         case uploaded do
           [%{path: zip_path}] ->
-            case UserDataTransfer.import_user_zip(socket.assigns.current_user.id, zip_path) do
+            case UserSettings.import_user_zip(socket.assigns.current_user.id, zip_path) do
               {:ok, result} ->
                 {:noreply,
                  socket

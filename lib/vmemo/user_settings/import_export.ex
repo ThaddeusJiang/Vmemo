@@ -1,4 +1,4 @@
-defmodule Vmemo.UserDataTransfer do
+defmodule Vmemo.UserSettings.ImportExport do
   @moduledoc false
   require Ash.Query
   require Logger

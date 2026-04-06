@@ -1,4 +1,4 @@
-defmodule Vmemo.UserDataTransferTest do
+defmodule Vmemo.UserSettingsTest do
   use Vmemo.DataCase, async: false
 
   import Vmemo.AccountFixtures
@@ -8,7 +8,7 @@ defmodule Vmemo.UserDataTransferTest do
   alias Vmemo.Memo.Note
   alias Vmemo.Memo.Photo
   alias Vmemo.Memo.PhotoNote
-  alias Vmemo.UserDataTransfer
+  alias Vmemo.UserSettings
 
   test "exports and imports data per user" do
     source_user = user_fixture()
@@ -54,7 +54,7 @@ defmodule Vmemo.UserDataTransferTest do
       "test/support/fixtures/images/wall-e.png"
     )
 
-    assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)
+    assert {:ok, export_result} = UserSettings.export_user_zip(source_user.id)
     assert export_result.files.copied == 1
     assert String.starts_with?(export_result.filename, "vmemo-data-")
     assert String.ends_with?(export_result.filename, ".zip")
@@ -69,7 +69,7 @@ defmodule Vmemo.UserDataTransferTest do
 
     on_exit(fn -> File.rm(tmp_zip_path) end)
 
-    assert {:ok, import_result} = UserDataTransfer.import_user_zip(target_user.id, tmp_zip_path)
+    assert {:ok, import_result} = UserSettings.import_user_zip(target_user.id, tmp_zip_path)
     assert import_result.photos.created == 1
     assert import_result.notes.created == 1
     assert import_result.photo_notes.created == 1
@@ -118,7 +118,7 @@ defmodule Vmemo.UserDataTransferTest do
       "test/support/fixtures/images/test-red-image.png"
     )
 
-    assert {:ok, export_result} = UserDataTransfer.export_user_zip(source_user.id)
+    assert {:ok, export_result} = UserSettings.export_user_zip(source_user.id)
 
     tmp_zip_path =
       Path.join(
@@ -137,7 +137,7 @@ defmodule Vmemo.UserDataTransferTest do
       Application.put_env(:vmemo, :typesense_url, original_typesense_url)
     end)
 
-    assert {:error, result} = UserDataTransfer.import_user_zip(target_user.id, tmp_zip_path)
+    assert {:error, result} = UserSettings.import_user_zip(target_user.id, tmp_zip_path)
     assert result.photos.created == 1
     assert result.notes.created == 1
     assert result.photo_notes.created == 1
