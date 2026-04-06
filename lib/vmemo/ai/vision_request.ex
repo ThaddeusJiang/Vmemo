@@ -187,7 +187,7 @@ defmodule Vmemo.Ai.VisionRequest do
       allow_nil? false
       attribute_writable? true
       attribute_type :uuid
-      domain Vmemo.AccountDomain
+      domain Vmemo.Account
     end
   end
 

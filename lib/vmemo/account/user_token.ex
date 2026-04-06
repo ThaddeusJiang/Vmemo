@@ -1,7 +1,7 @@
 defmodule Vmemo.Account.UserToken do
   @moduledoc false
   use Ash.Resource,
-    domain: Vmemo.AccountDomain,
+    domain: Vmemo.Account,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAuthentication.TokenResource, AshAdmin.Resource]
 
