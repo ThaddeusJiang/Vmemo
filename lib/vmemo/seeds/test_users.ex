@@ -8,9 +8,9 @@ defmodule Vmemo.Seeds.TestUsers do
   require Ash.Query
 
   alias Vmemo.Account
-  alias Vmemo.Photos.Note
-  alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoNote
   alias Vmemo.Repo
 
   @seeded_photo_id "11111111-1111-4111-8111-111111111111"

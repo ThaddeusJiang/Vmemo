@@ -3,7 +3,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   use VmemoWeb, :live_component
 
   alias Ash
-  alias Vmemo.Photos.Note
+  alias Vmemo.Memo.Note
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true

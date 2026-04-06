@@ -6,9 +6,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   alias VmemoWeb.LiveComponents.Waterfall
 
-  alias Vmemo.Photos.Note
-  alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoNote
   alias Vmemo.PhotoService
 
   @impl true

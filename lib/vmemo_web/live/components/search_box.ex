@@ -2,7 +2,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @moduledoc false
   use VmemoWeb, :live_component
 
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
   alias Vmemo.PhotoService
 
   @impl true
@@ -130,7 +130,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
     results =
       results
       |> Enum.map(fn
-        %Vmemo.Photos.Photo{} = photo -> {:ok, photo}
+        %Vmemo.Memo.Photo{} = photo -> {:ok, photo}
         {:error, reason} -> {:error, reason}
         other -> {:error, inspect(other)}
       end)

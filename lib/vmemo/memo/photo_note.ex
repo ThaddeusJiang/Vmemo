@@ -1,7 +1,7 @@
-defmodule Vmemo.Photos.PhotoNote do
+defmodule Vmemo.Memo.PhotoNote do
   @moduledoc false
   use Ash.Resource,
-    domain: Vmemo.Photos,
+    domain: Vmemo.Memo,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource]
 
@@ -35,12 +35,12 @@ defmodule Vmemo.Photos.PhotoNote do
   end
 
   relationships do
-    belongs_to :photo, Vmemo.Photos.Photo do
+    belongs_to :photo, Vmemo.Memo.Photo do
       allow_nil? false
       attribute_writable? true
     end
 
-    belongs_to :note, Vmemo.Photos.Note do
+    belongs_to :note, Vmemo.Memo.Note do
       allow_nil? false
       attribute_writable? true
     end

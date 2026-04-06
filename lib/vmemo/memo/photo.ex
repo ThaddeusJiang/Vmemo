@@ -1,4 +1,4 @@
-defmodule Vmemo.Photos.Photo do
+defmodule Vmemo.Memo.Photo do
   @moduledoc false
   @derive {Jason.Encoder,
            only: [
@@ -13,7 +13,7 @@ defmodule Vmemo.Photos.Photo do
              :updated_at
            ]}
   use Ash.Resource,
-    domain: Vmemo.Photos,
+    domain: Vmemo.Memo,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
@@ -38,8 +38,8 @@ defmodule Vmemo.Photos.Photo do
         lock_for_update? false
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Photos.Photo.Workers.SyncTypesense
-        scheduler_module_name Vmemo.Photos.Photo.Schedulers.SyncTypesense
+        worker_module_name Vmemo.Memo.Photo.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Memo.Photo.Schedulers.SyncTypesense
       end
 
       trigger :generate_caption do
@@ -47,8 +47,8 @@ defmodule Vmemo.Photos.Photo do
         queue :ai_vision
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Photos.Photo.Workers.GenerateCaption
-        scheduler_module_name Vmemo.Photos.Photo.Schedulers.GenerateCaption
+        worker_module_name Vmemo.Memo.Photo.Workers.GenerateCaption
+        scheduler_module_name Vmemo.Memo.Photo.Schedulers.GenerateCaption
       end
     end
   end
@@ -104,7 +104,7 @@ defmodule Vmemo.Photos.Photo do
       accept []
       require_atomic? false
       transaction? false
-      change Vmemo.Photos.Photo.Changes.SyncTypesense
+      change Vmemo.Memo.Photo.Changes.SyncTypesense
     end
 
     update :generate_caption do
@@ -567,8 +567,8 @@ defmodule Vmemo.Photos.Photo do
   end
 
   relationships do
-    many_to_many :notes, Vmemo.Photos.Note do
-      through Vmemo.Photos.PhotoNote
+    many_to_many :notes, Vmemo.Memo.Note do
+      through Vmemo.Memo.PhotoNote
       source_attribute_on_join_resource :photo_id
       destination_attribute_on_join_resource :note_id
     end

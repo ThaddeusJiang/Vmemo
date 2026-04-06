@@ -8,7 +8,7 @@ defmodule Vmemo.Ai.VisionRequest do
   require Ash.Query
   require Logger
   alias SmallSdk.Moondream
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
 
   postgres do
     table "ai_vision_requests"
@@ -178,7 +178,7 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   relationships do
-    belongs_to :photo, Vmemo.Photos.Photo do
+    belongs_to :photo, Vmemo.Memo.Photo do
       allow_nil? false
       attribute_writable? true
     end

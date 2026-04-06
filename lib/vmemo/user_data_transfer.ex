@@ -4,9 +4,9 @@ defmodule Vmemo.UserDataTransfer do
   require Logger
 
   alias Vmemo.Account.User
-  alias Vmemo.Photos.Note
-  alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoNote
   alias Vmemo.Repo
 
   @error_limit 50
