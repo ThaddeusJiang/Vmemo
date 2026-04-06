@@ -8,9 +8,9 @@ defmodule Vmemo.Seeds.TestUsers do
   require Ash.Query
 
   alias Vmemo.Account
-  alias Vmemo.Photos.Note
-  alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoNote
   alias Vmemo.Repo
 
   @seeded_photo_id "11111111-1111-4111-8111-111111111111"
@@ -38,7 +38,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
       existing_user ->
         IO.puts("User already exists: #{email}")
-        existing_user
+        ensure_test_user_credentials(email, existing_user, password)
     end
   end
 
@@ -57,13 +57,32 @@ defmodule Vmemo.Seeds.TestUsers do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     user_id = Ecto.UUID.dump!(user.id)
 
-    case Repo.query("UPDATE users SET confirmed_at = $1 WHERE id = $2", [now, user_id]) do
+    case Repo.query("UPDATE auth_users SET confirmed_at = $1 WHERE id = $2", [now, user_id]) do
       {:ok, _} ->
         IO.puts("Created and confirmed user: #{email}")
         Account.get_user_by_email(email)
 
       {:error, error} ->
         IO.puts("User created but confirmation failed: #{inspect(error)}")
+        user
+    end
+  end
+
+  defp ensure_test_user_credentials(email, user, password) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    user_id = Ecto.UUID.dump!(user.id)
+    hashed_password = Bcrypt.hash_pwd_salt(password)
+
+    case Repo.query(
+           "UPDATE auth_users SET hashed_password = $1, confirmed_at = $2 WHERE id = $3",
+           [hashed_password, now, user_id]
+         ) do
+      {:ok, _} ->
+        IO.puts("Updated test user credentials: #{email}")
+        Account.get_user_by_email(email)
+
+      {:error, error} ->
+        IO.puts("Failed to update test user credentials: #{inspect(error)}")
         user
     end
   end
@@ -86,7 +105,7 @@ defmodule Vmemo.Seeds.TestUsers do
     now_usec = DateTime.utc_now()
 
     sql = """
-    INSERT INTO api_tokens (name, description, expires_at, token_hash, user_id, created_at, inserted_at, updated_at, is_active)
+    INSERT INTO auth_api_tokens (name, description, expires_at, token_hash, user_id, created_at, inserted_at, updated_at, is_active)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING id
     """

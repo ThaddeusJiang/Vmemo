@@ -7,7 +7,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
 
   use VmemoWeb, :controller
 
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
   alias Vmemo.PhotoService
   # alias removed: SmallSdk.FileSystem
 

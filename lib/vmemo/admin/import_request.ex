@@ -6,7 +6,7 @@ defmodule Vmemo.Admin.ImportRequest do
     extensions: [AshAdmin.Resource, AshOban]
 
   postgres do
-    table "import_requests"
+    table "admin_import_requests"
     repo Vmemo.Repo
   end
 

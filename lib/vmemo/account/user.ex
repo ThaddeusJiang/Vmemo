@@ -1,12 +1,12 @@
 defmodule Vmemo.Account.User do
   @moduledoc false
   use Ash.Resource,
-    domain: Vmemo.AccountDomain,
+    domain: Vmemo.Account,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAuthentication, AshAdmin.Resource]
 
   postgres do
-    table "users"
+    table "auth_users"
     repo Vmemo.Repo
   end
 

@@ -2,7 +2,7 @@ defmodule Vmemo.Workers.Typesense.CreateNote do
   @moduledoc false
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
-  alias Vmemo.Photos.Note
+  alias Vmemo.Memo.Note
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"note_id" => note_id}}) do

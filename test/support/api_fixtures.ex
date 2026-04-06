@@ -15,7 +15,7 @@ defmodule VmemoWeb.ApiFixtures do
         {:ok, user} =
           Account.register_user(%{
             email: "test@example.com",
-            password: "password123456"
+            password: "pass123456"
           })
 
         user

@@ -6,9 +6,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   alias VmemoWeb.LiveComponents.Waterfall
 
-  alias Vmemo.Photos.Note
-  alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoNote
   alias Vmemo.PhotoService
 
   @impl true
@@ -168,6 +168,13 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                       </div>
                     </div>
                 <% end %>
+
+                <p
+                  :for={err <- upload_errors(@uploads.photos, entry)}
+                  class="mt-2 text-xs text-error text-left"
+                >
+                  {error_to_string(err)}
+                </p>
               </article>
             </:card>
           </.live_component>

@@ -1,14 +1,14 @@
-defmodule Vmemo.Photos.Note do
+defmodule Vmemo.Memo.Note do
   @moduledoc false
   use Ash.Resource,
-    domain: Vmemo.Photos,
+    domain: Vmemo.Memo,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
   alias Vmemo.PhotoService.TsNote
 
   postgres do
-    table "notes"
+    table "memo_notes"
     repo Vmemo.Repo
   end
 
@@ -24,8 +24,8 @@ defmodule Vmemo.Photos.Note do
         lock_for_update? false
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Photos.Note.Workers.SyncTypesense
-        scheduler_module_name Vmemo.Photos.Note.Schedulers.SyncTypesense
+        worker_module_name Vmemo.Memo.Note.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Memo.Note.Schedulers.SyncTypesense
       end
     end
   end
@@ -60,7 +60,7 @@ defmodule Vmemo.Photos.Note do
       accept []
       require_atomic? false
       transaction? false
-      change Vmemo.Photos.Note.Changes.SyncTypesense
+      change Vmemo.Memo.Note.Changes.SyncTypesense
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -92,8 +92,8 @@ defmodule Vmemo.Photos.Note do
   end
 
   relationships do
-    many_to_many :photos, Vmemo.Photos.Photo do
-      through Vmemo.Photos.PhotoNote
+    many_to_many :photos, Vmemo.Memo.Photo do
+      through Vmemo.Memo.PhotoNote
       source_attribute_on_join_resource :note_id
       destination_attribute_on_join_resource :photo_id
     end

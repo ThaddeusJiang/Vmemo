@@ -1,12 +1,12 @@
 defmodule Vmemo.Account.UserToken do
   @moduledoc false
   use Ash.Resource,
-    domain: Vmemo.AccountDomain,
+    domain: Vmemo.Account,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAuthentication.TokenResource, AshAdmin.Resource]
 
   postgres do
-    table "user_tokens"
+    table "auth_user_tokens"
     repo Vmemo.Repo
   end
 

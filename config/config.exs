@@ -56,16 +56,16 @@ config :spark,
 config :vmemo,
   ecto_repos: [Vmemo.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Vmemo.Chat, Vmemo.Photos, Vmemo.Ai, Vmemo.AccountDomain, Vmemo.Admin],
+  ash_domains: [Vmemo.Admin, Vmemo.Account, Vmemo.Memo, Vmemo.Ai, Vmemo.Chat],
   user_data_import_typesense_chunk_size: 50,
   user_data_import_typesense_chunk_pause_ms: 50
 
 config :vmemo, :ash_domains, [
-  Vmemo.Chat,
-  Vmemo.Photos,
+  Vmemo.Admin,
+  Vmemo.Account,
+  Vmemo.Memo,
   Vmemo.Ai,
-  Vmemo.AccountDomain,
-  Vmemo.Admin
+  Vmemo.Chat
 ]
 
 # Configures the endpoint

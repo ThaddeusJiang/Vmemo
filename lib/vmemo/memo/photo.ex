@@ -1,4 +1,4 @@
-defmodule Vmemo.Photos.Photo do
+defmodule Vmemo.Memo.Photo do
   @moduledoc false
   @derive {Jason.Encoder,
            only: [
@@ -13,16 +13,16 @@ defmodule Vmemo.Photos.Photo do
              :updated_at
            ]}
   use Ash.Resource,
-    domain: Vmemo.Photos,
+    domain: Vmemo.Memo,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
-  alias SmallSdk.Moondream
+  alias Vmemo.PhotoService.Ai
   alias Vmemo.PhotoService.TsPhoto
 
   postgres do
-    table "photos"
+    table "memo_images"
     repo Vmemo.Repo
   end
 
@@ -38,8 +38,8 @@ defmodule Vmemo.Photos.Photo do
         lock_for_update? false
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Photos.Photo.Workers.SyncTypesense
-        scheduler_module_name Vmemo.Photos.Photo.Schedulers.SyncTypesense
+        worker_module_name Vmemo.Memo.Photo.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Memo.Photo.Schedulers.SyncTypesense
       end
 
       trigger :generate_caption do
@@ -47,8 +47,8 @@ defmodule Vmemo.Photos.Photo do
         queue :ai_vision
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Photos.Photo.Workers.GenerateCaption
-        scheduler_module_name Vmemo.Photos.Photo.Schedulers.GenerateCaption
+        worker_module_name Vmemo.Memo.Photo.Workers.GenerateCaption
+        scheduler_module_name Vmemo.Memo.Photo.Schedulers.GenerateCaption
       end
     end
   end
@@ -104,7 +104,7 @@ defmodule Vmemo.Photos.Photo do
       accept []
       require_atomic? false
       transaction? false
-      change Vmemo.Photos.Photo.Changes.SyncTypesense
+      change Vmemo.Memo.Photo.Changes.SyncTypesense
     end
 
     update :generate_caption do
@@ -567,8 +567,8 @@ defmodule Vmemo.Photos.Photo do
   end
 
   relationships do
-    many_to_many :notes, Vmemo.Photos.Note do
-      through Vmemo.Photos.PhotoNote
+    many_to_many :notes, Vmemo.Memo.Note do
+      through Vmemo.Memo.PhotoNote
       source_attribute_on_join_resource :photo_id
       destination_attribute_on_join_resource :note_id
     end
@@ -714,21 +714,28 @@ defmodule Vmemo.Photos.Photo do
   end
 
   defp generate_caption_for_photo(photo) do
-    if is_nil(photo.caption) or photo.caption == "" do
-      with {:ok, image_base64} <- read_image_base64_for_typesense(photo.url),
-           {:ok, caption} <- Moondream.caption(image_base64),
-           {:ok, _updated_photo} <-
-             __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
-        :ok
-      else
-        {:error, :file_not_found} ->
-          :ok
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    else
-      :ok
+    cond do
+      has_caption?(photo.caption) -> :ok
+      true -> do_generate_caption(photo)
     end
   end
+
+  defp do_generate_caption(photo) do
+    with {:ok, caption} <- Ai.generate_caption_from_url(photo.url),
+         {:ok, _updated_photo} <-
+           __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+      :ok
+    else
+      {:discard, :file_not_found} ->
+        :ok
+
+      {:discard, reason} ->
+        {:discard, reason}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp has_caption?(caption), do: is_binary(caption) and caption != ""
 end

@@ -3,7 +3,7 @@ defmodule VmemoWeb.PhotosIndexLive do
 
   use VmemoWeb, :live_view
 
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true

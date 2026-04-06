@@ -3,7 +3,7 @@ defmodule VmemoWeb.NoteIdLive do
   use VmemoWeb, :live_view
 
   alias Ash
-  alias Vmemo.Photos.Note
+  alias Vmemo.Memo.Note
   alias VmemoWeb.LiveComponents.NoteUpdateForm
 
   @impl true

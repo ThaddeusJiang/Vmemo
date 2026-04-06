@@ -1,14 +1,14 @@
 defmodule Vmemo.Account.ApiToken do
   @moduledoc false
   use Ash.Resource,
-    domain: Vmemo.AccountDomain,
+    domain: Vmemo.Account,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource]
 
   require Ash.Query
 
   postgres do
-    table "api_tokens"
+    table "auth_api_tokens"
     repo Vmemo.Repo
   end
 

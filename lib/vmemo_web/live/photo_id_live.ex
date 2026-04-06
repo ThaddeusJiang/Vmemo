@@ -5,7 +5,7 @@ defmodule VmemoWeb.PhotoIdLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Ai.VisionRequest
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
 
   alias VmemoWeb.LiveComponents.MoondreamPanel
   alias VmemoWeb.LiveComponents.Waterfall

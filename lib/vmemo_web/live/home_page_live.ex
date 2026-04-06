@@ -3,7 +3,7 @@ defmodule VmemoWeb.HomePageLive do
 
   require Ash.Query
 
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
   alias VmemoWeb.LiveComponents.SearchBox
 
   @impl true

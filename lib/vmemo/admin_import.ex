@@ -2,9 +2,9 @@ defmodule Vmemo.AdminImport do
   @moduledoc false
   require Ash.Query
   alias Vmemo.Account.User
-  alias Vmemo.Photos.Note
-  alias Vmemo.Photos.Photo
-  alias Vmemo.Photos.PhotoNote
+  alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoNote
 
   @error_limit 50
 

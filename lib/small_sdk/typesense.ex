@@ -2,7 +2,6 @@ defmodule SmallSdk.Typesense do
   @moduledoc false
   require Logger
 
-  alias SmallSdk.Utils
   @debug_log_max_items 5
   @debug_log_max_chars 200
 
@@ -306,8 +305,7 @@ defmodule SmallSdk.Typesense do
   end
 
   defp get_env do
-    url = Application.fetch_env!(:vmemo, :typesense_url) |> Utils.validate_url!()
-
+    url = Application.fetch_env!(:vmemo, :typesense_url)
     api_key = Application.fetch_env!(:vmemo, :typesense_api_key)
 
     {url, api_key}

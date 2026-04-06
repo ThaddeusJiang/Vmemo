@@ -3,7 +3,7 @@ defmodule Vmemo.Workers.Typesense.CreatePhoto do
   use Oban.Worker, queue: :sync_typesense, max_attempts: 3
 
   require Logger
-  alias Vmemo.Photos.Photo
+  alias Vmemo.Memo.Photo
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"photo_id" => photo_id}}) do
