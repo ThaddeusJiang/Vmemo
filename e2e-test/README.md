@@ -150,7 +150,7 @@ Page-render visual assertions should run at both:
 
 ```text
 email = "test@example.com"
-password = "password123456"
+password = "pass123456"
 ```
 
 ## CI Trigger

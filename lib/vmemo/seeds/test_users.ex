@@ -30,7 +30,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
   defp create_test_user do
     email = "test@example.com"
-    password = "password123456"
+    password = "pass123456"
 
     case Account.get_user_by_email(email) do
       nil ->
@@ -38,7 +38,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
       existing_user ->
         IO.puts("User already exists: #{email}")
-        existing_user
+        ensure_test_user_credentials(email, existing_user, password)
     end
   end
 
@@ -64,6 +64,25 @@ defmodule Vmemo.Seeds.TestUsers do
 
       {:error, error} ->
         IO.puts("User created but confirmation failed: #{inspect(error)}")
+        user
+    end
+  end
+
+  defp ensure_test_user_credentials(email, user, password) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    user_id = Ecto.UUID.dump!(user.id)
+    hashed_password = Bcrypt.hash_pwd_salt(password)
+
+    case Repo.query(
+           "UPDATE auth_users SET hashed_password = $1, confirmed_at = $2 WHERE id = $3",
+           [hashed_password, now, user_id]
+         ) do
+      {:ok, _} ->
+        IO.puts("Updated test user credentials: #{email}")
+        Account.get_user_by_email(email)
+
+      {:error, error} ->
+        IO.puts("Failed to update test user credentials: #{inspect(error)}")
         user
     end
   end

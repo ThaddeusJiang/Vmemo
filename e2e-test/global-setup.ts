@@ -1,7 +1,7 @@
 import { chromium, expect, type FullConfig } from "@playwright/test";
 
 const email = "test@example.com";
-const password = "password123456";
+const password = "pass123456";
 const storageStatePath = "/tmp/vmemo-e2e-storage.json";
 
 export default async function globalSetup(config: FullConfig) {
