@@ -141,8 +141,6 @@ defmodule Vmemo.Ts do
     end
   end
 
-  defp ensure_collection_updated(result, action), do: ensure_ok(result, action)
-
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
@@ -285,7 +283,7 @@ defmodule Vmemo.Ts do
     missing_fields =
       Enum.reject(fields, fn field ->
         field_name = Map.get(field, "name")
-        MapSet.member?(existing_field_names, field_name)
+        Enum.member?(existing_field_names, field_name)
       end)
 
     if missing_fields == [] do
@@ -304,10 +302,9 @@ defmodule Vmemo.Ts do
         fields
         |> Enum.map(&Map.get(&1, "name"))
         |> Enum.reject(&is_nil/1)
-        |> MapSet.new()
 
       _ ->
-        MapSet.new()
+        []
     end
   end
 end

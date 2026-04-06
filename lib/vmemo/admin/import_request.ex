@@ -174,7 +174,7 @@ defmodule Vmemo.Admin.ImportRequest do
             File.close(source)
 
             case result do
-              :ok -> {:ok, filename, dest_path}
+              {:ok, _bytes} -> {:ok, filename, dest_path}
               {:error, reason} -> {:error, reason}
             end
 

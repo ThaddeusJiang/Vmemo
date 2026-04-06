@@ -243,10 +243,6 @@ defmodule SmallSdk.Typesense do
         end
 
         {:ok, {[], 0, 1}}
-
-      error ->
-        Logger.warning("Typesense multi search failed: #{inspect(error)}")
-        {:ok, {[], 0, 1}}
     end
   end
 

@@ -439,9 +439,6 @@ defmodule Vmemo.Account do
           end
         end
 
-      {:error, :expired} ->
-        {:error, :expired_token}
-
       _ ->
         {:error, :invalid_token}
     end
@@ -574,9 +571,6 @@ defmodule Vmemo.Account do
     # 使用 Ash Authentication JWT 生成 session token
     case AshAuthentication.Jwt.token_for_user(user) do
       {:ok, token, _claims} ->
-        token
-
-      {:ok, token} ->
         token
 
       _ ->

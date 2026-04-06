@@ -318,6 +318,5 @@ defmodule VmemoWeb.AdminImportLive do
     {ImportZipWriter, dest_dir: dest_dir, filename: entry.client_name}
   end
 
-  defp format_error(error) when is_binary(error), do: error
   defp format_error(error), do: inspect(error)
 end

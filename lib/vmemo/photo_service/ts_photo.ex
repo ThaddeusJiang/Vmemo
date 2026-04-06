@@ -316,9 +316,6 @@ defmodule Vmemo.PhotoService.TsPhoto do
         )
 
         {photos |> Enum.map(&parse/1), found, current_page}
-
-      _ ->
-        {[], 0, page}
     end
   end
 
@@ -359,9 +356,6 @@ defmodule Vmemo.PhotoService.TsPhoto do
         )
 
         {photos |> Enum.map(&parse/1), found, current_page}
-
-      _ ->
-        {[], 0, page}
     end
   end
 

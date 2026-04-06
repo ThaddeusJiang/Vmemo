@@ -44,7 +44,6 @@ defmodule Vmemo.Chat.OpenRouterChatModel do
     case new(opts) do
       {:ok, chat} -> chat
       {:error, reason} -> raise "Failed to create OpenRouter chat model: #{inspect(reason)}"
-      chat when is_struct(chat, LangChain.ChatModels.ChatOpenAI) -> chat
     end
   end
 end

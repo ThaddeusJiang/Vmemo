@@ -28,7 +28,19 @@ defmodule Vmemo.Ts.Warmup do
     end
   end
 
-  defp create_warmup_document(_payload, 0), do: {:error, "retries exhausted"}
+  defp create_warmup_document(payload, 1) do
+    req = Typesense.build_request("/collections/photos/documents")
+
+    Typesense.request(:post, req,
+      json: payload,
+      receive_timeout: @embedding_warmup_receive_timeout
+    )
+    |> Typesense.handle_response()
+    |> case do
+      {:ok, _doc} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   defp create_warmup_document(payload, attempts_left) do
     req = Typesense.build_request("/collections/photos/documents")
@@ -44,16 +56,13 @@ defmodule Vmemo.Ts.Warmup do
       {:ok, _doc} ->
         :ok
 
-      {:error, reason} when attempts_left > 1 ->
+      {:error, reason} ->
         if retriable_warmup_error?(reason) do
           Process.sleep(@embedding_warmup_retry_sleep_ms)
           create_warmup_document(payload, attempts_left - 1)
         else
           {:error, reason}
         end
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 

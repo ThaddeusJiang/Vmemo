@@ -286,18 +286,12 @@ defmodule SmallSdk.Moondream do
     url.path
   end
 
-  defp request_path(_), do: nil
-
   defp sanitize_response({:ok, %{status: status, body: body}}) do
     %{status: status, body: sanitize_value(body)}
   end
 
   defp sanitize_response({:error, reason}) do
     %{error: inspect(reason, limit: 20, printable_limit: @debug_log_max_chars)}
-  end
-
-  defp sanitize_response(other) do
-    %{other: inspect(other, limit: 20, printable_limit: @debug_log_max_chars)}
   end
 
   defp sanitize_value(nil), do: nil

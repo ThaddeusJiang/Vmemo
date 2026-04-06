@@ -372,13 +372,10 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("memo_images", rows, on_conflict: :nothing, conflict_target: [:id]) do
-            {count, _} ->
-              {count, []}
+          {count, _} =
+            Repo.insert_all("memo_images", rows, on_conflict: :nothing, conflict_target: [:id])
 
-            error ->
-              {0, [format_error(error)]}
-          end
+          {count, []}
       end
 
     created = inserted_count
@@ -501,13 +498,10 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("memo_notes", rows, on_conflict: :nothing, conflict_target: [:id]) do
-            {count, _} ->
-              {count, []}
+          {count, _} =
+            Repo.insert_all("memo_notes", rows, on_conflict: :nothing, conflict_target: [:id])
 
-            error ->
-              {0, [format_error(error)]}
-          end
+          {count, []}
       end
 
     created = inserted_count
@@ -525,7 +519,7 @@ defmodule Vmemo.UserDataTransfer do
 
     pair_list = MapSet.to_list(pairs)
     existing_pairs = fetch_existing_photo_note_pairs(pair_list)
-    to_insert_pairs = Enum.reject(pair_list, &MapSet.member?(existing_pairs, &1))
+    to_insert_pairs = Enum.reject(pair_list, &Enum.member?(existing_pairs, &1))
     generated_ids = generate_uuid_v7_list(length(to_insert_pairs))
 
     rows_to_insert =
@@ -545,20 +539,17 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("memo_images_notes", rows,
-                 on_conflict: :nothing,
-                 conflict_target: [:photo_id, :note_id]
-               ) do
-            {count, _} ->
-              {count, []}
+          {count, _} =
+            Repo.insert_all("memo_images_notes", rows,
+              on_conflict: :nothing,
+              conflict_target: [:photo_id, :note_id]
+            )
 
-            error ->
-              {0, [format_error(error)]}
-          end
+          {count, []}
       end
 
     skipped =
-      MapSet.size(existing_pairs) + max(length(rows_to_insert) - inserted_count, 0)
+      length(existing_pairs) + max(length(rows_to_insert) - inserted_count, 0)
 
     {%{created: inserted_count, skipped: skipped, failed: length(insert_errors)}, insert_errors}
   end
@@ -695,8 +686,17 @@ defmodule Vmemo.UserDataTransfer do
   end
 
   defp typesense_source_user_id(payload) do
-    first_photo = List.first(payload.typesense_photos || [])
-    first_note = List.first(payload.typesense_notes || [])
+    first_photo =
+      payload
+      |> pick_value([:typesense_photos, "typesense_photos"])
+      |> normalize_list()
+      |> List.first()
+
+    first_note =
+      payload
+      |> pick_value([:typesense_notes, "typesense_notes"])
+      |> normalize_list()
+      |> List.first()
 
     pick_value(first_photo, ["inserted_by", :inserted_by]) ||
       pick_value(first_note, ["belongs_to", :belongs_to])
@@ -975,8 +975,6 @@ defmodule Vmemo.UserDataTransfer do
     )
   end
 
-  defp valid_uuid?(_id), do: false
-
   defp normalize_list(value) when is_list(value), do: value
   defp normalize_list(_value), do: []
 
@@ -1031,7 +1029,7 @@ defmodule Vmemo.UserDataTransfer do
     end
   end
 
-  defp fetch_existing_photo_note_pairs([]), do: MapSet.new()
+  defp fetch_existing_photo_note_pairs([]), do: []
 
   defp fetch_existing_photo_note_pairs(pairs) do
     {photo_ids, note_ids} = Enum.unzip(pairs)
@@ -1046,12 +1044,10 @@ defmodule Vmemo.UserDataTransfer do
 
     case Repo.query(query, [photo_ids, note_ids]) do
       {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [photo_id, note_id] -> {photo_id, note_id} end)
-        |> MapSet.new()
+        Enum.map(rows, fn [photo_id, note_id] -> {photo_id, note_id} end)
 
       _ ->
-        MapSet.new()
+        []
     end
   end
 

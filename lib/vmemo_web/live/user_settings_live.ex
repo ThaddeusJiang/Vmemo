@@ -397,6 +397,5 @@ defmodule VmemoWeb.UserSettingsLive do
   defp error_to_string(:too_many_files), do: "You have selected too many files"
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 
-  defp format_error(error) when is_binary(error), do: error
   defp format_error(error), do: inspect(error)
 end

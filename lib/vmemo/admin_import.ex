@@ -700,6 +700,5 @@ defmodule Vmemo.AdminImport do
   defp add_error(errors, _error) when length(errors) >= @error_limit, do: errors
   defp add_error(errors, error), do: errors ++ [error]
 
-  defp format_error(error) when is_binary(error), do: error
   defp format_error(error), do: inspect(error)
 end

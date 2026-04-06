@@ -651,9 +651,6 @@ defmodule Vmemo.Memo.Photo do
 
       {:ok, updated} ->
         {:ok, updated}
-
-      error ->
-        error
     end
   end
 
@@ -665,10 +662,8 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp migrate_typesense_schema do
-    case Vmemo.Ts.migrate() do
-      :ok -> :ok
-      other -> {:error, "Typesense migration failed: #{inspect(other)}"}
-    end
+    :ok = Vmemo.Ts.migrate()
+    :ok
   rescue
     exception ->
       {:error, "Typesense migration failed: #{Exception.message(exception)}"}
