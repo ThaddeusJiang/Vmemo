@@ -269,15 +269,30 @@ defmodule SmallSdk.Moondream do
   end
 
   defp post(req, payload, action) do
-    dev_log("moondream.request",
-      action: action,
-      path: request_path(req),
-      json: sanitize_value(payload)
+    Logger.debug(
+      [
+        "[Moondream] request",
+        inspect(
+          [action: action, path: request_path(req), json: sanitize_value(payload)],
+          limit: 50,
+          printable_limit: 500
+        )
+      ],
+      ansi_color: :cyan
     )
 
     res = Req.post(req, json: payload)
 
-    dev_log("moondream.response", action: action, response: sanitize_response(res))
+    Logger.debug(
+      [
+        "[Moondream] response",
+        inspect([action: action, response: sanitize_response(res)],
+          limit: 50,
+          printable_limit: 500
+        )
+      ],
+      ansi_color: :cyan
+    )
 
     res
   end
@@ -318,8 +333,4 @@ defmodule SmallSdk.Moondream do
   end
 
   defp sanitize_value(value), do: value
-
-  defp dev_log(message, metadata) do
-    Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
-  end
 end

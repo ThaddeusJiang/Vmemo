@@ -4,8 +4,6 @@ defmodule Vmemo.SearchEngine.TsPhoto do
 
   CRUD and search operations are supported.
   """
-
-  require Logger
   alias SmallSdk.Typesense
 
   alias Vmemo.Ai.Caption
@@ -205,14 +203,6 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     user_id = Keyword.get(opts, :user_id, "")
     page = Keyword.get(opts, :page, 1)
     per_page = 10
-    raw_q = q
-
-    dev_log("vmemo.search.request",
-      raw_query: raw_q,
-      similar_photo_id: similar,
-      user_id: user_id,
-      page: page
-    )
 
     q =
       case String.trim(q) do
@@ -259,25 +249,9 @@ defmodule Vmemo.SearchEngine.TsPhoto do
 
     case Typesense.search_documents(@collection_name, params) do
       {:ok, %{documents: photos, found: found, page: current_page}} ->
-        dev_log("vmemo.search.response",
-          search_mode: "text",
-          normalized_query: q,
-          found: found,
-          page: current_page,
-          result_ids: Enum.map(photos, &Map.get(&1, "id")) |> Enum.take(10)
-        )
-
         {photos |> Enum.map(&parse/1), found, current_page}
 
       {:error, _reason} ->
-        dev_log("vmemo.search.response",
-          search_mode: "text",
-          normalized_query: q,
-          found: 0,
-          page: page,
-          result_ids: []
-        )
-
         {[], 0, page}
     end
   end
@@ -307,14 +281,6 @@ defmodule Vmemo.SearchEngine.TsPhoto do
 
     case Typesense.handle_multi_search_res(res) do
       {:ok, {photos, found, current_page}} ->
-        dev_log("vmemo.search.response",
-          search_mode: "semantic-fallback",
-          normalized_query: q,
-          found: found,
-          page: current_page,
-          result_ids: Enum.map(photos, &Map.get(&1, "id")) |> Enum.take(10)
-        )
-
         {photos |> Enum.map(&parse/1), found, current_page}
     end
   end
@@ -346,15 +312,6 @@ defmodule Vmemo.SearchEngine.TsPhoto do
 
     case Typesense.handle_multi_search_res(res) do
       {:ok, {photos, found, current_page}} ->
-        dev_log("vmemo.search.response",
-          search_mode: "similar-photo",
-          normalized_query: q,
-          similar_photo_id: similar,
-          found: found,
-          page: current_page,
-          result_ids: Enum.map(photos, &Map.get(&1, "id")) |> Enum.take(10)
-        )
-
         {photos |> Enum.map(&parse/1), found, current_page}
     end
   end
@@ -400,7 +357,4 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     end
   end
 
-  defp dev_log(message, metadata) do
-    Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
-  end
 end

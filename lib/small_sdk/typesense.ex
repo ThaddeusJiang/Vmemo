@@ -285,17 +285,42 @@ defmodule SmallSdk.Typesense do
   end
 
   def request(method, req, opts \\ []) when method in [:get, :post, :patch, :delete] do
-    dev_log("typesense.request",
-      method: method,
-      path: request_path(req),
-      params: sanitize_value(Keyword.get(opts, :params)),
-      json: sanitize_value(Keyword.get(opts, :json)),
-      body: sanitize_value(Keyword.get(opts, :body))
+    path = request_path(req)
+
+    color =
+      case method do
+        :post -> :green
+        :patch -> :yellow
+        _ -> nil
+      end
+
+    Logger.debug(
+      [
+        "[Typesense] request",
+        inspect(
+          [
+            method: method,
+            path: path,
+            params: sanitize_value(Keyword.get(opts, :params)),
+            json: sanitize_value(Keyword.get(opts, :json)),
+            body: sanitize_value(Keyword.get(opts, :body))
+          ],
+          limit: 50,
+          printable_limit: 500
+        )
+      ],
+      ansi_color: color
     )
 
     res = apply(Req, method, [req, opts])
 
-    dev_log("typesense.response", response: sanitize_response(res))
+    Logger.debug(
+      [
+        "[Typesense] response",
+        inspect([response: sanitize_response(res)], limit: 50, printable_limit: 500)
+      ],
+      ansi_color: color
+    )
 
     res
   end
@@ -366,8 +391,4 @@ defmodule SmallSdk.Typesense do
   end
 
   defp sanitize_value(value), do: value
-
-  defp dev_log(message, metadata) do
-    Logger.debug("#{message} #{inspect(metadata, limit: 50, printable_limit: 500)}")
-  end
 end
