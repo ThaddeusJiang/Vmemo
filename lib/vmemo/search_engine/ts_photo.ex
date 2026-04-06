@@ -356,5 +356,4 @@ defmodule Vmemo.SearchEngine.TsPhoto do
         other
     end
   end
-
 end
