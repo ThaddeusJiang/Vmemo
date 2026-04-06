@@ -10,7 +10,8 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-# Create test users for dev and test environments
-if Mix.env() in [:dev, :test] do
-  Code.require_file("seeds/test_users.exs", __DIR__)
-end
+# Seed shared photo fixture for all environments.
+Code.require_file("seeds/photo.exs", __DIR__)
+
+# Always execute photo seed in mix setup / db.seed.
+Vmemo.Seeds.Photo.run()

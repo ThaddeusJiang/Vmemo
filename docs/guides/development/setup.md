@@ -36,6 +36,9 @@ docker compose up -d
 mix setup
 ```
 
+`mix setup` only initializes shared development data and does not create local test users or test API tokens.
+For e2e auth fixtures, use the SQL seed flow in `e2e-test/fixtures/prepare-e2e-auth.sql`.
+
 4. Run the app locally:
 
 ```bash
