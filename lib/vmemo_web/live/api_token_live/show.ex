@@ -1,7 +1,7 @@
 defmodule VmemoWeb.ApiTokenLive.Show do
   use VmemoWeb, :live_view
 
-  alias Vmemo.ApiTokenService
+  alias Vmemo.Account.ApiTokens
 
   def render(assigns) do
     ~H"""
@@ -210,7 +210,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     user = socket.assigns.current_user
 
-    case ApiTokenService.get_user_api_token!(user, id) do
+    case ApiTokens.get_user_api_token!(user, id) do
       api_token ->
         {:ok,
          socket
@@ -232,7 +232,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokenService.delete_api_token(token) do
+    case ApiTokens.delete_api_token(token) do
       :ok ->
         {:noreply,
          socket
@@ -253,7 +253,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokenService.toggle_api_token_status(token) do
+    case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
         status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
 

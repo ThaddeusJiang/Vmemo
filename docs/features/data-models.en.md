@@ -172,7 +172,7 @@ These are maintained by Oban for background job execution and clustering.
 | `_gen_ocr` | `string` | OCR text |
 | `image_embedding` | `float[]` | Vector embedding |
 
-Service module: `Vmemo.PhotoService.TsPhoto`
+Service module: `Vmemo.SearchEngine.TsPhoto`
 
 ### `notes`
 
@@ -185,7 +185,7 @@ Service module: `Vmemo.PhotoService.TsPhoto`
 | `updated_at` | `int64` | Unix timestamp |
 | `belongs_to` | `string` | User id |
 
-Service module: `Vmemo.PhotoService.TsNote`
+Service module: `Vmemo.SearchEngine.TsNote`
 
 ## Relationship Summary
 

@@ -1,9 +1,13 @@
-defmodule Vmemo.UserDataTransfer do
+defmodule Vmemo.UserSettings do
   @moduledoc false
   require Ash.Query
   require Logger
 
   alias Vmemo.Account.User
+  alias Vmemo.ImportExport.Errors
+  alias Vmemo.ImportExport.Ids
+  alias Vmemo.ImportExport.Json
+  alias Vmemo.ImportExport.Zip
   alias Vmemo.Memo.Note
   alias Vmemo.Memo.Photo
   alias Vmemo.Memo.PhotoNote
@@ -372,13 +376,10 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("memo_images", rows, on_conflict: :nothing, conflict_target: [:id]) do
-            {count, _} ->
-              {count, []}
+          {count, _} =
+            Repo.insert_all("memo_images", rows, on_conflict: :nothing, conflict_target: [:id])
 
-            error ->
-              {0, [format_error(error)]}
-          end
+          {count, []}
       end
 
     created = inserted_count
@@ -501,13 +502,10 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("memo_notes", rows, on_conflict: :nothing, conflict_target: [:id]) do
-            {count, _} ->
-              {count, []}
+          {count, _} =
+            Repo.insert_all("memo_notes", rows, on_conflict: :nothing, conflict_target: [:id])
 
-            error ->
-              {0, [format_error(error)]}
-          end
+          {count, []}
       end
 
     created = inserted_count
@@ -525,7 +523,7 @@ defmodule Vmemo.UserDataTransfer do
 
     pair_list = MapSet.to_list(pairs)
     existing_pairs = fetch_existing_photo_note_pairs(pair_list)
-    to_insert_pairs = Enum.reject(pair_list, &MapSet.member?(existing_pairs, &1))
+    to_insert_pairs = Enum.reject(pair_list, &Enum.member?(existing_pairs, &1))
     generated_ids = generate_uuid_v7_list(length(to_insert_pairs))
 
     rows_to_insert =
@@ -545,20 +543,17 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("memo_images_notes", rows,
-                 on_conflict: :nothing,
-                 conflict_target: [:photo_id, :note_id]
-               ) do
-            {count, _} ->
-              {count, []}
+          {count, _} =
+            Repo.insert_all("memo_images_notes", rows,
+              on_conflict: :nothing,
+              conflict_target: [:photo_id, :note_id]
+            )
 
-            error ->
-              {0, [format_error(error)]}
-          end
+          {count, []}
       end
 
     skipped =
-      MapSet.size(existing_pairs) + max(length(rows_to_insert) - inserted_count, 0)
+      length(existing_pairs) + max(length(rows_to_insert) - inserted_count, 0)
 
     {%{created: inserted_count, skipped: skipped, failed: length(insert_errors)}, insert_errors}
   end
@@ -695,8 +690,17 @@ defmodule Vmemo.UserDataTransfer do
   end
 
   defp typesense_source_user_id(payload) do
-    first_photo = List.first(payload.typesense_photos || [])
-    first_note = List.first(payload.typesense_notes || [])
+    first_photo =
+      payload
+      |> pick_value([:typesense_photos, "typesense_photos"])
+      |> normalize_list()
+      |> List.first()
+
+    first_note =
+      payload
+      |> pick_value([:typesense_notes, "typesense_notes"])
+      |> normalize_list()
+      |> List.first()
 
     pick_value(first_photo, ["inserted_by", :inserted_by]) ||
       pick_value(first_note, ["belongs_to", :belongs_to])
@@ -791,63 +795,23 @@ defmodule Vmemo.UserDataTransfer do
   end
 
   defp extract_zip(zip_path, tmp_dir) do
-    case :zip.extract(String.to_charlist(zip_path), [{:cwd, String.to_charlist(tmp_dir)}]) do
-      {:ok, _files} -> :ok
-      {:error, reason} -> {:error, "Failed to extract zip: #{inspect(reason)}"}
-    end
+    Zip.extract_zip(zip_path, tmp_dir)
   end
 
   defp write_json(path, data) do
-    case Jason.encode(data, pretty: true) do
-      {:ok, json} ->
-        File.write(path, json)
-
-      {:error, reason} ->
-        {:error, "Failed to encode JSON #{path}: #{inspect(reason)}"}
-    end
+    Json.write_json(path, data)
   end
 
   defp read_json(path) do
-    case File.read(path) do
-      {:ok, content} ->
-        case Jason.decode(content) do
-          {:ok, data} -> {:ok, data}
-          {:error, error} -> {:error, "Failed to decode JSON #{path}: #{inspect(error)}"}
-        end
-
-      {:error, reason} ->
-        {:error, "Failed to read #{path}: #{inspect(reason)}"}
-    end
+    Json.read_json(path)
   end
 
   defp read_optional_json(path) do
-    case File.read(path) do
-      {:ok, content} ->
-        case Jason.decode(content) do
-          {:ok, data} -> data
-          {:error, _error} -> nil
-        end
-
-      {:error, _reason} ->
-        nil
-    end
+    Json.read_optional_json(path)
   end
 
   defp zip_dir(source_dir, target_zip_path) do
-    files =
-      source_dir
-      |> Path.join("**/*")
-      |> Path.wildcard()
-      |> Enum.filter(&File.regular?/1)
-      |> Enum.map(&Path.relative_to(&1, source_dir))
-      |> Enum.map(&String.to_charlist/1)
-
-    case :zip.create(String.to_charlist(target_zip_path), files,
-           cwd: String.to_charlist(source_dir)
-         ) do
-      {:ok, _filename} -> :ok
-      {:error, reason} -> {:error, "Failed to create zip: #{inspect(reason)}"}
-    end
+    Zip.zip_dir(source_dir, target_zip_path)
   end
 
   defp build_typesense_photo_docs(photos, links, user_id) do
@@ -959,26 +923,16 @@ defmodule Vmemo.UserDataTransfer do
 
   defp normalize_record_id(id) when is_binary(id) do
     cond do
-      valid_uuid?(id) -> {:uuid, id}
+      Ids.valid_uuid?(id) -> {:uuid, id}
       String.match?(id, ~r/^\d+$/) -> {:legacy, id}
       true -> :invalid
     end
   end
 
-  defp normalize_record_id(id) when is_integer(id), do: {:legacy, id}
-  defp normalize_record_id(_id), do: :invalid
+  defp normalize_record_id(id) when is_integer(id), do: Ids.normalize_record_id(id)
+  defp normalize_record_id(_id), do: Ids.normalize_record_id(nil)
 
-  defp valid_uuid?(id) when is_binary(id) do
-    Regex.match?(
-      ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      String.downcase(id)
-    )
-  end
-
-  defp valid_uuid?(_id), do: false
-
-  defp normalize_list(value) when is_list(value), do: value
-  defp normalize_list(_value), do: []
+  defp normalize_list(value), do: Json.normalize_list(value)
 
   defp pick_value(map, keys) when is_map(map) do
     Enum.find_value(keys, fn key ->
@@ -1031,7 +985,7 @@ defmodule Vmemo.UserDataTransfer do
     end
   end
 
-  defp fetch_existing_photo_note_pairs([]), do: MapSet.new()
+  defp fetch_existing_photo_note_pairs([]), do: []
 
   defp fetch_existing_photo_note_pairs(pairs) do
     {photo_ids, note_ids} = Enum.unzip(pairs)
@@ -1046,12 +1000,10 @@ defmodule Vmemo.UserDataTransfer do
 
     case Repo.query(query, [photo_ids, note_ids]) do
       {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [photo_id, note_id] -> {photo_id, note_id} end)
-        |> MapSet.new()
+        Enum.map(rows, fn [photo_id, note_id] -> {photo_id, note_id} end)
 
       _ ->
-        MapSet.new()
+        []
     end
   end
 
@@ -1119,14 +1071,11 @@ defmodule Vmemo.UserDataTransfer do
   defp to_iso8601(value), do: value
 
   defp append_errors(errors, more) do
-    Enum.reduce(more, errors, fn error, acc ->
-      add_error(acc, error)
-    end)
+    Errors.append_errors(errors, more)
+    |> Enum.take(@error_limit)
   end
 
-  defp add_error(errors, _error) when length(errors) >= @error_limit, do: errors
-  defp add_error(errors, error), do: errors ++ [error]
+  defp add_error(errors, error), do: Errors.add_error(errors, error, @error_limit)
 
-  defp format_error(error) when is_binary(error), do: error
-  defp format_error(error), do: inspect(error)
+  defp format_error(error), do: Errors.format_error(error)
 end

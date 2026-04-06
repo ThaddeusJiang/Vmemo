@@ -1,14 +1,10 @@
-defmodule Vmemo.Workers.Import.ProcessRequest do
+defmodule Vmemo.Admin.ImportRequest.ProcessRunner do
   @moduledoc false
-  use Oban.Worker, queue: :import_requests, max_attempts: 3
 
   require Logger
 
   alias Vmemo.Admin.ImportRequest
-  alias Vmemo.AdminImport
-
-  @impl Oban.Worker
-  def perform(%Oban.Job{args: args}), do: execute(args)
+  alias Vmemo.Admin.Import
 
   def execute(%{"request_id" => request_id}) do
     case Ash.get(ImportRequest, request_id, actor: nil) do
@@ -43,7 +39,7 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
            metadata: progress_metadata("Starting", 0)
          }) do
       {:ok, request} ->
-        case AdminImport.import_zip(zip_path, &update_request_progress(request, &1)) do
+        case Import.import_zip(zip_path, &update_request_progress(request, &1)) do
           {:ok, result} ->
             update_request_with_success(request, result)
 

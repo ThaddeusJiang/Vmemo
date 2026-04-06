@@ -2,7 +2,7 @@ defmodule VmemoWeb.UserSettingsLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Account
-  alias Vmemo.UserDataTransfer
+  alias Vmemo.UserSettings
   alias VmemoWeb.Uploads.ImportZipWriter
 
   def render(assigns) do
@@ -266,7 +266,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
         case uploaded do
           [%{path: zip_path}] ->
-            case UserDataTransfer.import_user_zip(socket.assigns.current_user.id, zip_path) do
+            case UserSettings.import_user_zip(socket.assigns.current_user.id, zip_path) do
               {:ok, result} ->
                 {:noreply,
                  socket
@@ -397,6 +397,5 @@ defmodule VmemoWeb.UserSettingsLive do
   defp error_to_string(:too_many_files), do: "You have selected too many files"
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 
-  defp format_error(error) when is_binary(error), do: error
   defp format_error(error), do: inspect(error)
 end

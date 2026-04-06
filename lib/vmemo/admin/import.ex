@@ -1,7 +1,11 @@
-defmodule Vmemo.AdminImport do
+defmodule Vmemo.Admin.Import do
   @moduledoc false
   require Ash.Query
   alias Vmemo.Account.User
+  alias Vmemo.ImportExport.Errors
+  alias Vmemo.ImportExport.Ids
+  alias Vmemo.ImportExport.Json
+  alias Vmemo.ImportExport.Zip
   alias Vmemo.Memo.Note
   alias Vmemo.Memo.Photo
   alias Vmemo.Memo.PhotoNote
@@ -35,10 +39,7 @@ defmodule Vmemo.AdminImport do
   end
 
   defp extract_zip(zip_path, tmp_dir) do
-    case :zip.extract(String.to_charlist(zip_path), [{:cwd, String.to_charlist(tmp_dir)}]) do
-      {:ok, _files} -> :ok
-      {:error, reason} -> {:error, "Failed to extract zip: #{inspect(reason)}"}
-    end
+    Zip.extract_zip(zip_path, tmp_dir)
   end
 
   defp read_payload(tmp_dir) do
@@ -71,33 +72,14 @@ defmodule Vmemo.AdminImport do
     end
   end
 
-  defp normalize_list(value) when is_list(value), do: value
-  defp normalize_list(_value), do: []
+  defp normalize_list(value), do: Json.normalize_list(value)
 
   defp read_json(path) do
-    case File.read(path) do
-      {:ok, content} ->
-        case Jason.decode(content) do
-          {:ok, data} -> {:ok, data}
-          {:error, error} -> {:error, "Failed to decode JSON #{path}: #{inspect(error)}"}
-        end
-
-      {:error, reason} ->
-        {:error, "Failed to read #{path}: #{inspect(reason)}"}
-    end
+    Json.read_json(path)
   end
 
   defp read_optional_json(path) do
-    case File.read(path) do
-      {:ok, content} ->
-        case Jason.decode(content) do
-          {:ok, data} -> data
-          {:error, _error} -> nil
-        end
-
-      {:error, _reason} ->
-        nil
-    end
+    Json.read_optional_json(path)
   end
 
   defp import_payload(payload, tmp_dir, progress_fun) do
@@ -652,23 +634,15 @@ defmodule Vmemo.AdminImport do
 
   defp normalize_record_id(id) when is_binary(id) do
     cond do
-      valid_uuid?(id) -> {:uuid, id}
+      Ids.valid_uuid?(id) -> {:uuid, id}
       String.match?(id, ~r/^\d+$/) -> {:legacy, id}
       true -> :invalid
     end
   end
 
-  defp normalize_record_id(id) when is_integer(id), do: {:legacy, id}
-  defp normalize_record_id(_id), do: :invalid
-
-  defp valid_uuid?(id) when is_binary(id) do
-    Regex.match?(
-      ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-      String.downcase(id)
-    )
-  end
-
-  defp valid_uuid?(_id), do: false
+  defp normalize_record_id(id) when is_integer(id), do: Ids.normalize_record_id(id)
+  defp normalize_record_id(_id), do: Ids.normalize_record_id(nil)
+  defp valid_uuid?(id), do: Ids.valid_uuid?(id)
 
   defp normalize_note_text(nil), do: ""
   defp normalize_note_text(text) when is_binary(text), do: text
@@ -692,14 +666,10 @@ defmodule Vmemo.AdminImport do
   end
 
   defp append_errors(errors, more) do
-    Enum.reduce(more, errors, fn error, acc ->
-      add_error(acc, error)
-    end)
+    Errors.append_errors(errors, more)
+    |> Enum.take(@error_limit)
   end
 
-  defp add_error(errors, _error) when length(errors) >= @error_limit, do: errors
-  defp add_error(errors, error), do: errors ++ [error]
-
-  defp format_error(error) when is_binary(error), do: error
-  defp format_error(error), do: inspect(error)
+  defp add_error(errors, error), do: Errors.add_error(errors, error, @error_limit)
+  defp format_error(error), do: Errors.format_error(error)
 end

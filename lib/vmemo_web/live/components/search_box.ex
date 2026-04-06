@@ -3,7 +3,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   use VmemoWeb, :live_component
 
   alias Vmemo.Memo.Photo
-  alias Vmemo.PhotoService
+  alias Vmemo.Memo.PhotoStorage
 
   @impl true
   def mount(socket) do
@@ -106,7 +106,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
           filename = entry.uuid <> Path.extname(entry.client_name)
 
-          {:ok, dest} = PhotoService.cp_file(path, current_user.id, filename)
+          {:ok, dest} = PhotoStorage.cp_file(path, current_user.id, filename)
 
           case Photo.create_with_sync(
                  %{

@@ -1,4 +1,4 @@
-defmodule Vmemo.PhotoService.Ai do
+defmodule Vmemo.Ai.Caption do
   @moduledoc false
   require Logger
 

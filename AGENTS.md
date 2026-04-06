@@ -237,7 +237,7 @@ shadcn/ui 表单取消按钮是 ghost 按钮。
 - e2e testing 的 seed / auth preparation **必须**在当前被测试的目标环境中执行：
   - 测试 dev server 时，在 dev 环境准备数据
   - 测试 prod-like container 时，在对应容器环境准备数据
-- CI 中的 e2e auth/data seed **总是**优先使用 SQL 脚本（`psql`）直接插入幂等测试数据，**不要**依赖 `Vmemo.Seeds.TestUsers` 这类应用层 seed 模块
+- CI 中的 e2e auth/data seed **总是**优先使用 SQL 脚本（`psql`）直接插入幂等测试数据，**不要**依赖应用层 seed 模块
 - 不常用且仅 CI 需要的 e2e 准备步骤（例如 auth seed）**不要**默认耦合到本地 npm/bun scripts；应在 CI workflow 中显式执行
 - e2e testing guidelines（用户视角）：
   - **总是**优先点击用户可见的按钮文本（例如 `Login` 按钮），而不是依赖 `button[type='submit']` 这类实现细节选择器
@@ -254,6 +254,12 @@ password = "pass123456"
 ## 项目规范
 
 - **版本管理**：本项目使用 `mise` 进行 Elixir/Erlang 版本管理。`mise.toml` 文件指定了所需的版本。设置项目时，运行 `mise install` 自动安装正确的版本。
+- **代码组织**：**总是**优先按「功能域 / 路由」组织代码，将需要一起修改、相互调用频繁的模块放在相近位置（例如同一 `Vmemo.*` 子命名空间或相邻目录），降低跨目录跳转和重构遗漏风险。
+  - 同时**必须**尊重 Elixir / Phoenix 推荐风格，不要为了“按功能分组”破坏生态约定：
+    - 领域与业务逻辑放在 `lib/vmemo/**`（按 context/子域组织）
+    - Web 层放在 `lib/vmemo_web/**`（LiveView、Controller、Component、Router 等）
+    - 命名与路径保持一致（模块名、文件路径、目录层级一致）
+  - 当两个模块强耦合（例如同一导入/导出流程、同一路由下的 LiveView 与服务）时，优先收敛到同一子目录或相邻子目录，而不是分散在远距离位置。
 - 本地 compose 约定：默认只提交 `*.example.yml`，所有非 `example` 的 compose 文件都通过复制 example 在本地生成并使用（例如 `cp docker-compose.example.yml docker-compose.yml`），不纳入 git 跟踪；`e2e-test/docker-compose.e2e.yml` 与 `docs/guides/deployment/self-hosting/docker-compose.yml` 作为固定入口例外，允许提交到仓库并在本地与 CI 直接使用。
 - **本地 reset 流程**：执行 reset 时先关闭 `mix phx.server`，再执行 `docker compose down -v` 清空数据，删除仓库根目录的 `storage/`（本地上传文件，与数据库 reset 一并清理），随后执行 `docker compose up -d`，最后运行 `mix setup` 初始化数据库定义、Typesense 定义与 local development smoke testing 数据。
 - 每次从没有 diff 的状态开始写代码时，先创建一个新的 branch，不要直接在 `develop` 或 `main` 上开始工作。

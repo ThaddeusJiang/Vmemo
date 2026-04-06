@@ -54,9 +54,6 @@ defmodule VmemoWeb.UserAuth do
       {:ok, token, _claims} ->
         token
 
-      {:ok, token} ->
-        token
-
       _ ->
         # 如果失败，生成一个简单的 session token
         :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)

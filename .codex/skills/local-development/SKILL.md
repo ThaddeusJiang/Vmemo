@@ -69,3 +69,5 @@ iex -S mix phx.server
 - If user answers `N`, only remind them to run `iex -S mix phx.server` manually when needed.
 - When server is started in IEx, remind user they can close it with `Ctrl+C` twice.
 - Do not run `build` or `start` commands unless the user explicitly asks.
+- After every code change, always run `mix dialyzer --format short`.
+- Do not stop at reporting Dialyzer results: always fix all reported errors and warnings, then rerun until clean.

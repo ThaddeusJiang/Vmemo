@@ -26,10 +26,8 @@ defmodule VmemoWeb.Uploads.ImportZipWriter do
 
   @impl true
   def write_chunk(data, state) do
-    case IO.binwrite(state.io, data) do
-      :ok -> {:ok, %{state | bytes: state.bytes + byte_size(data)}}
-      {:error, reason} -> {:error, reason, state}
-    end
+    :ok = IO.binwrite(state.io, data)
+    {:ok, %{state | bytes: state.bytes + byte_size(data)}}
   end
 
   @impl true

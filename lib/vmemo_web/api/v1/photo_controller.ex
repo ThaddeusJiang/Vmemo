@@ -8,7 +8,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   use VmemoWeb, :controller
 
   alias Vmemo.Memo.Photo
-  alias Vmemo.PhotoService
+  alias Vmemo.Memo.PhotoStorage
   # alias removed: SmallSdk.FileSystem
 
   require Logger
@@ -148,7 +148,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
     user_id = to_string(current_user.id)
 
     # 复制文件到存储目录
-    {:ok, dest} = PhotoService.cp_file(path, user_id, filename)
+    {:ok, dest} = PhotoStorage.cp_file(path, user_id, filename)
 
     # 创建照片记录（不写入 base64）
     note = Map.get(params, "note", "")
