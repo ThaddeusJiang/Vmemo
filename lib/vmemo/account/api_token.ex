@@ -8,7 +8,7 @@ defmodule Vmemo.Account.ApiToken do
   require Ash.Query
 
   postgres do
-    table "api_tokens"
+    table "auth_api_tokens"
     repo Vmemo.Repo
   end
 

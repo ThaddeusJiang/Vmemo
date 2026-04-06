@@ -4,7 +4,7 @@
 BEGIN;
 
 WITH target_user AS (
-  INSERT INTO users (
+  INSERT INTO auth_users (
     id,
     email,
     hashed_password,
@@ -29,10 +29,10 @@ WITH target_user AS (
 selected_user AS (
   SELECT id FROM target_user
   UNION ALL
-  SELECT id FROM users WHERE email = 'test@example.com'
+  SELECT id FROM auth_users WHERE email = 'test@example.com'
   LIMIT 1
 )
-INSERT INTO api_tokens (
+INSERT INTO auth_api_tokens (
   id,
   name,
   description,
@@ -62,9 +62,9 @@ DO UPDATE SET
   is_active = true;
 
 WITH selected_user AS (
-  SELECT id FROM users WHERE email = 'test@example.com' LIMIT 1
+  SELECT id FROM auth_users WHERE email = 'test@example.com' LIMIT 1
 )
-INSERT INTO photos (
+INSERT INTO memo_images (
   id,
   url,
   note,
@@ -87,9 +87,9 @@ DO UPDATE SET
   updated_at = timezone('utc', now());
 
 WITH selected_user AS (
-  SELECT id FROM users WHERE email = 'test@example.com' LIMIT 1
+  SELECT id FROM auth_users WHERE email = 'test@example.com' LIMIT 1
 )
-INSERT INTO notes (
+INSERT INTO memo_notes (
   id,
   text,
   user_id,
@@ -107,7 +107,7 @@ ON CONFLICT (id)
 DO UPDATE SET
   updated_at = timezone('utc', now());
 
-INSERT INTO photos_notes (
+INSERT INTO memo_images_notes (
   id,
   photo_id,
   note_id,

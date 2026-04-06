@@ -30,7 +30,7 @@ defmodule Vmemo.Seeds.TestUsers do
 
   defp create_test_user do
     email = "test@example.com"
-    password = "pass123456"
+    password = "password123456"
 
     case Account.get_user_by_email(email) do
       nil ->
@@ -57,7 +57,7 @@ defmodule Vmemo.Seeds.TestUsers do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     user_id = Ecto.UUID.dump!(user.id)
 
-    case Repo.query("UPDATE users SET confirmed_at = $1 WHERE id = $2", [now, user_id]) do
+    case Repo.query("UPDATE auth_users SET confirmed_at = $1 WHERE id = $2", [now, user_id]) do
       {:ok, _} ->
         IO.puts("Created and confirmed user: #{email}")
         Account.get_user_by_email(email)
@@ -86,7 +86,7 @@ defmodule Vmemo.Seeds.TestUsers do
     now_usec = DateTime.utc_now()
 
     sql = """
-    INSERT INTO api_tokens (name, description, expires_at, token_hash, user_id, created_at, inserted_at, updated_at, is_active)
+    INSERT INTO auth_api_tokens (name, description, expires_at, token_hash, user_id, created_at, inserted_at, updated_at, is_active)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING id
     """

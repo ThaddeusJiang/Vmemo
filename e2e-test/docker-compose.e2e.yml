@@ -17,13 +17,13 @@ services:
       - -lc
       - |
         for i in $(seq 1 120); do
-          if psql -tAc "SELECT to_regclass('public.users')" 2>/dev/null | grep -q users; then
+          if psql -tAc "SELECT to_regclass('public.auth_users')" 2>/dev/null | grep -q auth_users; then
             break
           fi
           sleep 1
         done
-        psql -tAc "SELECT to_regclass('public.users')" 2>/dev/null | grep -q users || {
-          echo "users table was not ready after waiting"
+        psql -tAc "SELECT to_regclass('public.auth_users')" 2>/dev/null | grep -q auth_users || {
+          echo "auth_users table was not ready after waiting"
           exit 3
         }
         psql -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql

@@ -297,7 +297,7 @@ defmodule Vmemo.UserDataTransfer do
     valid_uuid_ids =
       prepared |> Enum.map(&extract_valid_uuid_id(&1.raw_id)) |> Enum.reject(&is_nil/1)
 
-    existing_owner_map = fetch_existing_owner_map("photos", valid_uuid_ids)
+    existing_owner_map = fetch_existing_owner_map("memo_images", valid_uuid_ids)
 
     generated_ids =
       prepared
@@ -372,7 +372,7 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("photos", rows, on_conflict: :nothing, conflict_target: [:id]) do
+          case Repo.insert_all("memo_images", rows, on_conflict: :nothing, conflict_target: [:id]) do
             {count, _} ->
               {count, []}
 
@@ -422,7 +422,7 @@ defmodule Vmemo.UserDataTransfer do
     valid_uuid_ids =
       prepared |> Enum.map(&extract_valid_uuid_id(&1.raw_id)) |> Enum.reject(&is_nil/1)
 
-    existing_owner_map = fetch_existing_owner_map("notes", valid_uuid_ids)
+    existing_owner_map = fetch_existing_owner_map("memo_notes", valid_uuid_ids)
 
     generated_ids =
       prepared
@@ -501,7 +501,7 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("notes", rows, on_conflict: :nothing, conflict_target: [:id]) do
+          case Repo.insert_all("memo_notes", rows, on_conflict: :nothing, conflict_target: [:id]) do
             {count, _} ->
               {count, []}
 
@@ -545,7 +545,7 @@ defmodule Vmemo.UserDataTransfer do
           {0, []}
 
         rows ->
-          case Repo.insert_all("photos_notes", rows,
+          case Repo.insert_all("memo_images_notes", rows,
                  on_conflict: :nothing,
                  conflict_target: [:photo_id, :note_id]
                ) do
@@ -1019,7 +1019,7 @@ defmodule Vmemo.UserDataTransfer do
 
   defp fetch_existing_owner_map(_table, []), do: %{}
 
-  defp fetch_existing_owner_map(table, ids) when table in ["photos", "notes"] do
+  defp fetch_existing_owner_map(table, ids) when table in ["memo_images", "memo_notes"] do
     query = "SELECT id::text, user_id::text FROM #{table} WHERE id::text = ANY($1::text[])"
 
     case Repo.query(query, [ids]) do
@@ -1040,7 +1040,7 @@ defmodule Vmemo.UserDataTransfer do
 
     query = """
     SELECT photo_id::text, note_id::text
-    FROM photos_notes
+    FROM memo_images_notes
     WHERE photo_id::text = ANY($1::text[]) AND note_id::text = ANY($2::text[])
     """
 

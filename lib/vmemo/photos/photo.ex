@@ -22,7 +22,7 @@ defmodule Vmemo.Photos.Photo do
   alias Vmemo.PhotoService.TsPhoto
 
   postgres do
-    table "photos"
+    table "memo_images"
     repo Vmemo.Repo
   end
 

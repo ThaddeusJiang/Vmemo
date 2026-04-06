@@ -8,7 +8,7 @@ defmodule Vmemo.Photos.Note do
   alias Vmemo.PhotoService.TsNote
 
   postgres do
-    table "notes"
+    table "memo_notes"
     repo Vmemo.Repo
   end
 

@@ -6,7 +6,7 @@ defmodule Vmemo.Account.UserToken do
     extensions: [AshAuthentication.TokenResource, AshAdmin.Resource]
 
   postgres do
-    table "user_tokens"
+    table "auth_user_tokens"
     repo Vmemo.Repo
   end
 

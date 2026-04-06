@@ -23,7 +23,7 @@ defmodule Vmemo.Chat.Message do
   end
 
   postgres do
-    table "messages"
+    table "chat_messages"
     repo Vmemo.Repo
 
     references do
