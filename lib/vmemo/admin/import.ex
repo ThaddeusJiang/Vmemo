@@ -1,4 +1,4 @@
-defmodule Vmemo.AdminImport do
+defmodule Vmemo.Admin.Import do
   @moduledoc false
   require Ash.Query
   alias Vmemo.Account.User

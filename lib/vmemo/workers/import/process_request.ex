@@ -5,7 +5,7 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
   require Logger
 
   alias Vmemo.Admin.ImportRequest
-  alias Vmemo.AdminImport
+  alias Vmemo.Admin.Import
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}), do: execute(args)
@@ -43,7 +43,7 @@ defmodule Vmemo.Workers.Import.ProcessRequest do
            metadata: progress_metadata("Starting", 0)
          }) do
       {:ok, request} ->
-        case AdminImport.import_zip(zip_path, &update_request_progress(request, &1)) do
+        case Import.import_zip(zip_path, &update_request_progress(request, &1)) do
           {:ok, result} ->
             update_request_with_success(request, result)
 
