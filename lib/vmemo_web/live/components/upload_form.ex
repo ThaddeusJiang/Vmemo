@@ -168,6 +168,13 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                       </div>
                     </div>
                 <% end %>
+
+                <p
+                  :for={err <- upload_errors(@uploads.photos, entry)}
+                  class="mt-2 text-xs text-error text-left"
+                >
+                  {error_to_string(err)}
+                </p>
               </article>
             </:card>
           </.live_component>
