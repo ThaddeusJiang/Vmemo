@@ -7,6 +7,17 @@ description: "Use when working on Phoenix projects with Tidewave MCP. Prefer Tid
 
 Use this skill when implementing, debugging, or reviewing a Phoenix app with Tidewave MCP.
 
+## Environment bootstrap
+
+Before running project scripts, always execute:
+
+```bash
+mise trust
+mise install
+```
+
+Then run project commands directly (for example, `mix`, `iex -S mix`, `curl`) without `mise exec`.
+
 ## Preflight
 
 Before using Tidewave tools, verify Tidewave MCP is reachable:
@@ -66,6 +77,9 @@ Do not skip steps 2 and 3 when touching unfamiliar code paths.
 
 ## Guardrails
 
+- Always run `mise trust` and `mise install` before executing project scripts.
+- Prefer direct commands (`mix ...`, `iex -S mix`) instead of `mise exec`.
+- If sandbox/toolchain issues appear, rerun `mise trust` and `mise install` first.
 - Prefer Tidewave tools over broad search-first workflows.
 - When changing DB-related logic, verify both runtime behavior (`project_eval`) and data state (`execute_sql_query`).
 - When uncertain about framework behavior, always resolve with `get_docs` before editing.
