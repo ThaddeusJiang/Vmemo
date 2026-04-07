@@ -60,7 +60,7 @@ defmodule Vmemo.Memo.Note do
       accept []
       require_atomic? false
       transaction? false
-      change Vmemo.Memo.Note.Changes.SyncTypesense
+      change {Vmemo.Memo.Changes.SyncTypesense, resource: __MODULE__}
     end
 
     action :sync_typesense_by_id, :boolean do

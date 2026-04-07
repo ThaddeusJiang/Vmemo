@@ -102,7 +102,7 @@ defmodule Vmemo.Memo.Photo do
       accept []
       require_atomic? false
       transaction? false
-      change Vmemo.Memo.Photo.Changes.SyncTypesense
+      change {Vmemo.Memo.Changes.SyncTypesense, resource: __MODULE__}
     end
 
     update :generate_caption do
