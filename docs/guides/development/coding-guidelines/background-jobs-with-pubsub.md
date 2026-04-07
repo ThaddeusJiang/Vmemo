@@ -359,7 +359,7 @@ end
 
 ```elixir
 @impl true
-def handle_event("gen-description", _, socket) do
+def handle_event("generate-caption", _, socket) do
   user = socket.assigns.current_ash_user
   photo = socket.assigns.photo
 
@@ -512,7 +512,7 @@ end
 ```heex
 <button
   type="button"
-  phx-click="gen-description"
+  phx-click="generate-caption"
   disabled={
     if @latest_caption_request,
       do:

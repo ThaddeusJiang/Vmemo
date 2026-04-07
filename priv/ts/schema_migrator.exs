@@ -1,20 +1,20 @@
-defmodule Vmemo.Ts.Migrations do
+defmodule Vmemo.Ts.SchemaMigrator do
   @moduledoc false
 
-  @migrations_collection_file ".migrations_collection"
+  @migrations_collection "ts_schema_migrations"
 
   def migrate do
     migrations_collection = migrations_collection()
 
-    Vmemo.Ts.Collections.ensure_migrations_collection(migrations_collection)
-    applied_versions = Vmemo.Ts.Collections.applied_migration_versions(migrations_collection)
+    Vmemo.Ts.Schema.ensure_migrations_collection(migrations_collection)
+    applied_versions = Vmemo.Ts.Schema.applied_migration_versions(migrations_collection)
 
     migration_entries()
     |> validate_unique_migration_versions()
     |> pending_migrations(applied_versions)
     |> Enum.each(fn %{version: version, path: path} ->
       Code.eval_file(path)
-      Vmemo.Ts.Collections.record_migration_version(migrations_collection, version)
+      Vmemo.Ts.Schema.record_migration_version(migrations_collection, version)
     end)
 
     :ok
@@ -47,21 +47,7 @@ defmodule Vmemo.Ts.Migrations do
   end
 
   def migrations_collection do
-    path = Path.join(migrations_dir(), @migrations_collection_file)
-
-    case File.read(path) do
-      {:ok, value} ->
-        collection = String.trim(value)
-
-        if collection == "" do
-          raise("Typesense migrations collection config is empty: #{path}")
-        end
-
-        collection
-
-      {:error, reason} ->
-        raise("Typesense migrations collection config read failed: #{path} (#{inspect(reason)})")
-    end
+    @migrations_collection
   end
 
   defp migration_entries do

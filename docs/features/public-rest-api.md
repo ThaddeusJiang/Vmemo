@@ -87,8 +87,7 @@ Success response (`200`):
     "id": "01JKQM8X9Y7Z6W5V4U3T2S1R0P",
     "url": "/storage/v1/user_abc123/photos/20250126_103045_image.jpg",
     "note": "My vacation photo",
-    "description": "A beautiful sunset over the ocean",
-    "ocr_text": "Welcome to Paradise Beach",
+    "caption": "A beautiful sunset over the ocean",
     "inserted_at": "2025-01-26T10:30:45Z",
     "updated_at": "2025-01-26T10:31:00Z"
   }

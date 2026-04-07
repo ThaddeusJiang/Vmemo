@@ -207,7 +207,6 @@ Typesense 用于提供高性能的搜索能力，包括全文检索和向量相�
 | inserted_at | int64 | 创建时间戳 |
 | inserted_by | string | 用户 ID |
 | caption | string | AI 描述 |
-| _gen_ocr | string | AI OCR 结果 |
 | image_embedding | float[] | 图片向量嵌入 (用于相似搜索) |
 
 **服务模块**: `Vmemo.SearchEngine.TsPhoto`

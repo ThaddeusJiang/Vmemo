@@ -2,7 +2,7 @@ name: E2E Tests
 
 on:
   pull_request:
-    types: [labeled, synchronize, reopened]
+    types: [ready_for_review]
   workflow_dispatch:
     inputs:
       update_snapshots:
@@ -15,23 +15,7 @@ permissions:
   contents: write
 
 jobs:
-  build-image:
-    if: |
-      (github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.labels.*.name, 'run-e2e-testing')) ||
-      github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6.0.2
-
-      - name: Build app image artifact
-        uses: ./.github/actions/build-ci-image
-        with:
-          image_name: thaddeusjiang/vmemo:e2e
-
   e2e:
-    needs: build-image
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -66,7 +50,6 @@ jobs:
       run:
         working-directory: e2e-test
     env:
-      VMEMO_IMAGE: thaddeusjiang/vmemo:e2e
       DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
       TYPESENSE_URL: http://host.docker.internal:8108
       TYPESENSE_API_KEY: xyz
@@ -87,49 +70,35 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - name: Download app image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: vmemo-e2e-image
-          path: /tmp/vmemo-ci-image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
 
-      - name: Load app image
-        run: docker load -i /tmp/vmemo-ci-image/vmemo-e2e-image.tar
+      - name: Build app image (amd64, local only)
+        run: docker buildx build --platform linux/amd64 --file ./Dockerfile --tag thaddeusjiang/vmemo:e2e --load .
+
+      - name: Set up Erlang/Elixir for mix warmup task
+        uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+        working-directory: .
+
+      - name: Confirm Typesense is ready
+        run: curl -fsS http://localhost:8108/health >/dev/null
+
+      - name: Warm up Typesense embedding model
+        run: mix ts.warmup_embedding
+        working-directory: .
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo
+          TYPESENSE_URL: http://localhost:8108
 
       - name: Start app with compose
         run: |
           docker compose -f docker-compose.e2e.yml up -d
-
-      - name: Wait for dependency services
-        run: |
-          timeout=60
-          count=0
-          until curl -fsS http://localhost:8108/health >/dev/null; do
-            if [ $count -ge $timeout ]; then
-              echo "Timeout waiting for Typesense"
-              exit 1
-            fi
-            echo "Waiting for Typesense... ($count/$timeout)"
-            sleep 1
-            count=$((count + 1))
-          done
-          echo "Typesense is ready!"
-
-      - name: Wait for app
-        run: |
-          timeout=300
-          count=0
-          until curl -fsS http://localhost:4000/login >/dev/null; do
-            if [ $count -ge $timeout ]; then
-              echo "Timeout waiting for app"
-              docker compose -f docker-compose.e2e.yml logs vmemo || true
-              exit 1
-            fi
-            echo "Waiting for app... ($count/$timeout)"
-            sleep 1
-            count=$((count + 1))
-          done
-          echo "App is ready!"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -139,6 +108,9 @@ jobs:
 
       - name: Install Playwright browsers and host dependencies
         run: bunx playwright install --with-deps
+
+      - name: Confirm app is ready
+        run: curl -fsS http://localhost:4000/login >/dev/null
 
       - name: Update e2e snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}

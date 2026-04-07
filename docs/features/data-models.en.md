@@ -169,7 +169,6 @@ These are maintained by Oban for background job execution and clustering.
 | `inserted_at` | `int64` | Unix timestamp |
 | `inserted_by` | `string` | User id |
 | `caption` | `string` | AI caption |
-| `_gen_ocr` | `string` | OCR text |
 | `image_embedding` | `float[]` | Vector embedding |
 
 Service module: `Vmemo.SearchEngine.TsPhoto`

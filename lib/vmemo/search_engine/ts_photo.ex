@@ -6,8 +6,6 @@ defmodule Vmemo.SearchEngine.TsPhoto do
   """
   alias SmallSdk.Typesense
 
-  alias Vmemo.Ai.Caption
-
   @collection_name "photos"
 
   defstruct [
@@ -20,7 +18,6 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     :inserted_at,
     :inserted_by,
     :caption,
-    :_gen_ocr,
     :_vector_distance,
     :_text_match_info
   ]
@@ -39,8 +36,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
       file_id: photo["file_id"],
       inserted_at: photo["inserted_at"],
       inserted_by: photo["inserted_by"],
-      caption: photo["caption"] || photo["_gen_description"],
-      _gen_ocr: photo["_gen_ocr"],
+      caption: photo["caption"],
       _vector_distance: photo["_vector_distance"],
       _text_match_info: photo["_text_match_info"]
     }
@@ -123,34 +119,11 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     update_photo(Map.merge(photo, %{id: id}))
   end
 
-  def update_ocr(id, ocr) do
-    update_photo(%{
-      id: id,
-      _gen_ocr: ocr
-    })
-  end
-
   def update_caption(id, caption) do
     update_photo(%{
       id: id,
       caption: caption
     })
-  end
-
-  def gen_description(id) do
-    case get_photo(id) do
-      nil ->
-        {:error, :photo_not_found}
-
-      {:error, reason} ->
-        {:error, reason}
-
-      photo ->
-        case Caption.gen_description(photo.url) do
-          {:ok, description} -> {:ok, description}
-          {:error, reason} -> {:error, reason}
-        end
-    end
   end
 
   def list_photos(opts \\ []) do

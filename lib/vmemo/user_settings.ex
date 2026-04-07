@@ -132,7 +132,6 @@ defmodule Vmemo.UserSettings do
           url: photo.url,
           note: photo.note,
           caption: photo.caption,
-          ts_ocr: Map.get(photo, :ts_ocr),
           file_id: photo.file_id,
           user_id: photo.user_id,
           inserted_at: to_iso8601(photo.inserted_at),
@@ -284,7 +283,6 @@ defmodule Vmemo.UserSettings do
               url: url,
               note: pick_value(photo, ["note", :note]),
               caption: pick_value(photo, ["caption", :caption]),
-              ts_ocr: pick_value(photo, ["ts_ocr", :ts_ocr]),
               file_id: pick_value(photo, ["file_id", :file_id]),
               user_id: target_user_id,
               inserted_at:
@@ -831,8 +829,7 @@ defmodule Vmemo.UserSettings do
             "url" => photo.url,
             "file_id" => photo.file_id,
             "inserted_at" => inserted_at,
-            "inserted_by" => user_id,
-            "_gen_ocr" => Map.get(photo, :ts_ocr)
+            "inserted_by" => user_id
           }
 
           [doc | acc]

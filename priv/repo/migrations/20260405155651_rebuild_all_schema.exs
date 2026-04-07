@@ -59,7 +59,6 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
       add :url, :text, null: false
       add :note, :text
       add :caption, :text
-      add :ts_ocr, :text
       add :file_id, :text
       add :user_id, :uuid
 
@@ -356,7 +355,6 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
       remove :inserted_at
       remove :user_id
       remove :file_id
-      remove :ts_ocr
       remove :caption
       remove :note
       remove :url
