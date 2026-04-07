@@ -5,7 +5,7 @@
 重要‼️
 - [ ] 在发布请版本前，一定要保证已有 user 和 photo 完整
 
-- [ ] **验证照片详情页表单行为**：表单中 `_gen_description` 字段现在硬编码为 `nil`，之前是从 `photo._gen_description` 读取。需要确认：
+- [ ] **验证照片详情页表单行为**：表单 caption 字段现在硬编码为 `nil`，之前是从 `photo.caption` 读取。需要确认：
   - AI 生成的描述是否仍能正常保存和显示
   - 这是否是故意的设计变更（因为 Ash Photo resource 可能还没有这个字段）
 

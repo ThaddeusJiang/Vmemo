@@ -2,7 +2,6 @@ defmodule Vmemo.Account.Emails do
   @moduledoc false
 
   alias Vmemo.Account.User
-  alias Vmemo.Account.Users
   alias Vmemo.Account.UserNotifier
 
   def change_user_email(user, attrs \\ %{}) do
@@ -56,7 +55,7 @@ defmodule Vmemo.Account.Emails do
     case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_email", token, max_age: 86_400) do
       {:ok, %{user_id: user_id, current_email: current_email, new_email: new_email}} ->
         if user.id == user_id and user.email == current_email do
-          Users.update_user(user, %{email: new_email})
+          Vmemo.Account.update_user(user, %{email: new_email})
         else
           {:error, %{errors: [token: {"is not valid", []}]}}
         end
@@ -89,7 +88,7 @@ defmodule Vmemo.Account.Emails do
             if user.confirmed_at do
               {:error, :already_confirmed}
             else
-              Users.update_user(user, %{confirmed_at: DateTime.utc_now()})
+              Vmemo.Account.update_user(user, %{confirmed_at: DateTime.utc_now()})
             end
 
           _ ->
