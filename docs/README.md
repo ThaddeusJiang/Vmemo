@@ -2,9 +2,14 @@
 
 Top-level modules:
 
+- `coding-guidelines`
 - `decisions`
 - `features`
 - `guides`
+
+## coding-guidelines
+
+- [Coding Guidelines Index](coding-guidelines/README.md)
 
 ## decisions
 

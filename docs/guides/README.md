@@ -6,6 +6,7 @@
 
 ## Quick References
 
+- Coding Guidelines Index: ../coding-guidelines/README.md
 - Monitoring: https://sentry.io
 - Elixir on GitHub Actions: https://github.com/erlef/setup-beam?tab=readme-ov-file#erlangotp--elixir-on-ubuntu
 - Phoenix email setup:
