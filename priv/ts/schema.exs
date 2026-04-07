@@ -1,29 +1,28 @@
-defmodule Vmemo.Ts.Collections do
+defmodule Vmemo.Ts.Schema do
   @moduledoc false
 
   alias SmallSdk.Typesense
 
   def change_1 do
-    fields = [
-      %{"name" => "image", "type" => "image", "store" => false},
-      %{"name" => "note", "type" => "string", "optional" => true},
-      %{"name" => "url", "type" => "string"},
-      %{"name" => "file_id", "type" => "string", "optional" => true},
-      %{"name" => "inserted_at", "type" => "int64"},
-      %{"name" => "inserted_by", "type" => "string"}
-    ]
-
-    schema = %{
+    photos_schema = %{
       "name" => "photos",
-      "fields" => fields ++ [image_embedding_field()],
+      "fields" => [
+        %{"name" => "image", "type" => "image", "store" => false},
+        %{"name" => "note", "type" => "string", "optional" => true},
+        %{"name" => "url", "type" => "string"},
+        %{"name" => "file_id", "type" => "string", "optional" => true},
+        %{"name" => "inserted_at", "type" => "int64"},
+        %{"name" => "inserted_by", "type" => "string"},
+        %{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true},
+        %{"name" => "caption", "type" => "string", "optional" => true},
+        image_embedding_field()
+      ],
       "default_sorting_field" => "inserted_at"
     }
 
-    Typesense.create_collection(schema)
+    Typesense.create_collection(photos_schema)
     |> ensure_collection_created("photos")
-  end
 
-  def change_2 do
     notes_schema = %{
       "name" => "notes",
       "fields" => [
@@ -38,37 +37,14 @@ defmodule Vmemo.Ts.Collections do
 
     Typesense.create_collection(notes_schema)
     |> ensure_collection_created("notes")
-
-    ensure_collection_fields(
-      "photos",
-      [%{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true}],
-      "update photos collection with note_ids"
-    )
   end
 
-  def change_3 do
-    ensure_collection_fields(
-      "photos",
-      [
-        %{"name" => "_gen_ocr", "type" => "string", "optional" => true},
-        %{"name" => "_gen_description", "type" => "string", "optional" => true}
-      ],
-      "update photos collection with gen fields"
-    )
-  end
-
-  def change_4 do
-    caption_field = %{"name" => "caption", "type" => "string", "optional" => true}
-
-    ensure_collection_fields(
-      "photos",
-      [caption_field, image_embedding_field()],
-      "update photos collection with caption and embedding fields"
-    )
-  end
+  def change_2, do: :ok
+  def change_3, do: :ok
+  def change_4, do: :ok
 
   def reset do
-    migrations_collection = Vmemo.Ts.Migrations.migrations_collection()
+    migrations_collection = Vmemo.Ts.SchemaMigrator.migrations_collection()
 
     Typesense.drop_collection("photos")
     |> ensure_ok("drop photos collection")
@@ -150,17 +126,6 @@ defmodule Vmemo.Ts.Collections do
   defp ensure_collection_created(result, collection),
     do: ensure_ok(result, "create #{collection} collection")
 
-  defp ensure_collection_updated({:ok, _}, _action), do: :ok
-  defp ensure_collection_updated({:error, "Not Found"}, _action), do: :ok
-
-  defp ensure_collection_updated({:error, reason}, action) when is_binary(reason) do
-    if String.contains?(reason, "is already part of the schema") do
-      :ok
-    else
-      ensure_ok({:error, reason}, action)
-    end
-  end
-
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
@@ -176,36 +141,5 @@ defmodule Vmemo.Ts.Collections do
         }
       }
     }
-  end
-
-  defp ensure_collection_fields(collection_name, fields, action) when is_list(fields) do
-    existing_field_names = collection_field_names(collection_name)
-
-    missing_fields =
-      Enum.reject(fields, fn field ->
-        field_name = Map.get(field, "name")
-        Enum.member?(existing_field_names, field_name)
-      end)
-
-    if missing_fields == [] do
-      :ok
-    else
-      schema = %{"fields" => missing_fields}
-
-      Typesense.update_collection(collection_name, schema)
-      |> ensure_collection_updated(action)
-    end
-  end
-
-  defp collection_field_names(collection_name) do
-    case Typesense.get_collection(collection_name) do
-      {:ok, %{"fields" => fields}} when is_list(fields) ->
-        fields
-        |> Enum.map(&Map.get(&1, "name"))
-        |> Enum.reject(&is_nil/1)
-
-      _ ->
-        []
-    end
   end
 end

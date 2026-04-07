@@ -119,10 +119,7 @@ defmodule Vmemo.Memo.Note do
   defp sync_note_with_typesense_retry(typesense_data, :create) do
     case TsNote.create(typesense_data) do
       {:error, "Not Found"} ->
-        case migrate_typesense_schema() do
-          :ok -> TsNote.create(typesense_data)
-          error -> error
-        end
+        {:error, "Typesense collection not found. Please run `mix ts.migrate` first."}
 
       result ->
         result
@@ -132,28 +129,13 @@ defmodule Vmemo.Memo.Note do
   defp sync_note_with_typesense_retry(typesense_data, :update) do
     case TsNote.update(typesense_data) do
       {:error, "Not Found"} ->
-        with :ok <- migrate_typesense_schema(),
-             {:ok, _updated} <- sync_note_after_migration(typesense_data) do
-          {:ok, true}
+        case TsNote.create(typesense_data) do
+          {:ok, _created} -> {:ok, true}
+          error -> error
         end
 
       {:ok, updated} ->
         {:ok, updated}
     end
-  end
-
-  defp sync_note_after_migration(typesense_data) do
-    case TsNote.update(typesense_data) do
-      {:error, "Not Found"} -> TsNote.create(typesense_data)
-      result -> result
-    end
-  end
-
-  defp migrate_typesense_schema do
-    :ok = Vmemo.Ts.migrate()
-    :ok
-  rescue
-    exception ->
-      {:error, "Typesense migration failed: #{Exception.message(exception)}"}
   end
 end

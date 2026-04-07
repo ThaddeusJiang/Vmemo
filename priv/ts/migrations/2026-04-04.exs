@@ -1,2 +1,2 @@
 # mix run priv/ts/migrations/2026-04-04.exs
-Vmemo.Ts.change_4()
+Vmemo.Ts.Schema.change_4()

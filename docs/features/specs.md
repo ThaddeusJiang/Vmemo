@@ -215,6 +215,7 @@
 - `lib/vmemo/**`: 核心领域与服务
 - `lib/vmemo_web/**`: 路由、LiveView、Controller、认证 Plug
 - `lib/small_sdk/**`: 外部服务 SDK
+- `priv/ts/schema.exs`, `priv/ts/schema_migrator.exs`: Typesense schema 定义与迁移执行
 - `priv/ts/migrations/**`: Typesense 迁移脚本
 - `e2e-test/**`: Playwright e2e + visual snapshots
 
@@ -227,7 +228,8 @@
 - Admin: `/admin/login`, `/admin/import`, `/admin`(AshAdmin)
 
 ### 7.3 Typesense 迁移策略
-- `Vmemo.Ts.migrate/0` 读取 `priv/ts/migrations/*.exs`
+- `mix ts.migrate` / `Vmemo.Release.ts_migrate/0` 会动态加载 `priv/ts/schema.exs` 与 `priv/ts/schema_migrator.exs`
+- `Vmemo.Ts.SchemaMigrator.migrate/0` 读取 `priv/ts/migrations/*.exs`
 - 迁移版本记录到 `ts_schema_migrations`
 - 支持幂等：集合已存在/字段已存在时可容忍
 

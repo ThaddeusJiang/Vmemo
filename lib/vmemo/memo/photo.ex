@@ -6,7 +6,6 @@ defmodule Vmemo.Memo.Photo do
              :url,
              :note,
              :caption,
-             :ts_ocr,
              :file_id,
              :user_id,
              :inserted_at,
@@ -27,7 +26,7 @@ defmodule Vmemo.Memo.Photo do
   end
 
   admin do
-    table_columns([:id, :url, :note, :caption, :ts_ocr, :user_id, :inserted_at])
+    table_columns([:id, :url, :note, :caption, :user_id, :inserted_at])
   end
 
   oban do
@@ -63,7 +62,6 @@ defmodule Vmemo.Memo.Photo do
     define :hybrid_search, args: [:query, :similar_photo_id, :user_id, :page]
     define :hybrid_search_count, args: [:query, :similar_photo_id, :user_id]
     define :list_similar, args: [:photo_id, :user_id]
-    define :gen_description
     define :sync_typesense_by_id, args: [:photo_id]
   end
 
@@ -81,21 +79,21 @@ defmodule Vmemo.Memo.Photo do
     defaults [:read, :destroy]
 
     create :create_immediate do
-      accept [:url, :note, :caption, :ts_ocr, :file_id, :user_id]
+      accept [:url, :note, :caption, :file_id, :user_id]
     end
 
     create :import do
-      accept [:id, :url, :note, :caption, :ts_ocr, :file_id, :user_id]
+      accept [:id, :url, :note, :caption, :file_id, :user_id]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :caption, :ts_ocr, :file_id, :user_id]
+      accept [:url, :note, :caption, :file_id, :user_id]
       change run_oban_trigger(:sync_typesense)
       change run_oban_trigger(:generate_caption)
     end
 
     update :update do
-      accept [:note, :caption, :ts_ocr, :url]
+      accept [:note, :caption, :url]
       require_atomic? false
       change run_oban_trigger(:sync_typesense)
     end
@@ -527,26 +525,6 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
-    update :gen_description do
-      require_atomic? false
-
-      change fn changeset, context ->
-        photo_id = Ash.Changeset.get_attribute(changeset, :id)
-
-        case TsPhoto.gen_description(photo_id) do
-          {:ok, description} ->
-            Ash.Changeset.change_attribute(changeset, :caption, description)
-
-          {:error, reason} ->
-            Ash.Changeset.add_error(changeset,
-              field: :base,
-              message: "Failed to generate description: #{inspect(reason)}"
-            )
-        end
-      end
-
-      change run_oban_trigger(:sync_typesense)
-    end
   end
 
   attributes do
@@ -558,7 +536,6 @@ defmodule Vmemo.Memo.Photo do
 
     attribute :note, :string
     attribute :caption, :string
-    attribute :ts_ocr, :string
     attribute :file_id, :string
     attribute :user_id, :uuid
 
@@ -631,10 +608,7 @@ defmodule Vmemo.Memo.Photo do
   defp sync_photo_with_typesense_retry(typesense_data, :create) do
     case TsPhoto.create(typesense_data) do
       {:error, "Not Found"} ->
-        case migrate_typesense_schema() do
-          :ok -> TsPhoto.create(typesense_data)
-          error -> error
-        end
+        {:error, "Typesense collection not found. Please run `mix ts.migrate` first."}
 
       result ->
         result
@@ -644,29 +618,14 @@ defmodule Vmemo.Memo.Photo do
   defp sync_photo_with_typesense_retry(typesense_data, :update) do
     case TsPhoto.update_photo(typesense_data) do
       {:error, "Not Found"} ->
-        with :ok <- migrate_typesense_schema(),
-             {:ok, _updated} <- sync_photo_after_migration(typesense_data) do
-          {:ok, true}
+        case TsPhoto.create(typesense_data) do
+          {:ok, _created} -> {:ok, true}
+          error -> error
         end
 
       {:ok, updated} ->
         {:ok, updated}
     end
-  end
-
-  defp sync_photo_after_migration(typesense_data) do
-    case TsPhoto.update_photo(typesense_data) do
-      {:error, "Not Found"} -> TsPhoto.create(typesense_data)
-      result -> result
-    end
-  end
-
-  defp migrate_typesense_schema do
-    :ok = Vmemo.Ts.migrate()
-    :ok
-  rescue
-    exception ->
-      {:error, "Typesense migration failed: #{Exception.message(exception)}"}
   end
 
   defp build_typesense_sync_payload(photo) do
@@ -678,8 +637,7 @@ defmodule Vmemo.Memo.Photo do
       url: photo.url,
       file_id: photo.file_id,
       inserted_at: to_unix_timestamp(photo.inserted_at),
-      inserted_by: photo.user_id,
-      _gen_ocr: photo.ts_ocr
+      inserted_by: photo.user_id
     }
 
     case read_image_base64_for_typesense(photo.url) do
@@ -716,19 +674,17 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp do_generate_caption(photo) do
-    with {:ok, caption} <- Caption.generate_caption_from_url(photo.url),
+    with {:ok, {image_base64, _mime_type}} <- read_image_as_base64(photo.url),
+         {:ok, caption} <- Caption.generate_caption(image_base64),
          {:ok, _updated_photo} <-
            __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
       :ok
     else
-      {:discard, :file_not_found} ->
+      {:error, :file_not_found} ->
         :ok
 
-      {:discard, reason} ->
-        {:discard, reason}
-
-      {:error, reason} ->
-        {:error, reason}
+      error ->
+        error
     end
   end
 

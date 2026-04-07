@@ -45,7 +45,8 @@ defmodule Vmemo.Release do
     _ = Application.ensure_all_started(@app)
     _ = ensure_req_finch_started()
 
-    Vmemo.Ts.migrate()
+    load_ts_schema_modules()
+    apply(ts_schema_migrator_module(), :migrate, [])
   end
 
   defp repos do
@@ -62,6 +63,14 @@ defmodule Vmemo.Release do
       {:error, {:already_started, _pid}} -> :ok
     end
   end
+
+  defp load_ts_schema_modules do
+    ts_dir = Application.app_dir(@app, "priv/ts")
+    Code.require_file("schema.exs", ts_dir)
+    Code.require_file("schema_migrator.exs", ts_dir)
+  end
+
+  defp ts_schema_migrator_module, do: Module.concat([Vmemo, Ts, SchemaMigrator])
 
   defp migration_paths(repo) do
     path = Application.app_dir(@app, "priv/#{repo_migrations_path(repo)}/migrations")
