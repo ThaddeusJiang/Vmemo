@@ -70,10 +70,15 @@ defmodule Vmemo.Account do
   def deliver_user_reset_password_instructions(user, reset_password_url_fun),
     do: Passwords.deliver_user_reset_password_instructions(user, reset_password_url_fun)
 
-  def get_user_by_reset_password_token(token), do: Passwords.get_user_by_reset_password_token(token)
+  def get_user_by_reset_password_token(token),
+    do: Passwords.get_user_by_reset_password_token(token)
+
   def verify_reset_password_token(token), do: Passwords.verify_reset_password_token(token)
   def reset_user_password(user, attrs), do: Passwords.reset_user_password(user, attrs)
-  def update_user_password(user, password, attrs), do: Passwords.update_user_password(user, password, attrs)
+
+  def update_user_password(user, password, attrs),
+    do: Passwords.update_user_password(user, password, attrs)
+
   def change_user_password(user, attrs \\ %{}), do: Passwords.change_user_password(user, attrs)
 
   def get_user_by_email_and_password(email, password),

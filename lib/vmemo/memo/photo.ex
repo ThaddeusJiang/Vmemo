@@ -524,7 +524,6 @@ defmodule Vmemo.Memo.Photo do
         end)
       end
     end
-
   end
 
   attributes do
