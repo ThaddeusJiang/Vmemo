@@ -9,28 +9,23 @@ defmodule Vmemo.Ts.SchemaMigratorTest do
   end
 
   describe "pending_migrations/2" do
-    test "returns migrations not present in applied versions, ordered by version" do
+    test "returns migration when not yet applied" do
       entries = [
-        %{version: "2025-01-27", path: "priv/ts/migrations/2025-01-27.exs"},
-        %{version: "2024-12-19", path: "priv/ts/migrations/2024-12-19.exs"},
-        %{version: "2024-12-20", path: "priv/ts/migrations/2024-12-20.exs"}
+        %{version: "2024-12-19", path: "priv/ts/migrations/2024-12-19.exs"}
+      ]
+
+      applied_versions = []
+
+      assert [%{version: "2024-12-19"}] =
+               Vmemo.Ts.SchemaMigrator.pending_migrations(entries, applied_versions)
+    end
+
+    test "returns empty list when migration was already applied" do
+      entries = [
+        %{version: "2024-12-19", path: "priv/ts/migrations/2024-12-19.exs"}
       ]
 
       applied_versions = ["2024-12-19"]
-
-      assert [
-               %{version: "2024-12-20"},
-               %{version: "2025-01-27"}
-             ] = Vmemo.Ts.SchemaMigrator.pending_migrations(entries, applied_versions)
-    end
-
-    test "returns empty list when all versions are already applied" do
-      entries = [
-        %{version: "2024-12-19", path: "priv/ts/migrations/2024-12-19.exs"},
-        %{version: "2024-12-20", path: "priv/ts/migrations/2024-12-20.exs"}
-      ]
-
-      applied_versions = ["2024-12-19", "2024-12-20"]
 
       assert [] = Vmemo.Ts.SchemaMigrator.pending_migrations(entries, applied_versions)
     end

@@ -39,10 +39,6 @@ defmodule Vmemo.Ts.Schema do
     |> ensure_collection_created("notes")
   end
 
-  def change_2, do: :ok
-  def change_3, do: :ok
-  def change_4, do: :ok
-
   def reset do
     migrations_collection = Vmemo.Ts.SchemaMigrator.migrations_collection()
 

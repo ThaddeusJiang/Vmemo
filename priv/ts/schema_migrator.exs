@@ -1,7 +1,7 @@
 defmodule Vmemo.Ts.SchemaMigrator do
   @moduledoc false
 
-  @migrations_collection_file ".migrations_collection"
+  @migrations_collection "ts_schema_migrations"
 
   def migrate do
     migrations_collection = migrations_collection()
@@ -47,21 +47,7 @@ defmodule Vmemo.Ts.SchemaMigrator do
   end
 
   def migrations_collection do
-    path = Path.join(migrations_dir(), @migrations_collection_file)
-
-    case File.read(path) do
-      {:ok, value} ->
-        collection = String.trim(value)
-
-        if collection == "" do
-          raise("Typesense migrations collection config is empty: #{path}")
-        end
-
-        collection
-
-      {:error, reason} ->
-        raise("Typesense migrations collection config read failed: #{path} (#{inspect(reason)})")
-    end
+    @migrations_collection
   end
 
   defp migration_entries do
