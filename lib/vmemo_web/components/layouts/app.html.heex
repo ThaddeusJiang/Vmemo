@@ -7,6 +7,17 @@
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" />
             <span>Vmemo</span>
           </.link>
+          <.link href="/photos/upload" class="flex items-center btn btn-ghost btn-square hover:bg-white">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="size-6"
+              aria-hidden="true"
+              aria-label="Upload"
+            >
+              <path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/>
+            </svg>                           
+          </.link>
         <% else %>
           <a href="/" class="flex gap-2 sm:gap-4 items-center font-bold">
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block" /> Vmemo
@@ -16,20 +27,6 @@
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_user] || assigns[:current_user] do %>
-          <.link href="/photos/upload" class="flex items-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-              stroke="currentColor"
-              class="btn btn-neutral btn-square "
-              aria-hidden="true"
-              aria-label="Upload"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-          </.link>
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
