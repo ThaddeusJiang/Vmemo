@@ -1,6 +1,6 @@
 # Features
 
 - [Project Specs](specs.md)
-- [Data Models](data-models.md)
-- [Public REST API](public-rest-api.md)
-- [API Token Guide](api-tokens.md)
+- Ash data models: CI-generated resource diagrams — see [Architecture](https://github.com/ThaddeusJiang/Vmemo#architecture) in the repository README
+- [REST API](public-rest-api.md)
+- [API Token](api-tokens.md)

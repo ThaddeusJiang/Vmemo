@@ -25,7 +25,7 @@
 - 聊天能力（AshAi + OpenRouter），支持工具调用返回图片
 
 ### 1.4 API 与集成
-- Public REST API（`/api/v1/photos` create/show/delete）
+- REST API（`/api/v1/photos` create/show/delete）
 - API Token 生命周期管理（创建、启停、删除、过期控制、用量统计）
 - MCP 路由（`/mcp`）与 Photos Domain MCP resources
 - 用户数据导出 ZIP / 用户数据导入 ZIP
@@ -86,7 +86,7 @@
 - LiveView 负责实时交互，PubSub 负责任务进度与异步结果回流
 
 ### 3.2 领域边界（Ash Domains）
-- `Vmemo.AccountDomain`: `AshUser`, `AshUserToken`, `ApiToken`
+- `Vmemo.AccountDomain`: 用户账户、会话令牌、API 令牌（表 `ash_users` / `ash_user_tokens` / `api_tokens`）
 - `Vmemo.Photos`: `Photo`, `Note`, `PhotoNote`, `PhotoCaptionRequest`, `PhotoMoondreamRequest`
 - `Vmemo.Chat`: `Conversation`, `Message`
 - `Vmemo.Admin`: `ImportRequest`
@@ -109,7 +109,7 @@
 
 ### 4.1 认证与账户
 - 登录注册基于 AshAuthentication password strategy
-- Session token 与 reset token 统一走 `AshUserToken`
+- Session 与 reset 令牌统一使用 `ash_user_tokens` 表（会话令牌资源）
 - 邮箱确认/改邮箱通过 `Phoenix.Token` 签名链接
 - 密码规则：长度 12~72
 

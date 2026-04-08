@@ -18,13 +18,7 @@ mise install
 
 2. Start local dependencies:
 
-Create local compose file from the committed example:
-
-```bash
-cp docker-compose.example.yml docker-compose.yml
-```
-
-Then start local dependencies:
+The repository includes a root `docker-compose.yml` for Postgres, Typesense, and related services.
 
 ```bash
 docker compose up -d
@@ -103,6 +97,6 @@ Before opening a pull request:
 
 ## Related Docs
 
-- Public REST API: `docs/features/public-rest-api.md`
-- API Token Guide: `docs/features/api-tokens.md`
+- REST API: `docs/features/public-rest-api.md`
+- API Token: `docs/features/api-tokens.md`
 - Deployment: `docs/guides/deployment/docker-prod-run.md`

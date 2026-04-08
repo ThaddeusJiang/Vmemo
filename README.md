@@ -1,7 +1,7 @@
 # Vmemo
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/thaddeusjiang/vmemo)](https://hub.docker.com/r/thaddeusjiang/vmemo)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/ThaddeusJiang/Vmemo/blob/develop/LICENSE)
 
 Vmemo is a visual memory app for capturing life with photos, searching with AI, and reviewing moments quickly without writing long text notes.
 
@@ -20,7 +20,7 @@ Text-only journaling is easy to forget and hard to revisit. Vmemo focuses on vis
 - AI-powered search (text and image similarity).
 - AI caption and OCR extraction.
 - API token management.
-- Public REST API for external integrations.
+- REST API for external integrations.
 - Responsive web UI for desktop and mobile.
 
 ## Self-hosting
@@ -154,6 +154,20 @@ Open `http://localhost:4000`.
 - Ash Framework + Oban
 - PostgreSQL + Typesense
 - Tailwind CSS + daisyUI
+
+## Architecture
+
+Ash resource diagrams (PNG) are generated in CI with [`mix ash.generate_resource_diagrams`](https://hexdocs.pm/ash/Mix.Tasks.Ash.GenerateResourceDiagrams.html) and committed under [`lib/vmemo/`](https://github.com/ThaddeusJiang/Vmemo/tree/develop/lib/vmemo). Stable URLs (branch `develop`, raw GitHub content):
+
+| Domain  | Resource diagram (PNG) |
+| ------- | ------------------------ |
+| Account | [`account-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/account-mermaid-class-diagram.png) |
+| Admin   | [`admin-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/admin-mermaid-class-diagram.png) |
+| Ai      | [`ai-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/ai-mermaid-class-diagram.png) |
+| Chat    | [`chat-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/chat-mermaid-class-diagram.png) |
+| Memo    | [`memo-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/memo-mermaid-class-diagram.png) |
+
+If your default branch is `main` instead of `develop`, use `main` in place of `develop` in these URLs.
 
 ## Security Notes
 

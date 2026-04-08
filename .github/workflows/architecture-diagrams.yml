@@ -1,0 +1,70 @@
+name: Architecture diagrams
+
+# Regenerates Ash resource diagram PNGs (mix ash.generate_resource_diagrams) and
+# commits them under docs/architecture/ash/ for stable raw.githubusercontent.com URLs.
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - "lib/vmemo/**"
+      - ".github/workflows/architecture-diagrams.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: architecture-diagrams-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  ash-resource-diagrams:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Mermaid CLI (mmdc)
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Generate Ash resource diagrams (PNG)
+        run: mix ash.generate_resource_diagrams --format png
+
+      # Ash writes PNGs next to domain modules; there is no output-dir flag — only a short copy is needed.
+      - name: Publish diagrams under docs/architecture/ash
+        run: |
+          set -euo pipefail
+          mkdir -p docs/architecture/ash
+          shopt -s nullglob
+          files=(lib/vmemo/*-mermaid-class-diagram.png)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No generated PNG files found next to domain modules."
+            exit 1
+          fi
+          cp -f "${files[@]}" docs/architecture/ash/
+          rm -f "${files[@]}"
+
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(architecture): refresh Ash resource diagrams [skip ci]"
+          file_pattern: "docs/architecture/ash/*.png"

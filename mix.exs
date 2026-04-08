@@ -107,9 +107,8 @@ defmodule Vmemo.MixProject do
       api_reference: false,
       extras: [
         {"README.md", [filename: "home", title: "Home"]},
-        "docs/features/data-models.en.md",
-        "docs/features/public-rest-api.md",
-        "docs/features/api-tokens.md",
+        {"docs/features/public-rest-api.md", [title: "REST API"]},
+        {"docs/features/api-tokens.md", [title: "API Token"]},
         "docs/guides/development/setup.md",
         "docs/guides/deployment/docker-prod-run.md"
       ]

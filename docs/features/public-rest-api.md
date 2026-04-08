@@ -1,4 +1,4 @@
-# Vmemo Public REST API
+# REST API
 
 ## Overview
 

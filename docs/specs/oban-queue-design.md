@@ -11,6 +11,7 @@
 
 All queues are configured with `limit: 10` for the initial rollout.
 
+- `default`: general-purpose Oban jobs that do not specify another queue.
 - `chat_responses`: async chat response generation jobs.
 - `conversations`: async conversation title generation jobs.
 - `sync_typesense`: note/photo index synchronization jobs.
