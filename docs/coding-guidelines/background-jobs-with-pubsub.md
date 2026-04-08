@@ -4,6 +4,29 @@
 
 当需要实现长时间运行的任务（如 AI 生成、文件处理等），且希望用户离开页面后任务仍能继续执行时，应该使用 **Oban job + PubSub** 的模式。
 
+## 命名与隔离原则（必须）
+
+### 1) 模块隔离（Module Isolation）
+
+- `vmemo_web` 只能依赖业务语义，不依赖具体外部服务名。
+- 对 `vmemo_web` 而言：
+  - Typesense = **search engine**
+  - Moondream = **vision ai**
+- `vmemo_web` 中的函数名、event 名、flash 文案必须使用业务语义，不允许暴露 `typesense` / `moondream` / `oban` / `worker` / `queue` 等实现细节词汇。
+
+### 2) 外部依赖隔离（External Dependency Isolation）
+
+- 第三方能力通过 domain/resource/sdk 层封装后再提供给 web 层。
+- web 层只调用业务动作（例如 `update-search-engine`、`generate-caption`），不直接表达第三方供应商概念。
+
+### 3) 异步按同步心智处理（UI 语义）
+
+- 在 UI `handle_event` 中，把异步任务当作普通函数动作处理：
+  - 事件名使用业务动作（动词 + 业务对象）
+  - 成功/失败用普通交互语义反馈（如 saved/failed/retrying）
+  - 不在事件名与文案中出现 `job queued` 这类基础设施术语
+- 异步实现细节（Oban、PubSub、重试策略）留在 resource/worker 内部，不外溢到 UI 概念层。
+
 这种模式的优势：
 
 - ✅ 任务在后台异步执行，不阻塞用户界面

@@ -131,6 +131,40 @@ defmodule VmemoWeb.PhotoIdLive do
   end
 
   @impl true
+  def handle_event("update-search-engine", _, socket) do
+    user = socket.assigns.current_user
+    photo = socket.assigns.photo
+
+    case Photo.update_search_engine(photo, %{}, actor: user) do
+      {:ok, updated_photo} ->
+        {:noreply,
+         socket
+         |> assign(:photo, updated_photo)
+         |> put_flash(:info, "Retrying Typesense sync")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to retry Typesense sync")}
+    end
+  end
+
+  @impl true
+  def handle_event("generate-caption", _, socket) do
+    user = socket.assigns.current_user
+    photo = socket.assigns.photo
+
+    case Photo.request_generate_caption(photo, %{}, actor: user) do
+      {:ok, updated_photo} ->
+        {:noreply,
+         socket
+         |> assign(:photo, updated_photo)
+         |> put_flash(:info, "Retrying caption generation")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to retry caption generation")}
+    end
+  end
+
+  @impl true
   def handle_event("show-expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: true)}
   end
@@ -331,6 +365,37 @@ defmodule VmemoWeb.PhotoIdLive do
                         {if @photo.caption && @photo.caption != "",
                           do: gettext("Regenerate caption"),
                           else: gettext("Generate caption")}
+                      </span>
+                    </button>
+                  </li>
+                  <li class="border-t border-base-300 my-1"></li>
+                  <li>
+                    <button
+                      type="button"
+                      phx-click="update-search-engine"
+                      disabled={
+                        @photo.typesense_status == "pending" or
+                          @photo.typesense_status == "processing"
+                      }
+                    >
+                      <.icon name="hero-arrow-path" class="h-4 w-4" />
+                      <span>
+                        {gettext("Retry Typesense sync")} ({@photo.typesense_status})
+                      </span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      phx-click="generate-caption"
+                      disabled={
+                        @photo.moondream_status == "pending" or
+                          @photo.moondream_status == "processing"
+                      }
+                    >
+                      <.icon name="hero-arrow-path" class="h-4 w-4" />
+                      <span>
+                        {gettext("Retry Moondream caption")} ({@photo.moondream_status})
                       </span>
                     </button>
                   </li>
