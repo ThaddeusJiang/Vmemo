@@ -5,10 +5,10 @@ name: Architecture diagrams
 
 on:
   push:
-    # branches: [develop, main]
-    # paths:
-    #   - "lib/vmemo/**"
-    #   - ".github/workflows/architecture-diagrams.yml"
+    branches: [develop]
+    paths:
+      - "lib/vmemo/**"
+      - ".github/workflows/architecture-diagrams.yml"
   workflow_dispatch:
 
 concurrency:
