@@ -35,6 +35,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         })
       end)
       |> assign_new(:show_full_form, fn -> false end)
+      |> assign_new(:uploaded_photos, fn -> [] end)
 
     # 通知父组件文件状态变化和 upload ref
     # 使用 socket.parent_pid 获取父 LiveView 的 PID
@@ -191,6 +192,26 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
           <.live_file_input upload={@uploads.photos} class="hidden" />
         </section>
       </label>
+
+      <div :if={Enum.any?(@uploaded_photos)} class="mt-6">
+        <div class="mb-2 text-left text-sm font-medium text-base-content/70">Uploaded</div>
+        <div class="rounded-lg border border-base-300 bg-base-100 p-3">
+          <.live_component
+            id="waterfall-uploaded-photos"
+            module={Waterfall}
+            items={@uploaded_photos}
+          >
+            <:card :let={photo}>
+              <article class="relative overflow-hidden rounded-md bg-base-200">
+                <img src={photo.url} alt="Uploaded photo" class="w-full h-auto object-cover" />
+                <div class="absolute top-2 right-2 rounded-full bg-success text-success-content px-2 py-1 text-xs">
+                  Uploaded
+                </div>
+              </article>
+            </:card>
+          </.live_component>
+        </div>
+      </div>
 
       <%= if @has_files or @show_full_form do %>
         <p :for={err <- upload_errors(@uploads.photos)} class="alert alert-danger">
@@ -360,7 +381,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                 :ok ->
                   send(self(), {:upload_success, photos})
 
-                  {:noreply, socket}
+                  {:noreply, update(socket, :uploaded_photos, &append_uploaded_photos(&1, photos))}
 
                 {:error, _reason} ->
                   {:noreply,
@@ -384,6 +405,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   defp normalize_upload_result({:error, _reason} = error), do: error
   defp normalize_upload_result(%Photo{} = photo), do: {:ok, photo}
   defp normalize_upload_result(other), do: {:error, inspect(other)}
+
+  defp append_uploaded_photos(existing_photos, new_photos) do
+    (existing_photos ++ new_photos)
+    |> Enum.uniq_by(& &1.id)
+  end
 
   defp maybe_link_note_to_photos(nil, _photos, _current_user), do: :ok
 
