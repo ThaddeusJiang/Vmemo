@@ -137,10 +137,10 @@ defmodule Vmemo.MixProject do
         "xref graph --format cycles --label compile-connected --fail-above 0",
         "credo --strict",
         "sobelow --config",
-        "hex.audit",
+        "cmd mix hex.audit",
         "deps.unlock --check-unused",
-        "cmd MIX_ENV=test mix test --warnings-as-errors",
-        "cmd MIX_ENV=dev mix dialyzer --format short"
+        "cmd env MIX_ENV=test mix test --warnings-as-errors",
+        "cmd env MIX_ENV=dev mix dialyzer --format short"
       ],
       "ts.setup": ["ts.migrate"],
       "ts.reset": ["ts.drop", "ts.setup"],

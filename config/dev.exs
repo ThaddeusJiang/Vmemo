@@ -8,7 +8,7 @@ config :vmemo, Vmemo.Repo,
   password: "postgres",
   hostname: "localhost",
   database: "vmemo_dev",
-  port: 54321,
+  port: 54_321,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
