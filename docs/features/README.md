@@ -1,6 +1,6 @@
 # Features
 
 - [Project Specs](specs.md)
-- [Data Models](data-models.md) (Chinese; English variant: [data-models.en.md](data-models.en.md), used in `mix docs` extras)
+- Ash data models: CI-generated resource diagrams — see [Architecture](https://github.com/ThaddeusJiang/Vmemo#architecture) in the repository README
 - [REST API](public-rest-api.md)
 - [API Token](api-tokens.md)

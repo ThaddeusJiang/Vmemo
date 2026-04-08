@@ -20,7 +20,7 @@ Top-level modules:
 
 - [Features Index](features/README.md)
 - [Project Specs](features/specs.md)
-- [Data Models](features/data-models.md)
+- Ash data models: [Architecture](https://github.com/ThaddeusJiang/Vmemo#architecture) (repository README)
 - [REST API](features/public-rest-api.md)
 - [API Token](features/api-tokens.md)
 
