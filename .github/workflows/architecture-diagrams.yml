@@ -1,11 +1,11 @@
 name: Architecture diagrams
 
 # Regenerates Ash resource diagram PNGs (mix ash.generate_resource_diagrams) and
-# commits them under docs/architecture/ash/ for stable raw.githubusercontent.com URLs.
+# commits them under docs/guides/development/ash/.
 
 on:
   push:
-    branches: [develop, main]
+    branches: [develop]
     paths:
       - "lib/vmemo/**"
       - ".github/workflows/architecture-diagrams.yml"
@@ -40,6 +40,29 @@ jobs:
       - name: Install Mermaid CLI (mmdc)
         run: npm install -g @mermaid-js/mermaid-cli
 
+      - name: Configure Puppeteer for GitHub-hosted Linux
+        run: |
+          MMDC_BIN="$(command -v mmdc)"
+          if [ -z "$MMDC_BIN" ]; then
+            echo "mmdc not found in PATH"
+            exit 1
+          fi
+          cat > puppeteer-config.json <<'EOF'
+          {
+            "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+          }
+          EOF
+          mkdir -p "$HOME/.local/bin"
+          cat > "$HOME/.local/bin/mmdc" <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec "$MMDC_BIN" -p "$GITHUB_WORKSPACE/puppeteer-config.json" "\$@"
+          EOF
+          chmod +x "$HOME/.local/bin/mmdc"
+
+      - name: Ensure mmdc wrapper is first in PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Install Elixir dependencies
         run: mix deps.get
 
@@ -50,21 +73,21 @@ jobs:
         run: mix ash.generate_resource_diagrams --format png
 
       # Ash writes PNGs next to domain modules; there is no output-dir flag — only a short copy is needed.
-      - name: Publish diagrams under docs/architecture/ash
+      - name: Publish diagrams under docs/guides/development/ash
         run: |
           set -euo pipefail
-          mkdir -p docs/architecture/ash
+          mkdir -p docs/guides/development/ash
           shopt -s nullglob
           files=(lib/vmemo/*-mermaid-class-diagram.png)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No generated PNG files found next to domain modules."
             exit 1
           fi
-          cp -f "${files[@]}" docs/architecture/ash/
+          cp -f "${files[@]}" docs/guides/development/ash/
           rm -f "${files[@]}"
 
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(architecture): refresh Ash resource diagrams [skip ci]"
-          file_pattern: "docs/architecture/ash/*.png"
+          file_pattern: "docs/guides/development/ash/*.png"
