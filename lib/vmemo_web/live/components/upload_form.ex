@@ -204,8 +204,75 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             <:card :let={photo}>
               <article class="relative overflow-hidden rounded-md bg-base-200">
                 <img src={photo.url} alt="Uploaded photo" class="w-full h-auto object-cover" />
-                <div class="absolute top-2 right-2 rounded-full bg-success text-success-content px-2 py-1 text-xs">
-                  Uploaded
+                <div class="absolute top-2 right-2 dropdown dropdown-hover dropdown-end">
+                  <button
+                    type="button"
+                    tabindex="0"
+                    class={
+                      "inline-flex items-center justify-center rounded-full p-1.5 bg-base-100/90 shadow-lg " <>
+                        uploaded_photo_status_icon_class(photo)
+                    }
+                    title={uploaded_photo_status_label(photo)}
+                    aria-label={uploaded_photo_status_label(photo)}
+                  >
+                    <%= case uploaded_photo_status(photo) do %>
+                      <% :success -> %>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="size-4"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      <% :error -> %>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="size-4"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm9-4.5a.75.75 0 0 0-1.5 0v5.25a.75.75 0 0 0 1.5 0V7.5Zm0 9a.75.75 0 0 0-1.5 0v.75a.75.75 0 0 0 1.5 0v-.75Z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      <% :processing -> %>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="size-4 animate-pulse"
+                        >
+                          <path
+                            d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.283-3.283L2.06 11.81l2.845-.813a4.5 4.5 0 0 0 3.283-3.283L9 4.86l.813 2.845a4.5 4.5 0 0 0 3.283 3.283l2.845.813-2.845.813a4.5 4.5 0 0 0-3.283 3.283ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.455L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.455L18 2.25l.259 1.036a3.375 3.375 0 0 0 2.455 2.455L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.455ZM16.894 20.567 17.25 21.75l.356-1.183a2.25 2.25 0 0 1 1.567-1.567l1.183-.356-1.183-.356a2.25 2.25 0 0 1-1.567-1.567l-.356-1.183-.356 1.183a2.25 2.25 0 0 1-1.567 1.567l-1.183.356 1.183.356a2.25 2.25 0 0 1 1.567 1.567Z"
+                          />
+                        </svg>
+                    <% end %>
+                  </button>
+                  <div
+                    tabindex="0"
+                    class="dropdown-content z-10 mt-1 w-56 rounded-md border border-base-300 bg-base-100 p-2 text-xs shadow-lg"
+                  >
+                    <div class="font-medium text-base-content mb-1">Processing details</div>
+                    <div class="flex items-center justify-between gap-2 text-base-content/80">
+                      <div>Search Engine</div>
+                      <div class={uploaded_service_status_class(photo.typesense_status)}>
+                        {uploaded_service_status_text(photo.typesense_status)}
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 text-base-content/80 mt-1">
+                      <div>Vision AI</div>
+                      <div class={uploaded_service_status_class(photo.moondream_status)}>
+                        {uploaded_service_status_text(photo.moondream_status)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </article>
             </:card>
@@ -405,6 +472,50 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   defp normalize_upload_result({:error, _reason} = error), do: error
   defp normalize_upload_result(%Photo{} = photo), do: {:ok, photo}
   defp normalize_upload_result(other), do: {:error, inspect(other)}
+
+  defp uploaded_photo_status(%Photo{} = photo) do
+    statuses = [photo.typesense_status, photo.moondream_status]
+
+    cond do
+      Enum.any?(statuses, &(&1 == "failed")) -> :error
+      Enum.all?(statuses, &(&1 == "completed")) -> :success
+      true -> :processing
+    end
+  end
+
+  defp uploaded_photo_status_icon_class(photo) do
+    case uploaded_photo_status(photo) do
+      :success -> "text-success"
+      :error -> "text-error"
+      :processing -> "text-info"
+    end
+  end
+
+  defp uploaded_photo_status_label(photo) do
+    case uploaded_photo_status(photo) do
+      :success -> "Search engine and Vision AI processed successfully"
+      :error -> "Search engine or Vision AI processing failed"
+      :processing -> "Search engine or Vision AI is processing"
+    end
+  end
+
+  defp uploaded_service_status_class(status) do
+    case status do
+      "completed" -> "text-success font-medium"
+      "failed" -> "text-error font-medium"
+      _ -> "text-info font-medium"
+    end
+  end
+
+  defp uploaded_service_status_text(status) do
+    case status do
+      "completed" -> "Success"
+      "failed" -> "Failed"
+      "processing" -> "Processing"
+      "pending" -> "Pending"
+      _ -> "Processing"
+    end
+  end
 
   defp append_uploaded_photos(existing_photos, new_photos) do
     (existing_photos ++ new_photos)
