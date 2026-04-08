@@ -1,7 +1,7 @@
 name: Architecture diagrams
 
 # Regenerates Ash resource diagram PNGs (mix ash.generate_resource_diagrams) and
-# commits them under docs/architecture/ash/ for stable raw.githubusercontent.com URLs.
+# commits them under docs/guides/development/ash/.
 
 on:
   push:
@@ -73,21 +73,21 @@ jobs:
         run: mix ash.generate_resource_diagrams --format png
 
       # Ash writes PNGs next to domain modules; there is no output-dir flag — only a short copy is needed.
-      - name: Publish diagrams under docs/architecture/ash
+      - name: Publish diagrams under docs/guides/development/ash
         run: |
           set -euo pipefail
-          mkdir -p docs/architecture/ash
+          mkdir -p docs/guides/development/ash
           shopt -s nullglob
           files=(lib/vmemo/*-mermaid-class-diagram.png)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No generated PNG files found next to domain modules."
             exit 1
           fi
-          cp -f "${files[@]}" docs/architecture/ash/
+          cp -f "${files[@]}" docs/guides/development/ash/
           rm -f "${files[@]}"
 
       - name: Commit and push if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(architecture): refresh Ash resource diagrams [skip ci]"
-          file_pattern: "docs/architecture/ash/*.png"
+          file_pattern: "docs/guides/development/ash/*.png"

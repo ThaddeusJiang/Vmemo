@@ -6,7 +6,6 @@ Top-level modules:
 - `decisions`
 - `features`
 - `guides`
-- `specs`
 
 ## coding-guidelines
 
@@ -19,7 +18,7 @@ Top-level modules:
 ## features
 
 - [Features Index](features/README.md)
-- [Project Specs](features/specs.md)
+- [Project Specs](guides/development/project-specs.md)
 - Ash data models: [Architecture](https://github.com/ThaddeusJiang/Vmemo#architecture) (repository README)
 - [REST API](features/public-rest-api.md)
 - [API Token](features/api-tokens.md)
@@ -31,6 +30,6 @@ Top-level modules:
 - [Deployment](guides/deployment/README.md)
 - [Archive](guides/archive/README.md)
 
-## specs
+## development specs
 
-- [Oban Queue Design](specs/oban-queue-design.md)
+- [Oban Queue Design](guides/development/oban-queue-design.md)

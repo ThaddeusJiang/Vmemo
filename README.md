@@ -57,7 +57,7 @@ openssl rand -hex 64
 ```yaml
 services:
   vmemo:
-    image: thaddeusjiang/vmemo:<version>-amd64
+    image: thaddeusjiang/vmemo
     command: ["start"]
     restart: on-failure
     environment:
@@ -150,24 +150,10 @@ Open `http://localhost:4000`.
 
 ## Tech Stack
 
-- Elixir + Phoenix LiveView
-- Ash Framework + Oban
-- PostgreSQL + Typesense
+- Elixir + Phoenix LiveView + Ash Framework + Oban
 - Tailwind CSS + daisyUI
-
-## Architecture
-
-Ash resource diagrams (PNG) are generated in CI with [`mix ash.generate_resource_diagrams`](https://hexdocs.pm/ash/Mix.Tasks.Ash.GenerateResourceDiagrams.html) and committed under [`lib/vmemo/`](https://github.com/ThaddeusJiang/Vmemo/tree/develop/lib/vmemo). Stable URLs (branch `develop`, raw GitHub content):
-
-| Domain  | Resource diagram (PNG) |
-| ------- | ------------------------ |
-| Account | [`account-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/account-mermaid-class-diagram.png) |
-| Admin   | [`admin-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/admin-mermaid-class-diagram.png) |
-| Ai      | [`ai-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/ai-mermaid-class-diagram.png) |
-| Chat    | [`chat-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/chat-mermaid-class-diagram.png) |
-| Memo    | [`memo-mermaid-class-diagram.png`](https://raw.githubusercontent.com/ThaddeusJiang/Vmemo/develop/lib/vmemo/memo-mermaid-class-diagram.png) |
-
-If your default branch is `main` instead of `develop`, use `main` in place of `develop` in these URLs.
+- PostgreSQL + Typesense + Moondream.ai + OpenRouter
+- Docker
 
 ## Security Notes
 
