@@ -44,6 +44,7 @@ defmodule Vmemo.Memo.Photo do
       trigger :generate_caption do
         action :generate_caption
         queue :ai_vision
+        max_attempts 5
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Memo.Photo.Workers.GenerateCaption
