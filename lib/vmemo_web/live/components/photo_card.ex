@@ -1,31 +1,53 @@
 defmodule VmemoWeb.LiveComponents.PhotoCard do
   @moduledoc false
-  use VmemoWeb, :live_component
+  use VmemoWeb, :html
 
-  @impl true
-  def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:photo_id, assigns.photo.id)
-     |> assign(:photo_url, normalize_photo_url(assigns.photo.url))
-     |> assign(:photo_alt, assigns.photo.note || "Photo")}
-  end
+  attr :photo, :map, default: nil
+  attr :navigate, :string, default: nil
+  slot :media
+  slot :overlay, required: false
 
-  @impl true
-  def render(assigns) do
+  def photo_card(assigns) do
+    assigns =
+      assigns
+      |> assign(:has_media_slot, assigns.media != [])
+      |> assign(:resolved_navigate, resolve_navigate(assigns))
+      |> assign(:photo_url, resolve_photo_url(assigns))
+      |> assign(:photo_alt, resolve_photo_alt(assigns))
+
     ~H"""
     <div class="relative">
-      <.link navigate={~p"/photos/#{@photo_id}"} class="block">
-        <.img
-          src={@photo_url}
-          alt={@photo_alt}
-          class="w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-        />
-      </.link>
+      <%= if @resolved_navigate do %>
+        <.link navigate={@resolved_navigate} class="link link-hover block">
+          <%= if @has_media_slot do %>
+            {render_slot(@media)}
+          <% else %>
+            <.img src={@photo_url} alt={@photo_alt} id={to_string(@photo.id)} />
+          <% end %>
+        </.link>
+      <% else %>
+        <%= if @has_media_slot do %>
+          {render_slot(@media)}
+        <% else %>
+          <.img src={@photo_url} alt={@photo_alt} />
+        <% end %>
+      <% end %>
+      {render_slot(@overlay)}
     </div>
     """
   end
+
+  defp resolve_navigate(%{navigate: navigate}) when is_binary(navigate) and navigate != "",
+    do: navigate
+
+  defp resolve_navigate(%{photo: %{id: id}}), do: ~p"/photos/#{id}"
+  defp resolve_navigate(_), do: nil
+
+  defp resolve_photo_url(%{photo: %{url: url}}), do: normalize_photo_url(url)
+  defp resolve_photo_url(_), do: ""
+
+  defp resolve_photo_alt(%{photo: %{note: note}}) when is_binary(note) and note != "", do: note
+  defp resolve_photo_alt(_), do: "Photo"
 
   defp normalize_photo_url(url) when is_binary(url) do
     url_lower = String.downcase(url)

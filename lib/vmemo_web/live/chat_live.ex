@@ -516,11 +516,7 @@ defmodule VmemoWeb.ChatLive do
       ~H"""
       <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
         <%= for {photo, index} <- Enum.with_index(@photos) do %>
-          <.live_component
-            id={"photo-card-#{index}"}
-            module={VmemoWeb.LiveComponents.PhotoCard}
-            photo={photo}
-          />
+          <VmemoWeb.LiveComponents.PhotoCard.photo_card photo={photo} />
         <% end %>
       </div>
       """
