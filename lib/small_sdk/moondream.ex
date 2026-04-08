@@ -3,8 +3,6 @@ defmodule SmallSdk.Moondream do
   require Logger
 
   alias SmallSdk.Utils
-  @debug_log_max_items 5
-  @debug_log_max_chars 200
 
   @doc """
   Generate a caption for an image using Moondream Station.
@@ -60,7 +58,7 @@ defmodule SmallSdk.Moondream do
         {"Content-Type", "application/json"},
         {"X-Moondream-Auth", api_key}
       ],
-      receive_timeout: 120_000
+      receive_timeout: 30_000
     )
   end
 
@@ -269,28 +267,13 @@ defmodule SmallSdk.Moondream do
   end
 
   defp post(req, payload, action) do
-    Logger.debug(
-      [
-        "[Moondream] request",
-        inspect(
-          [action: action, path: request_path(req), json: sanitize_value(payload)],
-          limit: 50,
-          printable_limit: 500
-        )
-      ],
+    Logger.debug("[Moondream] request action=#{action} path=#{request_path(req)}",
       ansi_color: :cyan
     )
 
     res = Req.post(req, json: payload)
 
-    Logger.debug(
-      [
-        "[Moondream] response",
-        inspect([action: action, response: sanitize_response(res)],
-          limit: 50,
-          printable_limit: 500
-        )
-      ],
+    Logger.debug("[Moondream] response=#{inspect(res)}",
       ansi_color: :cyan
     )
 
@@ -300,37 +283,4 @@ defmodule SmallSdk.Moondream do
   defp request_path(%Req.Request{url: %URI{} = url}) do
     url.path
   end
-
-  defp sanitize_response({:ok, %{status: status, body: body}}) do
-    %{status: status, body: sanitize_value(body)}
-  end
-
-  defp sanitize_response({:error, reason}) do
-    %{error: inspect(reason, limit: 20, printable_limit: @debug_log_max_chars)}
-  end
-
-  defp sanitize_value(nil), do: nil
-
-  defp sanitize_value(data_url) when is_binary(data_url) do
-    if String.starts_with?(data_url, "data:") and String.contains?(data_url, ";base64,") do
-      [meta | _] = String.split(data_url, ",", parts: 2)
-      "#{meta},[BASE64_REDACTED length=#{byte_size(data_url)}]"
-    else
-      String.slice(data_url, 0, @debug_log_max_chars)
-    end
-  end
-
-  defp sanitize_value(value) when is_list(value) do
-    value
-    |> Enum.take(@debug_log_max_items)
-    |> Enum.map(&sanitize_value/1)
-  end
-
-  defp sanitize_value(value) when is_map(value) do
-    value
-    |> Enum.take(@debug_log_max_items)
-    |> Enum.into(%{}, fn {k, v} -> {k, sanitize_value(v)} end)
-  end
-
-  defp sanitize_value(value), do: value
 end
