@@ -1,4 +1,4 @@
-<main class="min-h-screen flex flex-col">
+<main class="h-dvh overflow-x-hidden overflow-y-hidden flex flex-col">
   <header class="px-4 lg:px-4 flex-none ">
     <div class="flex items-center justify-between border-b border-base-300 h-[60px] text-sm gap-2 sm:gap-4">
       <div class="flex grow items-center gap-2 sm:gap-4">
@@ -140,7 +140,7 @@
     </div>
   </header>
 
-  <section class=" grow flex flex-col ">
+  <section class="grow min-h-0 flex flex-col overflow-x-hidden">
     <.flash_group flash={@flash} />
     {@inner_content}
   </section>

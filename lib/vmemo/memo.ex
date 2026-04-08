@@ -41,6 +41,8 @@ defmodule Vmemo.Memo do
     resource Vmemo.Memo.Photo
     resource Vmemo.Memo.Note
     resource Vmemo.Memo.PhotoNote
+    resource Vmemo.Memo.UploadSession
+    resource Vmemo.Memo.UploadSessionItem
   end
 
   authorization do

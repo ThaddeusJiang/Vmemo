@@ -23,6 +23,7 @@ import { Toast } from "./hooks/toast"
 import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
 import { DirectoryUpload } from "./hooks/directory_upload"
+import { UploadResumeQueue } from "./hooks/upload_resume_queue"
 
 const FormatDatetime = {
   format() {
@@ -65,6 +66,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     Focus,
     MoondreamOverlay,
     DirectoryUpload,
+    UploadResumeQueue,
     FormatDatetime,
   },
   longPollFallbackMs: 2500,

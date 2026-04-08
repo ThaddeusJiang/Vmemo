@@ -247,6 +247,26 @@
 - 列表默认按 `inserted_at desc`
 - UI 与测试覆盖移动端 + 桌面端
 
+### 7.6 断点续传上传（Phase 1）
+- 目标：用户一次最多选择 100 张图片，选择后立即保存到 client store（IndexedDB）。
+- 刷新页面、浏览器崩溃、短时断网后，上传页面可恢复队列并继续上传未完成项。
+- 非目标：本阶段不实现 chunk/multipart 分片级续传协议。
+- 上传策略：逐张上传，单张失败不阻塞后续队列，可单独重试失败项。
+- note 策略：在“开始第一张上传前”创建 note；上传中允许继续编辑 note 内容。
+- 关联策略：每张图片上传成功后立即尝试关联 note，关联逻辑需要幂等。
+- 状态机：`queued -> uploading -> uploaded -> linked -> processing -> completed | failed`。
+- 处理状态：上传完成后在页面下部按上传顺序展示图片，并展示 Typesense/Moondream 处理中状态。
+- 滚动约束：上传页面禁止页面级横纵滚动；仅上传列表区域允许纵向滚动，仍禁止横向滚动。
+- 容量与兼容性：需对 IndexedDB 配额不足给出明确提示；iOS Safari 兼容性纳入测试矩阵。
+
+### 7.7 断点续传上传（Phase 2 服务端事务）
+- 新增 `memo_upload_sessions`：记录一次上传会话（用户、note、会话状态、计数与错误）。
+- 新增 `memo_upload_session_items`：记录会话内每张图片（顺序、指纹、状态、重试、photo_id）。
+- 幂等键：`(user_id, client_session_key)` 唯一确定上传会话；`(upload_session_id, client_file_fingerprint)` 唯一确定上传文件项。
+- 页面恢复时：客户端恢复队列并把会话 key / 文件元数据同步到服务端会话与 item。
+- 上传执行时：服务端更新 item 状态 `queued/uploading/uploaded/failed`，并汇总更新 session 计数与状态。
+- note 关联：note 创建后回写到 upload session，保证上传与编辑流程可追踪。
+
 ---
 
 ## 8. Detailed Release Checklist
