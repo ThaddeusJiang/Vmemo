@@ -47,7 +47,7 @@ Vmemo uses a dual-storage architecture:
 | `updated_at` | `utc_datetime` | Updated at |
 
 Relations:
-- `has_many :api_tokens` -> `Vmemo.Account.ApiToken`
+- `has_many :api_tokens` -> Vmemo.Account.ApiToken (Ash resource; module omitted from API reference)
 
 Module: `Vmemo.Account.AshUser`
 
@@ -89,7 +89,7 @@ Module: `Vmemo.Account.AshUserToken`
 Relations:
 - `belongs_to :ash_user` -> `Vmemo.Account.AshUser`
 
-Module: `Vmemo.Account.ApiToken`
+Module: Vmemo.Account.ApiToken (Ash resource; module omitted from API reference)
 
 ### Photos Domain
 
@@ -184,7 +184,7 @@ Service module: `Vmemo.SearchEngine.TsPhoto`
 | `updated_at` | `int64` | Unix timestamp |
 | `belongs_to` | `string` | User id |
 
-Service module: `Vmemo.SearchEngine.TsNote`
+Service module: Vmemo.SearchEngine.TsNote (internal module; omitted from API reference)
 
 ## Relationship Summary
 
