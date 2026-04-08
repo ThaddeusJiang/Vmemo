@@ -42,11 +42,26 @@ jobs:
 
       - name: Configure Puppeteer for GitHub-hosted Linux
         run: |
+          MMDC_BIN="$(command -v mmdc)"
+          if [ -z "$MMDC_BIN" ]; then
+            echo "mmdc not found in PATH"
+            exit 1
+          fi
           cat > puppeteer-config.json <<'EOF'
           {
             "args": ["--no-sandbox", "--disable-setuid-sandbox"]
           }
           EOF
+          mkdir -p "$HOME/.local/bin"
+          cat > "$HOME/.local/bin/mmdc" <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec "$MMDC_BIN" -p "$GITHUB_WORKSPACE/puppeteer-config.json" "\$@"
+          EOF
+          chmod +x "$HOME/.local/bin/mmdc"
+
+      - name: Ensure mmdc wrapper is first in PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install Elixir dependencies
         run: mix deps.get
