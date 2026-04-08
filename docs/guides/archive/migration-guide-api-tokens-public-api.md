@@ -653,11 +653,11 @@ mix ecto.rollback --step 3
 
 ## 相关文档
 
-- [Release Notes](RELEASE-NOTES.md)
-- [Public API 文档](public-api.md)
-- [API Token 管理指南](api-tokens.md)
-- [Test Plan](TEST-PLAN.md)
-- [Code Review](CODE-REVIEW.md)
+- [Release Notes](release-notes-api-tokens-public-api.md)
+- [Public API 文档](../../features/public-rest-api.md)
+- [API Token 管理指南](../../features/api-tokens.md)
+- [Test Plan](test-plan-api-tokens-public-api.md)
+- [Code Review](code-review-pr-40.md)
 
 ---
 

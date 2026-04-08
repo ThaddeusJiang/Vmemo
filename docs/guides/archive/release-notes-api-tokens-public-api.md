@@ -253,7 +253,7 @@ config :vmemo,
 2. **缺少 CORS 配置**: 如需浏览器跨域调用需配置
 3. **日志安全性**: 审查日志避免泄露敏感信息
 
-详细问题列表请参考 [Code Review](CODE-REVIEW.md)。
+详细问题列表请参考 [Code Review](code-review-pr-40.md)。
 
 ## 升级指南
 
@@ -354,7 +354,7 @@ config :vmemo,
    sudo systemctl start vmemo
    ```
 
-详细迁移指南请参考 [Migration Guide](MIGRATION-GUIDE.md)。
+详细迁移指南请参考 [Migration Guide](migration-guide-api-tokens-public-api.md)。
 
 ## 测试
 
@@ -378,21 +378,21 @@ mix test test/vmemo_web/api/
 mix test test/vmemo_web/api/auth_test.exs
 ```
 
-详细测试计划请参考 [Test Plan](TEST-PLAN.md)。
+详细测试计划请参考 [Test Plan](test-plan-api-tokens-public-api.md)。
 
 ## 文档
 
 ### 新增文档
 
-- [Public API 文档](public-api.md) - 完整的 API 参考
-- [API Token 管理指南](api-tokens.md) - Token 管理最佳实践
-- [Migration Guide](MIGRATION-GUIDE.md) - 详细的迁移步骤
-- [Test Plan](TEST-PLAN.md) - 测试计划和用例
-- [Code Review](CODE-REVIEW.md) - 代码审查报告
+- [Public API 文档](../../features/public-rest-api.md) - 完整的 API 参考
+- [API Token 管理指南](../../features/api-tokens.md) - Token 管理最佳实践
+- [Migration Guide](migration-guide-api-tokens-public-api.md) - 详细的迁移步骤
+- [Test Plan](test-plan-api-tokens-public-api.md) - 测试计划和用例
+- [Code Review](code-review-pr-40.md) - 代码审查报告
 
 ### 更新文档
 
-- [README.md](../README.md) - 添加 Public API 快速开始指南
+- [README.md](../../../README.md) - 添加 Public API 快速开始指南
 
 ## 性能影响
 

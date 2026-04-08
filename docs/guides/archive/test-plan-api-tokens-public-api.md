@@ -995,7 +995,7 @@ wrk -t4 -c100 -d30s \
 
 ### 已知问题
 
-详见 [Code Review](CODE-REVIEW.md) 中的 P0、P1、P2 问题列表。
+详见 [Code Review](code-review-pr-40.md) 中的 P0、P1、P2 问题列表。
 
 ## 测试环境配置
 
@@ -1067,11 +1067,11 @@ services:
 
 ## 相关文档
 
-- [Code Review](CODE-REVIEW.md)
-- [Release Notes](RELEASE-NOTES.md)
-- [Migration Guide](MIGRATION-GUIDE.md)
-- [Public API 文档](public-api.md)
-- [API Token 管理指南](api-tokens.md)
+- [Code Review](code-review-pr-40.md)
+- [Release Notes](release-notes-api-tokens-public-api.md)
+- [Migration Guide](migration-guide-api-tokens-public-api.md)
+- [Public API 文档](../../features/public-rest-api.md)
+- [API Token 管理指南](../../features/api-tokens.md)
 
 ---
 

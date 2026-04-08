@@ -2,6 +2,8 @@
 
 This section stores historical and one-off documentation that is not part of day-to-day onboarding.
 
+Links inside these files were checked against the current repository layout (archive filenames, `docs/features/*`, and root `README.md`). Content reflects past milestones; for current behavior, prefer [Development](../development/README.md), [Deployment](../deployment/README.md), and [Features](../../features/README.md).
+
 ## Reports
 
 - [Code Review (PR #40)](code-review-pr-40.md)

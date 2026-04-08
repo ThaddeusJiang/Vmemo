@@ -20,7 +20,7 @@ Text-only journaling is easy to forget and hard to revisit. Vmemo focuses on vis
 - AI-powered search (text and image similarity).
 - AI caption and OCR extraction.
 - API token management.
-- Public REST API for external integrations.
+- REST API for external integrations.
 - Responsive web UI for desktop and mobile.
 
 ## Self-hosting

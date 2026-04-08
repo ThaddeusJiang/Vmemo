@@ -15,8 +15,8 @@ Vmemo uses a dual-storage architecture:
 ├────────────────────────────────────────────────────────────────────┤
 │                                                                    │
 │  Account Domain (PostgreSQL)                                       │
-│  AshUser ──┬── AshUserToken                                        │
-│            └── ApiToken                                            │
+│  User ──┬── Session (JWT / `ash_user_tokens`)                      │
+│         └── API token (`api_tokens`)                               │
 │                                                                    │
 │  Photos Domain (PostgreSQL)                                        │
 │  Photo ──< PhotoNote >── Note                                      │
@@ -189,11 +189,11 @@ Service module: Vmemo.SearchEngine.TsNote (internal module; omitted from API ref
 ## Relationship Summary
 
 ```text
-AshUser (1) ── (N) AshUserToken
-AshUser (1) ── (N) ApiToken
-AshUser (1) ── (N) Photo
-AshUser (1) ── (N) Note
-Photo   (M) ── (N) Note  (via PhotoNote)
+User (1) ── (N) Session token
+User (1) ── (N) API token
+User (1) ── (N) Photo
+User (1) ── (N) Note
+Photo (M) ── (N) Note (via PhotoNote)
 ```
 
 ## Consistency Model

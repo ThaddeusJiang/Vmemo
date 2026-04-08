@@ -513,7 +513,7 @@ Public API 的完整参考文档。
 - Token 相关测试的修复模式
 - JWT 无状态特性的测试策略
 
-[查看完整文档](docs/tasks/test-fix-guide.md)
+（注：历史路径 `docs/tasks/test-fix-guide.md` 未纳入本仓库；请以当前 `test/` 目录与 CI 配置为准。）
 
 ---
 
@@ -598,7 +598,7 @@ Public API 的完整参考文档。
 
 **预计时间**: 14-22 天（5个阶段：准备、数据模型迁移、认证逻辑迁移、测试验证、部署监控）
 
-[查看完整计划和验收标准](docs/tasks/2025-01-25-ash-authentication-migration-plan.md)
+（注：历史迁移计划文档未纳入仓库；认证已统一为 Ash Authentication，见 `lib/vmemo/account/` 与路由配置。）
 
 ---
 
@@ -614,7 +614,7 @@ Public API 的完整参考文档。
 
 **预计时间**: 10-15 天（5个阶段：准备、更新认证模块、更新路由控制器、清理旧系统、测试验证）
 
-[查看完整计划](docs/tasks/2025-01-26-migrate-to-ash-user-token-system.md)
+（注：历史任务文档未纳入仓库；Ash User / Token 相关实现见 `lib/vmemo/account/`。）
 
 ---
 
@@ -661,7 +661,7 @@ Public API 的完整参考文档。
 **总计**: 21 个文档（相比优化前减少了 22 个）
 
 **文档分类**:
-- **核心功能文档**: 6 个（CODE-REVIEW, MIGRATION-GUIDE, RELEASE-NOTES, TEST-PLAN, api-tokens, public-api）
+- **核心功能文档**: 6 个（`code-review-pr-40.md`, `migration-guide-api-tokens-public-api.md`, `release-notes-api-tokens-public-api.md`, `test-plan-api-tokens-public-api.md`, `features/api-tokens.md`, `features/public-rest-api.md`）
 - **迁移文档**: 1 个（2025-10-29-migration-manual）
 - **任务跟踪**: 3 个（在 tasks/ 目录下）
 - **技术参考**: 保留关键的开发文档

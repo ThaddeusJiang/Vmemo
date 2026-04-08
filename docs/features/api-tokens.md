@@ -1,8 +1,8 @@
-# API Token Guide
+# API Token
 
 ## Overview
 
-API tokens are credentials for accessing the Vmemo Public REST API. Each token belongs to a user and inherits that user's access scope.
+API tokens are credentials for accessing the REST API. Each token belongs to a user and inherits that user's access scope.
 
 You can:
 

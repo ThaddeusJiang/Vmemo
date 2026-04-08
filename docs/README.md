@@ -6,6 +6,7 @@ Top-level modules:
 - `decisions`
 - `features`
 - `guides`
+- `specs`
 
 ## coding-guidelines
 
@@ -20,8 +21,8 @@ Top-level modules:
 - [Features Index](features/README.md)
 - [Project Specs](features/specs.md)
 - [Data Models](features/data-models.md)
-- [Public REST API](features/public-rest-api.md)
-- [API Token Guide](features/api-tokens.md)
+- [REST API](features/public-rest-api.md)
+- [API Token](features/api-tokens.md)
 
 ## guides
 
@@ -29,3 +30,7 @@ Top-level modules:
 - [Development](guides/development/README.md)
 - [Deployment](guides/deployment/README.md)
 - [Archive](guides/archive/README.md)
+
+## specs
+
+- [Oban Queue Design](specs/oban-queue-design.md)
