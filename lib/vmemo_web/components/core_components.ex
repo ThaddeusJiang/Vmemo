@@ -84,7 +84,7 @@ defmodule VmemoWeb.CoreComponents do
               </.button>
 
               <div id={"#{@id}-content"} class="h-full max-h-max flex flex-col">
-                <header class="flex-none">
+                <header :if={@header != []} class="flex-none">
                   {render_slot(@header)}
                 </header>
 

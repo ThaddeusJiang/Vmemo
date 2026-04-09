@@ -548,9 +548,54 @@ defmodule VmemoWeb.PhotoIdLive do
           </div>
         </div>
 
-        <.modal :if={@show_expanded} id="expanded_photo" show on_cancel={JS.push("hide-expanded")}>
-          <.img src={@photo.url} alt={@photo.note} />
-        </.modal>
+        <div
+          :if={@show_expanded}
+          id="expanded_photo"
+          data-cancel={JS.push("hide-expanded")}
+          class="relative z-50"
+        >
+          <div id="expanded_photo-bg" class="bg-zinc-800/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+          <div
+            class="fixed inset-0"
+            role="dialog"
+            aria-modal="true"
+            tabindex="0"
+            aria-labelledby="expanded_photo-title"
+            aria-describedby="expanded_photo-description"
+          >
+            <div class="h-full max-h-screen flex items-center justify-center">
+              <div class="w-full max-w-prose h-full max-h-screen p-6 lg:p-6">
+                <.focus_wrap
+                  id="expanded_photo-container"
+                  phx-window-keydown={JS.exec("data-cancel", to: "#expanded_photo")}
+                  phx-key="escape"
+                  phx-click-away={JS.exec("data-cancel", to: "#expanded_photo")}
+                  class="h-full bg-base-100 rounded-box shadow-lg relative overflow-hidden"
+                >
+                  <.button
+                    phx-click={JS.exec("data-cancel", to: "#expanded_photo")}
+                    variant="ghost"
+                    class="fixed btn-circle top-4 right-4 z-[60] text-white bg-black/35 hover:bg-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+                    aria-label="close"
+                  >
+                    <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+                  </.button>
+
+                  <div id="expanded_photo-content" class="h-full min-h-0 flex flex-col p-0">
+                    <div class="flex-1 min-h-0 overflow-hidden">
+                      <.img
+                        src={@photo.url}
+                        alt={@photo.note}
+                        class="w-full !h-full object-contain !rounded-none !shadow-none hover:!shadow-none block"
+                        id="expanded_photo-image"
+                      />
+                    </div>
+                  </div>
+                </.focus_wrap>
+              </div>
+            </div>
+          </div>
+        </div>
       <% end %>
     </div>
     """
