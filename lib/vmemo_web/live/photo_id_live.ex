@@ -564,29 +564,28 @@ defmodule VmemoWeb.PhotoIdLive do
             aria-describedby="expanded_photo-description"
           >
             <div class="h-full max-h-screen flex items-center justify-center">
-              <div class="w-full max-w-prose h-full max-h-screen p-6 lg:p-6">
+              <div class="w-full h-full max-h-screen p-0">
                 <.focus_wrap
                   id="expanded_photo-container"
                   phx-window-keydown={JS.exec("data-cancel", to: "#expanded_photo")}
                   phx-key="escape"
                   phx-click-away={JS.exec("data-cancel", to: "#expanded_photo")}
-                  class="h-full bg-base-100 rounded-box shadow-lg relative overflow-hidden"
+                  class="h-full w-full bg-transparent rounded-none shadow-none relative overflow-hidden"
                 >
                   <.button
                     phx-click={JS.exec("data-cancel", to: "#expanded_photo")}
-                    variant="ghost"
-                    class="fixed btn-circle top-4 right-4 z-[60] text-white bg-black/35 hover:bg-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+                    class="fixed top-4 right-4 z-[60] btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
                     aria-label="close"
                   >
                     <.icon name="hero-x-mark-solid" class="h-4 w-4" />
                   </.button>
 
-                  <div id="expanded_photo-content" class="h-full min-h-0 flex flex-col p-0">
-                    <div class="flex-1 min-h-0 overflow-hidden">
+                  <div id="expanded_photo-content" class="h-full w-full p-8">
+                    <div class="h-full w-full overflow-hidden flex items-center justify-center">
                       <.img
                         src={@photo.url}
                         alt={@photo.note}
-                        class="w-full !h-full object-contain !rounded-none !shadow-none hover:!shadow-none block"
+                        class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block"
                         id="expanded_photo-image"
                       />
                     </div>
