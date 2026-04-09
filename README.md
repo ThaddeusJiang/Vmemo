@@ -23,6 +23,23 @@ Text-only journaling is easy to forget and hard to revisit. Vmemo focuses on vis
 - REST API for external integrations.
 - Responsive web UI for desktop and mobile.
 
+## Dependencies
+
+### Required infrastructure
+
+- PostgreSQL (`postgres:18` in the example compose file) for primary data storage.
+- Typesense (`typesense/typesense:30.1` in the example compose file) for full-text and vector search.
+
+### AI services
+
+- Moondream API (`MOONDREAM_API_KEY`) for image caption and OCR extraction.
+- OpenRouter (`OPENROUTER_API_KEY`) for chat-related features.
+
+### Optional local Moondream runtime
+
+- Moondream Station: https://moondream.ai/p/station
+- Note: Moondream officially marks Station as deprecated and recommends Photon for the best experience.
+
 ## Self-hosting
 
 You can also run Vmemo on your local machine or self-host it.
