@@ -62,23 +62,23 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       |> assign(
         :form_class,
         if(has_files or assigns.show_full_form,
-          do: "w-full mx-auto max-w-screen-xl",
-          else: "absolute inset-0 pointer-events-none z-0"
+          do: "w-full mx-auto max-w-screen-xl h-full min-h-0 flex flex-col overflow-hidden",
+          else: "absolute inset-0 pointer-events-none z-0 h-full min-h-0 flex flex-col overflow-hidden"
         )
       )
       |> assign(
         :label_class,
         if(has_files or assigns.show_full_form,
-          do: "relative h-auto",
-          else: "relative h-full pointer-events-auto"
+          do: "relative flex-1 min-h-0 block",
+          else: "relative h-full min-h-0 pointer-events-auto block"
         )
       )
       |> assign(
         :section_class,
         if(has_files or assigns.show_full_form,
           do:
-            "aspect-auto sm:aspect-video relative flex flex-col w-full rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200",
-          else: "relative flex flex-col w-full h-full border-0 bg-transparent"
+            "relative flex flex-col w-full h-[32rem] max-h-[32rem] min-h-0 rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 overflow-hidden",
+          else: "relative flex flex-col w-full h-full min-h-0 border-0 bg-transparent overflow-hidden"
         )
       )
 
@@ -92,146 +92,156 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       phx-hook="ClipboardMediaFetcher"
       phx-drop-target={@uploads.photos.ref}
     >
-      <label for={@uploads.photos.ref} class={@label_class}>
-        <section class={@section_class}>
-          <.live_component
-            id="waterfall-upload-photos"
-            module={Waterfall}
-            items={@uploads.photos.entries}
-          >
-            <:empty>
-              <div class="w-full h-full flex flex-col justify-center items-center">
-                <img src="/images/undraw_images.svg" alt="Upload photos" class="w-1/2 h-auto" />
-              </div>
-            </:empty>
+      <div class="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+        <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <label for={@uploads.photos.ref} class={@label_class}>
+            <section class={@section_class}>
+              <.live_component
+                id="waterfall-upload-photos"
+                module={Waterfall}
+                items={@uploads.photos.entries}
+                class="flex-1 min-h-0 overflow-y-auto pr-1"
+              >
+                <:empty>
+                  <div class="w-full h-full flex flex-col justify-center items-center">
+                    <img src="/images/undraw_images.svg" alt="Upload photos" class="w-1/2 h-auto" />
+                  </div>
+                </:empty>
 
-            <:card :let={entry}>
-              <PhotoCard.photo_card>
-                <:media>
-                  <.live_img_preview
-                    entry={entry}
-                    class="w-full h-auto object-cover rounded-lg shadow hover:shadow-lg hover:transition-transform"
-                  />
-                </:media>
-                <:overlay>
-                  <%= case entry.progress do %>
-                    <% 0 -> %>
-                      <.button
-                        type="button"
-                        phx-target={@myself}
-                        phx-click="cancel-upload"
-                        phx-value-ref={entry.ref}
-                        aria-label="cancel"
-                        class="absolute top-2 right-2 btn btn-circle btn-sm btn-neutral"
-                      >
-                        &times;
-                      </.button>
-                    <% 100 -> %>
-                      <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm">
-                        <div
-                          class="radial-progress text-white"
-                          style="--value:100; --size:2rem; --thickness: 2px;"
-                          role="progressbar"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            class="size-6"
+                <:card :let={entry}>
+                  <PhotoCard.photo_card>
+                    <:media>
+                      <.live_img_preview
+                        entry={entry}
+                        class="w-full h-auto object-cover rounded-lg shadow hover:shadow-lg hover:transition-transform"
+                      />
+                    </:media>
+                    <:overlay>
+                      <%= case entry.progress do %>
+                        <% 0 -> %>
+                          <.button
+                            type="button"
+                            phx-target={@myself}
+                            phx-click="cancel-upload"
+                            phx-value-ref={entry.ref}
+                            aria-label="cancel"
+                            class="absolute top-2 right-2 btn btn-circle btn-sm btn-neutral"
                           >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="m4.5 12.75 6 6 9-13.5"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    <% _ -> %>
-                      <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm">
-                        <div
-                          class="radial-progress text-white"
-                          style={"--value:#{entry.progress}; --size:2rem; --thickness: 2px;"}
-                          role="progressbar"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
-                            class="size-6"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="m4.5 12.75 6 6 9-13.5"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                  <% end %>
-                </:overlay>
-              </PhotoCard.photo_card>
-              <p :for={err <- upload_errors(@uploads.photos, entry)} class="mt-2 text-xs text-error">
-                {error_to_string(err)}
-              </p>
-            </:card>
-          </.live_component>
+                            &times;
+                          </.button>
+                        <% 100 -> %>
+                          <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm">
+                            <div
+                              class="radial-progress text-white"
+                              style="--value:100; --size:2rem; --thickness: 2px;"
+                              role="progressbar"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="size-6"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="m4.5 12.75 6 6 9-13.5"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        <% _ -> %>
+                          <div class="absolute inset-0 flex justify-center items-center backdrop-blur-sm">
+                            <div
+                              class="radial-progress text-white"
+                              style={"--value:#{entry.progress}; --size:2rem; --thickness: 2px;"}
+                              role="progressbar"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                class="size-6"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="m4.5 12.75 6 6 9-13.5"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                      <% end %>
+                    </:overlay>
+                  </PhotoCard.photo_card>
+                  <div :for={err <- upload_errors(@uploads.photos, entry)} class="mt-2 text-xs text-error">
+                    {error_to_string(err)}
+                  </div>
+                </:card>
+              </.live_component>
 
-          <label
-            for={@uploads.photos.ref}
-            class="block flex-none py-2 rounded-3xl place-content-center hover:cursor-pointer"
-          >
-            <span class="text-sm text-gray-600 font-medium">
-              Drag and drop images here or click to upload
-            </span>
+              <label
+                for={@uploads.photos.ref}
+                class="block flex-none py-2 rounded-3xl place-content-center hover:cursor-pointer"
+              >
+                <span class="text-sm text-gray-600 font-medium">
+                  Drag and drop images here or click to upload
+                </span>
+              </label>
+
+              <.live_file_input upload={@uploads.photos} class="hidden" />
+            </section>
           </label>
 
-          <.live_file_input upload={@uploads.photos} class="hidden" />
+          <%= if @has_files or @show_full_form do %>
+            <div :for={err <- upload_errors(@uploads.photos)} class="alert alert-danger mt-3">
+              {error_to_string(err)}
+            </div>
+
+            <div :if={@has_files} class="mt-4 space-y-1 flex-none">
+              <.textarea_field
+                id={@form[:note].id}
+                name={@form[:note].name}
+                value={@form[:note].value}
+                label="Note"
+                phx-hook="Focus"
+              />
+
+              <.input field={@form[:is_whole]} type="checkbox" label="Is whole" />
+            </div>
+
+            <footer :if={@has_files} class="flex justify-center mt-4 flex-none">
+              <.button>Upload</.button>
+            </footer>
+          <% else %>
+            <div :for={err <- upload_errors(@uploads.photos)} class="hidden">
+              {error_to_string(err)}
+            </div>
+          <% end %>
         </section>
-      </label>
 
-      <div :if={Enum.any?(@uploaded_photos)} class="mt-6">
-        <div class="mb-2 text-left text-sm font-medium text-base-content/70">Uploaded</div>
-        <.live_component id="waterfall-uploaded-photos" module={Waterfall} items={@uploaded_photos}>
-          <:card :let={photo}>
-            <PhotoCard.photo_card photo={photo}>
-              <:overlay>
-                <.uploaded_photo_status_overlay photo={photo} />
-              </:overlay>
-            </PhotoCard.photo_card>
-          </:card>
-        </.live_component>
+        <section :if={Enum.any?(@uploaded_photos)} class="h-1/3 min-h-0 flex flex-col overflow-hidden">
+          <div class="mb-2 text-left text-sm font-medium text-base-content/70 flex-none">Uploaded</div>
+          <.live_component
+            id="waterfall-uploaded-photos"
+            module={Waterfall}
+            items={@uploaded_photos}
+            class="flex-1 min-h-0 overflow-y-auto pr-1"
+          >
+            <:card :let={photo}>
+              <PhotoCard.photo_card photo={photo}>
+                <:overlay>
+                  <.uploaded_photo_status_overlay photo={photo} />
+                </:overlay>
+              </PhotoCard.photo_card>
+            </:card>
+          </.live_component>
+        </section>
       </div>
-
-      <%= if @has_files or @show_full_form do %>
-        <p :for={err <- upload_errors(@uploads.photos)} class="alert alert-danger">
-          {error_to_string(err)}
-        </p>
-
-        <div :if={@has_files} class="mt-4 space-y-1">
-          <.textarea_field
-            id={@form[:note].id}
-            name={@form[:note].name}
-            value={@form[:note].value}
-            label="Note"
-            phx-hook="Focus"
-          />
-
-          <.input field={@form[:is_whole]} type="checkbox" label="Is whole" />
-        </div>
-
-        <footer :if={@has_files} class="flex justify-center mt-4">
-          <.button>Upload</.button>
-        </footer>
-      <% else %>
-        <p :for={err <- upload_errors(@uploads.photos)} class="hidden">
-          {error_to_string(err)}
-        </p>
-      <% end %>
     </form>
     """
   end
