@@ -37,10 +37,21 @@ When the user asks to run `setup`, first run the Common dependency steps, then r
 mix setup
 ```
 
+## Stop workflow
+
+When the user asks to run `stop`, stop local services and related processes in this order:
+
+```bash
+docker compose down
+pkill -f moondream-station || true
+pkill -f "mix phx.server" || true
+```
+
 ## Expected outcome
 
 - Reset ensures local dependencies are ready before `mix reset`.
 - Setup recreates Docker services and prepares local dependencies.
+- Stop shuts down Docker services and local runtime processes.
 - Runtime/toolchain is prepared before project scripts.
 
 ## Guardrails
@@ -49,6 +60,7 @@ mix setup
 - Always run `mise trust` and `mise install` before project scripts.
 - `reset`: run `docker compose up -d`, ensure `moondream-station` is installed/running, then run `mix reset`.
 - `setup`: run `docker compose up -d`, ensure `moondream-station` is installed/running, then run `mix setup`.
+- `stop`: run `docker compose down`, stop `moondream-station`, then stop `mix phx.server`.
 - Use direct commands without `mise exec`.
 - Do not run `build` or `start` commands unless explicitly requested.
 - After code changes, run `mix dialyzer --format short` and fix all issues until clean.
