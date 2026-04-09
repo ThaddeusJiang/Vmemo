@@ -18,7 +18,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
      |> assign(:original_note_text, note_text)
      |> assign_new(:form, fn ->
        to_form(%{
-        "note" => note_text
+         "note" => note_text
        })
      end)}
   end
@@ -45,7 +45,12 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
           <div class="flex items-center justify-between">
             <.label for={@form[:note].id} class="label-text">Note</.label>
             <div class="dropdown dropdown-end">
-              <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm" aria-label="Open note actions">
+              <div
+                tabindex="0"
+                role="button"
+                class="btn btn-ghost btn-square btn-sm"
+                aria-label="Open note actions"
+              >
                 <.icon name="hero-ellipsis-vertical" class="h-4 w-4" />
               </div>
               <ul
@@ -84,8 +89,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
             Save
           </span>
           <span class="hidden items-center gap-2 phx-submit-loading:inline-flex">
-            <.icon name="hero-arrow-path" class="size-4 animate-spin" />
-            Saving...
+            <.icon name="hero-arrow-path" class="size-4 animate-spin" /> Saving...
           </span>
         </.button>
       </div>

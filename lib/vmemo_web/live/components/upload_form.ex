@@ -63,7 +63,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         :form_class,
         if(has_files or assigns.show_full_form,
           do: "w-full mx-auto max-w-screen-xl h-full min-h-0 flex flex-col overflow-hidden",
-          else: "absolute inset-0 pointer-events-none z-0 h-full min-h-0 flex flex-col overflow-hidden"
+          else:
+            "absolute inset-0 pointer-events-none z-0 h-full min-h-0 flex flex-col overflow-hidden"
         )
       )
       |> assign(
@@ -78,7 +79,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         if(has_files or assigns.show_full_form,
           do:
             "relative flex flex-col w-full h-[32rem] max-h-[32rem] min-h-0 rounded-lg border-2 border-dashed border-gray-300 bg-base-100 p-4 text-center hover:border-primary hover:bg-base-200 hover:shadow-lg hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 overflow-hidden",
-          else: "relative flex flex-col w-full h-full min-h-0 border-0 bg-transparent overflow-hidden"
+          else:
+            "relative flex flex-col w-full h-full min-h-0 border-0 bg-transparent overflow-hidden"
         )
       )
 
@@ -178,7 +180,10 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                       <% end %>
                     </:overlay>
                   </PhotoCard.photo_card>
-                  <div :for={err <- upload_errors(@uploads.photos, entry)} class="mt-2 text-xs text-error">
+                  <div
+                    :for={err <- upload_errors(@uploads.photos, entry)}
+                    class="mt-2 text-xs text-error"
+                  >
                     {error_to_string(err)}
                   </div>
                 </:card>
@@ -225,7 +230,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         </section>
 
         <section :if={Enum.any?(@uploaded_photos)} class="h-1/3 min-h-0 flex flex-col overflow-hidden">
-          <div class="mb-2 text-left text-sm font-medium text-base-content/70 flex-none">Uploaded</div>
+          <div class="mb-2 text-left text-sm font-medium text-base-content/70 flex-none">
+            Uploaded
+          </div>
           <.live_component
             id="waterfall-uploaded-photos"
             module={Waterfall}
