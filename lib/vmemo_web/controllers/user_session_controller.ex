@@ -12,11 +12,16 @@ defmodule VmemoWeb.UserSessionController do
            "email" => email,
            "password" => password
          }) do
-      {:ok, user} ->
+      {:ok, %{confirmed_at: %DateTime{}} = user} ->
         # 使用 UserAuth 处理登录，传递 user_params 以支持 remember_me
         conn
         |> maybe_put_action_flash(action)
         |> log_in_with_action(user, user_params, action)
+
+      {:ok, _user} ->
+        conn
+        |> put_flash(:error, "Invalid email or password")
+        |> redirect(to: ~p"/login")
 
       {:error, _reason} ->
         # In order to prevent user enumeration attacks, don't disclose whether the email is registered.

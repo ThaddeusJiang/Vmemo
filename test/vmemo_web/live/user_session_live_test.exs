@@ -1,6 +1,8 @@
 defmodule VmemoWeb.UserSessionLiveTest do
   use VmemoWeb.ConnCase, async: true
 
+  alias Vmemo.Account
+
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
 
@@ -31,6 +33,7 @@ defmodule VmemoWeb.UserSessionLiveTest do
     test "redirects if user login with valid credentials", %{conn: conn} do
       password = "123456789abcd"
       user = user_fixture(%{password: password})
+      {:ok, user} = Account.update_user(user, %{confirmed_at: DateTime.utc_now()})
 
       {:ok, lv, _html} = live(conn, ~p"/login")
 

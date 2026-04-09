@@ -1,6 +1,7 @@
 # Development
 
 - [Setup](setup.md)
+- [FAQ](faq.md)
 - [Tidewave](tidewave.md)
 - [Architecture Diagrams](architecture-diagrams.md)
 - [Project Specs](project-specs.md)
