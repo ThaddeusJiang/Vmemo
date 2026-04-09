@@ -4,6 +4,7 @@ defmodule VmemoWeb.PhotosIndexLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Memo.Photo
+  alias VmemoWeb.LiveComponents.PhotoCard
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -92,7 +93,7 @@ defmodule VmemoWeb.PhotosIndexLive do
   def render(assigns) do
     ~H"""
     <section class="p-4 sm:p-4 lg:p-4 grow">
-      <div class="flex flex-col gap-4 w-full max-w-screen-lg mx-auto">
+      <div class="flex flex-col gap-4 w-full max-w-screen-xl mx-auto">
         <%= if @similar_photo_id && @similar_photo do %>
           <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
@@ -136,16 +137,15 @@ defmodule VmemoWeb.PhotosIndexLive do
           </:empty>
 
           <:card :let={photo}>
-            <div class="relative">
-              <.link navigate={~p"/photos/#{photo.id}"} class="link link-hover block">
-                <.img src={photo.url} alt={photo.note} id={photo.id} />
-              </.link>
-              <%= if @similar_photo_id && similarity_score(photo) do %>
-                <div class="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
-                  {similarity_score(photo)}%
-                </div>
-              <% end %>
-            </div>
+            <PhotoCard.photo_card photo={photo}>
+              <:overlay>
+                <%= if @similar_photo_id && similarity_score(photo) do %>
+                  <div class="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
+                    {similarity_score(photo)}%
+                  </div>
+                <% end %>
+              </:overlay>
+            </PhotoCard.photo_card>
           </:card>
         </.live_component>
 

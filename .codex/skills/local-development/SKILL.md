@@ -5,75 +5,62 @@ description: "Skill for Vmemo local development workflows."
 
 # Local Development Skill
 
-Use this skill when the user asks to reset local development state, rebuild local dependencies, or reinitialize development data.
+Use this skill when the user asks to run local `reset`/`setup` workflows, rebuild local dependencies, or reinitialize development data.
+
+## Common
+
+Use `mise` as the single source of truth for local development environment, before any workflow, run: `mise trust && mise install`.
+
+Before running any project script (`mix reset` / `mix setup`), ensure local dependencies are ready:
+
+- Run `docker compose up -d` (postgres + typesense)
+- Run `moondream-station` (directly or ensure it is already running)
+
+```bash
+docker compose up -d
+pgrep -f moondream-station >/dev/null || moondream-station &
+```
 
 ## Reset workflow
 
-When the user asks to run `reset`, execute these steps in order:
-
-1. Run `mise trust`.
-2. Run `mise install`.
-3. Stop `mix phx.server`.
-4. Run `docker compose down -v` to remove containers and volumes.
-5. Delete the local storage directory at the repository root: `storage/`.
-6. Run `docker compose up -d` to restart required services.
-7. **Stop** local Moondream Station: `pkill -f moondream-station || true` (same idea as `docker compose down` for that process).
-8. **Start** local Moondream Station: `moondream-station` (optional: resolve the binary with `which moondream-station` or `where moondream-station`). Starting it does not require `mise exec`. If the CLI runs as a long-running server, run `moondream-station &` so `mix setup` is not blocked, or start it in another terminal before continuing.
-9. Run `mix setup`.
-10. Ask user whether to run `iex -S mix phx.server` (default answer is `N`).
-11. Only if user answers `Y`, run `iex -S mix phx.server`.
-
-## Command sequence
-
-Run from the repository root:
+When the user asks to run `reset`, first run the Common dependency steps, then run `mix reset`.
 
 ```bash
-mise trust
-mise install
-pkill -f "mix phx.server" || true
-docker compose down -v
-pkill -f moondream-station || true
-rm -rf storage
-moondream-station &
-docker compose up -d
+mix reset
+```
+
+## Setup workflow
+
+When the user asks to run `setup`, first run the Common dependency steps, then run `mix setup`.
+
+```bash
 mix setup
 ```
 
-Then ask:
+## Stop workflow
 
-```text
-Run `iex -S mix phx.server` now? (Y/N, default: N)
-```
-
-If user answers `Y`:
+When the user asks to run `stop`, stop local services and related processes in this order:
 
 ```bash
-iex -S mix phx.server
+docker compose down
+pkill -f moondream-station || true
+pkill -f "mix phx.server" || true
 ```
 
 ## Expected outcome
 
-- Local database is recreated from current definitions.
-- Typesense definitions are initialized from project setup tasks.
-- Local development smoke testing data is reloaded by `mix setup`.
-- On-disk uploads under `storage/` are cleared; no orphaned files remain after DB reset.
-- Runtime/toolchain is prepared by `mise trust` and `mise install` before running scripts.
-- Local Moondream endpoint (`dev.exs` defaults to `http://localhost:2020/v1/`) is served by a fresh `moondream-station` process after an explicit stop (`pkill`) and start (`moondream-station`, typically backgrounded with `&`).
-- User is asked whether to start Phoenix server in IEx after reset (default `N`).
+- Reset ensures local dependencies are ready before `mix reset`.
+- Setup recreates Docker services and prepares local dependencies.
+- Stop shuts down Docker services and local runtime processes.
+- Runtime/toolchain is prepared before project scripts.
 
 ## Guardrails
 
-- Always keep this exact order for reset.
-- Always run `mise trust` and `mise install` before executing project scripts.
-- Default script execution should use direct commands (for example, `mix setup`) without `mise exec`.
-- If commands fail in sandbox due to toolchain/version issues, rerun `mise trust` and `mise install` first.
-- Do not skip `rm -rf storage` during reset unless the user explicitly wants to keep local uploads.
-- Do not skip restarting `moondream-station` during reset unless the user does not use local Moondream Station. Split it like Docker: **stop** with `pkill -f moondream-station || true`, then **start** with `moondream-station` (use `&` when the process is long-running so `mix setup` is not blocked). Do not wrap `moondream-station` in `mise exec`; locating the binary is enough via `which` / `where`. Do not use `brew services` for this process.
-- Do not skip `mix setup` after containers are recreated.
-- After reset, ask user whether to run `iex -S mix phx.server` (default `N`).
-- Only run `iex -S mix phx.server` when user explicitly answers `Y`.
-- If user answers `N`, only remind them to run `iex -S mix phx.server` manually when needed.
-- When server is started in IEx, remind user they can close it with `Ctrl+C` twice.
-- Do not run `build` or `start` commands unless the user explicitly asks.
-- After every code change, always run `mix dialyzer --format short`.
-- Do not stop at reporting Dialyzer results: always fix all reported errors and warnings, then rerun until clean.
+- Keep workflow order as documented.
+- Always run `mise trust` and `mise install` before project scripts.
+- `reset`: run `docker compose up -d`, ensure `moondream-station` is installed/running, then run `mix reset`.
+- `setup`: run `docker compose up -d`, ensure `moondream-station` is installed/running, then run `mix setup`.
+- `stop`: run `docker compose down`, stop `moondream-station`, then stop `mix phx.server`.
+- Use direct commands without `mise exec`.
+- Do not run `build` or `start` commands unless explicitly requested.
+- After code changes, run `mix dialyzer --format short` and fix all issues until clean.

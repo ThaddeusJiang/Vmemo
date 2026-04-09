@@ -6,6 +6,8 @@ defmodule Vmemo.Memo.Photo do
              :url,
              :note,
              :caption,
+             :typesense_status,
+             :moondream_status,
              :file_id,
              :user_id,
              :inserted_at,
@@ -26,7 +28,16 @@ defmodule Vmemo.Memo.Photo do
   end
 
   admin do
-    table_columns([:id, :url, :note, :caption, :user_id, :inserted_at])
+    table_columns([
+      :id,
+      :url,
+      :note,
+      :caption,
+      :typesense_status,
+      :moondream_status,
+      :user_id,
+      :inserted_at
+    ])
   end
 
   oban do
@@ -44,6 +55,7 @@ defmodule Vmemo.Memo.Photo do
       trigger :generate_caption do
         action :generate_caption
         queue :ai_vision
+        max_attempts 5
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Memo.Photo.Workers.GenerateCaption
@@ -63,6 +75,8 @@ defmodule Vmemo.Memo.Photo do
     define :hybrid_search_count, args: [:query, :similar_photo_id, :user_id]
     define :list_similar, args: [:photo_id, :user_id]
     define :sync_typesense_by_id, args: [:photo_id]
+    define :update_search_engine
+    define :request_generate_caption
   end
 
   defp valid_uuid?(id) when is_binary(id) do
@@ -88,6 +102,8 @@ defmodule Vmemo.Memo.Photo do
 
     create :create_with_sync do
       accept [:url, :note, :caption, :file_id, :user_id]
+      change set_attribute(:typesense_status, "pending")
+      change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:sync_typesense)
       change run_oban_trigger(:generate_caption)
     end
@@ -95,6 +111,7 @@ defmodule Vmemo.Memo.Photo do
     update :update do
       accept [:note, :caption, :url]
       require_atomic? false
+      change set_attribute(:typesense_status, "pending")
       change run_oban_trigger(:sync_typesense)
     end
 
@@ -102,6 +119,7 @@ defmodule Vmemo.Memo.Photo do
       accept []
       require_atomic? false
       transaction? false
+      change set_attribute(:typesense_status, "processing")
       change {Vmemo.Memo.Changes.SyncTypesense, resource: __MODULE__}
     end
 
@@ -109,21 +127,49 @@ defmodule Vmemo.Memo.Photo do
       accept []
       require_atomic? false
       transaction? false
+      change set_attribute(:moondream_status, "processing")
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record ->
           case generate_caption_for_photo(record) do
             :ok ->
+              set_moondream_status(record, "completed")
               {:ok, record}
 
             {:discard, _reason} ->
+              set_moondream_status(record, "failed")
               {:ok, record}
 
             {:error, reason} ->
+              set_moondream_status(record, "failed")
               {:error, reason}
           end
         end)
       end
+    end
+
+    update :update_search_engine do
+      accept []
+      require_atomic? false
+      change set_attribute(:typesense_status, "pending")
+      change run_oban_trigger(:sync_typesense)
+    end
+
+    update :request_generate_caption do
+      accept []
+      require_atomic? false
+      change set_attribute(:moondream_status, "pending")
+      change run_oban_trigger(:generate_caption)
+    end
+
+    update :set_typesense_status do
+      accept [:typesense_status]
+      require_atomic? false
+    end
+
+    update :set_moondream_status do
+      accept [:moondream_status]
+      require_atomic? false
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -526,6 +572,34 @@ defmodule Vmemo.Memo.Photo do
     end
   end
 
+  validations do
+    validate fn changeset, _context ->
+               status = Ash.Changeset.get_attribute(changeset, :typesense_status)
+
+               if status && status not in ["pending", "processing", "completed", "failed"] do
+                 {:error,
+                  field: :typesense_status,
+                  message: "must be one of: pending, processing, completed, failed"}
+               else
+                 :ok
+               end
+             end,
+             on: [:create, :update]
+
+    validate fn changeset, _context ->
+               status = Ash.Changeset.get_attribute(changeset, :moondream_status)
+
+               if status && status not in ["pending", "processing", "completed", "failed"] do
+                 {:error,
+                  field: :moondream_status,
+                  message: "must be one of: pending, processing, completed, failed"}
+               else
+                 :ok
+               end
+             end,
+             on: [:create, :update]
+  end
+
   attributes do
     uuid_primary_key :id, writable?: true
 
@@ -535,6 +609,8 @@ defmodule Vmemo.Memo.Photo do
 
     attribute :note, :string
     attribute :caption, :string
+    attribute :typesense_status, :string, allow_nil?: false, default: "completed"
+    attribute :moondream_status, :string, allow_nil?: false, default: "completed"
     attribute :file_id, :string
     attribute :user_id, :uuid
 
@@ -688,4 +764,24 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp has_caption?(caption), do: is_binary(caption) and caption != ""
+
+  defp set_moondream_status(photo, status) do
+    set_job_status(photo, :set_moondream_status, :moondream_status, status)
+  end
+
+  defp set_job_status(photo, action, field, status) do
+    changeset =
+      photo
+      |> Ash.Changeset.for_update(
+        action,
+        %{field => status},
+        actor: nil,
+        authorize?: false
+      )
+
+    Ash.update(changeset, actor: nil, authorize?: false)
+    :ok
+  rescue
+    _ -> :ok
+  end
 end

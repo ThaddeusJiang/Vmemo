@@ -4,7 +4,7 @@ services:
     hostname: postgres
     restart: on-failure
     ports:
-      - "54321:5432"
+      - "15432:5432"
     volumes:
       - pg-data:/var/lib/postgresql
     environment:
@@ -12,12 +12,22 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: vmemo_dev
 
+  typesense:
+    image: typesense/typesense:30.1
+    hostname: typesense
+    restart: on-failure
+    ports:
+      - "18108:8108"
+    volumes:
+      - ts-data:/data
+    command: "--data-dir /data --api-key=xyz --enable-cors"
+
   postgres-test:
     image: postgres:18
     hostname: postgres-test
     restart: on-failure
     ports:
-      - "54322:5432"
+      - "25432:5432"
     volumes:
       - pg-test-data:/var/lib/postgresql
     environment:
@@ -25,17 +35,18 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: vmemo_test
 
-  typesense:
+  typesense-test:
     image: typesense/typesense:30.1
-    hostname: typesense
+    hostname: typesense-test
     restart: on-failure
     ports:
-      - "8766:8108"
+      - "28108:8108"
     volumes:
-      - ts-data:/data
+      - ts-test-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
 
 volumes:
   pg-data:
   pg-test-data:
   ts-data:
+  ts-test-data:

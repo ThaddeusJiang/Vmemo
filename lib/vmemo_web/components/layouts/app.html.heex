@@ -141,7 +141,10 @@
   </header>
 
   <section class=" grow flex flex-col ">
-    <.flash_group flash={@flash} />
+    <.flash_group
+      flash={@flash}
+      class="fixed top-8 left-1/2 -translate-x-1/2"
+    />
     {@inner_content}
   </section>
 </main>

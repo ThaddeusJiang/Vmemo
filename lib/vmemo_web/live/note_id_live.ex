@@ -33,19 +33,21 @@ defmodule VmemoWeb.NoteIdLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="w-full mx-auto max-w-3xl p-4 sm:py-6 lg:px-8">
-      <%= if @note do %>
-        <.live_component
-          id="note_update_form"
-          module={NoteUpdateForm}
-          note={@note}
-          photos={@photos}
-          patch={~p"/notes/#{@note.id}"}
-          current_user={@current_user}
-        />
-      <% else %>
-        <.not_found />
-      <% end %>
+    <section class="p-4 sm:p-4 lg:p-4 grow">
+      <div class="w-full max-w-screen-xl mx-auto">
+        <%= if @note do %>
+          <.live_component
+            id="note_update_form"
+            module={NoteUpdateForm}
+            note={@note}
+            photos={@photos}
+            patch={~p"/notes/#{@note.id}"}
+            current_user={@current_user}
+          />
+        <% else %>
+          <.not_found />
+        <% end %>
+      </div>
     </section>
     """
   end

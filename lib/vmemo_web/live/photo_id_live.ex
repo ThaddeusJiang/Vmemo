@@ -58,15 +58,16 @@ defmodule VmemoWeb.PhotoIdLive do
 
     case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
+        original_form_values = %{"note" => updated_photo.note, "caption" => updated_photo.caption}
+
         {:noreply,
          socket
          |> assign(:photo, updated_photo)
+         |> assign(:form_dirty, false)
+         |> assign(:original_form_values, original_form_values)
          |> assign(
            :form,
-           to_form(%{
-             "note" => updated_photo.note,
-             "caption" => updated_photo.caption
-           })
+           to_form(original_form_values)
          )
          |> put_flash(:info, "Saved")}
 
@@ -75,6 +76,19 @@ defmodule VmemoWeb.PhotoIdLive do
          socket
          |> put_flash(:error, "Failed to save")}
     end
+  end
+
+  @impl true
+  def handle_event("validate", params, socket) do
+    note = Map.get(params, "note", socket.assigns.form[:note].value || "")
+    caption = Map.get(params, "caption", socket.assigns.form[:caption].value || "")
+    form_values = %{"note" => note, "caption" => caption}
+    form_dirty = form_values != socket.assigns.original_form_values
+
+    {:noreply,
+     socket
+     |> assign(:form_dirty, form_dirty)
+     |> assign(:form, to_form(form_values))}
   end
 
   @impl true
@@ -127,6 +141,40 @@ defmodule VmemoWeb.PhotoIdLive do
        |> assign(:latest_caption_request, latest_caption_request)}
     else
       _ -> {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("update-search-engine", _, socket) do
+    user = socket.assigns.current_user
+    photo = socket.assigns.photo
+
+    case Photo.update_search_engine(photo, %{}, actor: user) do
+      {:ok, updated_photo} ->
+        {:noreply,
+         socket
+         |> assign(:photo, updated_photo)
+         |> put_flash(:info, "Retrying Typesense sync")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to retry Typesense sync")}
+    end
+  end
+
+  @impl true
+  def handle_event("generate-caption", _, socket) do
+    user = socket.assigns.current_user
+    photo = socket.assigns.photo
+
+    case Photo.request_generate_caption(photo, %{}, actor: user) do
+      {:ok, updated_photo} ->
+        {:noreply,
+         socket
+         |> assign(:photo, updated_photo)
+         |> put_flash(:info, "Retrying caption generation")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to retry caption generation")}
     end
   end
 
@@ -231,15 +279,19 @@ defmodule VmemoWeb.PhotoIdLive do
       <%= if @photo == nil do %>
         <.not_found />
       <% else %>
-        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
+        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-xl">
           <div class=" gap-2 space-y-2 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
-            <div class="space-y-2 flex flex-col justify-center relative">
+            <div class="space-y-2 flex flex-col items-center justify-center relative min-h-[400px]">
               <figure class="w-auto h-auto group relative">
                 <%!-- <figcaption class="text-lg font-semibold text-gray-900">
                   <%= @photo.note %>
                 </figcaption> --%>
 
-                <.img src={@photo.url} alt={@photo.note} />
+                <.img
+                  src={@photo.url}
+                  alt={@photo.note}
+                  class="block !w-auto !max-w-full !h-auto !max-h-[400px] mx-auto !object-contain rounded-lg shadow hover:shadow-lg transition-shadow"
+                />
 
                 <.link
                   href={@photo.url}
@@ -274,8 +326,6 @@ defmodule VmemoWeb.PhotoIdLive do
                   </svg>
                 </.button>
               </figure>
-
-              <div class="grow" />
             </div>
 
             <div class="relative">
@@ -338,6 +388,37 @@ defmodule VmemoWeb.PhotoIdLive do
                   <li>
                     <button
                       type="button"
+                      phx-click="update-search-engine"
+                      disabled={
+                        @photo.typesense_status == "pending" or
+                          @photo.typesense_status == "processing"
+                      }
+                    >
+                      <.icon name="hero-arrow-path" class="h-4 w-4" />
+                      <span>
+                        {gettext("Retry Typesense sync")} ({@photo.typesense_status})
+                      </span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      phx-click="generate-caption"
+                      disabled={
+                        @photo.moondream_status == "pending" or
+                          @photo.moondream_status == "processing"
+                      }
+                    >
+                      <.icon name="hero-arrow-path" class="h-4 w-4" />
+                      <span>
+                        {gettext("Retry Moondream caption")} ({@photo.moondream_status})
+                      </span>
+                    </button>
+                  </li>
+                  <li class="border-t border-base-300 my-1"></li>
+                  <li>
+                    <button
+                      type="button"
                       phx-click="delete-photo"
                       phx-value-id={@photo.id}
                       data-confirm="You can't undo this action. Are you sure?"
@@ -352,6 +433,7 @@ defmodule VmemoWeb.PhotoIdLive do
               <.simple_form
                 for={@form}
                 phx-submit="save"
+                phx-change="validate"
                 class="w-full flex flex-col pt-2"
               >
                 <.textarea_field
@@ -417,7 +499,14 @@ defmodule VmemoWeb.PhotoIdLive do
                 </div>
 
                 <:actions>
-                  <.button>Save</.button>
+                  <.button :if={@form_dirty}>
+                    <span class="inline-flex items-center gap-2 phx-submit-loading:hidden">
+                      Save
+                    </span>
+                    <span class="hidden items-center gap-2 phx-submit-loading:inline-flex">
+                      <.icon name="hero-arrow-path" class="size-4 animate-spin" /> Saving...
+                    </span>
+                  </.button>
                 </:actions>
               </.simple_form>
             </div>
@@ -432,10 +521,10 @@ defmodule VmemoWeb.PhotoIdLive do
             loading_requests={@moondream_loading_requests}
           />
 
-          <div class="grid gap-4 grid-cols-4">
-            <div class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
+          <div :if={length(@photos) > 0 || length(@notes) > 0} class="grid gap-4 grid-cols-4">
+            <div :if={length(@photos) > 0} class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
               <h2 class="text-lg font-semibold">
-                Similar photos({length(@photos)})
+                Similar photos ({length(@photos)})
               </h2>
 
               <.live_component id="similar-photos" module={Waterfall} items={@photos}>
@@ -447,42 +536,72 @@ defmodule VmemoWeb.PhotoIdLive do
               </.live_component>
             </div>
 
-            <div class="space-y-2 col-span-4 sm:col-span-1 lg:col-span-2">
+            <div :if={length(@notes) > 0} class="space-y-2 col-span-4 sm:col-span-1 lg:col-span-2">
               <h2 class="text-lg font-semibold ">
-                References({length(@notes)})
+                Notes ({length(@notes)})
               </h2>
 
               <div class="space-y-2">
                 <.link
                   :for={note <- @notes}
                   navigate={~p"/notes/#{note.id}"}
-                  class="link link-hover block"
+                  class="inline-flex items-center gap-1"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="size-4 inline-block"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
-                    />
-                  </svg>
-
-                  <span>{note.text |> String.split("\n") |> hd()}</span>
+                  <.icon name="hero-document-text" class="size-4 shrink-0" />
+                  <span class="hover:underline">{note.text |> String.split("\n") |> hd()}</span>
                 </.link>
               </div>
             </div>
           </div>
         </div>
 
-        <.modal :if={@show_expanded} id="expanded_photo" show on_cancel={JS.push("hide-expanded")}>
-          <.img src={@photo.url} alt={@photo.note} />
-        </.modal>
+        <div
+          :if={@show_expanded}
+          id="expanded_photo"
+          data-cancel={JS.push("hide-expanded")}
+          class="relative z-50"
+        >
+          <div
+            id="expanded_photo-bg"
+            class="bg-zinc-800/90 fixed inset-0 transition-opacity"
+            aria-hidden="true"
+          />
+          <div
+            class="fixed inset-0"
+            role="dialog"
+            aria-modal="true"
+            tabindex="0"
+            aria-labelledby="expanded_photo-title"
+            aria-describedby="expanded_photo-description"
+          >
+            <div class="h-full max-h-screen flex items-center justify-center">
+              <.focus_wrap
+                id="expanded_photo-container"
+                phx-window-keydown={JS.exec("data-cancel", to: "#expanded_photo")}
+                phx-key="escape"
+                phx-click-away={JS.exec("data-cancel", to: "#expanded_photo")}
+                class="bg-transparent rounded-none shadow-none relative overflow-visible"
+              >
+                <.button
+                  phx-click={JS.exec("data-cancel", to: "#expanded_photo")}
+                  class="fixed top-4 right-4 z-[60] btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
+                  aria-label="close"
+                >
+                  <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+                </.button>
+
+                <div id="expanded_photo-content" class="flex items-center justify-center">
+                  <.img
+                    src={@photo.url}
+                    alt={@photo.note}
+                    class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block"
+                    id="expanded_photo-image"
+                  />
+                </div>
+              </.focus_wrap>
+            </div>
+          </div>
+        </div>
       <% end %>
     </div>
     """
@@ -498,6 +617,7 @@ defmodule VmemoWeb.PhotoIdLive do
     vision_requests = list_vision_requests(photo.id, user)
     caption_requests = caption_requests_from(vision_requests)
     latest_caption_request = latest_caption_request_from(caption_requests)
+    original_form_values = %{"note" => photo.note, "caption" => photo.caption}
 
     socket
     |> assign(photo: photo)
@@ -509,11 +629,10 @@ defmodule VmemoWeb.PhotoIdLive do
     |> assign(caption_requests: caption_requests)
     |> assign(caption_loading_requests: MapSet.new())
     |> assign(latest_caption_request: latest_caption_request)
+    |> assign(form_dirty: false)
+    |> assign(original_form_values: original_form_values)
     |> assign_new(:form, fn ->
-      to_form(%{
-        "note" => photo.note,
-        "caption" => photo.caption
-      })
+      to_form(original_form_values)
     end)
     |> maybe_subscribe_vision_request(photo.id)
   end

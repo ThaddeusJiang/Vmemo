@@ -1,10 +1,14 @@
 defmodule VmemoWeb.UserSessionControllerTest do
   use VmemoWeb.ConnCase, async: true
 
+  alias Vmemo.Account
+
   import Vmemo.AccountFixtures
 
   setup do
-    %{user: user_fixture()}
+    user = user_fixture()
+    {:ok, confirmed_user} = Account.update_user(user, %{confirmed_at: DateTime.utc_now()})
+    %{user: confirmed_user}
   end
 
   describe "POST /login" do
@@ -92,6 +96,19 @@ defmodule VmemoWeb.UserSessionControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
       assert redirected_to(conn) == ~p"/login"
+    end
+
+    test "rejects unconfirmed users", %{conn: conn} do
+      user = user_fixture()
+
+      conn =
+        post(conn, ~p"/login", %{
+          "user" => %{"email" => user.email, "password" => valid_user_password()}
+        })
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+      assert redirected_to(conn) == ~p"/login"
+      refute get_session(conn, :user_token)
     end
   end
 

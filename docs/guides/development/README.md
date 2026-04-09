@@ -1,6 +1,7 @@
 # Development
 
 - [Setup](setup.md)
+- [FAQ](faq.md)
 - [Tidewave](tidewave.md)
 - [Architecture Diagrams](architecture-diagrams.md)
 - [Project Specs](project-specs.md)
@@ -10,6 +11,4 @@
 ## Direct Links
 
 - [Elixir](../../coding-guidelines/elixir.md)
-- [Elixir Phoenix LiveView](../../coding-guidelines/elixir-phoenix-liveview.md)
-- [LiveView](../../coding-guidelines/liveview.md)
-- [Background Jobs with PubSub](../../coding-guidelines/background-jobs-with-pubsub.md)
+- [Phoenix + Ash All-in-One](../../coding-guidelines/phoenix-ash-all-in-one.md)
