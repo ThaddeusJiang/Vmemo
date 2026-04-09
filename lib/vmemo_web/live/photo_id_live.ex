@@ -312,7 +312,6 @@ defmodule VmemoWeb.PhotoIdLive do
                   </svg>
                 </.button>
               </figure>
-
             </div>
 
             <div class="relative">
@@ -554,7 +553,11 @@ defmodule VmemoWeb.PhotoIdLive do
           data-cancel={JS.push("hide-expanded")}
           class="relative z-50"
         >
-          <div id="expanded_photo-bg" class="bg-zinc-800/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+          <div
+            id="expanded_photo-bg"
+            class="bg-zinc-800/90 fixed inset-0 transition-opacity"
+            aria-hidden="true"
+          />
           <div
             class="fixed inset-0"
             role="dialog"
@@ -564,34 +567,30 @@ defmodule VmemoWeb.PhotoIdLive do
             aria-describedby="expanded_photo-description"
           >
             <div class="h-full max-h-screen flex items-center justify-center">
-              <div class="w-full h-full max-h-screen p-0">
-                <.focus_wrap
-                  id="expanded_photo-container"
-                  phx-window-keydown={JS.exec("data-cancel", to: "#expanded_photo")}
-                  phx-key="escape"
-                  phx-click-away={JS.exec("data-cancel", to: "#expanded_photo")}
-                  class="h-full w-full bg-transparent rounded-none shadow-none relative overflow-hidden"
+              <.focus_wrap
+                id="expanded_photo-container"
+                phx-window-keydown={JS.exec("data-cancel", to: "#expanded_photo")}
+                phx-key="escape"
+                phx-click-away={JS.exec("data-cancel", to: "#expanded_photo")}
+                class="bg-transparent rounded-none shadow-none relative overflow-visible"
+              >
+                <.button
+                  phx-click={JS.exec("data-cancel", to: "#expanded_photo")}
+                  class="fixed top-4 right-4 z-[60] btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
+                  aria-label="close"
                 >
-                  <.button
-                    phx-click={JS.exec("data-cancel", to: "#expanded_photo")}
-                    class="fixed top-4 right-4 z-[60] btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
-                    aria-label="close"
-                  >
-                    <.icon name="hero-x-mark-solid" class="h-4 w-4" />
-                  </.button>
+                  <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+                </.button>
 
-                  <div id="expanded_photo-content" class="h-full w-full p-8">
-                    <div class="h-full w-full overflow-hidden flex items-center justify-center">
-                      <.img
-                        src={@photo.url}
-                        alt={@photo.note}
-                        class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block"
-                        id="expanded_photo-image"
-                      />
-                    </div>
-                  </div>
-                </.focus_wrap>
-              </div>
+                <div id="expanded_photo-content" class="flex items-center justify-center">
+                  <.img
+                    src={@photo.url}
+                    alt={@photo.note}
+                    class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block"
+                    id="expanded_photo-image"
+                  />
+                </div>
+              </.focus_wrap>
             </div>
           </div>
         </div>
