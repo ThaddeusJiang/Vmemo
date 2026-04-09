@@ -124,6 +124,7 @@ defmodule Vmemo.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "db.setup", "ts.setup", "assets.setup", "assets.build"],
+      reset: ["db.reset", "ts.reset"],
       "db.create": ["ash_postgres.create"],
       "db.drop": ["ash_postgres.drop"],
       "db.migrate": ["ash.migrate"],

@@ -40,7 +40,10 @@ defmodule Vmemo.Ts.Schema do
   end
 
   def reset do
-    migrations_collection = Vmemo.Ts.SchemaMigrator.migrations_collection()
+    migrations_collection =
+      [Vmemo, Ts, SchemaMigrator]
+      |> Module.concat()
+      |> apply(:migrations_collection, [])
 
     Typesense.drop_collection("photos")
     |> ensure_ok("drop photos collection")
