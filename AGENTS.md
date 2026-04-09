@@ -46,9 +46,7 @@ Use `docs/coding-guidelines/` as the single source for coding guidelines:
 
 - `docs/coding-guidelines/README.md`
 - `docs/coding-guidelines/elixir.md`
-- `docs/coding-guidelines/elixir-phoenix-liveview.md`
-- `docs/coding-guidelines/liveview.md`
-- `docs/coding-guidelines/background-jobs-with-pubsub.md`
+- `docs/coding-guidelines/phoenix-ash-all-in-one.md`
 
 If new conventions are discovered in chat, sync them into this directory quickly.
 

@@ -237,7 +237,7 @@ defmodule VmemoWeb.CoreComponents do
     <.form :let={f} for={@for} as={@as} {@rest}>
       <div class="space-y-2">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} class="py-2">
+        <div :for={action <- @actions} class="py-2 flex items-center justify-end gap-2">
           {render_slot(action, f)}
         </div>
       </div>

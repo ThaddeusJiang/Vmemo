@@ -5,9 +5,8 @@ Centralized coding guidelines live in this directory.
 ## Core
 
 - [Elixir](elixir.md)
-- [Elixir Phoenix LiveView](elixir-phoenix-liveview.md)
-- [LiveView](liveview.md)
-- [Background Jobs with PubSub](background-jobs-with-pubsub.md)
+- [Phoenix + Ash All-in-One](phoenix-ash-all-in-one.md)
+- [UI/UX](ui-ux.md)
 
 ## Notes
 
