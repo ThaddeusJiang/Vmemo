@@ -4,6 +4,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
   alias Ash
   alias Vmemo.Memo.Note
+  alias VmemoWeb.LiveComponents.PhotoCard
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -22,36 +23,59 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   def render(assigns) do
     ~H"""
     <form phx-submit="save" phx-target={@myself} class="flex flex-col space-y-2">
-      <.live_component id="photos" module={Waterfall} items={@photos}>
-        <:card :let={photo}>
-          <.link navigate={~p"/photos/#{photo.id}"}>
-            <.img src={photo.url} alt={photo.note} />
-          </.link>
-        </:card>
-      </.live_component>
+      <section class="h-1/3 min-h-0 flex flex-col overflow-hidden">
+        <.live_component
+          id="photos"
+          module={Waterfall}
+          items={@photos}
+          class="flex-1 min-h-0 overflow-y-auto pr-1"
+        >
+          <:card :let={photo}>
+            <PhotoCard.photo_card photo={photo} />
+          </:card>
+        </.live_component>
+      </section>
 
-      <div class="flex flex-col space-y-1">
-        <.textarea_field
-          id={@form[:note].id}
-          name={@form[:note].name}
-          value={@form[:note].value}
-          label="Note"
-          errors={@form[:note].errors}
-        />
+      <div class="form-control w-full">
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <.label for={@form[:note].id} class="label-text">Note</.label>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-ghost btn-square btn-sm" aria-label="Open note actions">
+                <.icon name="hero-ellipsis-vertical" class="h-4 w-4" />
+              </div>
+              <ul
+                tabindex="0"
+                class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+              >
+                <li>
+                  <button
+                    type="button"
+                    class="text-error"
+                    data-confirm="You can't undo this action. Are you sure?"
+                    phx-click="delete-note"
+                    phx-value-id={@note.id}
+                    phx-target={@myself}
+                  >
+                    Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <.textarea
+            id={@form[:note].id}
+            name={@form[:note].name}
+            value={@form[:note].value}
+          />
+        </div>
+        <.error :for={msg <- @form[:note].errors}>
+          <span class="label-text-alt text-error">{msg}</span>
+        </.error>
       </div>
 
-      <div class="flex items-center justify-between">
+      <div class="mt-2 flex items-center justify-end gap-2">
         <.button>Save</.button>
-        <.button
-          type="button"
-          variant="danger"
-          data-confirm="You can't undo this action. Are you sure?"
-          phx-click="delete-note"
-          phx-value-id={@note.id}
-          phx-target={@myself}
-        >
-          Delete
-        </.button>
       </div>
     </form>
     """
