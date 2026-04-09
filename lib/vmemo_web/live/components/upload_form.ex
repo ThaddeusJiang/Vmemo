@@ -62,7 +62,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       |> assign(
         :form_class,
         if(has_files or assigns.show_full_form,
-          do: "w-full mx-auto max-w-screen-lg",
+          do: "w-full mx-auto max-w-screen-xl",
           else: "absolute inset-0 pointer-events-none z-0"
         )
       )
