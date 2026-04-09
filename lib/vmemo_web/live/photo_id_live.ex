@@ -58,15 +58,16 @@ defmodule VmemoWeb.PhotoIdLive do
 
     case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
+        original_form_values = %{"note" => updated_photo.note, "caption" => updated_photo.caption}
+
         {:noreply,
          socket
          |> assign(:photo, updated_photo)
+         |> assign(:form_dirty, false)
+         |> assign(:original_form_values, original_form_values)
          |> assign(
            :form,
-           to_form(%{
-             "note" => updated_photo.note,
-             "caption" => updated_photo.caption
-           })
+           to_form(original_form_values)
          )
          |> put_flash(:info, "Saved")}
 
@@ -75,6 +76,19 @@ defmodule VmemoWeb.PhotoIdLive do
          socket
          |> put_flash(:error, "Failed to save")}
     end
+  end
+
+  @impl true
+  def handle_event("validate", params, socket) do
+    note = Map.get(params, "note", socket.assigns.form[:note].value || "")
+    caption = Map.get(params, "caption", socket.assigns.form[:caption].value || "")
+    form_values = %{"note" => note, "caption" => caption}
+    form_dirty = form_values != socket.assigns.original_form_values
+
+    {:noreply,
+     socket
+     |> assign(:form_dirty, form_dirty)
+     |> assign(:form, to_form(form_values))}
   end
 
   @impl true
@@ -419,6 +433,7 @@ defmodule VmemoWeb.PhotoIdLive do
               <.simple_form
                 for={@form}
                 phx-submit="save"
+                phx-change="validate"
                 class="w-full flex flex-col pt-2"
               >
                 <.textarea_field
@@ -484,7 +499,14 @@ defmodule VmemoWeb.PhotoIdLive do
                 </div>
 
                 <:actions>
-                  <.button>Save</.button>
+                  <.button :if={@form_dirty}>
+                    <span class="inline-flex items-center gap-2 phx-submit-loading:hidden">
+                      Save
+                    </span>
+                    <span class="hidden items-center gap-2 phx-submit-loading:inline-flex">
+                      <.icon name="hero-arrow-path" class="size-4 animate-spin" /> Saving...
+                    </span>
+                  </.button>
                 </:actions>
               </.simple_form>
             </div>
@@ -499,10 +521,10 @@ defmodule VmemoWeb.PhotoIdLive do
             loading_requests={@moondream_loading_requests}
           />
 
-          <div class="grid gap-4 grid-cols-4">
-            <div class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
+          <div :if={length(@photos) > 0 || length(@notes) > 0} class="grid gap-4 grid-cols-4">
+            <div :if={length(@photos) > 0} class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
               <h2 class="text-lg font-semibold">
-                Similar photos({length(@photos)})
+                Similar photos ({length(@photos)})
               </h2>
 
               <.live_component id="similar-photos" module={Waterfall} items={@photos}>
@@ -514,20 +536,19 @@ defmodule VmemoWeb.PhotoIdLive do
               </.live_component>
             </div>
 
-            <div class="space-y-2 col-span-4 sm:col-span-1 lg:col-span-2">
+            <div :if={length(@notes) > 0} class="space-y-2 col-span-4 sm:col-span-1 lg:col-span-2">
               <h2 class="text-lg font-semibold ">
-                Notes
+                Notes ({length(@notes)})
               </h2>
 
               <div class="space-y-2">
                 <.link
                   :for={note <- @notes}
                   navigate={~p"/notes/#{note.id}"}
-                  class="link link-hover block"
+                  class="inline-flex items-center gap-1"
                 >
-                  <.icon name="hero-document-text" class="size-4 inline-block" />
-
-                  <span>{note.text |> String.split("\n") |> hd()}</span>
+                  <.icon name="hero-document-text" class="size-4 shrink-0" />
+                  <span class="hover:underline">{note.text |> String.split("\n") |> hd()}</span>
                 </.link>
               </div>
             </div>
@@ -596,6 +617,7 @@ defmodule VmemoWeb.PhotoIdLive do
     vision_requests = list_vision_requests(photo.id, user)
     caption_requests = caption_requests_from(vision_requests)
     latest_caption_request = latest_caption_request_from(caption_requests)
+    original_form_values = %{"note" => photo.note, "caption" => photo.caption}
 
     socket
     |> assign(photo: photo)
@@ -607,11 +629,10 @@ defmodule VmemoWeb.PhotoIdLive do
     |> assign(caption_requests: caption_requests)
     |> assign(caption_loading_requests: MapSet.new())
     |> assign(latest_caption_request: latest_caption_request)
+    |> assign(form_dirty: false)
+    |> assign(original_form_values: original_form_values)
     |> assign_new(:form, fn ->
-      to_form(%{
-        "note" => photo.note,
-        "caption" => photo.caption
-      })
+      to_form(original_form_values)
     end)
     |> maybe_subscribe_vision_request(photo.id)
   end

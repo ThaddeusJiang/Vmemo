@@ -9,12 +9,16 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
   @impl true
   def update(assigns, socket) do
+    note_text = assigns.note.text
+
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:note_dirty, false)
+     |> assign(:original_note_text, note_text)
      |> assign_new(:form, fn ->
        to_form(%{
-         "note" => assigns.note.text
+        "note" => note_text
        })
      end)}
   end
@@ -22,7 +26,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   @impl true
   def render(assigns) do
     ~H"""
-    <form phx-submit="save" phx-target={@myself} class="flex flex-col space-y-2">
+    <form phx-submit="save" phx-change="validate" phx-target={@myself} class="flex flex-col space-y-2">
       <section class="h-1/3 min-h-0 flex flex-col overflow-hidden">
         <.live_component
           id="photos"
@@ -75,10 +79,28 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
       </div>
 
       <div class="mt-2 flex items-center justify-end gap-2">
-        <.button>Save</.button>
+        <.button :if={@note_dirty}>
+          <span class="inline-flex items-center gap-2 phx-submit-loading:hidden">
+            Save
+          </span>
+          <span class="hidden items-center gap-2 phx-submit-loading:inline-flex">
+            <.icon name="hero-arrow-path" class="size-4 animate-spin" />
+            Saving...
+          </span>
+        </.button>
       </div>
     </form>
     """
+  end
+
+  @impl true
+  def handle_event("validate", %{"note" => note_text}, socket) do
+    note_dirty = note_text != socket.assigns.original_note_text
+
+    {:noreply,
+     socket
+     |> assign(:note_dirty, note_dirty)
+     |> assign(:form, to_form(%{"note" => note_text}))}
   end
 
   @impl true
@@ -90,6 +112,8 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
         {:noreply,
          socket
          |> assign(note: note, photos: note.photos || [])
+         |> assign(:note_dirty, false)
+         |> assign(:original_note_text, note.text)
          |> assign(form: to_form(%{"note" => note.text}))
          |> put_flash(:info, "Updated")
          |> push_patch(to: socket.assigns.patch)}
