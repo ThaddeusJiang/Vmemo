@@ -265,7 +265,7 @@ defmodule VmemoWeb.PhotoIdLive do
       <%= if @photo == nil do %>
         <.not_found />
       <% else %>
-        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
+        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-xl">
           <div class=" gap-2 space-y-2 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
             <div class="space-y-2 flex flex-col items-center justify-center relative min-h-[400px]">
               <figure class="w-auto h-auto group relative">
