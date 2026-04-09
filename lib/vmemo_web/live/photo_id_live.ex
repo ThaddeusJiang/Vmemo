@@ -267,13 +267,17 @@ defmodule VmemoWeb.PhotoIdLive do
       <% else %>
         <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-lg">
           <div class=" gap-2 space-y-2 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
-            <div class="space-y-2 flex flex-col justify-center relative">
+            <div class="space-y-2 flex flex-col items-center justify-center relative min-h-[400px]">
               <figure class="w-auto h-auto group relative">
                 <%!-- <figcaption class="text-lg font-semibold text-gray-900">
                   <%= @photo.note %>
                 </figcaption> --%>
 
-                <.img src={@photo.url} alt={@photo.note} />
+                <.img
+                  src={@photo.url}
+                  alt={@photo.note}
+                  class="block !w-auto !max-w-full !h-auto !max-h-[400px] mx-auto !object-contain rounded-lg shadow hover:shadow-lg transition-shadow"
+                />
 
                 <.link
                   href={@photo.url}
@@ -309,7 +313,6 @@ defmodule VmemoWeb.PhotoIdLive do
                 </.button>
               </figure>
 
-              <div class="grow" />
             </div>
 
             <div class="relative">
