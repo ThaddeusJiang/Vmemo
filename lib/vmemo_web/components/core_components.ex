@@ -116,6 +116,7 @@ defmodule VmemoWeb.CoreComponents do
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+  attr :class, :string, default: nil, doc: "custom classes for flash container"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
@@ -130,7 +131,8 @@ defmodule VmemoWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "alert fixed bottom-2 left-2 ml-2 w-80 sm:w-96 z-50",
+        "alert w-80 sm:w-96 z-50",
+        @class,
         @kind == :info && "alert-success",
         @kind == :error && "alert-error"
       ]}
@@ -163,12 +165,23 @@ defmodule VmemoWeb.CoreComponents do
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
   attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
+  attr :class, :string, default: nil, doc: "custom classes passed to flash items"
 
   def flash_group(assigns) do
     ~H"""
     <div id={@id}>
-      <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
-      <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
+      <.flash
+        kind={:info}
+        title={gettext("Success!")}
+        flash={@flash}
+        class={@class}
+      />
+      <.flash
+        kind={:error}
+        title={gettext("Error!")}
+        flash={@flash}
+        class={@class}
+      />
       <%!-- <.flash
         id="client-error"
         kind={:error}
