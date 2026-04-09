@@ -14,12 +14,12 @@ config :vmemo, Vmemo.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  port: String.to_integer(System.get_env("POSTGRES_PORT", "54322")),
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "25432")),
   database: "vmemo_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8766")
+config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:28108")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
 config :vmemo, moondream_url: System.get_env("MOONDREAM_URL", "http://localhost:2020/v1/")

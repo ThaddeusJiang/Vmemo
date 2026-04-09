@@ -8,12 +8,12 @@ config :vmemo, Vmemo.Repo,
   password: "postgres",
   hostname: "localhost",
   database: "vmemo_dev",
-  port: 54321,
+  port: 15432,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :vmemo, typesense_url: "http://localhost:8766"
+config :vmemo, typesense_url: "http://localhost:18108"
 config :vmemo, typesense_api_key: "xyz"
 
 config :vmemo, moondream_url: "http://localhost:2020/v1/"
