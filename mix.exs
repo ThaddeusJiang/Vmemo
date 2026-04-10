@@ -14,7 +14,8 @@ defmodule Vmemo.MixProject do
       dialyzer: dialyzer(),
       docs: &docs/0,
       compilers: Mix.compilers() ++ [],
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      usage_rules: usage_rules()
     ]
   end
 
@@ -82,6 +83,7 @@ defmodule Vmemo.MixProject do
       {:sentry, "~> 11.0"},
       {:hackney, "~> 1.21"},
       {:igniter, "~> 0.7"},
+      {:usage_rules, "~> 1.2", only: [:dev]},
       {:open_api_spex, "~> 3.22"},
       {:oban_met, "~> 1.0"},
       {:owl, "~> 0.13"},
@@ -111,6 +113,31 @@ defmodule Vmemo.MixProject do
         {"docs/features/api-tokens.md", [title: "API Token"]},
         "docs/guides/development/setup.md",
         "docs/guides/deployment/docker-prod-run.md"
+      ]
+    ]
+  end
+
+  defp usage_rules do
+    [
+      file: "AGENTS.md",
+      usage_rules: [
+        {:phoenix, link: :markdown},
+        {:ash, link: :markdown}
+      ],
+      skills: [
+        location: ".codex/skills",
+        build: [
+          "ash-framework": [
+            description:
+              "Use this skill when working with Ash Framework and its extensions. Consult before domain modeling, resources, actions, and data-layer changes.",
+            usage_rules: [:ash, ~r/^ash_/]
+          ],
+          "phoenix-framework": [
+            description:
+              "Use this skill when working with Phoenix and LiveView web layers, routing, rendering, templates, and events.",
+            usage_rules: [:phoenix, ~r/^phoenix_/]
+          ]
+        ]
       ]
     ]
   end

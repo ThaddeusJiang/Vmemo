@@ -143,3 +143,32 @@ password = "pass123456"
 - Prefer Tidewave tools for Phoenix-aware code and runtime checks.
 - Use `mix` for project tasks.
 - Do not use Python scripts for ad-hoc project automation.
+
+<!-- usage-rules-start -->
+<!-- phoenix:ecto-start -->
+## phoenix:ecto usage
+[phoenix:ecto usage rules](deps/phoenix/usage-rules/ecto.md)
+<!-- phoenix:ecto-end -->
+<!-- phoenix:elixir-start -->
+## phoenix:elixir usage
+[phoenix:elixir usage rules](deps/phoenix/usage-rules/elixir.md)
+<!-- phoenix:elixir-end -->
+<!-- phoenix:html-start -->
+## phoenix:html usage
+[phoenix:html usage rules](deps/phoenix/usage-rules/html.md)
+<!-- phoenix:html-end -->
+<!-- phoenix:liveview-start -->
+## phoenix:liveview usage
+[phoenix:liveview usage rules](deps/phoenix/usage-rules/liveview.md)
+<!-- phoenix:liveview-end -->
+<!-- phoenix:phoenix-start -->
+## phoenix:phoenix usage
+[phoenix:phoenix usage rules](deps/phoenix/usage-rules/phoenix.md)
+<!-- phoenix:phoenix-end -->
+<!-- ash-start -->
+## ash usage
+_A declarative, extensible framework for building Elixir applications._
+
+[ash usage rules](deps/ash/usage-rules.md)
+<!-- ash-end -->
+<!-- usage-rules-end -->
