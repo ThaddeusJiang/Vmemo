@@ -528,7 +528,8 @@ defmodule Vmemo.Admin.Import do
         note: note,
         caption: caption,
         file_id: file_id,
-        user_id: user_id
+        user_id: user_id,
+        inner_purpose: nil
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Enum.into(%{})

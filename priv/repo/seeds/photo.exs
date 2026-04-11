@@ -36,7 +36,8 @@ defmodule Vmemo.Seeds.Photo do
              url: "/images/logo.svg",
              note: @seeded_photo_note,
              file_id: "seeded-e2e-note-reference-logo",
-             user_id: user.id
+             user_id: user.id,
+             inner_purpose: nil
            },
            action: :import,
            actor: user

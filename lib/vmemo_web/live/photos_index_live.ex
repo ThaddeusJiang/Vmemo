@@ -107,6 +107,14 @@ defmodule VmemoWeb.PhotosIndexLive do
             <div class="ml-auto text-sm text-gray-600">
               <span class="font-semibold">{@total_count}</span> results
             </div>
+            <.button
+              phx-click="clear-search"
+              variant="ghost"
+              class="btn-circle"
+              aria-label="Clear search"
+            >
+              <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+            </.button>
           </div>
         <% else %>
           <%= if @q != "" do %>

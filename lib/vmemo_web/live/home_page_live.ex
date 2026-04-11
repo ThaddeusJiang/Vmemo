@@ -12,7 +12,9 @@ defmodule VmemoWeb.HomePageLive do
 
     total_photos =
       Photo
-      |> Ash.Query.filter(user_id == ^user.id)
+      |> Ash.Query.filter(
+        user_id == ^user.id and (is_nil(inner_purpose) or inner_purpose != "search")
+      )
       |> Ash.count(actor: user)
       |> case do
         {:ok, count} -> count

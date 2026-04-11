@@ -345,7 +345,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                          note: note_text,
                          url: Path.join("/", dest),
                          file_id: filename,
-                         user_id: user_id
+                         user_id: user_id,
+                         inner_purpose: nil
                        },
                        actor: current_user
                      ) do

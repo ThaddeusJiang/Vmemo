@@ -147,6 +147,7 @@ Use this pattern for long-running work that must continue after page leave:
 
 ## 7) Ash Framework
 
+- For **inner** attributes (not shown or edited by end users), follow [elixir.md § Ash resources: inner attributes](elixir.md#ash-resources-inner-attributes) (`public? false`, `source :_column` when the DB/search index uses a leading underscore).
 - Model business logic in resources/actions/policies, not in web templates.
 - Register resources in domains and expose clear interfaces through `code_interface`.
 - Keep action naming business-oriented and consistent.

@@ -158,7 +158,8 @@ defmodule VmemoWeb.Api.V1.PhotoController do
              note: note,
              url: Path.join("/", dest),
              file_id: filename,
-             user_id: user_id
+             user_id: user_id,
+             inner_purpose: nil
            },
            actor: current_user
          ) do

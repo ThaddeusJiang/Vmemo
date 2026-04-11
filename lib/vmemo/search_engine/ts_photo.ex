@@ -8,6 +8,9 @@ defmodule Vmemo.SearchEngine.TsPhoto do
 
   @collection_name "photos"
 
+  # Indexed as `_purpose` on Typesense (see `Photo.inner_purpose` / `source :_purpose`).
+  @purpose_search "search"
+
   defstruct [
     :id,
     :image,
@@ -18,6 +21,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     :inserted_at,
     :inserted_by,
     :caption,
+    :inner_purpose,
     :_vector_distance,
     :_text_match_info
   ]
@@ -37,6 +41,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
       inserted_at: photo["inserted_at"],
       inserted_by: photo["inserted_by"],
       caption: photo["caption"],
+      inner_purpose: purpose_from_ts_document(photo),
       _vector_distance: photo["_vector_distance"],
       _text_match_info: photo["_text_match_info"]
     }
@@ -136,7 +141,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
           q: "",
           query_by: "note,caption",
           exclude_fields: "image_embedding",
-          filter_by: "inserted_by:#{user_id}",
+          filter_by: user_library_filter_by(user_id),
           page: 1,
           per_page: 100,
           sort_by: "inserted_at:desc"
@@ -157,7 +162,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
         params: [
           q: "*",
           query_by: "note,caption",
-          filter_by: "inserted_by:#{user_id}",
+          filter_by: user_library_filter_by(user_id),
           per_page: 0
         ]
       )
@@ -172,7 +177,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
   @semantic_fallback_distance_threshold 0.95
   @multi_search_retry_attempts 1
 
-  def hybird_search_photos({q, similar}, opts \\ []) do
+  def hybrid_search_photos({q, similar}, opts \\ []) do
     user_id = Keyword.get(opts, :user_id, "")
     page = Keyword.get(opts, :page, 1)
     per_page = 10
@@ -183,7 +188,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
         q -> q
       end
 
-    if is_nil(similar) do
+    if is_nil(similar) or String.trim(to_string(similar)) == "" do
       choose_text_or_semantic_result(q, user_id, page, per_page)
     else
       search_similar_photos(q, similar, user_id, page, per_page)
@@ -213,7 +218,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     params = [
       q: q,
       query_by: "note,caption",
-      filter_by: "inserted_by:#{user_id}",
+      filter_by: user_library_filter_by(user_id),
       sort_by: "inserted_at:desc",
       exclude_fields: "image_embedding",
       per_page: per_page,
@@ -229,6 +234,29 @@ defmodule Vmemo.SearchEngine.TsPhoto do
     end
   end
 
+  defp user_library_filter_by(user_id) do
+    "inserted_by:#{user_id} && _purpose:!=#{@purpose_search}"
+  end
+
+  defp purpose_from_ts_document(photo) when is_map(photo) do
+    case Map.get(photo, "_purpose") || Map.get(photo, "image_purpose") do
+      nil ->
+        nil
+
+      "library" ->
+        nil
+
+      "similarity_query" ->
+        "search"
+
+      other when is_binary(other) ->
+        other
+
+      _ ->
+        nil
+    end
+  end
+
   defp search_semantic_photos(q, user_id, page, per_page) do
     req = Typesense.build_request("/multi_search")
 
@@ -240,7 +268,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
           "vector_query" =>
             "image_embedding:([], k: 200, distance_threshold: #{@semantic_fallback_distance_threshold})",
           "collection" => @collection_name,
-          "filter_by" => "inserted_by:#{user_id}",
+          "filter_by" => user_library_filter_by(user_id),
           "exclude_fields" => "image_embedding",
           "sort_by" => "_vector_distance:asc,inserted_at:desc",
           "drop_tokens_threshold" => 0,
@@ -271,7 +299,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
           "vector_query" =>
             "image_embedding:([], k: 500, distance_threshold: #{distance_threshold}, id:#{similar})",
           "collection" => @collection_name,
-          "filter_by" => "inserted_by:#{user_id}",
+          "filter_by" => user_library_filter_by(user_id),
           "exclude_fields" => "image_embedding",
           "sort_by" => "_vector_distance:asc,_text_match:desc",
           "drop_tokens_threshold" => 0,
@@ -303,7 +331,7 @@ defmodule Vmemo.SearchEngine.TsPhoto do
           "q" => "*",
           "vector_query" =>
             "image_embedding:([], k: #{limit * 2}, distance_threshold: #{distance_threshold}, id:#{id})",
-          "filter_by" => "inserted_by:#{user_id}",
+          "filter_by" => user_library_filter_by(user_id),
           "exclude_fields" => "image_embedding",
           "sort_by" => "_vector_distance:asc",
           "per_page" => limit

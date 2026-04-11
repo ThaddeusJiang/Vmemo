@@ -19,7 +19,10 @@ defmodule Vmemo.Memo.Photo do
     extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
+  require Logger
+
   alias Vmemo.Ai.Caption
+  alias Vmemo.Memo.PhotoStorage
   alias Vmemo.SearchEngine.TsPhoto
 
   postgres do
@@ -35,6 +38,7 @@ defmodule Vmemo.Memo.Photo do
       :caption,
       :typesense_status,
       :moondream_status,
+      :inner_purpose,
       :user_id,
       :inserted_at
     ])
@@ -66,6 +70,7 @@ defmodule Vmemo.Memo.Photo do
 
   code_interface do
     define :create_with_sync
+    define :create_for_image_search
     define :create_immediate
     define :read
     define :update
@@ -75,6 +80,7 @@ defmodule Vmemo.Memo.Photo do
     define :hybrid_search_count, args: [:query, :similar_photo_id, :user_id]
     define :list_similar, args: [:photo_id, :user_id]
     define :sync_typesense_by_id, args: [:photo_id]
+    define :ingest_temp_file_for_similarity_search, args: [:temp_path, :storage_file_id]
     define :update_search_engine
     define :request_generate_caption
   end
@@ -96,12 +102,22 @@ defmodule Vmemo.Memo.Photo do
       accept [:url, :note, :caption, :file_id, :user_id]
     end
 
+    @doc """
+    Persist row for search-by-photo without Oban. Used by `ingest_temp_file_for_similarity_search/2`.
+
+    Moondream caption jobs are upload-only; this action leaves `moondream_status` at the resource default.
+    """
+    create :create_for_image_search do
+      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose]
+      change set_attribute(:typesense_status, "pending")
+    end
+
     create :import do
-      accept [:id, :url, :note, :caption, :file_id, :user_id]
+      accept [:id, :url, :note, :caption, :file_id, :user_id, :inner_purpose]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :caption, :file_id, :user_id]
+      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose]
       change set_attribute(:typesense_status, "pending")
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:sync_typesense)
@@ -186,6 +202,95 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
+    action :ingest_temp_file_for_similarity_search, :uuid do
+      description """
+      Copy a temp upload into storage, create a photo row (no Oban), sync Typesense inline,
+      then mark typesense_status completed. For LiveView search-by-photo and similar entry points.
+      """
+
+      argument :temp_path, :string, allow_nil?: false
+      argument :storage_file_id, :string, allow_nil?: false
+
+      run fn input, context ->
+        actor = Map.get(context, :actor)
+
+        if is_nil(actor) do
+          {:error, "Actor is required for ingest_temp_file_for_similarity_search"}
+        else
+          temp_path = Ash.ActionInput.get_argument(input, :temp_path)
+          storage_file_id = Ash.ActionInput.get_argument(input, :storage_file_id)
+          user_id = actor.id
+
+          case PhotoStorage.cp_file(temp_path, user_id, storage_file_id) do
+            {:ok, dest} ->
+              case Ash.create(
+                     __MODULE__,
+                     %{
+                       note: "",
+                       url: Path.join("/", dest),
+                       file_id: storage_file_id,
+                       user_id: user_id,
+                       inner_purpose: "search"
+                     },
+                     action: :create_for_image_search,
+                     actor: actor
+                   ) do
+                {:ok, photo} ->
+                  case __MODULE__.sync_typesense_by_id(photo.id, actor: nil, authorize?: false) do
+                    {:ok, true} ->
+                      case Ash.update(photo, %{typesense_status: "completed"},
+                             domain: Vmemo.Memo,
+                             action: :set_typesense_status,
+                             actor: actor
+                           ) do
+                        {:ok, photo} ->
+                          {:ok, photo.id}
+
+                        {:error, reason} = err ->
+                          rollback_ingest_search_anchor(photo, actor)
+
+                          Logger.error(
+                            "ingest_temp_file_for_similarity_search failed: #{inspect(reason)}"
+                          )
+
+                          err
+                      end
+
+                    {:error, reason} = err ->
+                      rollback_ingest_search_anchor(photo, actor)
+
+                      Logger.error(
+                        "ingest_temp_file_for_similarity_search failed: #{inspect(reason)}"
+                      )
+
+                      err
+
+                    other ->
+                      rollback_ingest_search_anchor(photo, actor)
+
+                      Logger.error(
+                        "ingest_temp_file_for_similarity_search unexpected: #{inspect(other)}"
+                      )
+
+                      {:error, other}
+                  end
+
+                {:error, reason} = err ->
+                  Logger.error(
+                    "ingest_temp_file_for_similarity_search failed: #{inspect(reason)}"
+                  )
+
+                  err
+              end
+
+            {:error, reason} = err ->
+              Logger.error("ingest_temp_file_for_similarity_search failed: #{inspect(reason)}")
+              err
+          end
+        end
+      end
+    end
+
     read :get_with_notes do
       get? true
       argument :id, :string, allow_nil?: false
@@ -200,7 +305,7 @@ defmodule Vmemo.Memo.Photo do
 
     read :hybrid_search do
       argument :query, :string
-      argument :similar_photo_id, :string
+      argument :similar_photo_id, :string, allow_nil?: true
       argument :user_id, :uuid, allow_nil?: false
       argument :page, :integer, default: 1
 
@@ -214,7 +319,10 @@ defmodule Vmemo.Memo.Photo do
           per_page = 10
           offset = (page - 1) * per_page
 
-          Ash.Query.filter(query, user_id == ^user_id)
+          Ash.Query.filter(
+            query,
+            user_id == ^user_id and (is_nil(inner_purpose) or inner_purpose != "search")
+          )
           |> Ash.Query.sort(inserted_at: :desc)
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
@@ -263,7 +371,7 @@ defmodule Vmemo.Memo.Photo do
 
     action :hybrid_search_count, :integer do
       argument :query, :string
-      argument :similar_photo_id, :string
+      argument :similar_photo_id, :string, allow_nil?: true
       argument :user_id, :uuid, allow_nil?: false
 
       run fn input, context ->
@@ -273,7 +381,9 @@ defmodule Vmemo.Memo.Photo do
 
         if blank_query_without_similar?(q, similar) do
           __MODULE__
-          |> Ash.Query.filter(user_id == ^user_id)
+          |> Ash.Query.filter(
+            user_id == ^user_id and (is_nil(inner_purpose) or inner_purpose != "search")
+          )
           |> Ash.count(actor: context.actor)
         else
           {_photos, found, _current_page} =
@@ -304,7 +414,7 @@ defmodule Vmemo.Memo.Photo do
           {:error, "Actor is required for photo search"}
         else
           {photos, _found, _current_page} =
-            TsPhoto.hybird_search_photos({q, similar},
+            TsPhoto.hybrid_search_photos({q, similar},
               user_id: user_id,
               page: page
             )
@@ -611,6 +721,12 @@ defmodule Vmemo.Memo.Photo do
     attribute :caption, :string
     attribute :typesense_status, :string, allow_nil?: false, default: "completed"
     attribute :moondream_status, :string, allow_nil?: false, default: "completed"
+
+    attribute :inner_purpose, :string,
+      allow_nil?: true,
+      public?: false,
+      source: :_purpose
+
     attribute :file_id, :string
     attribute :user_id, :uuid
 
@@ -664,7 +780,7 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp typesense_hybrid_search(q, similar, user_id, page) do
-    TsPhoto.hybird_search_photos({q, similar},
+    TsPhoto.hybrid_search_photos({q, similar},
       user_id: user_id,
       page: page
     )
@@ -704,16 +820,18 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp build_typesense_sync_payload(photo) do
-    base_payload = %{
-      id: photo.id,
-      note: photo.note || "",
-      caption: photo.caption || "",
-      note_ids: Enum.map(photo.notes || [], & &1.id),
-      url: photo.url,
-      file_id: photo.file_id,
-      inserted_at: to_unix_timestamp(photo.inserted_at),
-      inserted_by: photo.user_id
-    }
+    base_payload =
+      %{
+        id: photo.id,
+        note: photo.note || "",
+        caption: photo.caption || "",
+        note_ids: Enum.map(photo.notes || [], & &1.id),
+        url: photo.url,
+        file_id: photo.file_id,
+        inserted_at: to_unix_timestamp(photo.inserted_at),
+        inserted_by: photo.user_id
+      }
+      |> maybe_put_purpose(photo.inner_purpose)
 
     case read_image_base64_for_typesense(photo.url) do
       {:ok, image} -> Map.put(base_payload, :image, image)
@@ -737,9 +855,26 @@ defmodule Vmemo.Memo.Photo do
   defp to_unix_timestamp(%DateTime{} = date_time), do: DateTime.to_unix(date_time)
   defp to_unix_timestamp(_), do: :os.system_time(:second)
 
+  defp rollback_ingest_search_anchor(photo, actor) do
+    _ = TsPhoto.delete_photo(photo.id)
+
+    case Ash.destroy(photo, domain: Vmemo.Memo, actor: actor) do
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("rollback_ingest_search_anchor destroy failed: #{inspect(reason)}")
+    end
+  end
+
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
   end
+
+  defp maybe_put_purpose(payload, value) when is_binary(value),
+    do: Map.put(payload, :_purpose, value)
+
+  defp maybe_put_purpose(payload, _), do: payload
 
   defp generate_caption_for_photo(photo) do
     cond do

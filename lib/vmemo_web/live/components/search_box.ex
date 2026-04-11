@@ -3,7 +3,6 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   use VmemoWeb, :live_component
 
   alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.PhotoStorage
 
   @impl true
   def mount(socket) do
@@ -57,9 +56,9 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   def handle_event("validate", _, socket) do
     entries = socket.assigns.uploads.photo.entries
 
+    # max_entries is 1, but ClipboardMediaFetcher can merge multiple files in one change.
     socket =
       if length(entries) > 1 do
-        # Keep only the first entry, cancel the rest
         entries
         |> Enum.drop(1)
         |> Enum.reduce(socket, fn entry, acc ->
@@ -85,69 +84,64 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       {:noreply, socket}
     else
       case uploaded_entries(socket, :photo) do
-        {[_ | _] = entries, []} ->
-          handle_uploaded_photos(entries, socket, current_user)
+        {completed, []} ->
+          case completed do
+            [entry] ->
+              consume_one_photo_for_search(entry, socket, current_user)
 
-        {[], []} ->
-          {:noreply, socket |> put_flash(:error, "Please wait for upload to complete")}
+            [] ->
+              {:noreply, socket |> put_flash(:error, "Please wait for upload to complete")}
 
-        {[], [_ | _] = errors} ->
+            _ ->
+              {:noreply,
+               socket
+               |> put_flash(
+                 :error,
+                 "Search by photo uses exactly one image. Remove extra files and try again."
+               )}
+          end
+
+        {_completed, errors} ->
           error_msg = "Upload failed: #{inspect(errors)}"
           {:noreply, socket |> put_flash(:error, error_msg)}
       end
     end
   end
 
-  defp handle_uploaded_photos(entries, socket, current_user) do
+  defp consume_one_photo_for_search(entry, socket, current_user) do
     require Logger
 
-    results =
-      for entry <- entries do
-        consume_uploaded_entry(socket, entry, fn %{path: path} = _meta ->
-          filename = entry.uuid <> Path.extname(entry.client_name)
+    result =
+      consume_uploaded_entry(socket, entry, fn %{path: path} ->
+        filename = entry.uuid <> Path.extname(entry.client_name)
 
-          {:ok, dest} = PhotoStorage.cp_file(path, current_user.id, filename)
+        case Photo.ingest_temp_file_for_similarity_search(path, filename, actor: current_user) do
+          {:ok, photo_id} ->
+            {:ok, photo_id}
 
-          case Photo.create_with_sync(
-                 %{
-                   note: "",
-                   url: Path.join("/", dest),
-                   file_id: filename,
-                   user_id: current_user.id
-                 },
-                 actor: current_user
-               ) do
-            {:ok, photo} ->
-              {:ok, photo}
-
-            {:error, reason} ->
-              Logger.error("Failed to create photo: #{inspect(reason)}")
-              {:error, reason}
-          end
-        end)
-      end
-
-    results =
-      results
-      |> Enum.map(fn
-        %Vmemo.Memo.Photo{} = photo -> {:ok, photo}
-        {:error, reason} -> {:error, reason}
-        other -> {:error, inspect(other)}
+          {:error, reason} ->
+            Logger.error("search-by-photo failed: #{inspect(reason)}")
+            {:ok, {:error, reason}}
+        end
       end)
 
-    case Enum.find(results, fn result -> match?({:error, _}, result) end) do
-      nil ->
-        case Enum.find(results, fn result -> match?({:ok, _}, result) end) do
-          {:ok, photo} ->
-            {:noreply,
-             socket |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo.id}", replace: true)}
+    # consume_uploaded_entry/3 returns the *unwrapped* value from {:ok, value} (see Phoenix LiveView upload_channel).
+    case result do
+      photo_id when is_binary(photo_id) ->
+        {:noreply,
+         socket
+         |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo_id}", replace: true)}
 
-          _ ->
-            {:noreply, socket |> put_flash(:error, "No photo created")}
-        end
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Search index is not ready or upload failed. Please try again."
+         )}
 
-      {:error, reason} ->
-        {:noreply, socket |> put_flash(:error, "Upload failed: #{inspect(reason)}")}
+      other ->
+        {:noreply, socket |> put_flash(:error, "Search by image failed: #{inspect(other)}")}
     end
   end
 

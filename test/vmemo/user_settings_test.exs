@@ -147,6 +147,8 @@ defmodule Vmemo.UserSettingsTest do
   end
 
   defp create_photo!(attrs) do
+    attrs = Map.put_new(attrs, :inner_purpose, nil)
+
     case Ash.create(Photo, attrs, action: :import, actor: nil, authorize?: false) do
       {:ok, photo} -> photo
       {:error, error} -> raise "failed to create photo: #{inspect(error)}"

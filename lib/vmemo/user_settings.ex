@@ -134,6 +134,7 @@ defmodule Vmemo.UserSettings do
           caption: photo.caption,
           file_id: photo.file_id,
           user_id: photo.user_id,
+          _purpose: photo.inner_purpose,
           inserted_at: to_iso8601(photo.inserted_at),
           updated_at: to_iso8601(photo.updated_at)
         }
@@ -285,6 +286,7 @@ defmodule Vmemo.UserSettings do
               caption: pick_value(photo, ["caption", :caption]),
               file_id: pick_value(photo, ["file_id", :file_id]),
               user_id: target_user_id,
+              _purpose: normalize_import_purpose(photo),
               inserted_at:
                 parse_iso_datetime(pick_value(photo, ["inserted_at", :inserted_at]), now),
               updated_at: parse_iso_datetime(pick_value(photo, ["updated_at", :updated_at]), now)
@@ -820,17 +822,19 @@ defmodule Vmemo.UserSettings do
         {:ok, image} ->
           inserted_at = datetime_to_unix(photo.inserted_at)
 
-          doc = %{
-            "id" => photo.id,
-            "image" => image,
-            "note" => photo.note || "",
-            "caption" => photo.caption || "",
-            "note_ids" => Map.get(photo_to_note_ids, photo.id, []),
-            "url" => photo.url,
-            "file_id" => photo.file_id,
-            "inserted_at" => inserted_at,
-            "inserted_by" => user_id
-          }
+          doc =
+            %{
+              "id" => photo.id,
+              "image" => image,
+              "note" => photo.note || "",
+              "caption" => photo.caption || "",
+              "note_ids" => Map.get(photo_to_note_ids, photo.id, []),
+              "url" => photo.url,
+              "file_id" => photo.file_id,
+              "inserted_at" => inserted_at,
+              "inserted_by" => user_id
+            }
+            |> maybe_put_typesense_purpose(photo.inner_purpose)
 
           [doc | acc]
 
@@ -930,6 +934,29 @@ defmodule Vmemo.UserSettings do
   defp normalize_record_id(_id), do: Ids.normalize_record_id(nil)
 
   defp normalize_list(value), do: Json.normalize_list(value)
+
+  defp normalize_import_purpose(photo) when is_map(photo) do
+    case pick_value(photo, [
+           "_purpose",
+           :_purpose,
+           "inner_purpose",
+           :inner_purpose,
+           "image_purpose",
+           :image_purpose
+         ]) do
+      nil -> nil
+      "" -> nil
+      "library" -> nil
+      "similarity_query" -> "search"
+      other when is_binary(other) -> other
+      _ -> nil
+    end
+  end
+
+  defp maybe_put_typesense_purpose(doc, value) when is_binary(value),
+    do: Map.put(doc, "_purpose", value)
+
+  defp maybe_put_typesense_purpose(doc, _), do: doc
 
   defp pick_value(map, keys) when is_map(map) do
     Enum.find_value(keys, fn key ->

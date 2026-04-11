@@ -15,6 +15,7 @@ defmodule Vmemo.Ts.Schema do
         %{"name" => "inserted_by", "type" => "string"},
         %{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true},
         %{"name" => "caption", "type" => "string", "optional" => true},
+        %{"name" => "_purpose", "type" => "string", "optional" => true, "facet" => true},
         image_embedding_field()
       ],
       "default_sorting_field" => "inserted_at"
@@ -37,6 +38,21 @@ defmodule Vmemo.Ts.Schema do
 
     Typesense.create_collection(notes_schema)
     |> ensure_collection_created("notes")
+  end
+
+  @doc """
+  Adds `_purpose` to `photos` for existing Typesense clusters (idempotent).
+  Fresh installs already include this field via `change_1/0`.
+  """
+  def change_2 do
+    ensure_photos_purpose_field()
+  end
+
+  @doc """
+  Adds `_purpose` when an older migration only created `image_purpose` (idempotent).
+  """
+  def change_3 do
+    ensure_photos_purpose_field()
   end
 
   def reset do
@@ -128,6 +144,28 @@ defmodule Vmemo.Ts.Schema do
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
+
+  defp ensure_photos_purpose_field do
+    case Typesense.get_collection("photos") do
+      {:ok, %{"fields" => fields}} when is_list(fields) ->
+        if Enum.any?(fields, fn f -> Map.get(f, "name") == "_purpose" end) do
+          :ok
+        else
+          Typesense.update_collection("photos", %{
+            "fields" => [
+              %{"name" => "_purpose", "type" => "string", "optional" => true, "facet" => true}
+            ]
+          })
+          |> ensure_ok("add _purpose field to photos collection")
+        end
+
+      {:ok, other} ->
+        raise("Typesense photos collection schema missing fields: #{inspect(Map.keys(other))}")
+
+      {:error, reason} ->
+        raise("Typesense get_collection photos failed: #{reason}")
+    end
+  end
 
   defp image_embedding_field do
     %{
