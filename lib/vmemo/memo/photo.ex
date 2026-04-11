@@ -22,7 +22,7 @@ defmodule Vmemo.Memo.Photo do
   require Logger
 
   alias Vmemo.Ai.Caption
-  alias Vmemo.Memo.PhotoStorage
+  alias Vmemo.Memo.ImageStorage
   alias Vmemo.SearchEngine.TsMemoImage
 
   postgres do
@@ -222,7 +222,7 @@ defmodule Vmemo.Memo.Photo do
           storage_file_id = Ash.ActionInput.get_argument(input, :storage_file_id)
           user_id = actor.id
 
-          case PhotoStorage.cp_file(temp_path, user_id, storage_file_id) do
+          case ImageStorage.cp_file(temp_path, user_id, storage_file_id) do
             {:ok, dest} ->
               case Ash.create(
                      __MODULE__,
