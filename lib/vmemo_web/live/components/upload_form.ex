@@ -8,6 +8,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias VmemoWeb.LiveComponents.Waterfall
 
   alias Vmemo.Memo.Note
+  alias Vmemo.Memo.Image
   alias Vmemo.Memo.Photo
   alias Vmemo.Memo.PhotoNote
   alias Vmemo.Memo.PhotoStorage
@@ -340,7 +341,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
                 {:ok, dest} = PhotoStorage.cp_file(path, user_id, filename)
 
-                case Photo.create_with_sync(
+                case Image.create_with_sync(
                        %{
                          note: note_text,
                          url: Path.join("/", dest),
