@@ -26,5 +26,4 @@ defmodule Vmemo.Memo.Image do
   defdelegate update_search_engine(record, attrs \\ %{}, opts \\ []), to: Photo
   defdelegate request_generate_caption(record, attrs \\ %{}, opts \\ []), to: Photo
   defdelegate library_photos_count(user_id, opts \\ []), to: Photo
-  defdelegate search_photos(opts \\ []), to: Photo
 end
