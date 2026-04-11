@@ -78,6 +78,7 @@ defmodule Vmemo.Memo.Photo do
     define :get_with_notes, args: [:id, :user_id]
     define :hybrid_search, args: [:query, :similar_photo_id, :user_id, :page]
     define :hybrid_search_count, args: [:query, :similar_photo_id, :user_id]
+    define :library_photos_count, args: [:user_id]
     define :list_similar, args: [:photo_id, :user_id]
     define :sync_typesense_by_id, args: [:photo_id]
     define :ingest_temp_file_for_similarity_search, args: [:temp_path, :storage_file_id]
@@ -319,10 +320,8 @@ defmodule Vmemo.Memo.Photo do
           per_page = 10
           offset = (page - 1) * per_page
 
-          Ash.Query.filter(
-            query,
-            user_id == ^user_id and (is_nil(inner_purpose) or inner_purpose != "search")
-          )
+          query
+          |> filter_library_photos(user_id)
           |> Ash.Query.sort(inserted_at: :desc)
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
@@ -381,9 +380,7 @@ defmodule Vmemo.Memo.Photo do
 
         if blank_query_without_similar?(q, similar) do
           __MODULE__
-          |> Ash.Query.filter(
-            user_id == ^user_id and (is_nil(inner_purpose) or inner_purpose != "search")
-          )
+          |> filter_library_photos(user_id)
           |> Ash.count(actor: context.actor)
         else
           {_photos, found, _current_page} =
@@ -391,6 +388,18 @@ defmodule Vmemo.Memo.Photo do
 
           {:ok, found}
         end
+      end
+    end
+
+    action :library_photos_count, :integer do
+      argument :user_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        user_id = Ash.ActionInput.get_argument(input, :user_id)
+
+        __MODULE__
+        |> filter_library_photos(user_id)
+        |> Ash.count(actor: context.actor)
       end
     end
 
@@ -869,6 +878,13 @@ defmodule Vmemo.Memo.Photo do
 
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
+  end
+
+  defp filter_library_photos(query, user_id) do
+    Ash.Query.filter(
+      query,
+      user_id == ^user_id and (is_nil(inner_purpose) or inner_purpose != "search")
+    )
   end
 
   defp maybe_put_purpose(payload, value) when is_binary(value),

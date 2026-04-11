@@ -1,8 +1,6 @@
 defmodule VmemoWeb.HomePageLive do
   use VmemoWeb, :live_view
 
-  require Ash.Query
-
   alias Vmemo.Memo.Photo
   alias VmemoWeb.LiveComponents.SearchBox
 
@@ -11,11 +9,7 @@ defmodule VmemoWeb.HomePageLive do
     user = socket.assigns.current_user
 
     total_photos =
-      Photo
-      |> Ash.Query.filter(
-        user_id == ^user.id and (is_nil(inner_purpose) or inner_purpose != "search")
-      )
-      |> Ash.count(actor: user)
+      Photo.library_photos_count(user.id, actor: user)
       |> case do
         {:ok, count} -> count
         _ -> 0
