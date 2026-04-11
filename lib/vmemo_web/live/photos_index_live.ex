@@ -3,7 +3,7 @@ defmodule VmemoWeb.PhotosIndexLive do
 
   use VmemoWeb, :live_view
 
-  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.Image
   alias VmemoWeb.LiveComponents.PhotoCard
   alias VmemoWeb.LiveComponents.Waterfall
 
@@ -33,14 +33,14 @@ defmodule VmemoWeb.PhotosIndexLive do
   end
 
   defp load_photos(q, similar_photo_id, page, user) do
-    case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
+    case Image.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
       {:ok, records} -> records
       _ -> []
     end
   end
 
   defp load_total_count(q, similar_photo_id, user) do
-    case Photo.hybrid_search_count(q, similar_photo_id, user.id, actor: user) do
+    case Image.hybrid_search_count(q, similar_photo_id, user.id, actor: user) do
       {:ok, count} -> count
       _ -> 0
     end
@@ -74,7 +74,7 @@ defmodule VmemoWeb.PhotosIndexLive do
   defp load_similar_photo(nil, _user), do: nil
 
   defp load_similar_photo(photo_id, user) do
-    case Photo.get_with_notes(photo_id, user.id, actor: user) do
+    case Image.get_with_notes(photo_id, user.id, actor: user) do
       {:ok, photo} -> photo
       _ -> nil
     end
