@@ -23,7 +23,7 @@ defmodule Vmemo.Memo.Photo do
 
   alias Vmemo.Ai.Caption
   alias Vmemo.Memo.PhotoStorage
-  alias Vmemo.SearchEngine.TsPhoto
+  alias Vmemo.SearchEngine.TsMemoImage
 
   postgres do
     table "memo_images"
@@ -423,7 +423,7 @@ defmodule Vmemo.Memo.Photo do
           {:error, "Actor is required for photo search"}
         else
           {photos, _found, _current_page} =
-            TsPhoto.hybrid_search_photos({q, similar},
+            TsMemoImage.hybrid_search_photos({q, similar},
               user_id: user_id,
               page: page
             )
@@ -666,7 +666,7 @@ defmodule Vmemo.Memo.Photo do
         photo_id = Ash.Query.get_argument(query, :photo_id)
         user_id = Ash.Query.get_argument(query, :user_id)
 
-        photos = TsPhoto.list_similar_photos(photo_id, user_id: user_id)
+        photos = TsMemoImage.list_similar_photos(photo_id, user_id: user_id)
 
         photo_ids =
           photos
@@ -789,7 +789,7 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp typesense_hybrid_search(q, similar, user_id, page) do
-    TsPhoto.hybrid_search_photos({q, similar},
+    TsMemoImage.hybrid_search_photos({q, similar},
       user_id: user_id,
       page: page
     )
@@ -798,7 +798,7 @@ defmodule Vmemo.Memo.Photo do
   defp upsert_typesense_photo(photo) do
     typesense_data = build_typesense_sync_payload(photo)
 
-    case TsPhoto.get_photo(photo.id) do
+    case TsMemoImage.get_photo(photo.id) do
       nil -> sync_photo_with_typesense_retry(typesense_data, :create)
       {:error, reason} -> {:error, reason}
       _existing -> sync_photo_with_typesense_retry(typesense_data, :update)
@@ -806,7 +806,7 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp sync_photo_with_typesense_retry(typesense_data, :create) do
-    case TsPhoto.create(typesense_data) do
+    case TsMemoImage.create(typesense_data) do
       {:error, "Not Found"} ->
         {:error, "Typesense collection not found. Please run `mix ts.migrate` first."}
 
@@ -816,9 +816,9 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp sync_photo_with_typesense_retry(typesense_data, :update) do
-    case TsPhoto.update_photo(typesense_data) do
+    case TsMemoImage.update_photo(typesense_data) do
       {:error, "Not Found"} ->
-        case TsPhoto.create(typesense_data) do
+        case TsMemoImage.create(typesense_data) do
           {:ok, _created} -> {:ok, true}
           error -> error
         end
@@ -865,7 +865,7 @@ defmodule Vmemo.Memo.Photo do
   defp to_unix_timestamp(_), do: :os.system_time(:second)
 
   defp rollback_ingest_search_anchor(photo, actor) do
-    _ = TsPhoto.delete_photo(photo.id)
+    _ = TsMemoImage.delete_photo(photo.id)
 
     case Ash.destroy(photo, domain: Vmemo.Memo, actor: actor) do
       {:ok, _} ->
