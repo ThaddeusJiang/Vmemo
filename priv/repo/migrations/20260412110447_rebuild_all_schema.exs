@@ -29,7 +29,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
         null: false,
         default: fragment("(now() AT TIME ZONE 'utc')")
 
-      add :photo_id, :uuid, null: false
+      add :image_id, :uuid, null: false
       add :note_id, :uuid, null: false
     end
 
@@ -38,10 +38,10 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     end
 
     alter table(:memo_images_notes) do
-      modify :photo_id,
+      modify :image_id,
              references(:memo_images,
                column: :id,
-               name: "memo_images_notes_photo_id_fkey",
+               name: "memo_images_notes_image_id_fkey",
                type: :uuid,
                prefix: "public"
              )
@@ -59,6 +59,9 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
       add :url, :text, null: false
       add :note, :text
       add :caption, :text
+      add :typesense_status, :text, null: false, default: "completed"
+      add :moondream_status, :text, null: false, default: "completed"
+      add :_purpose, :text
       add :file_id, :text
       add :user_id, :uuid
 
@@ -209,8 +212,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             name: "auth_api_tokens_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          ),
-          null: false
+          ), null: false
 
       add :inserted_at, :utc_datetime_usec,
         null: false,
@@ -224,15 +226,14 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     create table(:ai_vision_requests, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
 
-      add :photo_id,
+      add :image_id,
           references(:memo_images,
             column: :id,
-            name: "ai_vision_requests_photo_id_fkey",
+            name: "ai_vision_requests_image_id_fkey",
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
 
       add :user_id,
           references(:auth_users,
@@ -241,8 +242,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
 
       add :function_type, :text, null: false
       add :prompt, :text
@@ -265,7 +265,7 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
 
     create index(:ai_vision_requests, [:user_id])
 
-    create index(:ai_vision_requests, [:photo_id])
+    create index(:ai_vision_requests, [:image_id])
 
     create table(:admin_import_requests, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
@@ -289,11 +289,11 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
   def down do
     drop table(:admin_import_requests)
 
-    drop constraint(:ai_vision_requests, "ai_vision_requests_photo_id_fkey")
+    drop constraint(:ai_vision_requests, "ai_vision_requests_image_id_fkey")
 
     drop constraint(:ai_vision_requests, "ai_vision_requests_user_id_fkey")
 
-    drop_if_exists index(:ai_vision_requests, [:photo_id])
+    drop_if_exists index(:ai_vision_requests, [:image_id])
 
     drop_if_exists index(:ai_vision_requests, [:user_id])
 
@@ -355,18 +355,21 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
       remove :inserted_at
       remove :user_id
       remove :file_id
+      remove :_purpose
+      remove :moondream_status
+      remove :typesense_status
       remove :caption
       remove :note
       remove :url
     end
 
-    drop constraint(:memo_images_notes, "memo_images_notes_photo_id_fkey")
+    drop constraint(:memo_images_notes, "memo_images_notes_image_id_fkey")
 
     drop constraint(:memo_images_notes, "memo_images_notes_note_id_fkey")
 
     alter table(:memo_images_notes) do
       modify :note_id, :uuid
-      modify :photo_id, :uuid
+      modify :image_id, :uuid
     end
 
     drop table(:memo_images)
