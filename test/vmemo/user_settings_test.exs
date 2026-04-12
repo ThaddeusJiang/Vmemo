@@ -6,8 +6,8 @@ defmodule Vmemo.UserSettingsTest do
   require Ash.Query
 
   alias Vmemo.Memo.Note
-  alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.PhotoNote
+  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageNote
   alias Vmemo.UserSettings
 
   test "exports and imports data per user" do
@@ -21,36 +21,36 @@ defmodule Vmemo.UserSettingsTest do
       File.rm_rf(Path.join(["storage", "v1", target_user.id]))
     end)
 
-    source_photo =
-      create_photo!(%{
-        url: "/storage/v1/#{source_user.id}/photos/source-photo.png",
-        note: "source photo",
+    source_image =
+      create_image!(%{
+        url: "/storage/v1/#{source_user.id}/images/source-image.png",
+        note: "source image",
         caption: "source caption",
         file_id: "source-file",
         user_id: source_user.id
       })
 
-    _other_photo =
-      create_photo!(%{
-        url: "/storage/v1/#{other_user.id}/photos/other-photo.png",
-        note: "other photo",
+    _other_image =
+      create_image!(%{
+        url: "/storage/v1/#{other_user.id}/images/other-image.png",
+        note: "other image",
         caption: "other caption",
         file_id: "other-file",
         user_id: other_user.id
       })
 
     source_note = create_note!(%{text: "source note", user_id: source_user.id})
-    create_photo_note!(source_photo.id, source_note.id)
+    create_image_note!(source_image.id, source_note.id)
 
     write_user_file_from_fixture!(
       source_user.id,
-      "source-photo.png",
+      "source-image.png",
       "test/support/fixtures/images/test-red-image.png"
     )
 
     write_user_file_from_fixture!(
       other_user.id,
-      "other-photo.png",
+      "other-image.png",
       "test/support/fixtures/images/wall-e.png"
     )
 
@@ -70,18 +70,18 @@ defmodule Vmemo.UserSettingsTest do
     on_exit(fn -> File.rm(tmp_zip_path) end)
 
     assert {:ok, import_result} = UserSettings.import_user_zip(target_user.id, tmp_zip_path)
-    assert import_result.photos.created == 1
+    assert import_result.images.created == 1
     assert import_result.notes.created == 1
-    assert import_result.photo_notes.created == 1
+    assert import_result.image_notes.created == 1
     assert import_result.files.copied == 1
 
     target_photos =
-      Photo
+      Image
       |> Ash.Query.filter(user_id == ^target_user.id)
       |> Ash.read!(actor: nil, authorize?: false)
 
     assert length(target_photos) == 1
-    assert String.starts_with?(hd(target_photos).url, "/storage/v1/#{target_user.id}/photos/")
+    assert String.starts_with?(hd(target_photos).url, "/storage/v1/#{target_user.id}/images/")
 
     target_notes =
       Note
@@ -100,21 +100,21 @@ defmodule Vmemo.UserSettingsTest do
       File.rm_rf(Path.join(["storage", "v1", target_user.id]))
     end)
 
-    source_photo =
-      create_photo!(%{
-        url: "/storage/v1/#{source_user.id}/photos/source-photo.png",
-        note: "source photo",
+    source_image =
+      create_image!(%{
+        url: "/storage/v1/#{source_user.id}/images/source-image.png",
+        note: "source image",
         caption: "source caption",
         file_id: "source-file",
         user_id: source_user.id
       })
 
     source_note = create_note!(%{text: "source note", user_id: source_user.id})
-    create_photo_note!(source_photo.id, source_note.id)
+    create_image_note!(source_image.id, source_note.id)
 
     write_user_file_from_fixture!(
       source_user.id,
-      "source-photo.png",
+      "source-image.png",
       "test/support/fixtures/images/test-red-image.png"
     )
 
@@ -138,18 +138,20 @@ defmodule Vmemo.UserSettingsTest do
     end)
 
     assert {:error, result} = UserSettings.import_user_zip(target_user.id, tmp_zip_path)
-    assert result.photos.created == 1
+    assert result.images.created == 1
     assert result.notes.created == 1
-    assert result.photo_notes.created == 1
-    assert result.typesense.photos.failed >= 1
+    assert result.image_notes.created == 1
+    assert result.typesense.images.failed >= 1
     assert result.typesense.notes.failed >= 1
     assert result.error_count >= 1
   end
 
-  defp create_photo!(attrs) do
-    case Ash.create(Photo, attrs, action: :import, actor: nil, authorize?: false) do
-      {:ok, photo} -> photo
-      {:error, error} -> raise "failed to create photo: #{inspect(error)}"
+  defp create_image!(attrs) do
+    attrs = Map.put_new(attrs, :inner_purpose, nil)
+
+    case Ash.create(Image, attrs, action: :import, actor: nil, authorize?: false) do
+      {:ok, image} -> image
+      {:error, error} -> raise "failed to create image: #{inspect(error)}"
     end
   end
 
@@ -160,19 +162,19 @@ defmodule Vmemo.UserSettingsTest do
     end
   end
 
-  defp create_photo_note!(photo_id, note_id) do
-    case Ash.create(PhotoNote, %{photo_id: photo_id, note_id: note_id},
+  defp create_image_note!(image_id, note_id) do
+    case Ash.create(ImageNote, %{image_id: image_id, note_id: note_id},
            action: :import,
            actor: nil,
            authorize?: false
          ) do
       {:ok, _link} -> :ok
-      {:error, error} -> raise "failed to create photo_note: #{inspect(error)}"
+      {:error, error} -> raise "failed to create image_note: #{inspect(error)}"
     end
   end
 
   defp write_user_file_from_fixture!(user_id, filename, fixture_path) do
-    path = Path.join(["storage", "v1", user_id, "photos", filename])
+    path = Path.join(["storage", "v1", user_id, "images", filename])
     File.mkdir_p!(Path.dirname(path))
     File.cp!(fixture_path, path)
   end

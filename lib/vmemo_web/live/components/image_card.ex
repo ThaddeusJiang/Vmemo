@@ -1,13 +1,13 @@
-defmodule VmemoWeb.LiveComponents.PhotoCard do
+defmodule VmemoWeb.LiveComponents.ImageCard do
   @moduledoc false
   use VmemoWeb, :html
 
-  attr :photo, :map, default: nil
+  attr :image, :map, default: nil
   attr :navigate, :string, default: nil
   slot :media
   slot :overlay, required: false
 
-  def photo_card(assigns) do
+  def image_card(assigns) do
     assigns =
       assigns
       |> assign(:has_media_slot, assigns.media != [])
@@ -22,7 +22,7 @@ defmodule VmemoWeb.LiveComponents.PhotoCard do
           <%= if @has_media_slot do %>
             {render_slot(@media)}
           <% else %>
-            <.img src={@photo_url} alt={@photo_alt} id={to_string(@photo.id)} />
+            <.img src={@photo_url} alt={@photo_alt} id={to_string(@image.id)} />
           <% end %>
         </.link>
       <% else %>
@@ -40,14 +40,14 @@ defmodule VmemoWeb.LiveComponents.PhotoCard do
   defp resolve_navigate(%{navigate: navigate}) when is_binary(navigate) and navigate != "",
     do: navigate
 
-  defp resolve_navigate(%{photo: %{id: id}}), do: ~p"/photos/#{id}"
+  defp resolve_navigate(%{image: %{id: id}}), do: ~p"/images/#{id}"
   defp resolve_navigate(_), do: nil
 
-  defp resolve_photo_url(%{photo: %{url: url}}), do: normalize_photo_url(url)
+  defp resolve_photo_url(%{image: %{url: url}}), do: normalize_photo_url(url)
   defp resolve_photo_url(_), do: ""
 
-  defp resolve_photo_alt(%{photo: %{note: note}}) when is_binary(note) and note != "", do: note
-  defp resolve_photo_alt(_), do: "Photo"
+  defp resolve_photo_alt(%{image: %{note: note}}) when is_binary(note) and note != "", do: note
+  defp resolve_photo_alt(_), do: "Image"
 
   defp normalize_photo_url(url) when is_binary(url) do
     url_lower = String.downcase(url)

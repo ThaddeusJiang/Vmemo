@@ -162,7 +162,7 @@ defmodule Vmemo.MixProject do
       check: [
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "xref graph --format cycles --label compile-connected --fail-above 0",
+        "xref graph --format cycles --label compile --fail-above 0",
         "credo --strict",
         "sobelow --config",
         "hex.audit",

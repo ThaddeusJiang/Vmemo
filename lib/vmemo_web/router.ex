@@ -41,9 +41,9 @@ defmodule VmemoWeb.Router do
   scope "/api/v1", VmemoWeb.Api.V1 do
     pipe_through [:api, :api_auth]
 
-    post "/photos", PhotoController, :create
-    get "/photos/:id", PhotoController, :show
-    delete "/photos/:id", PhotoController, :delete
+    post "/images", ImageController, :create
+    get "/images/:id", ImageController, :show
+    delete "/images/:id", ImageController, :delete
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
@@ -111,9 +111,9 @@ defmodule VmemoWeb.Router do
     live_session :require_authenticated_user,
       on_mount: [{VmemoWeb.UserAuth, :ensure_authenticated_user}] do
       live "/home", HomePageLive, :index
-      live "/photos", PhotosIndexLive, :index
-      live "/photos/upload", PhotoUploadLive
-      live "/photos/:id", PhotoIdLive
+      live "/images", ImagesIndexLive, :index
+      live "/images/upload", ImageUploadLive
+      live "/images/:id", ImageIdLive
 
       live "/notes/:id", NoteIdLive
 
@@ -150,7 +150,7 @@ defmodule VmemoWeb.Router do
   scope "/storage/v1/", VmemoWeb do
     pipe_through :browser
 
-    get "/:user_id/photos/:filename", FileController, :show
+    get "/:user_id/images/:filename", FileController, :show
   end
 
   # Admin authentication routes

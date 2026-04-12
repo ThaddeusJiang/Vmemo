@@ -1,4 +1,4 @@
-defmodule Vmemo.Memo.Photo do
+defmodule Vmemo.Memo.Image do
   @moduledoc false
   @derive {Jason.Encoder,
            only: [
@@ -19,8 +19,11 @@ defmodule Vmemo.Memo.Photo do
     extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
+  require Logger
+
   alias Vmemo.Ai.Caption
-  alias Vmemo.SearchEngine.TsPhoto
+  alias Vmemo.Memo.ImageStorage
+  alias Vmemo.SearchEngine.TsImage
 
   postgres do
     table "memo_images"
@@ -35,6 +38,7 @@ defmodule Vmemo.Memo.Photo do
       :caption,
       :typesense_status,
       :moondream_status,
+      :inner_purpose,
       :user_id,
       :inserted_at
     ])
@@ -48,8 +52,8 @@ defmodule Vmemo.Memo.Photo do
         lock_for_update? false
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Memo.Photo.Workers.SyncTypesense
-        scheduler_module_name Vmemo.Memo.Photo.Schedulers.SyncTypesense
+        worker_module_name Vmemo.Memo.Image.Workers.SyncTypesense
+        scheduler_module_name Vmemo.Memo.Image.Schedulers.SyncTypesense
       end
 
       trigger :generate_caption do
@@ -58,23 +62,26 @@ defmodule Vmemo.Memo.Photo do
         max_attempts 5
         scheduler_cron false
         where expr(true)
-        worker_module_name Vmemo.Memo.Photo.Workers.GenerateCaption
-        scheduler_module_name Vmemo.Memo.Photo.Schedulers.GenerateCaption
+        worker_module_name Vmemo.Memo.Image.Workers.GenerateCaption
+        scheduler_module_name Vmemo.Memo.Image.Schedulers.GenerateCaption
       end
     end
   end
 
   code_interface do
     define :create_with_sync
+    define :create_for_image_search
     define :create_immediate
     define :read
     define :update
     define :destroy
     define :get_with_notes, args: [:id, :user_id]
-    define :hybrid_search, args: [:query, :similar_photo_id, :user_id, :page]
-    define :hybrid_search_count, args: [:query, :similar_photo_id, :user_id]
-    define :list_similar, args: [:photo_id, :user_id]
-    define :sync_typesense_by_id, args: [:photo_id]
+    define :hybrid_search, args: [:query, :similar_image_id, :user_id, :page]
+    define :hybrid_search_count, args: [:query, :similar_image_id, :user_id]
+    define :library_images_count, args: [:user_id]
+    define :list_similar, args: [:image_id, :user_id]
+    define :sync_typesense_by_id, args: [:image_id]
+    define :ingest_temp_file_for_similarity_search, args: [:temp_path, :storage_file_id]
     define :update_search_engine
     define :request_generate_caption
   end
@@ -96,12 +103,22 @@ defmodule Vmemo.Memo.Photo do
       accept [:url, :note, :caption, :file_id, :user_id]
     end
 
+    @doc """
+    Persist row for search-by-image without Oban. Used by `ingest_temp_file_for_similarity_search/2`.
+
+    Moondream caption jobs are upload-only; this action leaves `moondream_status` at the resource default.
+    """
+    create :create_for_image_search do
+      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose]
+      change set_attribute(:typesense_status, "pending")
+    end
+
     create :import do
-      accept [:id, :url, :note, :caption, :file_id, :user_id]
+      accept [:id, :url, :note, :caption, :file_id, :user_id, :inner_purpose]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :caption, :file_id, :user_id]
+      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose]
       change set_attribute(:typesense_status, "pending")
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:sync_typesense)
@@ -173,15 +190,103 @@ defmodule Vmemo.Memo.Photo do
     end
 
     action :sync_typesense_by_id, :boolean do
-      argument :photo_id, :uuid, allow_nil?: false
+      argument :image_id, :uuid, allow_nil?: false
 
       run fn input, _context ->
-        photo_id = Ash.ActionInput.get_argument(input, :photo_id)
+        image_id = Ash.ActionInput.get_argument(input, :image_id)
 
-        with {:ok, photo} <- Ash.get(__MODULE__, photo_id, actor: nil, authorize?: false),
-             {:ok, photo_with_notes} <- Ash.load(photo, :notes, actor: nil, authorize?: false),
+        with {:ok, image} <- Ash.get(__MODULE__, image_id, actor: nil, authorize?: false),
+             {:ok, photo_with_notes} <- Ash.load(image, :notes, actor: nil, authorize?: false),
              {:ok, _} <- upsert_typesense_photo(photo_with_notes) do
           {:ok, true}
+        end
+      end
+    end
+
+    action :ingest_temp_file_for_similarity_search, :uuid do
+      description """
+      Copy a temp upload into storage, create a image row (no Oban), sync Typesense inline,
+      then mark typesense_status completed. For LiveView search-by-image and similar entry points.
+      """
+
+      argument :temp_path, :string, allow_nil?: false
+      argument :storage_file_id, :string, allow_nil?: false
+
+      run fn input, context ->
+        actor = Map.get(context, :actor)
+
+        if is_nil(actor) do
+          {:error, "Actor is required for ingest_temp_file_for_similarity_search"}
+        else
+          temp_path = Ash.ActionInput.get_argument(input, :temp_path)
+          storage_file_id = Ash.ActionInput.get_argument(input, :storage_file_id)
+          user_id = actor.id
+
+          case ImageStorage.cp_file(temp_path, user_id, storage_file_id) do
+            {:ok, dest} ->
+              case Ash.create(
+                     __MODULE__,
+                     %{
+                       note: "",
+                       url: Path.join("/", dest),
+                       file_id: storage_file_id,
+                       user_id: user_id,
+                       inner_purpose: "search"
+                     },
+                     action: :create_for_image_search,
+                     actor: actor
+                   ) do
+                {:ok, image} ->
+                  case __MODULE__.sync_typesense_by_id(image.id, actor: nil, authorize?: false) do
+                    {:ok, true} ->
+                      case Ash.update(image, %{typesense_status: "completed"},
+                             action: :set_typesense_status,
+                             actor: actor
+                           ) do
+                        {:ok, image} ->
+                          {:ok, image.id}
+
+                        {:error, reason} = err ->
+                          rollback_ingest_search_anchor(image, actor)
+
+                          Logger.error(
+                            "ingest_temp_file_for_similarity_search failed: #{inspect(reason)}"
+                          )
+
+                          err
+                      end
+
+                    {:error, reason} = err ->
+                      rollback_ingest_search_anchor(image, actor)
+
+                      Logger.error(
+                        "ingest_temp_file_for_similarity_search failed: #{inspect(reason)}"
+                      )
+
+                      err
+
+                    other ->
+                      rollback_ingest_search_anchor(image, actor)
+
+                      Logger.error(
+                        "ingest_temp_file_for_similarity_search unexpected: #{inspect(other)}"
+                      )
+
+                      {:error, other}
+                  end
+
+                {:error, reason} = err ->
+                  Logger.error(
+                    "ingest_temp_file_for_similarity_search failed: #{inspect(reason)}"
+                  )
+
+                  err
+              end
+
+            {:error, reason} = err ->
+              Logger.error("ingest_temp_file_for_similarity_search failed: #{inspect(reason)}")
+              err
+          end
         end
       end
     end
@@ -200,13 +305,13 @@ defmodule Vmemo.Memo.Photo do
 
     read :hybrid_search do
       argument :query, :string
-      argument :similar_photo_id, :string
+      argument :similar_image_id, :string, allow_nil?: true
       argument :user_id, :uuid, allow_nil?: false
       argument :page, :integer, default: 1
 
       prepare fn query, _context ->
         q = Ash.Query.get_argument(query, :query) || ""
-        similar = Ash.Query.get_argument(query, :similar_photo_id)
+        similar = Ash.Query.get_argument(query, :similar_image_id)
         user_id = Ash.Query.get_argument(query, :user_id)
         page = Ash.Query.get_argument(query, :page)
 
@@ -214,29 +319,30 @@ defmodule Vmemo.Memo.Photo do
           per_page = 10
           offset = (page - 1) * per_page
 
-          Ash.Query.filter(query, user_id == ^user_id)
+          query
+          |> filter_library_photos(user_id)
           |> Ash.Query.sort(inserted_at: :desc)
           |> Ash.Query.offset(offset)
           |> Ash.Query.limit(per_page)
         else
-          {photos, _found, _current_page} =
+          {images, _found, _current_page} =
             typesense_hybrid_search(q, similar, user_id, page)
 
-          photo_ids =
-            photos
+          image_ids =
+            images
             |> Enum.map(& &1.id)
             |> Enum.filter(&valid_uuid?/1)
 
-          if photo_ids == [] do
+          if image_ids == [] do
             Ash.Query.filter(query, id: [in: []])
           else
             query
-            |> Ash.Query.filter(id: [in: photo_ids])
+            |> Ash.Query.filter(id: [in: image_ids])
             |> Ash.Query.after_action(fn _query, records ->
-              photos_by_id = Map.new(photos, fn photo -> {photo.id, photo} end)
+              photos_by_id = Map.new(images, fn image -> {image.id, image} end)
 
               sorted_records =
-                photo_ids
+                image_ids
                 |> Enum.map(fn id ->
                   Enum.find(records, fn record -> record.id == id end)
                 end)
@@ -263,17 +369,17 @@ defmodule Vmemo.Memo.Photo do
 
     action :hybrid_search_count, :integer do
       argument :query, :string
-      argument :similar_photo_id, :string
+      argument :similar_image_id, :string, allow_nil?: true
       argument :user_id, :uuid, allow_nil?: false
 
       run fn input, context ->
         q = Ash.ActionInput.get_argument(input, :query) || ""
-        similar = Ash.ActionInput.get_argument(input, :similar_photo_id)
+        similar = Ash.ActionInput.get_argument(input, :similar_image_id)
         user_id = Ash.ActionInput.get_argument(input, :user_id)
 
         if blank_query_without_similar?(q, similar) do
           __MODULE__
-          |> Ash.Query.filter(user_id == ^user_id)
+          |> filter_library_photos(user_id)
           |> Ash.count(actor: context.actor)
         else
           {_photos, found, _current_page} =
@@ -284,16 +390,28 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
-    action :search_photos, :string do
-      description "Search photos by text query or find similar photos. Returns JSON array of image data URLs (data:image/{type};base64,...) for direct image display."
+    action :library_images_count, :integer do
+      argument :user_id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        user_id = Ash.ActionInput.get_argument(input, :user_id)
+
+        __MODULE__
+        |> filter_library_photos(user_id)
+        |> Ash.count(actor: context.actor)
+      end
+    end
+
+    action :search_images, :string do
+      description "Search images by text query or find similar images. Returns JSON array of image data URLs (data:image/{type};base64,...) for direct image display."
 
       argument :query, :string, default: ""
-      argument :similar_photo_id, :string, allow_nil?: true
+      argument :similar_image_id, :string, allow_nil?: true
       argument :page, :integer, default: 1
 
       run fn input, context ->
         q = Ash.ActionInput.get_argument(input, :query) || ""
-        similar = Ash.ActionInput.get_argument(input, :similar_photo_id)
+        similar = Ash.ActionInput.get_argument(input, :similar_image_id)
         page = Ash.ActionInput.get_argument(input, :page) || 1
 
         # Get actor from context
@@ -301,46 +419,46 @@ defmodule Vmemo.Memo.Photo do
         user_id = if actor, do: actor.id, else: nil
 
         if is_nil(user_id) do
-          {:error, "Actor is required for photo search"}
+          {:error, "Actor is required for image search"}
         else
-          {photos, _found, _current_page} =
-            TsPhoto.hybird_search_photos({q, similar},
+          {images, _found, _current_page} =
+            TsImage.hybrid_search_images({q, similar},
               user_id: user_id,
               page: page
             )
 
-          photo_ids =
-            photos
+          image_ids =
+            images
             |> Enum.map(& &1.id)
             |> Enum.filter(&valid_uuid?/1)
 
-          if photo_ids == [] do
+          if image_ids == [] do
             {:ok, Jason.encode!([])}
           else
             query =
               __MODULE__
-              |> Ash.Query.filter(id: [in: photo_ids])
+              |> Ash.Query.filter(id: [in: image_ids])
 
             case Ash.read(query, actor: actor) do
               {:ok, records} ->
                 sorted_records =
-                  photo_ids
+                  image_ids
                   |> Enum.map(fn id ->
                     Enum.find(records, fn record -> record.id == id end)
                   end)
                   |> Enum.reject(&is_nil/1)
-                  |> Enum.map(&normalize_photo_url_for_api/1)
+                  |> Enum.map(&normalize_image_url_for_api/1)
 
                 image_data_urls =
                   sorted_records
-                  |> Enum.map(fn photo ->
-                    case read_image_as_base64(photo.url) do
+                  |> Enum.map(fn image ->
+                    case read_image_as_base64(image.url) do
                       {:ok, {base64_data, mime_type}} ->
                         "data:#{mime_type};base64,#{base64_data}"
 
                       {:error, _reason} ->
                         # Fallback to URL if image read fails
-                        photo.url
+                        image.url
                     end
                   end)
 
@@ -354,11 +472,11 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
-    # MCP Resource action: Return photo URL as string
-    # URI format: vmemo://photo/{id}/url
+    # MCP Resource action: Return image URL as string
+    # URI format: vmemo://image/{id}/url
     # The id will be extracted from the URI and passed as a parameter
-    action :get_photo_url, :string do
-      description "Get the URL of a photo by ID. Returns the photo URL as a string."
+    action :get_image_url, :string do
+      description "Get the URL of an image by ID. Returns the image URL as a string."
 
       argument :uri, :string, allow_nil?: false
 
@@ -366,15 +484,15 @@ defmodule Vmemo.Memo.Photo do
         uri = Ash.ActionInput.get_argument(input, :uri)
         actor = Map.get(context, :actor)
 
-        # Extract photo ID from URI: vmemo://photo/{id}/url
-        id = extract_photo_id_from_uri(uri)
+        # Extract image ID from URI: vmemo://image/{id}/url
+        id = extract_image_id_from_uri(uri)
 
         if is_nil(id) do
-          {:error, "Invalid URI format. Expected: vmemo://photo/{id}/url"}
+          {:error, "Invalid URI format. Expected: vmemo://image/{id}/url"}
         else
           case Ash.get(__MODULE__, id, actor: actor) do
-            {:ok, photo} ->
-              normalized_photo = normalize_photo_url_for_api(photo)
+            {:ok, image} ->
+              normalized_photo = normalize_image_url_for_api(image)
               {:ok, normalized_photo.url}
 
             {:error, reason} ->
@@ -384,11 +502,11 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
-    # MCP Resource action: Return photo as HTML
-    # URI format: vmemo://photo/{id}/html
+    # MCP Resource action: Return image as HTML
+    # URI format: vmemo://image/{id}/html
     # The id will be extracted from the URI and passed as a parameter
-    action :get_photo_html, :string do
-      description "Get a photo as HTML. Returns an HTML img tag with the photo URL, caption, and note."
+    action :get_image_html, :string do
+      description "Get an image as HTML. Returns an HTML img tag with the image URL, caption, and note."
 
       argument :uri, :string, allow_nil?: false
 
@@ -396,15 +514,15 @@ defmodule Vmemo.Memo.Photo do
         uri = Ash.ActionInput.get_argument(input, :uri)
         actor = Map.get(context, :actor)
 
-        # Extract photo ID from URI: vmemo://photo/{id}/html
-        id = extract_photo_id_from_uri(uri)
+        # Extract image ID from URI: vmemo://image/{id}/html
+        id = extract_image_id_from_uri(uri)
 
         if is_nil(id) do
-          {:error, "Invalid URI format. Expected: vmemo://photo/{id}/html"}
+          {:error, "Invalid URI format. Expected: vmemo://image/{id}/html"}
         else
           case Ash.get(__MODULE__, id, actor: actor) do
-            {:ok, photo} ->
-              normalized_photo = normalize_photo_url_for_api(photo)
+            {:ok, image} ->
+              normalized_photo = normalize_image_url_for_api(image)
               base_url = get_base_url()
 
               full_url =
@@ -414,13 +532,13 @@ defmodule Vmemo.Memo.Photo do
 
               {:safe, alt_text} =
                 Phoenix.HTML.html_escape(
-                  normalized_photo.caption || normalized_photo.note || "Photo"
+                  normalized_photo.caption || normalized_photo.note || "Image"
                 )
 
               caption_html =
                 if normalized_photo.caption do
                   {:safe, escaped_caption} = Phoenix.HTML.html_escape(normalized_photo.caption)
-                  "<p class=\"photo-caption\">#{escaped_caption}</p>"
+                  "<p class=\"image-caption\">#{escaped_caption}</p>"
                 else
                   ""
                 end
@@ -428,14 +546,14 @@ defmodule Vmemo.Memo.Photo do
               note_html =
                 if normalized_photo.note do
                   {:safe, escaped_note} = Phoenix.HTML.html_escape(normalized_photo.note)
-                  "<p class=\"photo-note\">#{escaped_note}</p>"
+                  "<p class=\"image-note\">#{escaped_note}</p>"
                 else
                   ""
                 end
 
               html = """
-              <div class="photo-card">
-                <img src="#{full_url}" alt="#{alt_text}" class="photo-image" />
+              <div class="image-card">
+                <img src="#{full_url}" alt="#{alt_text}" class="image-image" />
                 #{caption_html}
                 #{note_html}
               </div>
@@ -450,11 +568,11 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
-    # MCP Resource action: Return photo as image (base64 encoded)
-    # URI format: vmemo://photo/{id}/image
+    # MCP Resource action: Return image as base64 data
+    # URI format: vmemo://image/{id}/image
     # The id will be extracted from the URI and passed as a parameter
-    action :get_photo_image, :string do
-      description "Get a photo as base64-encoded image data. Returns the image data in data URL format (data:image/{type};base64,...). The MIME type is auto-detected from file content (supports JPEG, PNG, GIF, WEBP)."
+    action :get_image_data, :string do
+      description "Get an image as base64-encoded image data. Returns the image data in data URL format (data:image/{type};base64,...). The MIME type is auto-detected from file content (supports JPEG, PNG, GIF, WEBP)."
 
       argument :uri, :string, allow_nil?: false
 
@@ -462,15 +580,15 @@ defmodule Vmemo.Memo.Photo do
         uri = Ash.ActionInput.get_argument(input, :uri)
         actor = Map.get(context, :actor)
 
-        # Extract photo ID from URI: vmemo://photo/{id}/image
-        id = extract_photo_id_from_uri(uri)
+        # Extract image ID from URI: vmemo://image/{id}/image
+        id = extract_image_id_from_uri(uri)
 
         if is_nil(id) do
-          {:error, "Invalid URI format. Expected: vmemo://photo/{id}/image"}
+          {:error, "Invalid URI format. Expected: vmemo://image/{id}/image"}
         else
           case Ash.get(__MODULE__, id, actor: actor) do
-            {:ok, photo} ->
-              normalized_photo = normalize_photo_url_for_api(photo)
+            {:ok, image} ->
+              normalized_photo = normalize_image_url_for_api(image)
 
               case read_image_as_base64(normalized_photo.url) do
                 {:ok, {base64_data, mime_type}} ->
@@ -488,11 +606,11 @@ defmodule Vmemo.Memo.Photo do
       end
     end
 
-    # Helper function to extract photo ID from URI
-    defp extract_photo_id_from_uri(uri) do
-      # Match pattern: vmemo://photo/{uuid}/url or vmemo://photo/{uuid}/html or vmemo://photo/{uuid}/image
+    # Helper function to extract image ID from URI
+    defp extract_image_id_from_uri(uri) do
+      # Match pattern: vmemo://image/{uuid}/url or vmemo://image/{uuid}/html or vmemo://image/{uuid}/image
       regex =
-        ~r/vmemo:\/\/photo\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(url|html|image)/
+        ~r/vmemo:\/\/image\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(url|html|image)/
 
       case Regex.run(regex, uri) do
         [_, id, _] -> id
@@ -540,27 +658,27 @@ defmodule Vmemo.Memo.Photo do
     defp detect_mime_type_from_binary(_), do: nil
 
     read :list_similar do
-      argument :photo_id, :uuid, allow_nil?: false
+      argument :image_id, :uuid, allow_nil?: false
       argument :user_id, :uuid, allow_nil?: false
 
       prepare fn query, _context ->
-        photo_id = Ash.Query.get_argument(query, :photo_id)
+        image_id = Ash.Query.get_argument(query, :image_id)
         user_id = Ash.Query.get_argument(query, :user_id)
 
-        photos = TsPhoto.list_similar_photos(photo_id, user_id: user_id)
+        images = TsImage.list_similar_images(image_id, user_id: user_id)
 
-        photo_ids =
-          photos
+        image_ids =
+          images
           |> Enum.map(& &1.id)
           |> Enum.filter(&valid_uuid?/1)
 
-        # Load all matching photos then sort by the order from Typesense
+        # Load all matching images then sort by the order from Typesense
         query
-        |> Ash.Query.filter(id: [in: photo_ids])
+        |> Ash.Query.filter(id: [in: image_ids])
         |> Ash.Query.after_action(fn _query, records ->
-          # Sort records by the order of photo_ids from Typesense
+          # Sort records by the order of image_ids from Typesense
           sorted_records =
-            photo_ids
+            image_ids
             |> Enum.map(fn id ->
               Enum.find(records, fn record -> record.id == id end)
             end)
@@ -611,6 +729,12 @@ defmodule Vmemo.Memo.Photo do
     attribute :caption, :string
     attribute :typesense_status, :string, allow_nil?: false, default: "completed"
     attribute :moondream_status, :string, allow_nil?: false, default: "completed"
+
+    attribute :inner_purpose, :string,
+      allow_nil?: true,
+      public?: false,
+      source: :_purpose
+
     attribute :file_id, :string
     attribute :user_id, :uuid
 
@@ -620,38 +744,38 @@ defmodule Vmemo.Memo.Photo do
 
   relationships do
     many_to_many :notes, Vmemo.Memo.Note do
-      through Vmemo.Memo.PhotoNote
-      source_attribute_on_join_resource :photo_id
+      through Vmemo.Memo.ImageNote
+      source_attribute_on_join_resource :image_id
       destination_attribute_on_join_resource :note_id
     end
   end
 
-  # Normalize photo URL for API responses (used in search_photos action)
-  defp normalize_photo_url_for_api(photo) do
+  # Normalize image URL for API responses (used in search_images action)
+  defp normalize_image_url_for_api(image) do
     base_url = get_base_url()
 
     normalized_url =
       cond do
         # If URL is already absolute with wrong domain, extract path and rebuild
-        String.starts_with?(photo.url, "https://example.com") ->
-          path = String.replace_prefix(photo.url, "https://example.com", "")
+        String.starts_with?(image.url, "https://example.com") ->
+          path = String.replace_prefix(image.url, "https://example.com", "")
           base_url <> path
 
-        String.starts_with?(photo.url, "http://example.com") ->
-          path = String.replace_prefix(photo.url, "http://example.com", "")
+        String.starts_with?(image.url, "http://example.com") ->
+          path = String.replace_prefix(image.url, "http://example.com", "")
           base_url <> path
 
         # If URL is already absolute with correct domain, keep as is
-        String.starts_with?(photo.url, "http://") or String.starts_with?(photo.url, "https://") ->
-          photo.url
+        String.starts_with?(image.url, "http://") or String.starts_with?(image.url, "https://") ->
+          image.url
 
         # Relative path, convert to absolute URL
         true ->
-          base_url <> photo.url
+          base_url <> image.url
       end
 
-    # Update the photo struct with normalized URL
-    %{photo | url: normalized_url}
+    # Update the image struct with normalized URL
+    %{image | url: normalized_url}
   end
 
   defp get_base_url do
@@ -664,16 +788,16 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp typesense_hybrid_search(q, similar, user_id, page) do
-    TsPhoto.hybird_search_photos({q, similar},
+    TsImage.hybrid_search_images({q, similar},
       user_id: user_id,
       page: page
     )
   end
 
-  defp upsert_typesense_photo(photo) do
-    typesense_data = build_typesense_sync_payload(photo)
+  defp upsert_typesense_photo(image) do
+    typesense_data = build_typesense_sync_payload(image)
 
-    case TsPhoto.get_photo(photo.id) do
+    case TsImage.get_image(image.id) do
       nil -> sync_photo_with_typesense_retry(typesense_data, :create)
       {:error, reason} -> {:error, reason}
       _existing -> sync_photo_with_typesense_retry(typesense_data, :update)
@@ -681,7 +805,7 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp sync_photo_with_typesense_retry(typesense_data, :create) do
-    case TsPhoto.create(typesense_data) do
+    case TsImage.create(typesense_data) do
       {:error, "Not Found"} ->
         {:error, "Typesense collection not found. Please run `mix ts.migrate` first."}
 
@@ -691,9 +815,9 @@ defmodule Vmemo.Memo.Photo do
   end
 
   defp sync_photo_with_typesense_retry(typesense_data, :update) do
-    case TsPhoto.update_photo(typesense_data) do
+    case TsImage.update_image(typesense_data) do
       {:error, "Not Found"} ->
-        case TsPhoto.create(typesense_data) do
+        case TsImage.create(typesense_data) do
           {:ok, _created} -> {:ok, true}
           error -> error
         end
@@ -703,19 +827,21 @@ defmodule Vmemo.Memo.Photo do
     end
   end
 
-  defp build_typesense_sync_payload(photo) do
-    base_payload = %{
-      id: photo.id,
-      note: photo.note || "",
-      caption: photo.caption || "",
-      note_ids: Enum.map(photo.notes || [], & &1.id),
-      url: photo.url,
-      file_id: photo.file_id,
-      inserted_at: to_unix_timestamp(photo.inserted_at),
-      inserted_by: photo.user_id
-    }
+  defp build_typesense_sync_payload(image) do
+    base_payload =
+      %{
+        id: image.id,
+        note: image.note || "",
+        caption: image.caption || "",
+        note_ids: Enum.map(image.notes || [], & &1.id),
+        url: image.url,
+        file_id: image.file_id,
+        inserted_at: to_unix_timestamp(image.inserted_at),
+        inserted_by: image.user_id
+      }
+      |> maybe_put_purpose(image.inner_purpose)
 
-    case read_image_base64_for_typesense(photo.url) do
+    case read_image_base64_for_typesense(image.url) do
       {:ok, image} -> Map.put(base_payload, :image, image)
       _ -> base_payload
     end
@@ -737,22 +863,46 @@ defmodule Vmemo.Memo.Photo do
   defp to_unix_timestamp(%DateTime{} = date_time), do: DateTime.to_unix(date_time)
   defp to_unix_timestamp(_), do: :os.system_time(:second)
 
+  defp rollback_ingest_search_anchor(image, actor) do
+    _ = TsImage.delete_image(image.id)
+
+    case Ash.destroy(image, actor: actor) do
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("rollback_ingest_search_anchor destroy failed: #{inspect(reason)}")
+    end
+  end
+
   defp blank_query_without_similar?(q, similar) do
     String.trim(to_string(q || "")) == "" and String.trim(to_string(similar || "")) == ""
   end
 
-  defp generate_caption_for_photo(photo) do
+  defp filter_library_photos(query, user_id) do
+    Ash.Query.filter(
+      query,
+      user_id == ^user_id and (is_nil(inner_purpose) or inner_purpose != "search")
+    )
+  end
+
+  defp maybe_put_purpose(payload, value) when is_binary(value),
+    do: Map.put(payload, :_purpose, value)
+
+  defp maybe_put_purpose(payload, _), do: payload
+
+  defp generate_caption_for_photo(image) do
     cond do
-      has_caption?(photo.caption) -> :ok
-      true -> do_generate_caption(photo)
+      has_caption?(image.caption) -> :ok
+      true -> do_generate_caption(image)
     end
   end
 
-  defp do_generate_caption(photo) do
-    with {:ok, {image_base64, _mime_type}} <- read_image_as_base64(photo.url),
+  defp do_generate_caption(image) do
+    with {:ok, {image_base64, _mime_type}} <- read_image_as_base64(image.url),
          {:ok, caption} <- Caption.generate_caption(image_base64),
          {:ok, _updated_photo} <-
-           __MODULE__.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+           __MODULE__.update(image, %{caption: caption}, actor: nil, authorize?: false) do
       :ok
     else
       {:error, :file_not_found} ->
@@ -765,13 +915,13 @@ defmodule Vmemo.Memo.Photo do
 
   defp has_caption?(caption), do: is_binary(caption) and caption != ""
 
-  defp set_moondream_status(photo, status) do
-    set_job_status(photo, :set_moondream_status, :moondream_status, status)
+  defp set_moondream_status(image, status) do
+    set_job_status(image, :set_moondream_status, :moondream_status, status)
   end
 
-  defp set_job_status(photo, action, field, status) do
+  defp set_job_status(image, action, field, status) do
     changeset =
-      photo
+      image
       |> Ash.Changeset.for_update(
         action,
         %{field => status},

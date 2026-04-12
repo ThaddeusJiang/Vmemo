@@ -4,19 +4,19 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   import VmemoWeb.Live.FocusHelpers
 
-  alias VmemoWeb.LiveComponents.PhotoCard
+  alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
   alias Vmemo.Memo.Note
-  alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.PhotoNote
-  alias Vmemo.Memo.PhotoStorage
+  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageNote
+  alias Vmemo.Memo.ImageStorage
 
   @impl true
   def mount(socket) do
     socket =
       socket
-      |> allow_upload(:photos,
+      |> allow_upload(:images,
         accept: ~w(.png .jpg .jpeg .gif .webp),
         max_entries: 100
       )
@@ -40,8 +40,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
     # 通知父组件文件状态变化和 upload ref
     # 使用 socket.parent_pid 获取父 LiveView 的 PID
-    has_files = Enum.any?(socket.assigns.uploads.photos.entries)
-    upload_ref = socket.assigns.uploads.photos.ref
+    has_files = Enum.any?(socket.assigns.uploads.images.entries)
+    upload_ref = socket.assigns.uploads.images.ref
 
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
@@ -54,7 +54,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   @impl true
   def render(assigns) do
-    has_files = Enum.any?(assigns.uploads.photos.entries)
+    has_files = Enum.any?(assigns.uploads.images.entries)
 
     assigns =
       assigns
@@ -92,26 +92,26 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       phx-change="validate"
       class={@form_class}
       phx-hook="ClipboardMediaFetcher"
-      phx-drop-target={@uploads.photos.ref}
+      phx-drop-target={@uploads.images.ref}
     >
       <div class="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
         <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <label for={@uploads.photos.ref} class={@label_class}>
+          <label for={@uploads.images.ref} class={@label_class}>
             <section class={@section_class}>
               <.live_component
-                id="waterfall-upload-photos"
+                id="waterfall-upload-images"
                 module={Waterfall}
-                items={@uploads.photos.entries}
+                items={@uploads.images.entries}
                 class="flex-1 min-h-0 overflow-y-auto pr-1"
               >
                 <:empty>
                   <div class="w-full h-full flex flex-col justify-center items-center">
-                    <img src="/images/undraw_images.svg" alt="Upload photos" class="w-1/2 h-auto" />
+                    <img src="/images/undraw_images.svg" alt="Upload images" class="w-1/2 h-auto" />
                   </div>
                 </:empty>
 
                 <:card :let={entry}>
-                  <PhotoCard.photo_card>
+                  <ImageCard.image_card>
                     <:media>
                       <.live_img_preview
                         entry={entry}
@@ -179,9 +179,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                           </div>
                       <% end %>
                     </:overlay>
-                  </PhotoCard.photo_card>
+                  </ImageCard.image_card>
                   <div
-                    :for={err <- upload_errors(@uploads.photos, entry)}
+                    :for={err <- upload_errors(@uploads.images, entry)}
                     class="mt-2 text-xs text-error"
                   >
                     {error_to_string(err)}
@@ -190,7 +190,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               </.live_component>
 
               <label
-                for={@uploads.photos.ref}
+                for={@uploads.images.ref}
                 class="block flex-none py-2 rounded-3xl place-content-center hover:cursor-pointer"
               >
                 <span class="text-sm text-gray-600 font-medium">
@@ -198,12 +198,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                 </span>
               </label>
 
-              <.live_file_input upload={@uploads.photos} class="hidden" />
+              <.live_file_input upload={@uploads.images} class="hidden" />
             </section>
           </label>
 
           <%= if @has_files or @show_full_form do %>
-            <div :for={err <- upload_errors(@uploads.photos)} class="alert alert-danger mt-3">
+            <div :for={err <- upload_errors(@uploads.images)} class="alert alert-danger mt-3">
               {error_to_string(err)}
             </div>
 
@@ -223,7 +223,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               <.button>Upload</.button>
             </footer>
           <% else %>
-            <div :for={err <- upload_errors(@uploads.photos)} class="hidden">
+            <div :for={err <- upload_errors(@uploads.images)} class="hidden">
               {error_to_string(err)}
             </div>
           <% end %>
@@ -234,17 +234,17 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             Uploaded
           </div>
           <.live_component
-            id="waterfall-uploaded-photos"
+            id="waterfall-uploaded-images"
             module={Waterfall}
             items={@uploaded_photos}
             class="flex-1 min-h-0 overflow-y-auto pr-1"
           >
-            <:card :let={photo}>
-              <PhotoCard.photo_card photo={photo}>
+            <:card :let={image}>
+              <ImageCard.image_card image={image}>
                 <:overlay>
-                  <.uploaded_photo_status_overlay photo={photo} />
+                  <.uploaded_photo_status_overlay image={image} />
                 </:overlay>
-              </PhotoCard.photo_card>
+              </ImageCard.image_card>
             </:card>
           </.live_component>
         </section>
@@ -259,9 +259,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   @impl true
   def handle_event("validate", params, socket) do
-    current_file_count = length(socket.assigns.uploads.photos.entries)
+    current_file_count = length(socket.assigns.uploads.images.entries)
     previous_file_count = Map.get(socket.assigns, :previous_file_count, 0)
-    upload_ref = socket.assigns.uploads.photos.ref
+    upload_ref = socket.assigns.uploads.images.ref
     has_files = current_file_count > 0
     file_count_changed = current_file_count != previous_file_count
 
@@ -285,11 +285,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   end
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    previous_file_count = length(socket.assigns.uploads.photos.entries)
+    previous_file_count = length(socket.assigns.uploads.images.entries)
 
-    socket = cancel_upload(socket, :photos, ref)
+    socket = cancel_upload(socket, :images, ref)
 
-    current_file_count = length(socket.assigns.uploads.photos.entries)
+    current_file_count = length(socket.assigns.uploads.images.entries)
     has_files = current_file_count > 0
     file_count_changed = current_file_count != previous_file_count
 
@@ -331,25 +331,26 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             nil
         end
 
-      case uploaded_entries(socket, :photos) do
+      case uploaded_entries(socket, :images) do
         {[_ | _] = entries, []} ->
           results =
             for entry <- entries do
               consume_uploaded_entry(socket, entry, fn %{path: path} ->
                 filename = entry.uuid <> Path.extname(entry.client_name)
 
-                {:ok, dest} = PhotoStorage.cp_file(path, user_id, filename)
+                {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
 
-                case Photo.create_with_sync(
+                case Image.create_with_sync(
                        %{
                          note: note_text,
                          url: Path.join("/", dest),
                          file_id: filename,
-                         user_id: user_id
+                         user_id: user_id,
+                         inner_purpose: nil
                        },
                        actor: current_user
                      ) do
-                  {:ok, photo} -> {:ok, {:ok, photo}}
+                  {:ok, image} -> {:ok, {:ok, image}}
                   {:error, reason} -> {:ok, {:error, reason}}
                 end
               end)
@@ -383,21 +384,21 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
               {:noreply, socket |> put_flash(:error, "Upload error occurred")}
 
             nil ->
-              photos =
+              images =
                 results
                 |> Enum.filter(&match?({:ok, _}, &1))
-                |> Enum.map(fn {:ok, photo} -> photo end)
+                |> Enum.map(fn {:ok, image} -> image end)
 
-              case maybe_link_note_to_photos(note, photos, current_user) do
+              case maybe_link_note_to_photos(note, images, current_user) do
                 :ok ->
-                  send(self(), {:upload_success, photos})
+                  send(self(), {:upload_success, images})
 
                   {:noreply,
-                   update(socket, :uploaded_photos, &append_uploaded_photos(&1, photos))}
+                   update(socket, :uploaded_photos, &append_uploaded_photos(&1, images))}
 
                 {:error, _reason} ->
                   {:noreply,
-                   socket |> put_flash(:error, "Failed to link note to uploaded photos")}
+                   socket |> put_flash(:error, "Failed to link note to uploaded images")}
               end
           end
 
@@ -413,12 +414,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   defp maybe_focus_note_field(socket, false), do: socket
 
-  defp normalize_upload_result({:ok, %Photo{} = photo}), do: {:ok, photo}
+  defp normalize_upload_result({:ok, %Image{} = image}), do: {:ok, image}
   defp normalize_upload_result({:error, _reason} = error), do: error
-  defp normalize_upload_result(%Photo{} = photo), do: {:ok, photo}
+  defp normalize_upload_result(%Image{} = image), do: {:ok, image}
   defp normalize_upload_result(other), do: {:error, inspect(other)}
 
-  attr :photo, :map, required: true
+  attr :image, :map, required: true
 
   defp uploaded_photo_status_overlay(assigns) do
     ~H"""
@@ -428,12 +429,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         tabindex="0"
         class={
           "inline-flex items-center justify-center rounded-full p-1.5 bg-base-100/90 shadow-lg " <>
-            uploaded_photo_status_icon_class(@photo)
+            uploaded_photo_status_icon_class(@image)
         }
-        title={uploaded_photo_status_label(@photo)}
-        aria-label={uploaded_photo_status_label(@photo)}
+        title={uploaded_photo_status_label(@image)}
+        aria-label={uploaded_photo_status_label(@image)}
       >
-        <.uploaded_photo_status_icon status={uploaded_photo_status(@photo)} />
+        <.uploaded_photo_status_icon status={uploaded_photo_status(@image)} />
       </button>
       <div
         tabindex="0"
@@ -442,14 +443,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         <div class="font-medium text-base-content mb-1">Processing details</div>
         <div class="flex items-center justify-between gap-2 text-base-content/80">
           <div>Search Engine</div>
-          <div class={uploaded_service_status_class(@photo.typesense_status)}>
-            {uploaded_service_status_text(@photo.typesense_status)}
+          <div class={uploaded_service_status_class(@image.typesense_status)}>
+            {uploaded_service_status_text(@image.typesense_status)}
           </div>
         </div>
         <div class="flex items-center justify-between gap-2 text-base-content/80 mt-1">
           <div>Vision AI</div>
-          <div class={uploaded_service_status_class(@photo.moondream_status)}>
-            {uploaded_service_status_text(@photo.moondream_status)}
+          <div class={uploaded_service_status_class(@image.moondream_status)}>
+            {uploaded_service_status_text(@image.moondream_status)}
           </div>
         </div>
       </div>
@@ -491,8 +492,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     """
   end
 
-  defp uploaded_photo_status(%Photo{} = photo) do
-    statuses = [photo.typesense_status, photo.moondream_status]
+  defp uploaded_photo_status(%Image{} = image) do
+    statuses = [image.typesense_status, image.moondream_status]
 
     cond do
       Enum.any?(statuses, &(&1 == "failed")) -> :error
@@ -501,16 +502,16 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     end
   end
 
-  defp uploaded_photo_status_icon_class(photo) do
-    case uploaded_photo_status(photo) do
+  defp uploaded_photo_status_icon_class(image) do
+    case uploaded_photo_status(image) do
       :success -> "text-success"
       :error -> "text-error"
       :processing -> "text-info"
     end
   end
 
-  defp uploaded_photo_status_label(photo) do
-    case uploaded_photo_status(photo) do
+  defp uploaded_photo_status_label(image) do
+    case uploaded_photo_status(image) do
       :success -> "Search engine and Vision AI processed successfully"
       :error -> "Search engine or Vision AI processing failed"
       :processing -> "Search engine or Vision AI is processing"
@@ -544,13 +545,13 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   defp maybe_link_note_to_photos(_note, [], _current_user), do: :ok
 
-  defp maybe_link_note_to_photos(note, photos, current_user) do
-    photos
-    |> Enum.reduce_while(:ok, fn photo, _acc ->
+  defp maybe_link_note_to_photos(note, images, current_user) do
+    images
+    |> Enum.reduce_while(:ok, fn image, _acc ->
       case Ash.create(
-             PhotoNote,
+             ImageNote,
              %{
-               photo_id: photo.id,
+               image_id: image.id,
                note_id: note.id
              },
              action: :import,

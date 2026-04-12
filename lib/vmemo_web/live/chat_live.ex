@@ -78,7 +78,7 @@ defmodule VmemoWeb.ChatLive do
             class="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse"
           >
             <%= for {id, message} <- @streams.messages do %>
-              <% photos = extract_photos_from_message(message) %>
+              <% images = extract_photos_from_message(message) %>
               <% is_thinking = thinking?(message) %>
               <div
                 id={id}
@@ -110,7 +110,7 @@ defmodule VmemoWeb.ChatLive do
                     current_user={@current_user}
                   />
                   {render_thinking(assigns, is_thinking)}
-                  {render_photos(assigns, photos)}
+                  {render_photos(assigns, images)}
                 </div>
               </div>
             <% end %>
@@ -507,16 +507,16 @@ defmodule VmemoWeb.ChatLive do
     """
   end
 
-  defp render_photos(assigns, photos) do
-    if Enum.empty?(photos) do
+  defp render_photos(assigns, images) do
+    if Enum.empty?(images) do
       Phoenix.HTML.raw("")
     else
-      assigns = assign(assigns, :photos, photos)
+      assigns = assign(assigns, :images, images)
 
       ~H"""
       <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
-        <%= for {photo, index} <- Enum.with_index(@photos) do %>
-          <VmemoWeb.LiveComponents.PhotoCard.photo_card photo={photo} />
+        <%= for {image, index} <- Enum.with_index(@images) do %>
+          <VmemoWeb.LiveComponents.ImageCard.image_card image={image} />
         <% end %>
       </div>
       """
@@ -551,7 +551,7 @@ defmodule VmemoWeb.ChatLive do
   defp normalize_photo_url(url), do: url
 
   defp extract_photos_from_message(message) do
-    # If message is not complete (still thinking), don't show photos
+    # If message is not complete (still thinking), don't show images
     if thinking?(message) do
       []
     else
@@ -563,7 +563,7 @@ defmodule VmemoWeb.ChatLive do
           tool_results
           |> Enum.filter(fn result ->
             result_name = get_result_name(result)
-            result_name == "search_photos" || result_name == :search_photos
+            result_name == "search_images" || result_name == :search_images
           end)
           |> Enum.flat_map(fn result ->
             extract_photos_from_tool_result(result)
@@ -597,7 +597,7 @@ defmodule VmemoWeb.ChatLive do
             nil ->
               case normalize_photo(decoded) do
                 nil -> []
-                photo -> [photo]
+                image -> [image]
               end
 
             data when is_list(data) ->
@@ -608,7 +608,7 @@ defmodule VmemoWeb.ChatLive do
             data when is_map(data) ->
               case normalize_photo(data) do
                 nil -> []
-                photo -> [photo]
+                image -> [image]
               end
 
             _ ->

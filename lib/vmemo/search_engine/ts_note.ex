@@ -3,9 +3,10 @@ defmodule Vmemo.SearchEngine.TsNote do
   require Logger
   alias SmallSdk.Typesense
 
-  @collection_name "notes"
+  @collection_name "memo_notes"
+  @image_collection_name "memo_images"
 
-  defstruct [:id, :text, :photo_ids, :inserted_at, :updated_at, :belongs_to]
+  defstruct [:id, :text, :image_ids, :inserted_at, :updated_at, :belongs_to]
 
   def parse(nil) do
     nil
@@ -15,7 +16,7 @@ defmodule Vmemo.SearchEngine.TsNote do
     %__MODULE__{
       id: note["id"],
       text: note["text"],
-      photo_ids: note["photo_ids"],
+      image_ids: note["image_ids"] || note["image_ids"],
       inserted_at: note["inserted_at"],
       updated_at: note["updated_at"],
       belongs_to: note["belongs_to"]
@@ -40,7 +41,7 @@ defmodule Vmemo.SearchEngine.TsNote do
   end
 
   # TODO: renaming to read?
-  def get(id, :photos) do
+  def get(id, :images) do
     {:ok, note} = Typesense.get_document(@collection_name, id)
 
     note =
@@ -49,7 +50,7 @@ defmodule Vmemo.SearchEngine.TsNote do
         _ -> parse(note)
       end
 
-    req = Typesense.build_request("/collections/photos/documents/search")
+    req = Typesense.build_request("/collections/#{@image_collection_name}/documents/search")
 
     res =
       Req.get(req,
@@ -60,9 +61,9 @@ defmodule Vmemo.SearchEngine.TsNote do
         ]
       )
 
-    {:ok, photos} = Typesense.handle_search_res(res)
+    {:ok, images} = Typesense.handle_search_res(res)
 
-    {:ok, %{note: note, photos: photos |> Enum.map(&Vmemo.SearchEngine.TsPhoto.parse/1)}}
+    {:ok, %{note: note, images: images |> Enum.map(&Vmemo.SearchEngine.TsImage.parse/1)}}
   end
 
   # TODO: renaming to read?
@@ -78,10 +79,10 @@ defmodule Vmemo.SearchEngine.TsNote do
     Typesense.update_document(@collection_name, note)
   end
 
-  def update_photo_ids(id, photo_ids) do
+  def update_image_ids(id, image_ids) do
     update(%{
       id: id,
-      photo_ids: photo_ids
+      image_ids: image_ids
     })
   end
 

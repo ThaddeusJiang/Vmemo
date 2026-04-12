@@ -4,7 +4,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
   alias Ash
   alias Vmemo.Memo.Note
-  alias VmemoWeb.LiveComponents.PhotoCard
+  alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -29,13 +29,13 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
     <form phx-submit="save" phx-change="validate" phx-target={@myself} class="flex flex-col space-y-2">
       <section class="h-1/3 min-h-0 flex flex-col overflow-hidden">
         <.live_component
-          id="photos"
+          id="images"
           module={Waterfall}
-          items={@photos}
+          items={@images}
           class="flex-1 min-h-0 overflow-y-auto pr-1"
         >
-          <:card :let={photo}>
-            <PhotoCard.photo_card photo={photo} />
+          <:card :let={image}>
+            <ImageCard.image_card image={image} />
           </:card>
         </.live_component>
       </section>
@@ -111,11 +111,11 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   def handle_event("save", %{"note" => note_text}, socket) do
     actor = socket.assigns.current_user
 
-    case Ash.update(socket.assigns.note, %{text: note_text}, actor: actor, load: [:photos]) do
+    case Ash.update(socket.assigns.note, %{text: note_text}, actor: actor, load: [:images]) do
       {:ok, note} ->
         {:noreply,
          socket
-         |> assign(note: note, photos: note.photos || [])
+         |> assign(note: note, images: note.images || [])
          |> assign(:note_dirty, false)
          |> assign(:original_note_text, note.text)
          |> assign(form: to_form(%{"note" => note.text}))

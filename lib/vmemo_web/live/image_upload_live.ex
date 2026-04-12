@@ -1,4 +1,4 @@
-defmodule VmemoWeb.PhotoUploadLive do
+defmodule VmemoWeb.ImageUploadLive do
   use VmemoWeb, :live_view
 
   alias VmemoWeb.LiveComponents.UploadForm
@@ -23,14 +23,14 @@ defmodule VmemoWeb.PhotoUploadLive do
   end
 
   @impl true
-  def handle_info({:upload_success, photos}, socket) do
-    count = length(photos)
+  def handle_info({:upload_success, images}, socket) do
+    count = length(images)
 
     message =
       case count do
         0 -> "Photos uploaded successfully"
-        1 -> "1 photo uploaded successfully"
-        _ -> "#{count} photos uploaded successfully"
+        1 -> "1 image uploaded successfully"
+        _ -> "#{count} images uploaded successfully"
       end
 
     {:noreply, put_flash(socket, :info, message)}

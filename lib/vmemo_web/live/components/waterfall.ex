@@ -44,7 +44,7 @@ defmodule VmemoWeb.LiveComponents.Waterfall do
         <%= if @empty do %>
           {render_slot(@empty)}
         <% else %>
-          <div class="text-center text-gray-500 mt-4">No photos found.</div>
+          <div class="text-center text-gray-500 mt-4">No images found.</div>
         <% end %>
       <% else %>
         <div id={@id} phx-hook="Resizer" phx-target={@myself} data-col={@col}>

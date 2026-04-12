@@ -1,10 +1,10 @@
-defmodule VmemoWeb.PhotosIndexLive do
+defmodule VmemoWeb.ImagesIndexLive do
   require Logger
 
   use VmemoWeb, :live_view
 
-  alias Vmemo.Memo.Photo
-  alias VmemoWeb.LiveComponents.PhotoCard
+  alias Vmemo.Memo.Image
+  alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -16,14 +16,14 @@ defmodule VmemoWeb.PhotosIndexLive do
   def handle_event("load-more", _, socket) do
     user = socket.assigns.current_user
     q = socket.assigns.q
-    similar_photo_id = socket.assigns.similar_photo_id
+    similar_image_id = socket.assigns.similar_image_id
 
     page = socket.assigns.page + 1
-    more_photos = load_photos(q, similar_photo_id, page, user)
+    more_photos = load_photos(q, similar_image_id, page, user)
 
     {:noreply,
      socket
-     |> update(:photos, &(&1 ++ more_photos))
+     |> update(:images, &(&1 ++ more_photos))
      |> assign(:page, page)}
   end
 
@@ -32,15 +32,15 @@ defmodule VmemoWeb.PhotosIndexLive do
     {:noreply, push_navigate(socket, to: ~p"/home")}
   end
 
-  defp load_photos(q, similar_photo_id, page, user) do
-    case Photo.hybrid_search(q, similar_photo_id, user.id, page, actor: user) do
+  defp load_photos(q, similar_image_id, page, user) do
+    case Image.hybrid_search(q, similar_image_id, user.id, page, actor: user) do
       {:ok, records} -> records
       _ -> []
     end
   end
 
-  defp load_total_count(q, similar_photo_id, user) do
-    case Photo.hybrid_search_count(q, similar_photo_id, user.id, actor: user) do
+  defp load_total_count(q, similar_image_id, user) do
+    case Image.hybrid_search_count(q, similar_image_id, user.id, actor: user) do
       {:ok, count} -> count
       _ -> 0
     end
@@ -51,31 +51,31 @@ defmodule VmemoWeb.PhotosIndexLive do
     user = socket.assigns.current_user
 
     q = Map.get(params, "q", "")
-    similar_photo_id = Map.get(params, "similar_photo_id")
+    similar_image_id = Map.get(params, "similar_image_id")
 
-    photos = load_photos(q, similar_photo_id, 1, user)
-    total_count = load_total_count(q, similar_photo_id, user)
-    similar_photo = load_similar_photo(similar_photo_id, user)
+    images = load_photos(q, similar_image_id, 1, user)
+    total_count = load_total_count(q, similar_image_id, user)
+    similar_photo = load_similar_photo(similar_image_id, user)
 
     Logger.info(
-      "PhotosIndexLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(photos)}, total=#{total_count}"
+      "ImagesIndexLive handle_params: user_id=#{user.id} (#{inspect(user.id)}), q=#{q}, photos_count=#{length(images)}, total=#{total_count}"
     )
 
     {:noreply,
      socket
-     |> assign(:photos, photos)
+     |> assign(:images, images)
      |> assign(:page, 1)
      |> assign(:q, q)
-     |> assign(:similar_photo_id, similar_photo_id)
+     |> assign(:similar_image_id, similar_image_id)
      |> assign(:similar_photo, similar_photo)
      |> assign(:total_count, total_count)}
   end
 
   defp load_similar_photo(nil, _user), do: nil
 
-  defp load_similar_photo(photo_id, user) do
-    case Photo.get_with_notes(photo_id, user.id, actor: user) do
-      {:ok, photo} -> photo
+  defp load_similar_photo(image_id, user) do
+    case Image.get_with_notes(image_id, user.id, actor: user) do
+      {:ok, image} -> image
       _ -> nil
     end
   end
@@ -94,7 +94,7 @@ defmodule VmemoWeb.PhotosIndexLive do
     ~H"""
     <section class="p-4 sm:p-4 lg:p-4 grow">
       <div class="flex flex-col gap-4 w-full max-w-screen-xl mx-auto">
-        <%= if @similar_photo_id && @similar_photo do %>
+        <%= if @similar_image_id && @similar_photo do %>
           <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-blue-500 shadow-md">
@@ -107,6 +107,14 @@ defmodule VmemoWeb.PhotosIndexLive do
             <div class="ml-auto text-sm text-gray-600">
               <span class="font-semibold">{@total_count}</span> results
             </div>
+            <.button
+              phx-click="clear-search"
+              variant="ghost"
+              class="btn-circle"
+              aria-label="Clear search"
+            >
+              <.icon name="hero-x-mark-solid" class="h-4 w-4" />
+            </.button>
           </div>
         <% else %>
           <%= if @q != "" do %>
@@ -125,27 +133,27 @@ defmodule VmemoWeb.PhotosIndexLive do
           <% end %>
         <% end %>
 
-        <.live_component id="waterfall-photos" module={Waterfall} items={@photos}>
+        <.live_component id="waterfall-images" module={Waterfall} items={@images}>
           <:empty>
             <div class="flex flex-col items-center justify-center min-h-[400px] gap-4">
               <h2 class="text-2xl font-semibold text-gray-700">No results</h2>
               <p class="text-gray-500 text-center">
                 Try a different search above or
-                <.link href="/photos/upload" class="link link-primary">upload photos</.link>
+                <.link href="/images/upload" class="link link-primary">upload images</.link>
               </p>
             </div>
           </:empty>
 
-          <:card :let={photo}>
-            <PhotoCard.photo_card photo={photo}>
+          <:card :let={image}>
+            <ImageCard.image_card image={image}>
               <:overlay>
-                <%= if @similar_photo_id && similarity_score(photo) do %>
+                <%= if @similar_image_id && similarity_score(image) do %>
                   <div class="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
-                    {similarity_score(photo)}%
+                    {similarity_score(image)}%
                   </div>
                 <% end %>
               </:overlay>
-            </PhotoCard.photo_card>
+            </ImageCard.image_card>
           </:card>
         </.live_component>
 

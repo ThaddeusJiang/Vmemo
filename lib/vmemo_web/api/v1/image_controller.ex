@@ -1,14 +1,14 @@
-defmodule VmemoWeb.Api.V1.PhotoController do
+defmodule VmemoWeb.Api.V1.ImageController do
   @moduledoc """
-  API V1 Photo Controller
+  API V1 Image Controller
 
   处理照片的 CRUD 操作
   """
 
   use VmemoWeb, :controller
 
-  alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.PhotoStorage
+  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageStorage
   # alias removed: SmallSdk.FileSystem
 
   require Logger
@@ -16,7 +16,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   @doc """
   创建新照片
 
-  POST /api/v1/photos
+  POST /api/v1/images
   Content-Type: multipart/form-data
 
   Parameters:
@@ -38,45 +38,45 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   @doc """
   获取照片信息
 
-  GET /api/v1/photos/:id
+  GET /api/v1/images/:id
   """
-  def show(conn, %{"id" => photo_id}) do
+  def show(conn, %{"id" => image_id}) do
     current_user = conn.assigns.current_user
 
-    case Photo.get_with_notes(photo_id, current_user.id, actor: current_user) do
-      {:ok, photo} ->
+    case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
+      {:ok, image} ->
         success_response(conn, %{
-          id: photo.id,
-          url: photo.url,
-          note: photo.note,
-          inserted_at: photo.inserted_at
+          id: image.id,
+          url: image.url,
+          note: image.note,
+          inserted_at: image.inserted_at
         })
 
       {:error, _reason} ->
-        error_response(conn, 404, "PHOTO_NOT_FOUND", "Photo not found")
+        error_response(conn, 404, "PHOTO_NOT_FOUND", "Image not found")
     end
   end
 
   @doc """
   删除照片
 
-  DELETE /api/v1/photos/:id
+  DELETE /api/v1/images/:id
   """
-  def delete(conn, %{"id" => photo_id}) do
+  def delete(conn, %{"id" => image_id}) do
     current_user = conn.assigns.current_user
 
-    case Photo.get_with_notes(photo_id, current_user.id, actor: current_user) do
-      {:ok, photo} ->
-        case Photo.destroy(photo, actor: current_user) do
+    case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
+      {:ok, image} ->
+        case Image.destroy(image, actor: current_user) do
           :ok ->
-            success_response(conn, %{message: "Photo deleted successfully"})
+            success_response(conn, %{message: "Image deleted successfully"})
 
           {:error, _reason} ->
-            error_response(conn, 500, "DELETE_FAILED", "Failed to delete photo")
+            error_response(conn, 500, "DELETE_FAILED", "Failed to delete image")
         end
 
       {:error, _reason} ->
-        error_response(conn, 404, "PHOTO_NOT_FOUND", "Photo not found")
+        error_response(conn, 404, "PHOTO_NOT_FOUND", "Image not found")
     end
   end
 
@@ -148,31 +148,32 @@ defmodule VmemoWeb.Api.V1.PhotoController do
     user_id = to_string(current_user.id)
 
     # 复制文件到存储目录
-    {:ok, dest} = PhotoStorage.cp_file(path, user_id, filename)
+    {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
 
     # 创建照片记录（不写入 base64）
     note = Map.get(params, "note", "")
 
-    case Photo.create_with_sync(
+    case Image.create_with_sync(
            %{
              note: note,
              url: Path.join("/", dest),
              file_id: filename,
-             user_id: user_id
+             user_id: user_id,
+             inner_purpose: nil
            },
            actor: current_user
          ) do
-      {:ok, photo} ->
+      {:ok, image} ->
         success_response(conn, %{
-          id: photo.id,
-          url: photo.url,
-          note: photo.note,
-          inserted_at: photo.inserted_at
+          id: image.id,
+          url: image.url,
+          note: image.note,
+          inserted_at: image.inserted_at
         })
 
       {:error, changeset} ->
-        Logger.error("Failed to create photo: #{inspect(changeset.errors)}")
-        error_response(conn, 500, "CREATE_FAILED", "Failed to create photo")
+        Logger.error("Failed to create image: #{inspect(changeset.errors)}")
+        error_response(conn, 500, "CREATE_FAILED", "Failed to create image")
     end
   end
 

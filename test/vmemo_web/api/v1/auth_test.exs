@@ -20,15 +20,15 @@ defmodule VmemoWeb.Api.V1.AuthTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{raw_token}")
-        |> get(~p"/api/v1/photos/1")
+        |> get(~p"/api/v1/images/1")
 
-      # Should not be unauthorized (404 is OK for non-existent photo)
+      # Should not be unauthorized (404 is OK for non-existent image)
       refute conn.status == 401
       refute conn.status == 403
     end
 
     test "rejects missing token", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/photos/1")
+      conn = get(conn, ~p"/api/v1/images/1")
 
       assert conn.status == 401
 
@@ -45,7 +45,7 @@ defmodule VmemoWeb.Api.V1.AuthTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer invalid_token_12345")
-        |> get(~p"/api/v1/photos/1")
+        |> get(~p"/api/v1/images/1")
 
       assert conn.status == 401
     end
@@ -54,7 +54,7 @@ defmodule VmemoWeb.Api.V1.AuthTest do
       conn =
         conn
         |> put_req_header("authorization", raw_token)
-        |> get(~p"/api/v1/photos/1")
+        |> get(~p"/api/v1/images/1")
 
       assert conn.status == 401
     end
@@ -63,7 +63,7 @@ defmodule VmemoWeb.Api.V1.AuthTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer ")
-        |> get(~p"/api/v1/photos/1")
+        |> get(~p"/api/v1/images/1")
 
       assert conn.status == 401
     end
@@ -72,7 +72,7 @@ defmodule VmemoWeb.Api.V1.AuthTest do
       conn =
         conn
         |> put_req_header("authorization", "NotBearer token123")
-        |> get(~p"/api/v1/photos/1")
+        |> get(~p"/api/v1/images/1")
 
       assert conn.status == 401
     end

@@ -1,4 +1,4 @@
-defmodule Vmemo.Memo.PhotoNote do
+defmodule Vmemo.Memo.ImageNote do
   @moduledoc false
   use Ash.Resource,
     domain: Vmemo.Memo,
@@ -11,7 +11,7 @@ defmodule Vmemo.Memo.PhotoNote do
   end
 
   admin do
-    table_columns([:id, :photo_id, :note_id, :inserted_at])
+    table_columns([:id, :image_id, :note_id, :inserted_at])
   end
 
   code_interface do
@@ -24,7 +24,7 @@ defmodule Vmemo.Memo.PhotoNote do
     defaults [:read, :create, :destroy]
 
     create :import do
-      accept [:photo_id, :note_id]
+      accept [:image_id, :note_id]
     end
   end
 
@@ -35,14 +35,19 @@ defmodule Vmemo.Memo.PhotoNote do
   end
 
   relationships do
-    belongs_to :photo, Vmemo.Memo.Photo do
+    belongs_to :image, Vmemo.Memo.Image do
       allow_nil? false
       attribute_writable? true
+      source_attribute :image_id
     end
 
     belongs_to :note, Vmemo.Memo.Note do
       allow_nil? false
       attribute_writable? true
     end
+  end
+
+  identities do
+    identity :unique_image_note_pair, [:image_id, :note_id]
   end
 end

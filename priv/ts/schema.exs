@@ -3,50 +3,24 @@ defmodule Vmemo.Ts.Schema do
 
   alias SmallSdk.Typesense
 
-  def change_1 do
-    photos_schema = %{
-      "name" => "photos",
-      "fields" => [
-        %{"name" => "image", "type" => "image", "store" => false},
-        %{"name" => "note", "type" => "string", "optional" => true},
-        %{"name" => "url", "type" => "string"},
-        %{"name" => "file_id", "type" => "string", "optional" => true},
-        %{"name" => "inserted_at", "type" => "int64"},
-        %{"name" => "inserted_by", "type" => "string"},
-        %{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true},
-        %{"name" => "caption", "type" => "string", "optional" => true},
-        image_embedding_field()
-      ],
-      "default_sorting_field" => "inserted_at"
-    }
-
-    Typesense.create_collection(photos_schema)
-    |> ensure_collection_created("photos")
-
-    notes_schema = %{
-      "name" => "notes",
-      "fields" => [
-        %{"name" => "text", "type" => "string"},
-        %{"name" => "photo_ids", "type" => "string[]", "optional" => true, "facet" => true},
-        %{"name" => "inserted_at", "type" => "int64"},
-        %{"name" => "updated_at", "type" => "int64"},
-        %{"name" => "belongs_to", "type" => "string", "facet" => true}
-      ],
-      "default_sorting_field" => "inserted_at"
-    }
-
-    Typesense.create_collection(notes_schema)
-    |> ensure_collection_created("notes")
-  end
-
   def reset do
     migrations_collection =
       [Vmemo, Ts, SchemaMigrator]
       |> Module.concat()
       |> apply(:migrations_collection, [])
 
+    Typesense.drop_collection("memo_images")
+    |> ensure_ok("drop memo_images collection")
+
+    Typesense.drop_collection("memo_notes")
+    |> ensure_ok("drop memo_notes collection")
+
+    # Legacy collection names for backward compatibility during rename.
+    Typesense.drop_collection("images")
+    |> ensure_ok("drop legacy images collection")
+
     Typesense.drop_collection("photos")
-    |> ensure_ok("drop photos collection")
+    |> ensure_ok("drop legacy photos collection")
 
     Typesense.drop_collection("notes")
     |> ensure_ok("drop notes collection")
@@ -128,17 +102,4 @@ defmodule Vmemo.Ts.Schema do
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
-
-  defp image_embedding_field do
-    %{
-      "name" => "image_embedding",
-      "type" => "float[]",
-      "embed" => %{
-        "from" => ["image"],
-        "model_config" => %{
-          "model_name" => "ts/clip-vit-b-p32"
-        }
-      }
-    }
-  end
 end
