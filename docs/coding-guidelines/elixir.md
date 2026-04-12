@@ -44,3 +44,12 @@ When a value is **internal** to the domain or pipeline (routing, sync flags, non
 - Prefer **`nil`** for unset optional tags (for example `inner_purpose`); only persist `""` when the field has a real empty-string business meaning.
 - Use **short opaque tokens** for non-default buckets (e.g. `"search"` for search-by-photo anchors).
 - Do **not** reserve or branch on future values until a feature needs them; extend when requirements appear.
+
+## Ash resources: module naming and calls
+
+- Do **not** create alias wrapper modules for Ash resources using `defdelegate` (for example `Vmemo.Memo.Image -> Vmemo.Memo.Photo`).
+- Call the **canonical Ash resource module** directly from web/domain/service code (for example `Vmemo.Memo.Photo.create_with_sync/2`).
+- If a naming migration is needed (such as `photo` -> `image`), do it as a planned refactor:
+  - update canonical modules/resources/actions first;
+  - then update call sites;
+  - avoid runtime compatibility wrappers that hide the real resource boundary.
