@@ -46,4 +46,8 @@ defmodule Vmemo.Memo.ImageNote do
       attribute_writable? true
     end
   end
+
+  identities do
+    identity :unique_image_note_pair, [:image_id, :note_id]
+  end
 end

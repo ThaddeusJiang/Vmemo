@@ -270,6 +270,10 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
 
     create index(:ai_vision_requests, [:image_id])
 
+    create unique_index(:memo_images_notes, [:image_id, :note_id],
+             name: "memo_images_notes_unique_image_note_index"
+           )
+
     create table(:admin_import_requests, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
       add :status, :text, null: false, default: "pending"
@@ -297,6 +301,10 @@ defmodule Vmemo.Repo.Migrations.RebuildAllSchema do
     drop constraint(:ai_vision_requests, "ai_vision_requests_user_id_fkey")
 
     drop_if_exists index(:ai_vision_requests, [:image_id])
+
+    drop_if_exists unique_index(:memo_images_notes, [:image_id, :note_id],
+                     name: "memo_images_notes_unique_image_note_index"
+                   )
 
     drop_if_exists index(:ai_vision_requests, [:user_id])
 
