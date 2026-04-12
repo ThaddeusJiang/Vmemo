@@ -14,7 +14,7 @@ defmodule Vmemo.Memo.Image do
              :updated_at
            ]}
   use Ash.Resource,
-    domain: :"Elixir.Vmemo.Memo",
+    domain: Vmemo.Memo,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
