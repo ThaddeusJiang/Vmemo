@@ -2,7 +2,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @moduledoc false
   use VmemoWeb, :live_component
 
-  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.Photo
 
   @impl true
   def mount(socket) do
@@ -115,7 +115,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         filename = entry.uuid <> Path.extname(entry.client_name)
 
-        case Image.ingest_temp_file_for_similarity_search(path, filename, actor: current_user) do
+        case Photo.ingest_temp_file_for_similarity_search(path, filename, actor: current_user) do
           {:ok, photo_id} ->
             {:ok, photo_id}
 

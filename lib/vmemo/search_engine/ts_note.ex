@@ -62,7 +62,7 @@ defmodule Vmemo.SearchEngine.TsNote do
 
     {:ok, photos} = Typesense.handle_search_res(res)
 
-    {:ok, %{note: note, photos: photos |> Enum.map(&Vmemo.SearchEngine.TsMemoImage.parse/1)}}
+    {:ok, %{note: note, photos: photos |> Enum.map(&Vmemo.SearchEngine.TsPhoto.parse/1)}}
   end
 
   # TODO: renaming to read?

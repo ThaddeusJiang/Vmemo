@@ -5,7 +5,7 @@ defmodule VmemoWeb.PhotoIdLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Ai.VisionRequest
-  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.Photo
 
   alias VmemoWeb.LiveComponents.MoondreamPanel
   alias VmemoWeb.LiveComponents.Waterfall
@@ -22,8 +22,8 @@ defmodule VmemoWeb.PhotoIdLive do
   defp mount_photo(id, socket) do
     user = socket.assigns.current_user
 
-    with {:ok, photo} <- Image.get_with_notes(id, user.id, actor: user),
-         {:ok, photos} <- Image.list_similar(photo.id, user.id, actor: user) do
+    with {:ok, photo} <- Photo.get_with_notes(id, user.id, actor: user),
+         {:ok, photos} <- Photo.list_similar(photo.id, user.id, actor: user) do
       {:ok, assign_loaded_photo(socket, user, photo, photos)}
     else
       _ -> {:ok, assign_photo_not_found(socket)}
@@ -36,7 +36,7 @@ defmodule VmemoWeb.PhotoIdLive do
 
     case Ash.get(Photo, id, actor: user) do
       {:ok, photo} ->
-        Image.destroy(photo, actor: user)
+        Photo.destroy(photo, actor: user)
 
         {:noreply,
          socket
@@ -56,7 +56,7 @@ defmodule VmemoWeb.PhotoIdLive do
     note = Map.get(params, "note", socket.assigns.photo.note)
     caption = Map.get(params, "caption", socket.assigns.photo.caption)
 
-    case Image.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
+    case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
         original_form_values = %{"note" => updated_photo.note, "caption" => updated_photo.caption}
 
@@ -149,7 +149,7 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_user
     photo = socket.assigns.photo
 
-    case Image.update_search_engine(photo, %{}, actor: user) do
+    case Photo.update_search_engine(photo, %{}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
@@ -166,7 +166,7 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_user
     photo = socket.assigns.photo
 
-    case Image.request_generate_caption(photo, %{}, actor: user) do
+    case Photo.request_generate_caption(photo, %{}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
@@ -223,7 +223,7 @@ defmodule VmemoWeb.PhotoIdLive do
     # Update photo if caption was generated
     socket =
       if payload.status == "completed" && payload.function_type == "caption" do
-        case Image.get_with_notes(socket.assigns.photo.id, user.id, actor: user) do
+        case Photo.get_with_notes(socket.assigns.photo.id, user.id, actor: user) do
           {:ok, updated_photo} ->
             current_note = socket.assigns.form[:note].value || updated_photo.note
 

@@ -9,7 +9,7 @@ defmodule Vmemo.UserSettings do
   alias Vmemo.ImportExport.Json
   alias Vmemo.ImportExport.Zip
   alias Vmemo.Memo.Note
-  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.Photo
   alias Vmemo.Memo.Photo
   alias Vmemo.Memo.PhotoNote
   alias Vmemo.Repo
@@ -597,7 +597,7 @@ defmodule Vmemo.UserSettings do
     {photo_stats, photo_errors} =
       sync_typesense_records(
         MapSet.to_list(photo_ids),
-        fn id -> Image.sync_typesense_by_id(id, actor: nil, authorize?: false) end,
+        fn id -> Photo.sync_typesense_by_id(id, actor: nil, authorize?: false) end,
         "photo"
       )
 

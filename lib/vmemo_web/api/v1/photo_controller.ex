@@ -7,8 +7,8 @@ defmodule VmemoWeb.Api.V1.PhotoController do
 
   use VmemoWeb, :controller
 
-  alias Vmemo.Memo.Image
-  alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.PhotoStorage
   # alias removed: SmallSdk.FileSystem
 
   require Logger
@@ -43,7 +43,7 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   def show(conn, %{"id" => photo_id}) do
     current_user = conn.assigns.current_user
 
-    case Image.get_with_notes(photo_id, current_user.id, actor: current_user) do
+    case Photo.get_with_notes(photo_id, current_user.id, actor: current_user) do
       {:ok, photo} ->
         success_response(conn, %{
           id: photo.id,
@@ -65,9 +65,9 @@ defmodule VmemoWeb.Api.V1.PhotoController do
   def delete(conn, %{"id" => photo_id}) do
     current_user = conn.assigns.current_user
 
-    case Image.get_with_notes(photo_id, current_user.id, actor: current_user) do
+    case Photo.get_with_notes(photo_id, current_user.id, actor: current_user) do
       {:ok, photo} ->
-        case Image.destroy(photo, actor: current_user) do
+        case Photo.destroy(photo, actor: current_user) do
           :ok ->
             success_response(conn, %{message: "Photo deleted successfully"})
 
@@ -148,12 +148,12 @@ defmodule VmemoWeb.Api.V1.PhotoController do
     user_id = to_string(current_user.id)
 
     # 复制文件到存储目录
-    {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
+    {:ok, dest} = PhotoStorage.cp_file(path, user_id, filename)
 
     # 创建照片记录（不写入 base64）
     note = Map.get(params, "note", "")
 
-    case Image.create_with_sync(
+    case Photo.create_with_sync(
            %{
              note: note,
              url: Path.join("/", dest),

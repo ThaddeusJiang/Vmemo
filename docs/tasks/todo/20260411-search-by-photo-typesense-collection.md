@@ -48,7 +48,7 @@
 
 1. LiveView `SearchBox`：`consume_uploaded_entry` 读临时文件 → Base64 → `TsSearchPhotos.index_image/2`。
 2. 成功 → `push_navigate` 至 `/photos?search_anchor_id=<uuid>`。
-3. `PhotosIndexLive`：`Photo.hybrid_search` / `hybrid_search_count` 传入 `search_anchor_id`；域内从 anchor 取向量（再次校验 `inserted_by`），`TsMemoImage` 对 `photos` 发起带字面 `image_embedding:([...], k:, distance_threshold:)` 的 multi_search。
+3. `PhotosIndexLive`：`Photo.hybrid_search` / `hybrid_search_count` 传入 `search_anchor_id`；域内从 anchor 取向量（再次校验 `inserted_by`），`TsPhoto` 对 `photos` 发起带字面 `image_embedding:([...], k:, distance_threshold:)` 的 multi_search。
 4. 用户 `clear-search` 时可选 `delete_document` 回收 anchor（刷新带同一 query 仍依赖 anchor 存在，故不在首次 load 后立刻删）。
 
 ## 风险
@@ -63,7 +63,7 @@
 - [x] `priv/ts/migrations/2026-04-12.exs`：`change_3` 删除旧集合 `photo_search_anchors` 并确保 `search_photos`。
 - [x] `Vmemo.Ts.Schema.reset/0`：`drop` `search_photos` 与遗留 `photo_search_anchors`。
 - [x] `Vmemo.SearchEngine.TsSearchPhotos`（`index_image/2`、`get_embedding/2`、`delete/1`）。
-- [x] `TsMemoImage` / `Photo`：`search_anchor_id` 贯通 hybrid 与 count。
+- [x] `TsPhoto` / `Photo`：`search_anchor_id` 贯通 hybrid 与 count。
 - [x] `SearchBox` / `PhotosIndexLive`：新 query 参数与 UI（无缩略图时文案头）。
 
 ## Test checklist

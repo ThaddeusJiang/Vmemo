@@ -8,7 +8,7 @@ defmodule Vmemo.Ai.VisionRequest do
   require Ash.Query
   require Logger
   alias SmallSdk.Moondream
-  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.Photo
   alias Vmemo.Memo.Photo
 
   postgres do
@@ -328,7 +328,7 @@ defmodule Vmemo.Ai.VisionRequest do
       caption when is_binary(caption) and caption != "" ->
         with {:ok, photo} <- Ash.get(Photo, photo_id, actor: nil),
              {:ok, _updated_photo} <-
-               Image.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+               Photo.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
           :ok
         end
 
