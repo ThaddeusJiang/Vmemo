@@ -14,7 +14,7 @@ defmodule Vmemo.Memo.Image do
              :updated_at
            ]}
   use Ash.Resource,
-    domain: Vmemo.Memo,
+    domain: :"Elixir.Vmemo.Memo",
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
@@ -240,7 +240,6 @@ defmodule Vmemo.Memo.Image do
                   case __MODULE__.sync_typesense_by_id(image.id, actor: nil, authorize?: false) do
                     {:ok, true} ->
                       case Ash.update(image, %{typesense_status: "completed"},
-                             domain: Vmemo.Memo,
                              action: :set_typesense_status,
                              actor: actor
                            ) do
@@ -867,7 +866,7 @@ defmodule Vmemo.Memo.Image do
   defp rollback_ingest_search_anchor(image, actor) do
     _ = TsImage.delete_image(image.id)
 
-    case Ash.destroy(image, domain: Vmemo.Memo, actor: actor) do
+    case Ash.destroy(image, actor: actor) do
       {:ok, _} ->
         :ok
 
