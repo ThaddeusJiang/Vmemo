@@ -22,7 +22,7 @@ defmodule Mix.Tasks.Ts.WarmupEmbedding do
       "inserted_by" => "warmup"
     }
 
-    case Typesense.create_document("images", document) do
+    case Typesense.create_document("memo_images", document) do
       {:ok, _doc} ->
         Mix.shell().info("Typesense embedding warmup document inserted")
 

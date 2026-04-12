@@ -6,7 +6,8 @@ defmodule Vmemo.SearchEngine.TsImage do
   """
   alias SmallSdk.Typesense
 
-  @collection_name "images"
+  @collection_name "memo_images"
+  @note_collection_name "memo_notes"
 
   # Indexed as `_purpose` on Typesense (see `Image.inner_purpose` / `source :_purpose`).
   @purpose_search "search"
@@ -90,7 +91,7 @@ defmodule Vmemo.SearchEngine.TsImage do
         _ -> parse(image)
       end
 
-    req = Typesense.build_request("/collections/notes/documents/search")
+    req = Typesense.build_request("/collections/#{@note_collection_name}/documents/search")
 
     res =
       Typesense.request(:get, req,

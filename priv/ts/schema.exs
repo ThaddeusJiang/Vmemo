@@ -3,76 +3,21 @@ defmodule Vmemo.Ts.Schema do
 
   alias SmallSdk.Typesense
 
-  def change_1 do
-    images_schema = %{
-      "name" => "images",
-      "fields" => [
-        %{"name" => "image", "type" => "image", "store" => false},
-        %{"name" => "note", "type" => "string", "optional" => true},
-        %{"name" => "url", "type" => "string"},
-        %{"name" => "file_id", "type" => "string", "optional" => true},
-        %{"name" => "inserted_at", "type" => "int64"},
-        %{"name" => "inserted_by", "type" => "string"},
-        %{"name" => "note_ids", "type" => "string[]", "optional" => true, "facet" => true},
-        %{"name" => "caption", "type" => "string", "optional" => true},
-        %{"name" => "_purpose", "type" => "string", "optional" => true, "facet" => true},
-        image_embedding_field()
-      ],
-      "default_sorting_field" => "inserted_at"
-    }
-
-    Typesense.create_collection(images_schema)
-    |> ensure_collection_created("images")
-
-    notes_schema = %{
-      "name" => "notes",
-      "fields" => [
-        %{"name" => "text", "type" => "string"},
-        %{"name" => "image_ids", "type" => "string[]", "optional" => true, "facet" => true},
-        %{"name" => "inserted_at", "type" => "int64"},
-        %{"name" => "updated_at", "type" => "int64"},
-        %{"name" => "belongs_to", "type" => "string", "facet" => true}
-      ],
-      "default_sorting_field" => "inserted_at"
-    }
-
-    Typesense.create_collection(notes_schema)
-    |> ensure_collection_created("notes")
-  end
-
-  @doc """
-  Adds `_purpose` to `images` for existing Typesense clusters (idempotent).
-  Fresh installs already include this field via `change_1/0`.
-  """
-  def change_2 do
-    ensure_images_purpose_field()
-  end
-
-  @doc """
-  Adds `_purpose` when an older migration only created `image_purpose` (idempotent).
-  """
-  def change_3 do
-    ensure_images_purpose_field()
-  end
-
-  @doc """
-  Align Typesense naming with Ash resources:
-  - create `images` collection when missing
-  - ensure `notes.image_ids` exists for image linkage
-  """
-  def change_4 do
-    change_1()
-    ensure_notes_image_ids_field()
-  end
-
   def reset do
     migrations_collection =
       [Vmemo, Ts, SchemaMigrator]
       |> Module.concat()
       |> apply(:migrations_collection, [])
 
+    Typesense.drop_collection("memo_images")
+    |> ensure_ok("drop memo_images collection")
+
+    Typesense.drop_collection("memo_notes")
+    |> ensure_ok("drop memo_notes collection")
+
+    # Legacy collection names for backward compatibility during rename.
     Typesense.drop_collection("images")
-    |> ensure_ok("drop images collection")
+    |> ensure_ok("drop legacy images collection")
 
     Typesense.drop_collection("photos")
     |> ensure_ok("drop legacy photos collection")
@@ -157,61 +102,4 @@ defmodule Vmemo.Ts.Schema do
   defp ensure_ok({:ok, _}, _action), do: :ok
   defp ensure_ok({:error, "Not Found"}, _action), do: :ok
   defp ensure_ok({:error, reason}, action), do: raise("Typesense #{action} failed: #{reason}")
-
-  defp ensure_images_purpose_field do
-    case Typesense.get_collection("images") do
-      {:ok, %{"fields" => fields}} when is_list(fields) ->
-        if Enum.any?(fields, fn f -> Map.get(f, "name") == "_purpose" end) do
-          :ok
-        else
-          Typesense.update_collection("images", %{
-            "fields" => [
-              %{"name" => "_purpose", "type" => "string", "optional" => true, "facet" => true}
-            ]
-          })
-          |> ensure_ok("add _purpose field to images collection")
-        end
-
-      {:ok, other} ->
-        raise("Typesense images collection schema missing fields: #{inspect(Map.keys(other))}")
-
-      {:error, reason} ->
-        raise("Typesense get_collection images failed: #{reason}")
-    end
-  end
-
-  defp ensure_notes_image_ids_field do
-    case Typesense.get_collection("notes") do
-      {:ok, %{"fields" => fields}} when is_list(fields) ->
-        if Enum.any?(fields, fn f -> Map.get(f, "name") == "image_ids" end) do
-          :ok
-        else
-          Typesense.update_collection("notes", %{
-            "fields" => [
-              %{"name" => "image_ids", "type" => "string[]", "optional" => true, "facet" => true}
-            ]
-          })
-          |> ensure_ok("add image_ids field to notes collection")
-        end
-
-      {:ok, other} ->
-        raise("Typesense notes collection schema missing fields: #{inspect(Map.keys(other))}")
-
-      {:error, reason} ->
-        raise("Typesense get_collection notes failed: #{reason}")
-    end
-  end
-
-  defp image_embedding_field do
-    %{
-      "name" => "image_embedding",
-      "type" => "float[]",
-      "embed" => %{
-        "from" => ["image"],
-        "model_config" => %{
-          "model_name" => "ts/clip-vit-b-p32"
-        }
-      }
-    }
-  end
 end

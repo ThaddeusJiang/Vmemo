@@ -3,7 +3,8 @@ defmodule Vmemo.SearchEngine.TsNote do
   require Logger
   alias SmallSdk.Typesense
 
-  @collection_name "notes"
+  @collection_name "memo_notes"
+  @image_collection_name "memo_images"
 
   defstruct [:id, :text, :image_ids, :inserted_at, :updated_at, :belongs_to]
 
@@ -49,7 +50,7 @@ defmodule Vmemo.SearchEngine.TsNote do
         _ -> parse(note)
       end
 
-    req = Typesense.build_request("/collections/images/documents/search")
+    req = Typesense.build_request("/collections/#{@image_collection_name}/documents/search")
 
     res =
       Req.get(req,

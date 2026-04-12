@@ -163,9 +163,9 @@ defmodule SmallSdk.Typesense do
     res =
       request(:post, req,
         json: %{
-          "description" => "Search-only images key",
+          "description" => "Search-only memo images key",
           "actions" => ["documents:search"],
-          "collections" => ["images"]
+          "collections" => ["memo_images"]
         }
       )
 
