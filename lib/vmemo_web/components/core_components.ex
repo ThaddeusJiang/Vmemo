@@ -851,7 +851,7 @@ defmodule VmemoWeb.CoreComponents do
 
   ## Examples
 
-      <.img src="/images/photo.jpg" alt="A photo of a mountain" />
+      <.img src="/images/image.jpg" alt="A image of a mountain" />
   """
   def img(assigns) do
     ~H"""
@@ -900,7 +900,7 @@ defmodule VmemoWeb.CoreComponents do
   attr :note, :string, required: true
 
   @doc """
-  Renders photo with note.
+  Renders image with note.
   """
   def photo_note(assigns) do
     ~H"""

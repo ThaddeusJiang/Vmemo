@@ -41,7 +41,7 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
       |> LLMChain.add_messages(message_chain)
       # add the names of tools you want available in your conversation here.
       # i.e tools: [:lookup_weather]
-      |> AshAi.setup_ash_ai(otp_app: :vmemo, tools: [:photo_search], actor: context.actor)
+      |> AshAi.setup_ash_ai(otp_app: :vmemo, tools: [:image_search], actor: context.actor)
       |> patch_tool_schemas()
       |> LLMChain.add_callback(%{
         on_llm_new_delta: fn _chain, deltas ->

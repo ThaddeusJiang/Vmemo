@@ -1,11 +1,11 @@
-defmodule VmemoWeb.PhotoIdLive do
+defmodule VmemoWeb.ImageIdLive do
   require Logger
   use Gettext, backend: VmemoWeb.Gettext
 
   use VmemoWeb, :live_view
 
   alias Vmemo.Ai.VisionRequest
-  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.Image
 
   alias VmemoWeb.LiveComponents.MoondreamPanel
   alias VmemoWeb.LiveComponents.Waterfall
@@ -22,47 +22,47 @@ defmodule VmemoWeb.PhotoIdLive do
   defp mount_photo(id, socket) do
     user = socket.assigns.current_user
 
-    with {:ok, photo} <- Photo.get_with_notes(id, user.id, actor: user),
-         {:ok, photos} <- Photo.list_similar(photo.id, user.id, actor: user) do
-      {:ok, assign_loaded_photo(socket, user, photo, photos)}
+    with {:ok, image} <- Image.get_with_notes(id, user.id, actor: user),
+         {:ok, images} <- Image.list_similar(image.id, user.id, actor: user) do
+      {:ok, assign_loaded_photo(socket, user, image, images)}
     else
       _ -> {:ok, assign_photo_not_found(socket)}
     end
   end
 
   @impl true
-  def handle_event("delete-photo", %{"id" => id}, socket) do
+  def handle_event("delete-image", %{"id" => id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(Photo, id, actor: user) do
-      {:ok, photo} ->
-        Photo.destroy(photo, actor: user)
+    case Ash.get(Image, id, actor: user) do
+      {:ok, image} ->
+        Image.destroy(image, actor: user)
 
         {:noreply,
          socket
          |> put_flash(:info, "Deleted")
-         |> push_navigate(to: ~p"/photos")}
+         |> push_navigate(to: ~p"/images")}
 
       _ ->
         {:noreply,
          socket
-         |> put_flash(:error, "Photo not found")}
+         |> put_flash(:error, "Image not found")}
     end
   end
 
   @impl true
   def handle_event("save", params, socket) do
     user = socket.assigns.current_user
-    note = Map.get(params, "note", socket.assigns.photo.note)
-    caption = Map.get(params, "caption", socket.assigns.photo.caption)
+    note = Map.get(params, "note", socket.assigns.image.note)
+    caption = Map.get(params, "caption", socket.assigns.image.caption)
 
-    case Photo.update(socket.assigns.photo, %{note: note, caption: caption}, actor: user) do
+    case Image.update(socket.assigns.image, %{note: note, caption: caption}, actor: user) do
       {:ok, updated_photo} ->
         original_form_values = %{"note" => updated_photo.note, "caption" => updated_photo.caption}
 
         {:noreply,
          socket
-         |> assign(:photo, updated_photo)
+         |> assign(:image, updated_photo)
          |> assign(:form_dirty, false)
          |> assign(:original_form_values, original_form_values)
          |> assign(
@@ -94,9 +94,9 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def handle_event("gen-description", _, socket) do
     user = socket.assigns.current_user
-    photo = socket.assigns.photo
+    image = socket.assigns.image
 
-    case VisionRequest.create_caption(%{photo_id: photo.id, user_id: user.id}, actor: user) do
+    case VisionRequest.create_caption(%{image_id: image.id, user_id: user.id}, actor: user) do
       {:ok, request} ->
         loading_requests = MapSet.put(socket.assigns.caption_loading_requests, request.id)
 
@@ -147,13 +147,13 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def handle_event("update-search-engine", _, socket) do
     user = socket.assigns.current_user
-    photo = socket.assigns.photo
+    image = socket.assigns.image
 
-    case Photo.update_search_engine(photo, %{}, actor: user) do
+    case Image.update_search_engine(image, %{}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
-         |> assign(:photo, updated_photo)
+         |> assign(:image, updated_photo)
          |> put_flash(:info, "Retrying Typesense sync")}
 
       {:error, _reason} ->
@@ -164,13 +164,13 @@ defmodule VmemoWeb.PhotoIdLive do
   @impl true
   def handle_event("generate-caption", _, socket) do
     user = socket.assigns.current_user
-    photo = socket.assigns.photo
+    image = socket.assigns.image
 
-    case Photo.request_generate_caption(photo, %{}, actor: user) do
+    case Image.request_generate_caption(image, %{}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
-         |> assign(:photo, updated_photo)
+         |> assign(:image, updated_photo)
          |> put_flash(:info, "Retrying caption generation")}
 
       {:error, _reason} ->
@@ -193,7 +193,7 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_user
 
     vision_requests =
-      case VisionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+      case VisionRequest.list_by_image(socket.assigns.image.id, actor: user) do
         {:ok, requests} -> requests
         _ -> socket.assigns.moondream_requests
       end
@@ -220,15 +220,15 @@ defmodule VmemoWeb.PhotoIdLive do
       loading_requests: moondream_loading_requests
     )
 
-    # Update photo if caption was generated
+    # Update image if caption was generated
     socket =
       if payload.status == "completed" && payload.function_type == "caption" do
-        case Photo.get_with_notes(socket.assigns.photo.id, user.id, actor: user) do
+        case Image.get_with_notes(socket.assigns.image.id, user.id, actor: user) do
           {:ok, updated_photo} ->
             current_note = socket.assigns.form[:note].value || updated_photo.note
 
             socket
-            |> assign(:photo, updated_photo)
+            |> assign(:image, updated_photo)
             |> assign(
               :form,
               to_form(%{
@@ -259,7 +259,7 @@ defmodule VmemoWeb.PhotoIdLive do
     user = socket.assigns.current_user
 
     moondream_requests =
-      case VisionRequest.list_by_photo(socket.assigns.photo.id, actor: user) do
+      case VisionRequest.list_by_image(socket.assigns.image.id, actor: user) do
         {:ok, requests} -> requests
         _ -> socket.assigns.moondream_requests
       end
@@ -276,7 +276,7 @@ defmodule VmemoWeb.PhotoIdLive do
   def render(assigns) do
     ~H"""
     <div class="p-4 sm:p-4 lg:p-4">
-      <%= if @photo == nil do %>
+      <%= if @image == nil do %>
         <.not_found />
       <% else %>
         <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-xl">
@@ -284,17 +284,17 @@ defmodule VmemoWeb.PhotoIdLive do
             <div class="space-y-2 flex flex-col items-center justify-center relative min-h-[400px]">
               <figure class="w-auto h-auto group relative">
                 <%!-- <figcaption class="text-lg font-semibold text-gray-900">
-                  <%= @photo.note %>
+                  <%= @image.note %>
                 </figcaption> --%>
 
                 <.img
-                  src={@photo.url}
-                  alt={@photo.note}
+                  src={@image.url}
+                  alt={@image.note}
                   class="block !w-auto !max-w-full !h-auto !max-h-[400px] mx-auto !object-contain rounded-lg shadow hover:shadow-lg transition-shadow"
                 />
 
                 <.link
-                  href={@photo.url}
+                  href={@image.url}
                   class="absolute bottom-2 right-2 btn btn-circle hidden group-hover:flex sm:group-hover:hidden items-center justify-center group-hover:bg-base-100"
                   aria-label={gettext("expand")}
                 >
@@ -361,7 +361,7 @@ defmodule VmemoWeb.PhotoIdLive do
                         stroke-linejoin="round"
                         class={
                           "lucide lucide-brain-circuit h-4 w-4 " <>
-                            if(@photo.caption && @photo.caption != "",
+                            if(@image.caption && @image.caption != "",
                               do: "text-green-500",
                               else: "text-base-content"
                             )
@@ -378,7 +378,7 @@ defmodule VmemoWeb.PhotoIdLive do
                         />
                       </svg>
                       <span>
-                        {if @photo.caption && @photo.caption != "",
+                        {if @image.caption && @image.caption != "",
                           do: gettext("Regenerate caption"),
                           else: gettext("Generate caption")}
                       </span>
@@ -390,13 +390,13 @@ defmodule VmemoWeb.PhotoIdLive do
                       type="button"
                       phx-click="update-search-engine"
                       disabled={
-                        @photo.typesense_status == "pending" or
-                          @photo.typesense_status == "processing"
+                        @image.typesense_status == "pending" or
+                          @image.typesense_status == "processing"
                       }
                     >
                       <.icon name="hero-arrow-path" class="h-4 w-4" />
                       <span>
-                        {gettext("Retry Typesense sync")} ({@photo.typesense_status})
+                        {gettext("Retry Typesense sync")} ({@image.typesense_status})
                       </span>
                     </button>
                   </li>
@@ -405,13 +405,13 @@ defmodule VmemoWeb.PhotoIdLive do
                       type="button"
                       phx-click="generate-caption"
                       disabled={
-                        @photo.moondream_status == "pending" or
-                          @photo.moondream_status == "processing"
+                        @image.moondream_status == "pending" or
+                          @image.moondream_status == "processing"
                       }
                     >
                       <.icon name="hero-arrow-path" class="h-4 w-4" />
                       <span>
-                        {gettext("Retry Moondream caption")} ({@photo.moondream_status})
+                        {gettext("Retry Moondream caption")} ({@image.moondream_status})
                       </span>
                     </button>
                   </li>
@@ -419,8 +419,8 @@ defmodule VmemoWeb.PhotoIdLive do
                   <li>
                     <button
                       type="button"
-                      phx-click="delete-photo"
-                      phx-value-id={@photo.id}
+                      phx-click="delete-image"
+                      phx-value-id={@image.id}
                       data-confirm="You can't undo this action. Are you sure?"
                     >
                       <.icon name="hero-trash" class="h-4 w-4 text-error" />
@@ -515,22 +515,22 @@ defmodule VmemoWeb.PhotoIdLive do
           <.live_component
             id="moondream-panel"
             module={MoondreamPanel}
-            photo={@photo}
+            image={@image}
             current_user={@current_user}
             requests={@moondream_requests}
             loading_requests={@moondream_loading_requests}
           />
 
-          <div :if={length(@photos) > 0 || length(@notes) > 0} class="grid gap-4 grid-cols-4">
-            <div :if={length(@photos) > 0} class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
+          <div :if={length(@images) > 0 || length(@notes) > 0} class="grid gap-4 grid-cols-4">
+            <div :if={length(@images) > 0} class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
               <h2 class="text-lg font-semibold">
-                Similar photos ({length(@photos)})
+                Similar images ({length(@images)})
               </h2>
 
-              <.live_component id="similar-photos" module={Waterfall} items={@photos}>
-                <:card :let={photo}>
-                  <.link navigate={~p"/photos/#{photo.id}"} class="link link-hover block">
-                    <.img src={photo.url} alt={photo.note} />
+              <.live_component id="similar-images" module={Waterfall} items={@images}>
+                <:card :let={image}>
+                  <.link navigate={~p"/images/#{image.id}"} class="link link-hover block">
+                    <.img src={image.url} alt={image.note} />
                   </.link>
                 </:card>
               </.live_component>
@@ -592,8 +592,8 @@ defmodule VmemoWeb.PhotoIdLive do
 
                 <div id="expanded_photo-content" class="flex items-center justify-center">
                   <.img
-                    src={@photo.url}
-                    alt={@photo.note}
+                    src={@image.url}
+                    alt={@image.note}
                     class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block"
                     id="expanded_photo-image"
                   />
@@ -613,17 +613,17 @@ defmodule VmemoWeb.PhotoIdLive do
 
   defp format_error_message(_), do: "Unknown error"
 
-  defp assign_loaded_photo(socket, user, photo, photos) do
-    vision_requests = list_vision_requests(photo.id, user)
+  defp assign_loaded_photo(socket, user, image, images) do
+    vision_requests = list_vision_requests(image.id, user)
     caption_requests = caption_requests_from(vision_requests)
     latest_caption_request = latest_caption_request_from(caption_requests)
-    original_form_values = %{"note" => photo.note, "caption" => photo.caption}
+    original_form_values = %{"note" => image.note, "caption" => image.caption}
 
     socket
-    |> assign(photo: photo)
-    |> assign(notes: photo.notes || [])
+    |> assign(image: image)
+    |> assign(notes: image.notes || [])
     |> assign(show_expanded: false)
-    |> assign(photos: photos)
+    |> assign(images: images)
     |> assign(moondream_requests: vision_requests)
     |> assign(moondream_loading_requests: MapSet.new())
     |> assign(caption_requests: caption_requests)
@@ -634,25 +634,25 @@ defmodule VmemoWeb.PhotoIdLive do
     |> assign_new(:form, fn ->
       to_form(original_form_values)
     end)
-    |> maybe_subscribe_vision_request(photo.id)
+    |> maybe_subscribe_vision_request(image.id)
   end
 
   defp assign_photo_not_found(socket) do
     socket
-    |> assign(photo: nil)
+    |> assign(image: nil)
     |> assign(notes: [])
   end
 
-  defp list_vision_requests(photo_id, user) do
-    case VisionRequest.list_by_photo(photo_id, actor: user) do
+  defp list_vision_requests(image_id, user) do
+    case VisionRequest.list_by_image(image_id, actor: user) do
       {:ok, requests} -> requests
       _ -> []
     end
   end
 
-  defp maybe_subscribe_vision_request(socket, photo_id) do
+  defp maybe_subscribe_vision_request(socket, image_id) do
     if connected?(socket) do
-      Phoenix.PubSub.subscribe(Vmemo.PubSub, "vision_request:#{photo_id}")
+      Phoenix.PubSub.subscribe(Vmemo.PubSub, "vision_request:#{image_id}")
     end
 
     socket

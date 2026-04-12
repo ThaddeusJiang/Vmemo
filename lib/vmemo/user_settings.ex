@@ -9,9 +9,8 @@ defmodule Vmemo.UserSettings do
   alias Vmemo.ImportExport.Json
   alias Vmemo.ImportExport.Zip
   alias Vmemo.Memo.Note
-  alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.PhotoNote
+  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageNote
   alias Vmemo.Repo
 
   @error_limit 50
@@ -21,10 +20,10 @@ defmodule Vmemo.UserSettings do
 
     result =
       with {:ok, user} <- fetch_user(user_id),
-           {:ok, photos} <- list_user_photos(user_id),
+           {:ok, images} <- list_user_images(user_id),
            {:ok, notes} <- list_user_notes(user_id),
            {:ok, links} <- list_note_links(notes),
-           :ok <- write_export_payload(tmp_dir, user, photos, notes, links),
+           :ok <- write_export_payload(tmp_dir, user, images, notes, links),
            files <- copy_user_storage_for_export(tmp_dir, user_id),
            {:ok, binary, filename} <- build_zip_binary(tmp_dir) do
         {:ok, %{binary: binary, filename: filename, files: files}}
@@ -59,14 +58,14 @@ defmodule Vmemo.UserSettings do
     end
   end
 
-  defp list_user_photos(user_id) do
+  defp list_user_images(user_id) do
     query =
-      Photo
+      Image
       |> Ash.Query.filter(user_id == ^user_id)
       |> Ash.Query.sort(inserted_at: :desc)
 
     case Ash.read(query, actor: nil, authorize?: false) do
-      {:ok, photos} -> {:ok, photos}
+      {:ok, images} -> {:ok, images}
       {:error, error} -> {:error, format_error(error)}
     end
   end
@@ -90,14 +89,14 @@ defmodule Vmemo.UserSettings do
       {:ok, %{}}
     else
       query =
-        PhotoNote
+        ImageNote
         |> Ash.Query.filter(note_id in ^note_ids)
 
       case Ash.read(query, actor: nil, authorize?: false) do
         {:ok, links} ->
           mapped =
             Enum.reduce(links, %{}, fn link, acc ->
-              Map.update(acc, link.note_id, [link.photo_id], fn ids -> [link.photo_id | ids] end)
+              Map.update(acc, link.note_id, [link.image_id], fn ids -> [link.image_id | ids] end)
             end)
 
           {:ok, mapped}
@@ -108,7 +107,7 @@ defmodule Vmemo.UserSettings do
     end
   end
 
-  defp write_export_payload(tmp_dir, user, photos, notes, links) do
+  defp write_export_payload(tmp_dir, user, images, notes, links) do
     data_dir = Path.join(tmp_dir, "data")
     File.mkdir_p!(data_dir)
 
@@ -126,18 +125,18 @@ defmodule Vmemo.UserSettings do
       updated_at: to_iso8601(user.updated_at)
     }
 
-    photos_data =
-      Enum.map(photos, fn photo ->
+    images_data =
+      Enum.map(images, fn image ->
         %{
-          id: photo.id,
-          url: photo.url,
-          note: photo.note,
-          caption: photo.caption,
-          file_id: photo.file_id,
-          user_id: photo.user_id,
-          _purpose: photo.inner_purpose,
-          inserted_at: to_iso8601(photo.inserted_at),
-          updated_at: to_iso8601(photo.updated_at)
+          id: image.id,
+          url: image.url,
+          note: image.note,
+          caption: image.caption,
+          file_id: image.file_id,
+          user_id: image.user_id,
+          _purpose: image.inner_purpose,
+          inserted_at: to_iso8601(image.inserted_at),
+          updated_at: to_iso8601(image.updated_at)
         }
       end)
 
@@ -147,21 +146,21 @@ defmodule Vmemo.UserSettings do
           id: note.id,
           text: note.text,
           user_id: note.user_id,
-          photo_ids: Map.get(links, note.id, []) |> Enum.uniq(),
+          image_ids: Map.get(links, note.id, []) |> Enum.uniq(),
           inserted_at: to_iso8601(note.inserted_at),
           updated_at: to_iso8601(note.updated_at)
         }
       end)
 
-    typesense_photos = build_typesense_photo_docs(photos, links, user.id)
+    typesense_images = build_typesense_image_docs(images, links, user.id)
     typesense_notes = build_typesense_note_docs(notes_data, user.id)
 
     [
       {"metadata.json", metadata},
       {"user.json", user_data},
-      {"photos.json", photos_data},
+      {"images.json", images_data},
       {"notes.json", notes_data},
-      {"typesense_photos.json", typesense_photos},
+      {"typesense_images.json", typesense_images},
       {"typesense_notes.json", typesense_notes}
     ]
     |> Enum.reduce_while(:ok, fn {filename, payload}, :ok ->
@@ -173,8 +172,8 @@ defmodule Vmemo.UserSettings do
   end
 
   defp copy_user_storage_for_export(tmp_dir, user_id) do
-    source_root = Path.join(["storage", "v1", user_id, "photos"])
-    dest_root = Path.join([tmp_dir, "storage", "v1", user_id, "photos"])
+    source_root = Path.join(["storage", "v1", user_id, "images"])
+    dest_root = Path.join([tmp_dir, "storage", "v1", user_id, "images"])
 
     if File.exists?(source_root) do
       files =
@@ -226,20 +225,20 @@ defmodule Vmemo.UserSettings do
 
     file_stats = copy_user_storage_for_import(tmp_dir, source_user_id, user_id)
 
-    {photo_stats, photo_id_map, photo_ids, photo_errors} =
-      import_photos(payload.photos, source_user_id, user_id)
+    {image_stats, image_id_map, image_ids, image_errors} =
+      import_images(payload.images, source_user_id, user_id)
 
     {note_stats, note_id_map, note_photo_map, note_ids, note_errors} =
       import_notes(payload.notes, user_id)
 
     {link_stats, link_errors} =
-      import_photo_links(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids)
+      import_photo_links(note_photo_map, image_id_map, note_id_map, image_ids, note_ids)
 
-    {typesense_stats, typesense_errors} = sync_imported_typesense_documents(photo_ids, note_ids)
+    {typesense_stats, typesense_errors} = sync_imported_typesense_documents(image_ids, note_ids)
 
     errors =
       []
-      |> append_errors(photo_errors)
+      |> append_errors(image_errors)
       |> append_errors(note_errors)
       |> append_errors(link_errors)
       |> append_errors(typesense_errors)
@@ -247,9 +246,9 @@ defmodule Vmemo.UserSettings do
     result = %{
       metadata: payload.metadata,
       files: file_stats,
-      photos: photo_stats,
+      images: image_stats,
       notes: note_stats,
-      photo_notes: link_stats,
+      image_notes: link_stats,
       typesense: typesense_stats,
       errors: errors,
       error_count: length(errors)
@@ -262,35 +261,35 @@ defmodule Vmemo.UserSettings do
     end
   end
 
-  defp import_photos(photos, source_user_id, target_user_id) do
+  defp import_images(images, source_user_id, target_user_id) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
     {prepared, errors} =
-      Enum.reduce(photos, {[], []}, fn photo, {rows, errs} ->
-        legacy_id = pick_value(photo, ["id", :id])
-        raw_url = pick_value(photo, ["url", :url])
-        url = remap_photo_url(raw_url, source_user_id, target_user_id)
+      Enum.reduce(images, {[], []}, fn image, {rows, errs} ->
+        legacy_id = pick_value(image, ["id", :id])
+        raw_url = pick_value(image, ["url", :url])
+        url = remap_image_url(raw_url, source_user_id, target_user_id)
 
         cond do
           is_nil(legacy_id) or is_nil(url) ->
-            {rows, add_error(errs, "Photo missing id or url")}
+            {rows, add_error(errs, "Image missing id or url")}
 
           storage_url?(url) and not file_exists_for_storage_url?(url) ->
-            {rows, add_error(errs, "Photo file missing for #{inspect(legacy_id)}: #{url}")}
+            {rows, add_error(errs, "Image file missing for #{inspect(legacy_id)}: #{url}")}
 
           true ->
             row = %{
               legacy_id: legacy_id,
               raw_id: legacy_id,
               url: url,
-              note: pick_value(photo, ["note", :note]),
-              caption: pick_value(photo, ["caption", :caption]),
-              file_id: pick_value(photo, ["file_id", :file_id]),
+              note: pick_value(image, ["note", :note]),
+              caption: pick_value(image, ["caption", :caption]),
+              file_id: pick_value(image, ["file_id", :file_id]),
               user_id: target_user_id,
-              _purpose: normalize_import_purpose(photo),
+              _purpose: normalize_import_purpose(image),
               inserted_at:
-                parse_iso_datetime(pick_value(photo, ["inserted_at", :inserted_at]), now),
-              updated_at: parse_iso_datetime(pick_value(photo, ["updated_at", :updated_at]), now)
+                parse_iso_datetime(pick_value(image, ["inserted_at", :inserted_at]), now),
+              updated_at: parse_iso_datetime(pick_value(image, ["updated_at", :updated_at]), now)
             }
 
             {[row | rows], errs}
@@ -399,8 +398,8 @@ defmodule Vmemo.UserSettings do
         legacy_id = pick_value(note, ["id", :id])
         text = pick_value(note, ["text", :text]) || ""
 
-        photo_ids =
-          note |> pick_value(["photo_ids", :photo_ids]) |> normalize_list() |> Enum.uniq()
+        image_ids =
+          note |> pick_value(["image_ids", :image_ids]) |> normalize_list() |> Enum.uniq()
 
         if is_nil(legacy_id) do
           {rows, add_error(errs, "Note missing id")}
@@ -410,7 +409,7 @@ defmodule Vmemo.UserSettings do
             raw_id: legacy_id,
             text: text,
             user_id: target_user_id,
-            photo_ids: photo_ids,
+            image_ids: image_ids,
             inserted_at: parse_iso_datetime(pick_value(note, ["inserted_at", :inserted_at]), now),
             updated_at: parse_iso_datetime(pick_value(note, ["updated_at", :updated_at]), now)
           }
@@ -453,17 +452,17 @@ defmodule Vmemo.UserSettings do
               nil ->
                 db_row =
                   row
-                  |> Map.drop([:legacy_id, :raw_id, :photo_ids])
+                  |> Map.drop([:legacy_id, :raw_id, :image_ids])
                   |> Map.put(:id, uuid_to_db(valid_id))
                   |> Map.update!(:user_id, &uuid_to_db/1)
 
                 {[db_row | insert_rows], Map.put(map, row.legacy_id, valid_id),
-                 Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, valid_id),
+                 Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, valid_id),
                  skipped, gen_ids}
 
               owner_id when owner_id == row.user_id ->
                 {insert_rows, Map.put(map, row.legacy_id, valid_id),
-                 Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, valid_id),
+                 Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, valid_id),
                  skipped + 1, gen_ids}
 
               _other_owner ->
@@ -471,12 +470,12 @@ defmodule Vmemo.UserSettings do
 
                 db_row =
                   row
-                  |> Map.drop([:legacy_id, :raw_id, :photo_ids])
+                  |> Map.drop([:legacy_id, :raw_id, :image_ids])
                   |> Map.put(:id, uuid_to_db(new_id))
                   |> Map.update!(:user_id, &uuid_to_db/1)
 
                 {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
-                 Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, new_id),
+                 Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, new_id),
                  skipped, tail}
             end
 
@@ -485,12 +484,12 @@ defmodule Vmemo.UserSettings do
 
             db_row =
               row
-              |> Map.drop([:legacy_id, :raw_id, :photo_ids])
+              |> Map.drop([:legacy_id, :raw_id, :image_ids])
               |> Map.put(:id, uuid_to_db(new_id))
               |> Map.update!(:user_id, &uuid_to_db/1)
 
             {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
-             Map.put(note_map, row.legacy_id, row.photo_ids), MapSet.put(id_set, new_id), skipped,
+             Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, new_id), skipped,
              tail}
         end
       end)
@@ -517,10 +516,10 @@ defmodule Vmemo.UserSettings do
     {%{created: created, skipped: skipped, failed: failed}, id_map, note_photo_map, ids, errors}
   end
 
-  defp import_photo_links(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids) do
+  defp import_photo_links(note_photo_map, image_id_map, note_id_map, image_ids, note_ids) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
-    pairs = build_photo_note_pairs(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids)
+    pairs = build_photo_note_pairs(note_photo_map, image_id_map, note_id_map, image_ids, note_ids)
 
     pair_list = MapSet.to_list(pairs)
     existing_pairs = fetch_existing_photo_note_pairs(pair_list)
@@ -529,10 +528,10 @@ defmodule Vmemo.UserSettings do
 
     rows_to_insert =
       Enum.zip(to_insert_pairs, generated_ids)
-      |> Enum.map(fn {{photo_id, note_id}, id} ->
+      |> Enum.map(fn {{image_id, note_id}, id} ->
         %{
           id: uuid_to_db(id),
-          photo_id: uuid_to_db(photo_id),
+          image_id: uuid_to_db(image_id),
           note_id: uuid_to_db(note_id),
           inserted_at: now
         }
@@ -547,7 +546,7 @@ defmodule Vmemo.UserSettings do
           {count, _} =
             Repo.insert_all("memo_images_notes", rows,
               on_conflict: :nothing,
-              conflict_target: [:photo_id, :note_id]
+              conflict_target: [:image_id, :note_id]
             )
 
           {count, []}
@@ -559,46 +558,46 @@ defmodule Vmemo.UserSettings do
     {%{created: inserted_count, skipped: skipped, failed: length(insert_errors)}, insert_errors}
   end
 
-  defp build_photo_note_pairs(note_photo_map, photo_id_map, note_id_map, photo_ids, note_ids) do
+  defp build_photo_note_pairs(note_photo_map, image_id_map, note_id_map, image_ids, note_ids) do
     Enum.reduce(note_photo_map, MapSet.new(), fn pair, acc ->
-      append_photo_note_pairs(pair, acc, photo_id_map, note_id_map, photo_ids, note_ids)
+      append_photo_note_pairs(pair, acc, image_id_map, note_id_map, image_ids, note_ids)
     end)
   end
 
   defp append_photo_note_pairs(
-         {legacy_note_id, legacy_photo_ids},
+         {legacy_note_id, legacy_image_ids},
          acc,
-         photo_id_map,
+         image_id_map,
          note_id_map,
-         photo_ids,
+         image_ids,
          note_ids
        ) do
     note_id = Map.get(note_id_map, legacy_note_id)
 
-    Enum.reduce(legacy_photo_ids, acc, fn legacy_photo_id, inner ->
-      photo_id = Map.get(photo_id_map, legacy_photo_id)
+    Enum.reduce(legacy_image_ids, acc, fn legacy_image_id, inner ->
+      image_id = Map.get(image_id_map, legacy_image_id)
 
-      if valid_photo_note_pair?(photo_id, note_id, photo_ids, note_ids) do
-        MapSet.put(inner, {photo_id, note_id})
+      if valid_photo_note_pair?(image_id, note_id, image_ids, note_ids) do
+        MapSet.put(inner, {image_id, note_id})
       else
         inner
       end
     end)
   end
 
-  defp valid_photo_note_pair?(photo_id, note_id, photo_ids, note_ids) do
+  defp valid_photo_note_pair?(image_id, note_id, image_ids, note_ids) do
     not is_nil(note_id) and
-      not is_nil(photo_id) and
+      not is_nil(image_id) and
       MapSet.member?(note_ids, note_id) and
-      MapSet.member?(photo_ids, photo_id)
+      MapSet.member?(image_ids, image_id)
   end
 
-  defp sync_imported_typesense_documents(photo_ids, note_ids) do
-    {photo_stats, photo_errors} =
+  defp sync_imported_typesense_documents(image_ids, note_ids) do
+    {image_stats, image_errors} =
       sync_typesense_records(
-        MapSet.to_list(photo_ids),
-        fn id -> Photo.sync_typesense_by_id(id, actor: nil, authorize?: false) end,
-        "photo"
+        MapSet.to_list(image_ids),
+        fn id -> Image.sync_typesense_by_id(id, actor: nil, authorize?: false) end,
+        "image"
       )
 
     {note_stats, note_errors} =
@@ -608,7 +607,7 @@ defmodule Vmemo.UserSettings do
         "note"
       )
 
-    {%{photos: photo_stats, notes: note_stats}, photo_errors ++ note_errors}
+    {%{images: image_stats, notes: note_stats}, image_errors ++ note_errors}
   end
 
   defp sync_typesense_records([], _sync_fun, _entity_name) do
@@ -693,7 +692,7 @@ defmodule Vmemo.UserSettings do
   defp typesense_source_user_id(payload) do
     first_photo =
       payload
-      |> pick_value([:typesense_photos, "typesense_photos"])
+      |> pick_value([:typesense_images, "typesense_images"])
       |> normalize_list()
       |> List.first()
 
@@ -722,8 +721,8 @@ defmodule Vmemo.UserSettings do
   end
 
   defp copy_user_storage_for_import(tmp_dir, source_user_id, target_user_id) do
-    source_root = Path.join([tmp_dir, "storage", "v1", to_string(source_user_id || ""), "photos"])
-    target_root = Path.join(["storage", "v1", target_user_id, "photos"])
+    source_root = Path.join([tmp_dir, "storage", "v1", to_string(source_user_id || ""), "images"])
+    target_root = Path.join(["storage", "v1", target_user_id, "images"])
 
     if source_user_id && File.exists?(source_root) do
       files =
@@ -749,16 +748,16 @@ defmodule Vmemo.UserSettings do
     end
   end
 
-  defp remap_photo_url(nil, _source_user_id, _target_user_id), do: nil
+  defp remap_image_url(nil, _source_user_id, _target_user_id), do: nil
 
-  defp remap_photo_url(url, source_user_id, target_user_id) do
+  defp remap_image_url(url, source_user_id, target_user_id) do
     source_prefix =
       case source_user_id do
         nil -> nil
-        id -> "/storage/v1/#{id}/photos/"
+        id -> "/storage/v1/#{id}/images/"
       end
 
-    target_prefix = "/storage/v1/#{target_user_id}/photos/"
+    target_prefix = "/storage/v1/#{target_user_id}/images/"
 
     cond do
       is_binary(source_prefix) and String.starts_with?(url, source_prefix) ->
@@ -782,10 +781,10 @@ defmodule Vmemo.UserSettings do
          %{
            metadata: metadata,
            user: read_optional_json(Path.join(data_dir, "user.json")) || %{},
-           photos: normalize_list(read_optional_json(Path.join(data_dir, "photos.json"))),
+           images: normalize_list(read_optional_json(Path.join(data_dir, "images.json"))),
            notes: normalize_list(read_optional_json(Path.join(data_dir, "notes.json"))),
-           typesense_photos:
-             normalize_list(read_optional_json(Path.join(data_dir, "typesense_photos.json"))),
+           typesense_images:
+             normalize_list(read_optional_json(Path.join(data_dir, "typesense_images.json"))),
            typesense_notes:
              normalize_list(read_optional_json(Path.join(data_dir, "typesense_notes.json")))
          }}
@@ -815,32 +814,32 @@ defmodule Vmemo.UserSettings do
     Zip.zip_dir(source_dir, target_zip_path)
   end
 
-  defp build_typesense_photo_docs(photos, links, user_id) do
-    photo_to_note_ids = invert_note_photo_links(links)
+  defp build_typesense_image_docs(images, links, user_id) do
+    image_to_note_ids = invert_note_image_links(links)
 
-    Enum.reduce(photos, [], fn photo, acc ->
-      case read_photo_image_base64(photo.url) do
-        {:ok, image} ->
-          inserted_at = datetime_to_unix(photo.inserted_at)
+    Enum.reduce(images, [], fn image_row, acc ->
+      case read_image_base64(image_row.url) do
+        {:ok, image_base64} ->
+          inserted_at = datetime_to_unix(image_row.inserted_at)
 
           doc =
             %{
-              "id" => photo.id,
-              "image" => image,
-              "note" => photo.note || "",
-              "caption" => photo.caption || "",
-              "note_ids" => Map.get(photo_to_note_ids, photo.id, []),
-              "url" => photo.url,
-              "file_id" => photo.file_id,
+              "id" => image_row.id,
+              "image" => image_base64,
+              "note" => image_row.note || "",
+              "caption" => image_row.caption || "",
+              "note_ids" => Map.get(image_to_note_ids, image_row.id, []),
+              "url" => image_row.url,
+              "file_id" => image_row.file_id,
               "inserted_at" => inserted_at,
               "inserted_by" => user_id
             }
-            |> maybe_put_typesense_purpose(photo.inner_purpose)
+            |> maybe_put_typesense_purpose(image_row.inner_purpose)
 
           [doc | acc]
 
         {:error, reason} ->
-          Logger.warning("Skip typesense photo export for #{photo.id}: #{inspect(reason)}")
+          Logger.warning("Skip typesense image export for #{image_row.id}: #{inspect(reason)}")
           acc
       end
     end)
@@ -852,7 +851,7 @@ defmodule Vmemo.UserSettings do
       %{
         "id" => pick_value(note, ["id", :id]),
         "text" => pick_value(note, ["text", :text]) || "",
-        "photo_ids" => pick_value(note, ["photo_ids", :photo_ids]) |> normalize_list(),
+        "image_ids" => pick_value(note, ["image_ids", :image_ids]) |> normalize_list(),
         "inserted_at" => iso8601_to_unix(pick_value(note, ["inserted_at", :inserted_at])),
         "updated_at" => iso8601_to_unix(pick_value(note, ["updated_at", :updated_at])),
         "belongs_to" => user_id
@@ -860,18 +859,18 @@ defmodule Vmemo.UserSettings do
     end)
   end
 
-  defp invert_note_photo_links(links) do
-    Enum.reduce(links, %{}, fn {note_id, photo_ids}, acc ->
-      Enum.reduce(photo_ids, acc, fn photo_id, inner ->
-        Map.update(inner, photo_id, [note_id], fn ids -> [note_id | ids] end)
+  defp invert_note_image_links(links) do
+    Enum.reduce(links, %{}, fn {note_id, image_ids}, acc ->
+      Enum.reduce(image_ids, acc, fn image_id, inner ->
+        Map.update(inner, image_id, [note_id], fn ids -> [note_id | ids] end)
       end)
     end)
-    |> Enum.into(%{}, fn {photo_id, note_ids} ->
-      {photo_id, note_ids |> Enum.uniq() |> Enum.reverse()}
+    |> Enum.into(%{}, fn {image_id, note_ids} ->
+      {image_id, note_ids |> Enum.uniq() |> Enum.reverse()}
     end)
   end
 
-  defp read_photo_image_base64(url) when is_binary(url) do
+  defp read_image_base64(url) when is_binary(url) do
     case url_to_storage_path(url) do
       nil ->
         {:error, :invalid_path}
@@ -884,7 +883,7 @@ defmodule Vmemo.UserSettings do
     end
   end
 
-  defp read_photo_image_base64(_url), do: {:error, :invalid_url}
+  defp read_image_base64(_url), do: {:error, :invalid_url}
 
   defp url_to_storage_path(url) do
     path =
@@ -936,8 +935,8 @@ defmodule Vmemo.UserSettings do
 
   defp normalize_list(value), do: Json.normalize_list(value)
 
-  defp normalize_import_purpose(photo) when is_map(photo) do
-    case pick_value(photo, [
+  defp normalize_import_purpose(image) when is_map(image) do
+    case pick_value(image, [
            "_purpose",
            :_purpose,
            "inner_purpose",
@@ -1013,19 +1012,19 @@ defmodule Vmemo.UserSettings do
   defp fetch_existing_photo_note_pairs([]), do: []
 
   defp fetch_existing_photo_note_pairs(pairs) do
-    {photo_ids, note_ids} = Enum.unzip(pairs)
-    photo_ids = Enum.uniq(photo_ids)
+    {image_ids, note_ids} = Enum.unzip(pairs)
+    image_ids = Enum.uniq(image_ids)
     note_ids = Enum.uniq(note_ids)
 
     query = """
-    SELECT photo_id::text, note_id::text
+    SELECT image_id::text, note_id::text
     FROM memo_images_notes
-    WHERE photo_id::text = ANY($1::text[]) AND note_id::text = ANY($2::text[])
+    WHERE image_id::text = ANY($1::text[]) AND note_id::text = ANY($2::text[])
     """
 
-    case Repo.query(query, [photo_ids, note_ids]) do
+    case Repo.query(query, [image_ids, note_ids]) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [photo_id, note_id] -> {photo_id, note_id} end)
+        Enum.map(rows, fn [image_id, note_id] -> {image_id, note_id} end)
 
       _ ->
         []

@@ -50,7 +50,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   @impl true
   def handle_event("submit", %{"moondream" => params}, socket) do
     user = socket.assigns.current_user
-    photo = socket.assigns.photo
+    image = socket.assigns.image
     function = socket.assigns.function
     prompt = Map.get(params, "prompt", "") |> String.trim()
     prompt = if prompt == "", do: socket.assigns.prompt, else: prompt
@@ -60,7 +60,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     else
       case VisionRequest.create(
              %{
-               photo_id: photo.id,
+               image_id: image.id,
                user_id: user.id,
                function_type: function,
                prompt: prompt
@@ -594,7 +594,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         id={"moondream-point-#{@request.id}"}
         phx-hook="MoondreamOverlay"
       >
-        <.img src={@photo.url} alt={@photo.note || "Photo"} class="w-full h-auto rounded-lg" />
+        <.img src={@image.url} alt={@image.note || "Image"} class="w-full h-auto rounded-lg" />
         <%= for {x, y} <- @points do %>
           <span
             class="absolute pointer-events-none z-10"
@@ -630,7 +630,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         id={"moondream-detect-#{@request.id}"}
         phx-hook="MoondreamOverlay"
       >
-        <.img src={@photo.url} alt={@photo.note || "Photo"} class="w-full h-auto rounded-lg" />
+        <.img src={@image.url} alt={@image.note || "Image"} class="w-full h-auto rounded-lg" />
         <svg
           class="absolute inset-0 pointer-events-none w-full h-full z-10"
           preserveAspectRatio="xMidYMid meet"

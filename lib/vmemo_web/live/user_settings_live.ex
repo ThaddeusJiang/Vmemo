@@ -86,7 +86,7 @@ defmodule VmemoWeb.UserSettingsLive do
           <div class="border border-base-300 rounded-md p-4 space-y-2">
             <h2 class="text-base font-medium">Data Export</h2>
             <p class="text-sm text-base-content/70">
-              Download your photos, notes, and linked files as a ZIP file.
+              Download your images, notes, and linked files as a ZIP file.
             </p>
             <div class="py-2">
               <.link href={~p"/settings/export"} class="btn btn-outline">
@@ -164,24 +164,24 @@ defmodule VmemoWeb.UserSettingsLive do
             <div :if={@import_result} class="border border-base-300 rounded-md p-2 text-sm space-y-1">
               <p class="font-medium">Import Result</p>
               <% files = result_value(@import_result, [:files, "files"], %{}) %>
-              <% photos = result_value(@import_result, [:photos, "photos"], %{}) %>
+              <% images = result_value(@import_result, [:images, "images"], %{}) %>
               <% notes = result_value(@import_result, [:notes, "notes"], %{}) %>
-              <% photo_notes = result_value(@import_result, [:photo_notes, "photo_notes"], %{}) %>
+              <% image_notes = result_value(@import_result, [:image_notes, "image_notes"], %{}) %>
               <% typesense = result_value(@import_result, [:typesense, "typesense"], %{}) %>
-              <% typesense_photos = result_value(typesense, [:photos, "photos"], %{}) %>
+              <% typesense_images = result_value(typesense, [:images, "images"], %{}) %>
               <% typesense_notes = result_value(typesense, [:notes, "notes"], %{}) %>
               <% errors = result_value(@import_result, [:errors, "errors"], []) %>
               <% error_count = result_value(@import_result, [:error_count, "error_count"], 0) %>
               <p>Files copied: {result_value(files, [:copied, "copied"], 0)}</p>
               <p>Files skipped: {result_value(files, [:skipped, "skipped"], 0)}</p>
-              <p>Photos created: {result_value(photos, [:created, "created"], 0)}</p>
-              <p>Photos skipped: {result_value(photos, [:skipped, "skipped"], 0)}</p>
+              <p>Images created: {result_value(images, [:created, "created"], 0)}</p>
+              <p>Images skipped: {result_value(images, [:skipped, "skipped"], 0)}</p>
               <p>Notes created: {result_value(notes, [:created, "created"], 0)}</p>
               <p>Notes skipped: {result_value(notes, [:skipped, "skipped"], 0)}</p>
-              <p>Links created: {result_value(photo_notes, [:created, "created"], 0)}</p>
-              <p>Links skipped: {result_value(photo_notes, [:skipped, "skipped"], 0)}</p>
+              <p>Links created: {result_value(image_notes, [:created, "created"], 0)}</p>
+              <p>Links skipped: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
               <p>
-                Typesense photos upserted: {result_value(typesense_photos, [:success, "success"], 0)}
+                Typesense images upserted: {result_value(typesense_images, [:success, "success"], 0)}
               </p>
               <p>
                 Typesense notes upserted: {result_value(typesense_notes, [:success, "success"], 0)}

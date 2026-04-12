@@ -190,7 +190,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
   defp usage_example_code(token) do
     """
-    fetch('http://localhost:4000/api/v1/photos', {
+    fetch('http://localhost:4000/api/v1/images', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer #{token}',

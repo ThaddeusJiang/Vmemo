@@ -70,8 +70,8 @@ defmodule Vmemo.Memo.Note do
         note_id = Ash.ActionInput.get_argument(input, :note_id)
 
         with {:ok, note} <- Ash.get(__MODULE__, note_id, actor: nil, authorize?: false),
-             {:ok, note_with_photos} <- Ash.load(note, :photos, actor: nil, authorize?: false),
-             {:ok, _} <- upsert_typesense_note(note_with_photos) do
+             {:ok, note_with_images} <- Ash.load(note, :images, actor: nil, authorize?: false),
+             {:ok, _} <- upsert_typesense_note(note_with_images) do
           {:ok, true}
         end
       end
@@ -92,10 +92,10 @@ defmodule Vmemo.Memo.Note do
   end
 
   relationships do
-    many_to_many :photos, Vmemo.Memo.Photo do
-      through Vmemo.Memo.PhotoNote
+    many_to_many :images, Vmemo.Memo.Image do
+      through Vmemo.Memo.ImageNote
       source_attribute_on_join_resource :note_id
-      destination_attribute_on_join_resource :photo_id
+      destination_attribute_on_join_resource :image_id
     end
   end
 
@@ -104,7 +104,7 @@ defmodule Vmemo.Memo.Note do
       id: note.id,
       text: note.text,
       belongs_to: note.user_id,
-      photo_ids: Enum.map(note.photos || [], & &1.id),
+      image_ids: Enum.map(note.images || [], & &1.id),
       inserted_at: DateTime.to_unix(note.inserted_at),
       updated_at: DateTime.to_unix(note.updated_at)
     }

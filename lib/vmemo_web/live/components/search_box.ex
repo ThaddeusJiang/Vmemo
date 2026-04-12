@@ -2,7 +2,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @moduledoc false
   use VmemoWeb, :live_component
 
-  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.Image
 
   @impl true
   def mount(socket) do
@@ -10,7 +10,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
      socket
      |> assign(show_expanded: false)
      |> assign(:q, "")
-     |> allow_upload(:photo,
+     |> allow_upload(:image,
        accept: ~w(.png .jpg .jpeg .gif .webp),
        max_entries: 1
      )}
@@ -38,9 +38,9 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @impl true
   def handle_event("hide-expanded", _, socket) do
     socket =
-      socket.assigns.uploads.photo.entries
+      socket.assigns.uploads.image.entries
       |> Enum.reduce(socket, fn entry, acc ->
-        cancel_upload(acc, :photo, entry.ref)
+        cancel_upload(acc, :image, entry.ref)
       end)
       |> assign(show_expanded: false)
 
@@ -48,13 +48,13 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
-  def handle_event("cancel-photo", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :photo, ref)}
+  def handle_event("cancel-image", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :image, ref)}
   end
 
   @impl true
   def handle_event("validate", _, socket) do
-    entries = socket.assigns.uploads.photo.entries
+    entries = socket.assigns.uploads.image.entries
 
     # max_entries is 1, but ClipboardMediaFetcher can merge multiple files in one change.
     socket =
@@ -62,7 +62,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         entries
         |> Enum.drop(1)
         |> Enum.reduce(socket, fn entry, acc ->
-          cancel_upload(acc, :photo, entry.ref)
+          cancel_upload(acc, :image, entry.ref)
         end)
       else
         socket
@@ -77,13 +77,13 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   @impl true
-  def handle_event("search-by-photo", _, socket) do
+  def handle_event("search-by-image", _, socket) do
     current_user = Map.get(socket.assigns, :current_user)
 
     if is_nil(current_user) do
       {:noreply, socket}
     else
-      case uploaded_entries(socket, :photo) do
+      case uploaded_entries(socket, :image) do
         {completed, []} ->
           case completed do
             [entry] ->
@@ -97,7 +97,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                socket
                |> put_flash(
                  :error,
-                 "Search by photo uses exactly one image. Remove extra files and try again."
+                 "Search by image uses exactly one image. Remove extra files and try again."
                )}
           end
 
@@ -115,22 +115,22 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         filename = entry.uuid <> Path.extname(entry.client_name)
 
-        case Photo.ingest_temp_file_for_similarity_search(path, filename, actor: current_user) do
-          {:ok, photo_id} ->
-            {:ok, photo_id}
+        case Image.ingest_temp_file_for_similarity_search(path, filename, actor: current_user) do
+          {:ok, image_id} ->
+            {:ok, image_id}
 
           {:error, reason} ->
-            Logger.error("search-by-photo failed: #{inspect(reason)}")
+            Logger.error("search-by-image failed: #{inspect(reason)}")
             {:ok, {:error, reason}}
         end
       end)
 
     # consume_uploaded_entry/3 returns the *unwrapped* value from {:ok, value} (see Phoenix LiveView upload_channel).
     case result do
-      photo_id when is_binary(photo_id) ->
+      image_id when is_binary(image_id) ->
         {:noreply,
          socket
-         |> push_navigate(to: ~p"/photos?similar_photo_id=#{photo_id}", replace: true)}
+         |> push_navigate(to: ~p"/images?similar_image_id=#{image_id}", replace: true)}
 
       {:error, _reason} ->
         {:noreply,
@@ -149,7 +149,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   def render(assigns) do
     ~H"""
     <div class="grow container dropdown dropdown-open place-self-start">
-      <form :if={!@show_expanded} action="/photos" method="get" class="form-control container">
+      <form :if={!@show_expanded} action="/images" method="get" class="form-control container">
         <label class="input input-bordered flex items-center rounded-3xl w-full">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -194,7 +194,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-lg p-4 sm:p-4  container aspect-3/2 "
       >
         <header class="container flex items-center justify-center ">
-          <p class="text-gray-500 text-sm">Search by photo</p>
+          <p class="text-gray-500 text-sm">Search by image</p>
           <.button
             variant="ghost"
             phx-click="hide-expanded"
@@ -205,20 +205,20 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           </.button>
         </header>
         <form
-          id="search-by-photo"
+          id="search-by-image"
           class="form-control flex flex-col items-center justify-center gap-4 flex-1"
-          phx-submit="search-by-photo"
+          phx-submit="search-by-image"
           phx-change="validate"
           phx-target={@myself}
           phx-hook="ClipboardMediaFetcher"
-          phx-drop-target={@uploads.photo.ref}
+          phx-drop-target={@uploads.image.ref}
         >
           <%!-- Always include the file input --%>
-          <.live_file_input upload={@uploads.photo} class="hidden" />
+          <.live_file_input upload={@uploads.image} class="hidden" />
 
-          <%= if Enum.any?(@uploads.photo.entries) do %>
+          <%= if Enum.any?(@uploads.image.entries) do %>
             <div class="w-full flex flex-col items-center gap-4 flex-1">
-              <%= for entry <- @uploads.photo.entries do %>
+              <%= for entry <- @uploads.image.entries do %>
                 <article class="upload-entry relative w-full max-w-xs aspect-square">
                   <figure class="w-full h-full">
                     <.live_img_preview entry={entry} class="w-full h-full object-cover rounded-lg" />
@@ -281,12 +281,12 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                   type="submit"
                   variant="submit"
                   disabled={
-                    Enum.any?(@uploads.photo.entries, fn entry ->
+                    Enum.any?(@uploads.image.entries, fn entry ->
                       entry.progress > 0 and entry.progress < 100
                     end)
                   }
                 >
-                  <%= if Enum.any?(@uploads.photo.entries, fn entry -> entry.progress > 0 and entry.progress < 100 end) do %>
+                  <%= if Enum.any?(@uploads.image.entries, fn entry -> entry.progress > 0 and entry.progress < 100 end) do %>
                     Uploading...
                   <% else %>
                     Search
@@ -296,11 +296,11 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
             </div>
           <% else %>
             <label
-              for={@uploads.photo.ref}
+              for={@uploads.image.ref}
               class="text-center w-full h-full flex flex-col justify-center items-center cursor-pointer"
             >
               <div class=" w-full h-full flex flex-col justify-center items-center">
-                <img src="/images/undraw_images.svg" alt="Upload photos" class="h-20 w-auto" />
+                <img src="/images/undraw_images.svg" alt="Upload images" class="h-20 w-auto" />
               </div>
               <div class="text-xs text-gray-500 mt-4">
                 Drop an image or <span class="link">click here</span>

@@ -15,18 +15,18 @@ defmodule VmemoWeb.NoteIdLive do
   def handle_params(%{"id" => id}, _, socket) do
     actor = socket.assigns.current_user
 
-    case Ash.get(Note, id, actor: actor, load: [:photos]) do
+    case Ash.get(Note, id, actor: actor, load: [:images]) do
       {:ok, note} ->
         {:noreply,
          socket
          |> assign(note: note)
-         |> assign(photos: note.photos || [])}
+         |> assign(images: note.images || [])}
 
       {:error, _reason} ->
         {:noreply,
          socket
          |> assign(note: nil)
-         |> assign(photos: [])}
+         |> assign(images: [])}
     end
   end
 
@@ -40,7 +40,7 @@ defmodule VmemoWeb.NoteIdLive do
             id="note_update_form"
             module={NoteUpdateForm}
             note={@note}
-            photos={@photos}
+            images={@images}
             patch={~p"/notes/#{@note.id}"}
             current_user={@current_user}
           />

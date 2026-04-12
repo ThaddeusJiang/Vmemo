@@ -1,10 +1,10 @@
-defmodule Vmemo.Seeds.Photo do
+defmodule Vmemo.Seeds.Image do
   @moduledoc """
   Seeds the shared e2e reference photo.
   """
 
   alias Vmemo.Account
-  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.Image
 
   @seeded_photo_id "11111111-1111-4111-8111-111111111111"
   @seeded_photo_note "Seeded e2e note reference photo"
@@ -30,7 +30,7 @@ defmodule Vmemo.Seeds.Photo do
   """
   def insert_seeded_photo(user) do
     case Ash.create(
-           Photo,
+           Image,
            %{
              id: @seeded_photo_id,
              url: "/images/logo.svg",

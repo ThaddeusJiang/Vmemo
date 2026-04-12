@@ -1,4 +1,4 @@
-defmodule Vmemo.Memo.PhotoStorage do
+defmodule Vmemo.Memo.ImageStorage do
   @moduledoc false
   alias SmallSdk.FileSystem
 
@@ -10,6 +10,6 @@ defmodule Vmemo.Memo.PhotoStorage do
   defp gen_dest(user_id, filename) do
     timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
 
-    Path.join([user_id, "photos", timestamp <> "_" <> filename])
+    Path.join([user_id, "images", timestamp <> "_" <> filename])
   end
 end

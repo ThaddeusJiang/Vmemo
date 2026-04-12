@@ -1,6 +1,6 @@
-defmodule VmemoWeb.Api.V1.PhotoControllerTest do
+defmodule VmemoWeb.Api.V1.ImageControllerTest do
   @moduledoc """
-  Photo API 测试
+  Image API 测试
   """
 
   use VmemoWeb.ConnCase, async: true
@@ -8,7 +8,7 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
   import Vmemo.AccountFixtures
   import VmemoWeb.ApiFixtures
 
-  describe "POST /api/v1/photos - Create photo" do
+  describe "POST /api/v1/images - Create image" do
     setup %{conn: conn} do
       user = user_fixture()
       raw_token = create_test_token(user)
@@ -20,7 +20,7 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{raw_token}")
-        |> post(~p"/api/v1/photos", %{})
+        |> post(~p"/api/v1/images", %{})
 
       assert conn.status == 400
       assert json_response(conn, 400)["status"] == "error"
@@ -31,7 +31,7 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
       test_image_path = create_test_image()
 
       conn =
-        post(conn, ~p"/api/v1/photos", %{
+        post(conn, ~p"/api/v1/images", %{
           "file" => %Plug.Upload{
             path: test_image_path,
             filename: "test.png",
@@ -50,7 +50,7 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{raw_token}")
-        |> post(~p"/api/v1/photos", %{
+        |> post(~p"/api/v1/images", %{
           "file" => %Plug.Upload{
             path: test_file_path,
             filename: "test.txt",
@@ -62,7 +62,7 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
     end
   end
 
-  describe "GET /api/v1/photos/:id - Show photo" do
+  describe "GET /api/v1/images/:id - Show image" do
     setup %{conn: conn} do
       user = user_fixture()
       raw_token = create_test_token(user)
@@ -70,11 +70,11 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
       {:ok, conn: conn, user: user, raw_token: raw_token}
     end
 
-    test "returns 404 for non-existent photo", %{conn: conn, raw_token: raw_token} do
+    test "returns 404 for non-existent image", %{conn: conn, raw_token: raw_token} do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{raw_token}")
-        |> get(~p"/api/v1/photos/999999")
+        |> get(~p"/api/v1/images/999999")
 
       assert conn.status == 404
       assert json_response(conn, 404)["status"] == "error"
@@ -82,13 +82,13 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
     end
 
     test "returns 401 without token", %{conn: conn} do
-      conn = get(conn, ~p"/api/v1/photos/1")
+      conn = get(conn, ~p"/api/v1/images/1")
 
       assert conn.status == 401
     end
   end
 
-  describe "DELETE /api/v1/photos/:id - Delete photo" do
+  describe "DELETE /api/v1/images/:id - Delete image" do
     setup %{conn: conn} do
       user = user_fixture()
       raw_token = create_test_token(user)
@@ -96,17 +96,17 @@ defmodule VmemoWeb.Api.V1.PhotoControllerTest do
       {:ok, conn: conn, user: user, raw_token: raw_token}
     end
 
-    test "returns 404 for non-existent photo", %{conn: conn, raw_token: raw_token} do
+    test "returns 404 for non-existent image", %{conn: conn, raw_token: raw_token} do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{raw_token}")
-        |> delete(~p"/api/v1/photos/999999")
+        |> delete(~p"/api/v1/images/999999")
 
       assert conn.status == 404
     end
 
     test "returns 401 without token", %{conn: conn} do
-      conn = delete(conn, ~p"/api/v1/photos/1")
+      conn = delete(conn, ~p"/api/v1/images/1")
 
       assert conn.status == 401
     end

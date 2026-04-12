@@ -8,20 +8,19 @@ defmodule Vmemo.Ai.VisionRequest do
   require Ash.Query
   require Logger
   alias SmallSdk.Moondream
-  alias Vmemo.Memo.Photo
-  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.Image
 
   postgres do
     table "ai_vision_requests"
     repo Vmemo.Repo
 
     references do
-      reference :photo, on_delete: :delete
+      reference :image, on_delete: :delete
       reference :user, on_delete: :delete
     end
 
     custom_indexes do
-      index [:photo_id]
+      index [:image_id]
       index [:user_id]
       index [:status]
       index [:inserted_at]
@@ -29,7 +28,7 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   admin do
-    table_columns([:id, :photo_id, :user_id, :function_type, :status, :inserted_at])
+    table_columns([:id, :image_id, :user_id, :function_type, :status, :inserted_at])
   end
 
   oban do
@@ -51,20 +50,20 @@ defmodule Vmemo.Ai.VisionRequest do
     define :read
     define :update
     define :retry
-    define :list_by_photo, args: [:photo_id]
+    define :list_by_image, args: [:image_id]
   end
 
   actions do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:photo_id, :user_id, :function_type, :prompt]
+      accept [:image_id, :user_id, :function_type, :prompt]
       change set_attribute(:status, "pending")
       change run_oban_trigger(:process)
     end
 
     create :create_caption do
-      accept [:photo_id, :user_id]
+      accept [:image_id, :user_id]
       change set_attribute(:status, "pending")
       change set_attribute(:function_type, "caption")
       change set_attribute(:prompt, nil)
@@ -106,10 +105,10 @@ defmodule Vmemo.Ai.VisionRequest do
       end
     end
 
-    read :list_by_photo do
-      argument :photo_id, :uuid, allow_nil?: false
+    read :list_by_image do
+      argument :image_id, :uuid, allow_nil?: false
 
-      filter expr(photo_id == ^arg(:photo_id))
+      filter expr(image_id == ^arg(:image_id))
 
       prepare fn query, _context ->
         Ash.Query.sort(query, inserted_at: :desc)
@@ -149,7 +148,7 @@ defmodule Vmemo.Ai.VisionRequest do
   attributes do
     uuid_v7_primary_key :id
 
-    attribute :photo_id, :uuid do
+    attribute :image_id, :uuid do
       allow_nil? false
     end
 
@@ -179,9 +178,10 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   relationships do
-    belongs_to :photo, Vmemo.Memo.Photo do
+    belongs_to :image, Vmemo.Memo.Image do
       allow_nil? false
       attribute_writable? true
+      source_attribute :image_id
     end
 
     belongs_to :user, Vmemo.Account.User do
@@ -195,24 +195,24 @@ defmodule Vmemo.Ai.VisionRequest do
   defp process_request(request) do
     case update_request_status(request, "processing") do
       {:ok, request} ->
-        case Ash.get(Photo, request.photo_id, actor: nil) do
-          {:ok, photo} ->
-            case read_image_as_base64(photo.url) do
+        case Ash.get(Image, request.image_id, actor: nil) do
+          {:ok, image} ->
+            case read_image_as_base64(image.url) do
               {:ok, image_base64} ->
                 call_moondream_api(request, image_base64)
 
               {:error, reason} ->
-                Logger.error("Failed to read image for photo #{photo.id}: #{inspect(reason)}")
+                Logger.error("Failed to read image for image #{image.id}: #{inspect(reason)}")
                 update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
             end
 
           {:error, %Ash.Error.Query.NotFound{}} ->
-            Logger.warning("Photo #{request.photo_id} not found")
-            update_request_with_error(request, "Photo not found")
+            Logger.warning("Image #{request.image_id} not found")
+            update_request_with_error(request, "Image not found")
 
           {:error, error} ->
-            Logger.error("Failed to get photo #{request.photo_id}: #{inspect(error)}")
-            update_request_with_error(request, "Failed to get photo: #{inspect(error)}")
+            Logger.error("Failed to get image #{request.image_id}: #{inspect(error)}")
+            update_request_with_error(request, "Failed to get image: #{inspect(error)}")
         end
 
       {:error, error} ->
@@ -323,12 +323,12 @@ defmodule Vmemo.Ai.VisionRequest do
     end
   end
 
-  defp maybe_update_photo_caption(%{function_type: "caption", photo_id: photo_id}, result_map) do
+  defp maybe_update_photo_caption(%{function_type: "caption", image_id: image_id}, result_map) do
     case extract_caption(result_map) do
       caption when is_binary(caption) and caption != "" ->
-        with {:ok, photo} <- Ash.get(Photo, photo_id, actor: nil),
+        with {:ok, image} <- Ash.get(Image, image_id, actor: nil),
              {:ok, _updated_photo} <-
-               Photo.update(photo, %{caption: caption}, actor: nil, authorize?: false) do
+               Image.update(image, %{caption: caption}, actor: nil, authorize?: false) do
           :ok
         end
 
@@ -349,11 +349,11 @@ defmodule Vmemo.Ai.VisionRequest do
   defp broadcast_update(request) do
     Phoenix.PubSub.broadcast(
       Vmemo.PubSub,
-      "vision_request:#{request.photo_id}",
+      "vision_request:#{request.image_id}",
       {:vision_request_updated,
        %{
          request_id: request.id,
-         photo_id: request.photo_id,
+         image_id: request.image_id,
          function_type: request.function_type,
          status: request.status,
          result: request.result,

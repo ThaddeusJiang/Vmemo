@@ -1,7 +1,7 @@
 defmodule VmemoWeb.HomePageLive do
   use VmemoWeb, :live_view
 
-  alias Vmemo.Memo.Photo
+  alias Vmemo.Memo.Image
   alias VmemoWeb.LiveComponents.SearchBox
 
   @impl true
@@ -9,7 +9,7 @@ defmodule VmemoWeb.HomePageLive do
     user = socket.assigns.current_user
 
     total_photos =
-      Photo.library_photos_count(user.id, actor: user)
+      Image.library_images_count(user.id, actor: user)
       |> case do
         {:ok, count} -> count
         _ -> 0
@@ -34,7 +34,7 @@ defmodule VmemoWeb.HomePageLive do
             <h1 class="text-4xl font-bold">Search</h1>
 
             <div class="text-sm text-gray-600">
-              Total <span class="font-semibold">{@total_photos}</span> photos
+              Total <span class="font-semibold">{@total_photos}</span> images
             </div>
 
             <.live_component

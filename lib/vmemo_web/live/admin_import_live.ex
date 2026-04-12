@@ -128,9 +128,9 @@ defmodule VmemoWeb.AdminImportLive do
             <%= if @request.result do %>
               <% files = result_value(@request.result, [:files, "files"], %{}) %>
               <% users = result_value(@request.result, [:users, "users"], %{}) %>
-              <% photos = result_value(@request.result, [:photos, "photos"], %{}) %>
+              <% images = result_value(@request.result, [:images, "images"], %{}) %>
               <% notes = result_value(@request.result, [:notes, "notes"], %{}) %>
-              <% photo_notes = result_value(@request.result, [:photo_notes, "photo_notes"], %{}) %>
+              <% image_notes = result_value(@request.result, [:image_notes, "image_notes"], %{}) %>
               <% errors = result_value(@request.result, [:errors, "errors"], []) %>
               <% error_count = result_value(@request.result, [:error_count, "error_count"], 0) %>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -147,10 +147,10 @@ defmodule VmemoWeb.AdminImportLive do
                   <p>Failed: {result_value(users, [:failed, "failed"], 0)}</p>
                 </div>
                 <div class="border border-base-300 rounded-md p-2">
-                  <p class="font-medium">Photos</p>
-                  <p>Created: {result_value(photos, [:created, "created"], 0)}</p>
-                  <p>Skipped: {result_value(photos, [:skipped, "skipped"], 0)}</p>
-                  <p>Failed: {result_value(photos, [:failed, "failed"], 0)}</p>
+                  <p class="font-medium">Images</p>
+                  <p>Created: {result_value(images, [:created, "created"], 0)}</p>
+                  <p>Skipped: {result_value(images, [:skipped, "skipped"], 0)}</p>
+                  <p>Failed: {result_value(images, [:failed, "failed"], 0)}</p>
                 </div>
                 <div class="border border-base-300 rounded-md p-2">
                   <p class="font-medium">Notes</p>
@@ -160,9 +160,9 @@ defmodule VmemoWeb.AdminImportLive do
                 </div>
                 <div class="border border-base-300 rounded-md p-2">
                   <p class="font-medium">Links</p>
-                  <p>Created: {result_value(photo_notes, [:created, "created"], 0)}</p>
-                  <p>Skipped: {result_value(photo_notes, [:skipped, "skipped"], 0)}</p>
-                  <p>Failed: {result_value(photo_notes, [:failed, "failed"], 0)}</p>
+                  <p>Created: {result_value(image_notes, [:created, "created"], 0)}</p>
+                  <p>Skipped: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
+                  <p>Failed: {result_value(image_notes, [:failed, "failed"], 0)}</p>
                 </div>
               </div>
 
