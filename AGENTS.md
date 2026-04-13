@@ -39,6 +39,9 @@ mix format
 - Do not run build/start commands unless explicitly requested.
 - If there is no diff yet, create a feature branch before coding.
 - Do not commit `.playwright-mcp/*`.
+- Keep documentation as concise as possible.
+- Prefer simple and maintainable solutions first ("Less, but better").
+- Avoid premature optimization; optimize performance only after a measured bottleneck is confirmed.
 
 ## Source of Truth for Conventions
 
