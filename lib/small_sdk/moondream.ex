@@ -3,6 +3,7 @@ defmodule SmallSdk.Moondream do
   require Logger
 
   alias SmallSdk.Utils
+  @default_receive_timeout_ms 120_000
 
   @doc """
   Generate a caption for an image using Moondream Station.
@@ -58,7 +59,7 @@ defmodule SmallSdk.Moondream do
         {"Content-Type", "application/json"},
         {"X-Moondream-Auth", api_key}
       ],
-      receive_timeout: 30_000
+      receive_timeout: @default_receive_timeout_ms
     )
   end
 
