@@ -784,7 +784,7 @@ defmodule Vmemo.Memo.Image do
 
     host = Keyword.get(url_config, :host)
     scheme = Keyword.get(url_config, :scheme, "http")
-    port = Keyword.get(url_config, :port)
+    port = Keyword.get(url_config, :port) || infer_endpoint_port(endpoint_config, scheme)
 
     cond do
       is_binary(host) and host != "" ->
@@ -806,6 +806,23 @@ defmodule Vmemo.Memo.Image do
       _ -> "#{scheme}://#{host}:#{port}"
     end
   end
+
+  defp infer_endpoint_port(endpoint_config, "http") do
+    endpoint_config
+    |> Keyword.get(:http, [])
+    |> endpoint_transport_port()
+  end
+
+  defp infer_endpoint_port(endpoint_config, "https") do
+    endpoint_config
+    |> Keyword.get(:https, [])
+    |> endpoint_transport_port()
+  end
+
+  defp infer_endpoint_port(_endpoint_config, _scheme), do: nil
+
+  defp endpoint_transport_port(options) when is_list(options), do: Keyword.get(options, :port)
+  defp endpoint_transport_port(_), do: nil
 
   defp typesense_hybrid_search(q, similar, user_id, page) do
     TsImage.hybrid_search_images({q, similar},
