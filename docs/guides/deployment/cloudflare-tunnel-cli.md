@@ -67,6 +67,12 @@ cloudflared tunnel route dns <tunnel-name> <public-hostname>
 
 If you need multiple hostnames, add one route command per hostname.
 
+If a hostname already points to the wrong tunnel and you need to force switch:
+
+```bash
+cloudflared tunnel route dns --overwrite-dns <tunnel-name> <public-hostname>
+```
+
 ## 5) Start tunnel with --url
 
 Foreground run (first-time verification):
@@ -82,6 +88,12 @@ nohup cloudflared tunnel --no-autoupdate --url <origin-url> run --token "$(cloud
 ```
 
 This route does not require `~/.cloudflared/config.yml`.
+
+If you already have `~/.cloudflared/config.yml` and want token+url mode to ignore it, use:
+
+```bash
+cloudflared --config /dev/null tunnel --no-autoupdate --url <origin-url> run --token "$(cloudflared --config /dev/null tunnel token <tunnel-name>)"
+```
 
 ## 6) Configure Vmemo public host
 
@@ -135,9 +147,13 @@ tail -f /tmp/cloudflared-<tunnel-name>.log
 
 Common issues:
 
+- `1033` tunnel error: hostname is mapped, but the mapped tunnel has no active connector.
+  - Check `cloudflared tunnel list` and ensure the target tunnel has non-empty `CONNECTIONS`.
+  - Start a connector: `nohup cloudflared tunnel --no-autoupdate run <tunnel-name> > /tmp/cloudflared-<tunnel-name>.log 2>&1 &`
 - `502` or `503` from edge: `--url` target is wrong, or app is not listening on the target port
 - Host mismatch behavior: `PHX_HOST` does not match public hostname
 - Route missing: run `cloudflared tunnel route dns ...` again for target hostname
+- Existing local config hijacks commands: if commands behave as if using another tunnel, rerun with `--config /dev/null`
 - Tunnel token mismatch: regenerate token via `cloudflared tunnel token <tunnel-name>`
 
 ## Optional: clean up and re-create

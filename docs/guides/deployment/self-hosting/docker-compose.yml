@@ -1,6 +1,6 @@
 services:
   vmemo:
-    image: thaddeusjiang/vmemo:latest
+    image: thaddeusjiang/vmemo
     restart: on-failure
     env_file:
       - .env
@@ -21,7 +21,7 @@ services:
     ports:
       - "15432:5432"
     volumes:
-      - ./vmemo_data/pg-data:/var/lib/postgresql/data
+      - ./vmemo_data/pg-data:/var/lib/postgresql
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

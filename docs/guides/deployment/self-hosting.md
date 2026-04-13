@@ -46,10 +46,8 @@ cp .env.example .env
 MOONDREAM_URL=http://host.docker.internal:2020/v1/
 ```
 
-如果你想使用本地刚 build 的镜像，在当前目录运行：
-
 ```bash
-VMEMO_IMAGE=thaddeusjiang/vmemo:latest docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
+docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
 ```
 
 3. 启动服务：
@@ -126,6 +124,11 @@ services:
       - ./vmemo_data/storage:/app/storage
 ```
 
+PostgreSQL 18 注意事项：
+
+- data volume 应挂载到 `/var/lib/postgresql`（而不是 `/var/lib/postgresql/data`）。
+- 否则可能出现容器反复重启或 healthcheck 长时间不通过。
+
 ### 3) 启动和验证
 
 ```bash
@@ -185,15 +188,58 @@ curl -I https://your.public.hostname
 - 这里使用 `--url` 只会把公网请求转发到 `vmemo`（`http://vmemo:4000`）。
 - `postgres` 和 `typesense` 仅供 `vmemo` 容器内部依赖，不会被 cloudflared 直接公开。
 - 这个 Docker 方案不依赖 `~/.cloudflared/config.yml` 等 Docker 外部配置文件。
+- 如果你已经在宿主机用 `~/.cloudflared/config.yml` 跑 tunnel（常见为 `service: http://localhost:14000`），不要同时启用 compose 里的 `cloudflared`，二选一即可。
 
 CLI 方式请参考：
 
 - `docs/guides/deployment/cloudflare-tunnel-cli.md`
 - CLI 指南同样使用 `--url` 模式，不需要 `~/.cloudflared/config.yml`。
 
+### 5) Cloudflare 1033 / 530 快速排查
+
+`1033` 的本质是：hostname 已绑定 tunnel，但 tunnel 当前没有可用连接（或边缘还未收敛）。
+
+1. 先看 tunnel 连接数：
+
+```bash
+cloudflared tunnel list
+```
+
+如果目标 tunnel 的 `CONNECTIONS` 为空，先启动 connector：
+
+```bash
+nohup cloudflared tunnel --no-autoupdate run <tunnel-name> > /tmp/cloudflared-<tunnel-name>.log 2>&1 &
+```
+
+2. 确认域名路由是否绑定到预期 tunnel：
+
+```bash
+cloudflared tunnel route dns <tunnel-name> <public-hostname>
+```
+
+如果你需要覆盖历史错误绑定，使用：
+
+```bash
+cloudflared tunnel route dns --overwrite-dns <tunnel-name> <public-hostname>
+```
+
+3. 若本机存在 `~/.cloudflared/config.yml`，避免被默认配置“劫持”到其他 tunnel：
+
+```bash
+cloudflared --config /dev/null tunnel route dns --overwrite-dns <tunnel-name> <public-hostname>
+cloudflared --config /dev/null tunnel --no-autoupdate --url <origin-url> run --token "$(cloudflared --config /dev/null tunnel token <tunnel-name>)"
+```
+
+4. 验证顺序建议：
+
+```bash
+curl -I <origin-url>
+curl -I https://<public-hostname>
+tail -f /tmp/cloudflared-<tunnel-name>.log
+```
+
 ## Notes
 
-- 默认镜像标签是 `thaddeusjiang/vmemo:latest`；如需固定版本，可在 compose 文件改为具体 tag（例如 `v0.1.0`）。
-- 你也可以通过环境变量覆盖镜像：`VMEMO_IMAGE=your-image:tag docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d`。
+- 默认镜像标签是 `thaddeusjiang/vmemo`；如需固定版本，可在 compose 文件改为具体 tag（例如 `2026.4.12`）。
 - compose 依赖容器启动时自动执行数据库迁移和 Typesense 迁移。
 - 如需公网访问，请在入口层或反向代理启用 HTTPS。
