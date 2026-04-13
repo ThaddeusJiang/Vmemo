@@ -779,11 +779,31 @@ defmodule Vmemo.Memo.Image do
   end
 
   defp get_base_url do
-    if Mix.env() == :prod do
-      host = System.get_env("PHX_HOST") || "vmemo.app"
-      "https://#{host}"
-    else
-      "http://localhost:4000"
+    endpoint_config = Application.get_env(:vmemo, VmemoWeb.Endpoint, [])
+    url_config = Keyword.get(endpoint_config, :url, [])
+
+    host = Keyword.get(url_config, :host)
+    scheme = Keyword.get(url_config, :scheme, "http")
+    port = Keyword.get(url_config, :port)
+
+    cond do
+      is_binary(host) and host != "" ->
+        build_url(scheme, host, port)
+
+      phx_host = System.get_env("PHX_HOST") ->
+        "https://#{phx_host}"
+
+      true ->
+        "http://localhost:4000"
+    end
+  end
+
+  defp build_url(scheme, host, port) do
+    case {scheme, port} do
+      {"http", 80} -> "#{scheme}://#{host}"
+      {"https", 443} -> "#{scheme}://#{host}"
+      {_, nil} -> "#{scheme}://#{host}"
+      _ -> "#{scheme}://#{host}:#{port}"
     end
   end
 
