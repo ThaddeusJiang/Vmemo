@@ -3,7 +3,7 @@
 - [Setup](setup.md)
 - [FAQ](faq.md)
 - [Tidewave](tidewave.md)
-- [Architecture Diagrams](architecture-diagrams.md)
+- [Resource Diagrams](resource-diagrams.md)
 - [Project Specs](project-specs.md)
 - [Oban Queue Design](oban-queue-design.md)
 - [Coding Guidelines](../../coding-guidelines/README.md)

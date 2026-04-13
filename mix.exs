@@ -104,18 +104,61 @@ defmodule Vmemo.MixProject do
   end
 
   defp docs do
+    resource_diagram_extras =
+      Path.wildcard("lib/vmemo/*-mermaid-class-diagram.md")
+      |> Enum.sort()
+
     [
       main: "home",
       api_reference: false,
+      before_closing_body_tag: &before_closing_body_tag/1,
       extras: [
         {"README.md", [filename: "home", title: "Home"]},
         {"docs/features/public-rest-api.md", [title: "REST API"]},
         {"docs/features/api-tokens.md", [title: "API Token"]},
         "docs/guides/development/setup.md",
         "docs/guides/deployment/docker-prod-run.md"
-      ]
+      ] ++ resource_diagram_extras
     ]
   end
+
+  defp before_closing_body_tag(:html) do
+    """
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      const hideDiagramMenuItems = () => {
+        const selector = '#sidebar a[href$="-mermaid-class-diagram.html"]';
+        for (const linkEl of document.querySelectorAll(selector)) {
+          const itemEl = linkEl.closest("li");
+          if (itemEl) {
+            itemEl.remove();
+          }
+        }
+      };
+
+      hideDiagramMenuItems();
+      window.addEventListener("exdoc:loaded", hideDiagramMenuItems);
+
+      mermaid.initialize({startOnLoad: false});
+      let id = 0;
+      for (const codeEl of document.querySelectorAll("pre code.mermaid")) {
+        const preEl = codeEl.parentElement;
+        const graphDefinition = codeEl.textContent;
+        const graphEl = document.createElement("div");
+        const graphId = `mermaid-graph-${id++}`;
+        mermaid.render(graphId, graphDefinition).then(({svg, bindFunctions}) => {
+          graphEl.innerHTML = svg;
+          bindFunctions?.(graphEl);
+          preEl.insertAdjacentElement("afterend", graphEl);
+          preEl.remove();
+        });
+      }
+    </script>
+    """
+  end
+
+  defp before_closing_body_tag(_), do: ""
 
   defp usage_rules do
     [

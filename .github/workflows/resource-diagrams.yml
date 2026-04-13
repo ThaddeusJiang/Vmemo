@@ -1,0 +1,49 @@
+name: Resource diagrams
+
+# Regenerates Ash resource diagram markdown files (mix ash.generate_resource_diagrams)
+# and commits them under lib/vmemo/.
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "lib/vmemo/**"
+      - ".github/workflows/resource-diagrams.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: resource-diagrams-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  ash-resource-diagrams:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Generate Ash resource diagrams (Markdown)
+        run: mix ash.generate_resource_diagrams --format md
+
+      - name: Commit and push if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(resource): refresh Ash resource diagrams [skip ci]"
+          file_pattern: "lib/vmemo/*-mermaid-class-diagram.md"

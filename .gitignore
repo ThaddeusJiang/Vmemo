@@ -73,5 +73,8 @@ _local_docs/
 # Dialyzer PLT cache
 /priv/plts/
 
-# Ash mix ash.generate_resource_diagrams output next to domain modules (published copies: docs/guides/development/ash/)
-lib/vmemo/*-mermaid-*
+# Optional PNG output from `mix ash.generate_resource_diagrams --format png`
+lib/vmemo/*-mermaid-*.png
+
+# Intermediate Mermaid source output
+lib/vmemo/*-mermaid-*.mmd
