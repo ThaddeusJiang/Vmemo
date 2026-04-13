@@ -112,13 +112,14 @@ defmodule Vmemo.MixProject do
       main: "home",
       api_reference: false,
       before_closing_body_tag: &before_closing_body_tag/1,
-      extras: [
-        {"README.md", [filename: "home", title: "Home"]},
-        {"docs/features/public-rest-api.md", [title: "REST API"]},
-        {"docs/features/api-tokens.md", [title: "API Token"]},
-        "docs/guides/development/setup.md",
-        "docs/guides/deployment/docker-prod-run.md"
-      ] ++ resource_diagram_extras
+      extras:
+        [
+          {"README.md", [filename: "home", title: "Home"]},
+          {"docs/features/public-rest-api.md", [title: "REST API"]},
+          {"docs/features/api-tokens.md", [title: "API Token"]},
+          "docs/guides/development/setup.md",
+          "docs/guides/deployment/docker-prod-run.md"
+        ] ++ resource_diagram_extras
     ]
   end
 
