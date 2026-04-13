@@ -1,0 +1,34 @@
+name: Resolve CalVer
+description: Resolve and validate release version in CalVer format (YYYY.M.Patch)
+
+inputs:
+  raw_version:
+    description: Raw version string. When empty, fallback to current Asia/Tokyo date.
+    required: false
+    default: ""
+
+outputs:
+  version:
+    description: Resolved and validated CalVer version.
+    value: ${{ steps.resolve.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve and validate version
+      id: resolve
+      shell: bash
+      run: |
+        VERSION="${{ inputs.raw_version }}"
+
+        if [[ -z "$VERSION" ]]; then
+          VERSION="$(TZ=Asia/Tokyo date +'%Y.%-m.%-d')"
+        fi
+
+        if [[ ! "$VERSION" =~ ^[0-9]{4}\.(1[0-2]|[1-9])\.([1-9][0-9]*)$ ]]; then
+          echo "Invalid release version: '$VERSION'"
+          echo "Expected CalVer: YYYY.M.Patch (no leading zero, month 1-12, patch >= 1)"
+          exit 1
+        fi
+
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"

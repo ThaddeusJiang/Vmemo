@@ -1,0 +1,34 @@
+name: Release Draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version in CalVer format (YYYY.M.Patch). Leave empty to use current date."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create_draft_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release version
+        id: version
+        uses: ./.github/actions/resolve-calver
+        with:
+          raw_version: ${{ github.event.inputs.version }}
+
+      - name: Create GitHub draft release (with tag + notes)
+        uses: ncipollo/release-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          tag: ${{ steps.version.outputs.version }}
+          commit: main
+          name: Vmemo ${{ steps.version.outputs.version }}
+          draft: true
+          generateReleaseNotes: true
