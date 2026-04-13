@@ -37,11 +37,9 @@ jobs:
 
       - name: Create GitHub draft release (with tag + notes)
         uses: ncipollo/release-action@v1
-        env:
-          GH_TOKEN: ${{ github.token }}
         with:
           tag: ${{ steps.version.outputs.version }}
-          commit: main
+          commit: develop
           name: Vmemo ${{ steps.version.outputs.version }}
           draft: true
           generateReleaseNotes: true
