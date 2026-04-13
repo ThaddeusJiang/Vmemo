@@ -38,14 +38,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       |> assign_new(:show_full_form, fn -> false end)
       |> assign_new(:uploaded_photos, fn -> [] end)
 
-    # 通知父组件文件状态变化和 upload ref
-    # 使用 socket.parent_pid 获取父 LiveView 的 PID
+    # Notify parent component about file state changes and upload ref
+    # Use socket.parent_pid to get parent LiveView PID
     has_files = Enum.any?(socket.assigns.uploads.images.entries)
     upload_ref = socket.assigns.uploads.images.ref
 
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
-      # 确保 ref 总是发送（可能在组件更新时 ref 变化）
+      # Ensure ref is always sent (it may change when component updates)
       send(socket.parent_pid, {:upload_form_ref, upload_ref})
     end
 
@@ -265,13 +265,13 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     has_files = current_file_count > 0
     file_count_changed = current_file_count != previous_file_count
 
-    # 通知父组件文件状态变化
+    # Notify parent component about file state changes
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
       send(socket.parent_pid, {:upload_form_ref, upload_ref})
     end
 
-    # 合并表单数据
+    # Merge form data
     current_form_data = socket.assigns.form.params || %{}
     new_form_data = Map.merge(current_form_data, params)
 

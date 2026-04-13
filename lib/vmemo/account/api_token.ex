@@ -237,18 +237,18 @@ defmodule Vmemo.Account.ApiToken do
     end
   end
 
-  # Token 生成和 hash 计算
+  # Token generation and hash computation
   def generate_token do
-    # 生成 32 字节的随机 token
+    # Generate a 32-byte random token
     token = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
-    # 添加前缀便于识别
+    # Add prefix for easier identification
     prefixed_token = "vmemo_" <> token
-    # 计算 hash
+    # Compute hash
     hash = :crypto.hash(:sha256, prefixed_token) |> Base.encode16(case: :lower)
     {prefixed_token, hash}
   end
 
-  # 验证 token
+  # Verify token
   def verify_token(token, token_hash) do
     computed_hash = :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
     computed_hash == token_hash

@@ -1,29 +1,29 @@
-# Docker 启动检查清单
+# Docker Startup Checklist
 
-本文档列出 Docker 容器启动前需要检查的配置项（release 启动模式）。
+This document lists the configuration checks required before container startup (release mode).
 
-## ✅ 当前启动链路
+## Current Startup Chain
 
-### 1. 入口点脚本 (`rel/entrypoint.sh`)
+### 1. Entrypoint Script (`rel/entrypoint.sh`)
 
-- ✅ 容器通过 `ENTRYPOINT` 先执行启动前准备
-- ✅ 启动时运行统一 release 迁移（`bin/vmemo eval "Vmemo.Release.migrate()"`，包含 Postgres + Typesense）
-- ✅ 最后通过 `CMD` 启动 release（`bin/vmemo start`）
+- Container runs pre-start preparation via `ENTRYPOINT`.
+- Startup runs unified release migration (`bin/vmemo eval "Vmemo.Release.migrate()"`, including Postgres + Typesense).
+- Release starts via `CMD` (`bin/vmemo start`).
 
-### 2. Dockerfile 配置
+### 2. Dockerfile Configuration
 
-- ✅ builder 执行 `mix release`
-- ✅ runner 只拷贝 release 产物
-- ✅ 使用 `ENTRYPOINT + CMD` 模式，`CMD` 为 `start`
+- Builder runs `mix release`.
+- Runner copies release artifacts only.
+- Uses `ENTRYPOINT + CMD`, with `CMD ["start"]`.
 
-### 3. Zeabur 配置 (`others/zeabur/vmemo.yml`)
+### 3. Zeabur Config (`others/zeabur/vmemo.yml`)
 
-- ✅ 添加 `PHX_SERVER=true` 环境变量
-- ✅ 添加 `ADMIN_PASSWORD` 环境变量配置
-- ✅ 保留其他必需环境变量（`SECRET_KEY_BASE`, `RESEND_API_KEY` 等）
-- ✅ 添加 `SENTRY_DSN` 环境变量配置
+- Includes `PHX_SERVER=true`.
+- Includes `ADMIN_PASSWORD`.
+- Keeps other required envs (`SECRET_KEY_BASE`, `RESEND_API_KEY`, etc.).
+- Includes `SENTRY_DSN`.
 
-## ⚠️ 必需环境变量
+## Required Environment Variables
 
 1. `SECRET_KEY_BASE`
 2. `ADMIN_PASSWORD`
@@ -35,37 +35,39 @@
 8. `OPENROUTER_API_KEY`
 9. `SENTRY_DSN`
 
-可选：`MOONDREAM_URL`、`SENTRY_ENV`
+Optional: `MOONDREAM_URL`, `SENTRY_ENV`
 
-## 🔍 启动流程验证
+## Startup Verification
 
-1. **运行 release 迁移（包含 Postgres + Typesense）**
-   ```bash
-   bin/vmemo eval "Vmemo.Release.migrate()"
-   ```
+1. **Run release migration (Postgres + Typesense)**
 
-2. **启动服务**
-   ```bash
-   bin/vmemo start
-   ```
+```bash
+bin/vmemo eval "Vmemo.Release.migrate()"
+```
 
-## 🐛 常见问题排查
+2. **Start service**
 
-### 迁移失败
+```bash
+bin/vmemo start
+```
 
-1. 查看容器日志：`docker logs <container_id>`
-2. 检查数据库与 Typesense 连通性
-3. 检查 `TYPESENSE_URL` / `TYPESENSE_API_KEY`
+## Troubleshooting
 
-### 环境变量缺失
+### Migration Failure
 
-1. 对照 `config/runtime.exs` 校验必需项
-2. 校验变量名是否拼写正确
+1. Check container logs: `docker logs <container_id>`
+2. Verify database and Typesense connectivity
+3. Verify `TYPESENSE_URL` / `TYPESENSE_API_KEY`
 
-## ✅ 验证清单
+### Missing Environment Variables
 
-- [ ] `rel/entrypoint.sh` 存在且可执行
-- [ ] Dockerfile 使用 release 启动（`CMD ["start"]`）
-- [ ] Zeabur 配置包含必需环境变量
-- [ ] 数据库服务可访问
-- [ ] Typesense 服务可访问
+1. Verify required keys against `config/runtime.exs`
+2. Verify variable names are spelled correctly
+
+## Validation Checklist
+
+- [ ] `rel/entrypoint.sh` exists and is executable
+- [ ] Dockerfile starts via release (`CMD ["start"]`)
+- [ ] Zeabur config contains required envs
+- [ ] Database service is reachable
+- [ ] Typesense service is reachable

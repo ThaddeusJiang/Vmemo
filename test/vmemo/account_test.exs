@@ -50,23 +50,23 @@ defmodule Vmemo.AccountTest do
 
   describe "register_user/1" do
     test "requires email and password to be set" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates email and password when given" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates maximum values for email and password for security" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates email uniqueness" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "registers users with a hashed password" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -101,27 +101,27 @@ defmodule Vmemo.AccountTest do
     end
 
     test "requires email to change", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates email", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates maximum value for email for security", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates email uniqueness", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates current password", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "applies the email without persisting it", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -160,19 +160,19 @@ defmodule Vmemo.AccountTest do
     end
 
     test "updates the email with a valid token", %{user: _user, token: _token, email: _email} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not update email with invalid token", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not update email if user email changed", %{user: _user, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not update email if token expired", %{user: _user, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -185,7 +185,7 @@ defmodule Vmemo.AccountTest do
     end
 
     test "allows fields to be set" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -195,23 +195,23 @@ defmodule Vmemo.AccountTest do
     end
 
     test "validates password", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates maximum values for password for security", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates current password", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "updates the password", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "deletes all tokens for the given user", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -244,13 +244,13 @@ defmodule Vmemo.AccountTest do
     end
 
     test "does not return user for expired token", %{token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
   describe "delete_user_session_token/1" do
     test "deletes the token" do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -284,15 +284,15 @@ defmodule Vmemo.AccountTest do
     end
 
     test "confirms the email with a valid token", %{user: _user, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not confirm with invalid token", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not confirm email if token expired", %{user: _user, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -329,7 +329,7 @@ defmodule Vmemo.AccountTest do
     end
 
     test "returns the user with valid token", %{user: %{id: _id}, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not return the user with invalid token", %{user: _user} do
@@ -338,7 +338,7 @@ defmodule Vmemo.AccountTest do
     end
 
     test "does not return the user if token expired", %{user: _user, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
@@ -348,19 +348,19 @@ defmodule Vmemo.AccountTest do
     end
 
     test "validates password", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "validates maximum values for password for security", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "updates the password", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "deletes all tokens for the given user", %{user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 

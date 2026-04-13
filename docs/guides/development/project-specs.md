@@ -1,321 +1,321 @@
 # Vmemo Project Specs
 
-## 1. 核心功能
+## 1. Core Features
 
-### 1.1 用户与认证
-- 用户注册、登录、登出
-- 邮箱确认、忘记密码、重置密码
-- 用户设置（修改邮箱、修改密码）
-- Admin 登录与 Admin Import 页面
-- Ash Authentication + JWT + TokenResource 组合认证
+### 1.1 Users and Authentication
+- User registration, login, logout
+- Email confirmation, forgot password, reset password
+- User settings (change email, change password)
+- Admin login and Admin Import page
+- Combined auth with Ash Authentication + JWT + TokenResource
 
-### 1.2 照片与笔记
-- 单图/多图上传（LiveView Upload）
-- 拖拽上传、粘贴上传（前端 hooks）
-- 图片详情查看与编辑（note/caption）
-- 笔记（Note）与照片（Photo）多对多关联
-- 照片删除
+### 1.2 Photos and Notes
+- Single/multiple image upload (LiveView Upload)
+- Drag-and-drop upload and paste upload (frontend hooks)
+- View and edit photo details (note/caption)
+- Many-to-many association between Note and Photo
+- Photo deletion
 
-### 1.3 搜索与 AI
-- 文本搜索（query）
-- 以图搜图（similar_photo_id + 向量相似度）
-- 混合搜索（全文 + 向量）
-- 自动/手动生成 caption（Moondream）
-- Moondream 通用能力：query/caption/point/detect/segment
-- 聊天能力（AshAi + OpenRouter），支持工具调用返回图片
+### 1.3 Search and AI
+- Text search (`query`)
+- Search by photo (`similar_photo_id` + vector similarity)
+- Hybrid search (full-text + vector)
+- Automatic/manual caption generation (Moondream)
+- General Moondream capabilities: query/caption/point/detect/segment
+- Chat capability (AshAi + OpenRouter) with tool-call image responses
 
-### 1.4 API 与集成
-- REST API（`/api/v1/photos` create/show/delete）
-- API Token 生命周期管理（创建、启停、删除、过期控制、用量统计）
-- MCP 路由（`/mcp`）与 Photos Domain MCP resources
-- 用户数据导出 ZIP / 用户数据导入 ZIP
-- 管理员全量导入 ZIP
+### 1.4 API and Integrations
+- REST API (`/api/v1/photos` create/show/delete)
+- API token lifecycle management (create, activate/deactivate, delete, expiry, usage)
+- MCP route (`/mcp`) and Photos Domain MCP resources
+- User data export ZIP / user data import ZIP
+- Admin full import ZIP
 
-### 1.5 异步与后台任务
-- Oban 队列处理耗时任务
-- Photo/Note 异步同步到 Typesense
-- Caption 与 Moondream 请求异步处理
-- Admin Import 异步处理并通过 PubSub 推送进度
+### 1.5 Async and Background Jobs
+- Oban queue for long-running jobs
+- Async sync from Photo/Note to Typesense
+- Async processing for Caption and Moondream requests
+- Async Admin Import with PubSub progress updates
 
 ---
 
-## 2. 核心依赖
+## 2. Core Dependencies
 
-### 2.1 应用框架与语言栈
+### 2.1 Framework and Language Stack
 - Elixir `~> 1.19`
 - Phoenix `~> 1.8`
 - Phoenix LiveView `~> 1.1`
-- Bandit（HTTP server adapter）
+- Bandit (HTTP server adapter)
 
-### 2.2 领域与数据层
+### 2.2 Domain and Data Layer
 - Ash `~> 3.0`
 - AshPostgres `>= 2.6.8`
 - AshPhoenix `~> 2.1`
 - AshAdmin `~> 0.13.19`
 - AshAuthentication `~> 4.13`
-- PostgreSQL（主数据）
+- PostgreSQL (primary datastore)
 
-### 2.3 搜索与 AI
-- Typesense（全文/向量检索）
+### 2.3 Search and AI
+- Typesense (full-text/vector retrieval)
 - AshAi `~> 0.5`
-- OpenRouter API（聊天模型）
-- Moondream API（图像理解）
+- OpenRouter API (chat model)
+- Moondream API (image understanding)
 - Req `~> 0.5.10`
 
-### 2.4 异步与可观测
+### 2.4 Async and Observability
 - Oban `~> 2.19`
 - Oban Web `~> 2.0`
 - Oban Met `~> 1.0`
-- Telemetry（Phoenix/VM 指标）
+- Telemetry (Phoenix/VM metrics)
 - Sentry `~> 11.0`
 
-### 2.5 前端与测试
+### 2.5 Frontend and Testing
 - Tailwind CSS + daisyUI
 - esbuild
-- Playwright（e2e + visual snapshots，双 viewport）
-- Bun（e2e 执行环境）
+- Playwright (e2e + visual snapshots, dual viewport)
+- Bun (e2e runtime)
 
 ---
 
-## 3. 核心架构
+## 3. Core Architecture
 
-### 3.1 总体架构（双存储 + 异步同步）
-- PostgreSQL 作为主事实源（用户、照片、笔记、token、请求、会话）
-- Typesense 作为搜索索引与向量检索层
-- 写入先落 DB，再通过 Oban 异步同步到 Typesense
-- LiveView 负责实时交互，PubSub 负责任务进度与异步结果回流
+### 3.1 High-level Architecture (Dual Storage + Async Sync)
+- PostgreSQL is the source of truth (users, photos, notes, tokens, requests, sessions)
+- Typesense is the search index and vector retrieval layer
+- Writes go to DB first, then async sync to Typesense through Oban
+- LiveView handles real-time interactions; PubSub returns job progress and async results
 
-### 3.2 领域边界（Ash Domains）
-- `Vmemo.AccountDomain`: 用户账户、会话令牌、API 令牌（表 `ash_users` / `ash_user_tokens` / `api_tokens`）
+### 3.2 Domain Boundaries (Ash Domains)
+- `Vmemo.AccountDomain`: user account, session token, API token (`ash_users` / `ash_user_tokens` / `api_tokens`)
 - `Vmemo.Photos`: `Photo`, `Note`, `PhotoNote`, `PhotoCaptionRequest`, `PhotoMoondreamRequest`
 - `Vmemo.Chat`: `Conversation`, `Message`
 - `Vmemo.Admin`: `ImportRequest`
 
-### 3.3 运行时关键组件（Supervisor）
+### 3.3 Runtime Components (Supervisor)
 - `Vmemo.Repo`
 - `Phoenix.PubSub`
 - `Finch`
 - `Oban`
 - `VmemoWeb.Endpoint`
 
-### 3.4 交互层
+### 3.4 Interaction Layer
 - Browser: Phoenix Controller + LiveView
 - API: `/api/v1` + `VmemoWeb.ApiAuth`
 - MCP: `/mcp` + `VmemoWeb.McpAuth`
 
 ---
 
-## 4. 功能细节
+## 4. Functional Details
 
-### 4.1 认证与账户
-- 登录注册基于 AshAuthentication password strategy
-- Session 与 reset 令牌统一使用 `ash_user_tokens` 表（会话令牌资源）
-- 邮箱确认/改邮箱通过 `Phoenix.Token` 签名链接
-- 密码规则：长度 12~72
+### 4.1 Auth and Accounts
+- Login/registration uses AshAuthentication password strategy
+- Session and reset tokens are unified in `ash_user_tokens`
+- Email confirmation/change email uses signed links with `Phoenix.Token`
+- Password rule: length 12-72
 
-### 4.2 图片上传与存储
-- Web 端使用 LiveView 内置 upload（`allow_upload`）
-- API 端使用 multipart，校验扩展名与 magic bytes
-- 文件落盘路径：`storage/v1/<user_id>/photos/<timestamp>_<filename>`
-- `Photo.create_with_sync` 创建后自动 enqueue Typesense 同步
+### 4.2 Image Upload and Storage
+- Web uses built-in LiveView upload (`allow_upload`)
+- API uses multipart with extension and magic-byte validation
+- Storage path: `storage/v1/<user_id>/photos/<timestamp>_<filename>`
+- `Photo.create_with_sync` auto-enqueues Typesense sync
 
-### 4.3 搜索
-- `Photo.hybrid_search`：空查询走 DB `inserted_at desc` 分页
-- 非空查询走 Typesense multi_search，结果按 Typesense 返回顺序重排
-- `similar_photo_id` 启用向量距离排序，并回填 `_vector_distance`
-- `Photo.hybrid_search_count`：查询条件不同，分别走 DB count 或 Typesense found
+### 4.3 Search
+- `Photo.hybrid_search`: empty query uses DB pagination by `inserted_at desc`
+- Non-empty query uses Typesense multi_search and preserves Typesense order
+- `similar_photo_id` enables vector-distance sorting and backfills `_vector_distance`
+- `Photo.hybrid_search_count` uses DB count or Typesense found based on query mode
 
 ### 4.4 Caption / Moondream
-- Caption 请求记录在 `photo_caption_requests`
-- 通用 Moondream 请求记录在 `photo_moondream_requests`
-- Worker 状态流：`pending -> processing -> completed|failed`
-- 结果通过 PubSub topic 回推到页面
+- Caption requests are recorded in `photo_caption_requests`
+- Generic Moondream requests are recorded in `photo_moondream_requests`
+- Worker states: `pending -> processing -> completed|failed`
+- Results are pushed to pages via PubSub topic
 
 ### 4.5 Chat
-- `Conversation` 与 `Message` 由 Ash Resource + AshOban trigger 驱动
-- 用户发消息后触发 `respond` 后台任务
-- agent 回复支持增量 upsert（`upsert_response`），可累积 tool_calls/tool_results
-- 聊天页可归档/删除会话，消息流通过 PubSub 更新
+- `Conversation` and `Message` are driven by Ash Resource + AshOban triggers
+- User message triggers background `respond` job
+- Agent replies support incremental upsert (`upsert_response`) with accumulated `tool_calls` / `tool_results`
+- Chat page supports archive/delete, and stream updates through PubSub
 
-### 4.6 Token 与 Public API
-- API Token 仅存 hash（`sha256`），明文仅创建时返回一次
-- 校验逻辑包含 active + expiry + usage 更新
-- REST 端点：上传/查询/删除照片
+### 4.6 Token and Public API
+- API tokens store hash only (`sha256`); plaintext returns once at creation time
+- Validation includes active flag + expiry + usage update
+- REST endpoints: upload/query/delete photos
 
-### 4.7 数据导入导出
-- 用户自助导出：导出 user/photos/notes/typesense docs + storage 文件
-- 用户自助导入：导入数据后重建 DB 与 Typesense（按用户范围）
-- 管理员导入：支持 users/photos/notes/links 的全量导入，并记录详细统计
-
----
-
-## 5. 依赖细节
-
-### 5.1 外部服务依赖
-- PostgreSQL: 业务主库、Oban jobs
-- Typesense: `photos`/`notes`/`ts_schema_migrations` 集合
-- Moondream: 图像 caption/query/point/detect/segment
-- OpenRouter: Chat model
-- Resend: 邮件发送
-- Sentry: 错误上报
-
-### 5.2 配置与环境变量（生产关键项）
-- 必需：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
-- 常用可选：`MOONDREAM_URL`, `SENTRY_ENV`
-- 生产默认：`MOONDREAM_URL` 默认为 `https://api.moondream.ai/v1/`
-- 严格校验：数值类 env（如导入分片大小）不合法会直接 `raise`
-
-### 5.3 CI/CD 依赖
-- Elixir checks：PR 自动跑 `mix test`
-- e2e tests：PR label `run-e2e-testing` 或 `workflow_dispatch`
-- release：手动触发，按 CalVer 推送 `amd64/arm64` 镜像并创建 GitHub Release
-
-### 5.4 前端与视觉测试依赖
-- Playwright 双 viewport 项目：`iphone-se` + `macbook-13`
-- visual snapshots 在 `e2e-test/tests/*-snapshots`
+### 4.7 Data Import/Export
+- User self-export: user/photos/notes/typesense docs + storage files
+- User self-import: rebuild DB and Typesense by user scope
+- Admin import: full users/photos/notes/links import with detailed stats
 
 ---
 
-## 6. 架构细节
+## 5. Dependency Details
 
-### 6.1 模块分层
-- Web 层：`VmemoWeb.Router`, LiveViews, Controllers, Plugs
-- Domain 层：`Vmemo.*`（Ash Domain + Resource）
-- Service 层：`Vmemo.SearchEngine.TsPhoto`, `Vmemo.SearchEngine.TsNote`, `Vmemo.PhotoStorage`, `Vmemo.ApiTokenService`, `Vmemo.UserSettings`, `Vmemo.Admin.Import`
-- Worker 层：`Vmemo.Workers.*`
-- SDK 层：`SmallSdk.Typesense`, `SmallSdk.Moondream`, `SmallSdk.FileSystem`
+### 5.1 External Services
+- PostgreSQL: primary business data + Oban jobs
+- Typesense: `photos` / `notes` / `ts_schema_migrations` collections
+- Moondream: image caption/query/point/detect/segment
+- OpenRouter: chat model
+- Resend: email delivery
+- Sentry: error reporting
 
-### 6.2 数据流（写路径）
-- 用户操作 -> Ash action 写 PostgreSQL
-- `after_action` enqueue Oban
-- Worker 消费任务并更新 Typesense 或调用外部 AI
-- PubSub 推送状态 -> LiveView 刷新 UI
+### 5.2 Config and Environment Variables (Production-Critical)
+- Required: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
+- Common optional: `MOONDREAM_URL`, `SENTRY_ENV`
+- Production default: `MOONDREAM_URL` defaults to `https://api.moondream.ai/v1/`
+- Strict validation: invalid numeric env values (for example import chunk size) raise at runtime
 
-### 6.3 数据流（读路径）
-- 常规详情读取：PostgreSQL
-- 搜索读取：Typesense + PostgreSQL 结果重排/补全
-- API 与 LiveView 在 actor 维度隔离用户数据
+### 5.3 CI/CD Dependencies
+- Elixir checks: PR runs `mix test`
+- e2e tests: trigger by PR label `run-e2e-testing` or `workflow_dispatch`
+- Release: manually triggered, pushes `amd64/arm64` images by CalVer and creates GitHub Release
 
-### 6.4 安全与权限
-- Browser 会话：`fetch_current_ash_user`
-- API：`Bearer` token + `VmemoWeb.ApiAuth`
-- MCP：可匿名访问，带 token 时注入 actor
-- Chat/Photos 主查询绑定 actor 或 user_id 过滤
-
-### 6.5 可运维性
-- `Vmemo.Release.migrate/0` 同时处理 AshPostgres + Typesense migration
-- Dev 路由提供 dashboard/oban dashboard/external service 页面
-- release image 为单一路径（根 `Dockerfile`, `MIX_ENV=prod`）
+### 5.4 Frontend and Visual Testing Dependencies
+- Dual viewport Playwright projects: `iphone-se` + `macbook-13`
+- Visual snapshots in `e2e-test/tests/*-snapshots`
 
 ---
 
-## 7. 实现细节
+## 6. Architecture Details
 
-### 7.1 关键目录
-- `lib/vmemo/**`: 核心领域与服务
-- `lib/vmemo_web/**`: 路由、LiveView、Controller、认证 Plug
-- `lib/small_sdk/**`: 外部服务 SDK
-- `priv/ts/schema.exs`, `priv/ts/schema_migrator.exs`: Typesense schema 定义与迁移执行
-- `priv/ts/migrations/**`: Typesense 迁移脚本
+### 6.1 Module Layers
+- Web layer: `VmemoWeb.Router`, LiveViews, Controllers, Plugs
+- Domain layer: `Vmemo.*` (Ash Domain + Resource)
+- Service layer: `Vmemo.SearchEngine.TsPhoto`, `Vmemo.SearchEngine.TsNote`, `Vmemo.PhotoStorage`, `Vmemo.ApiTokenService`, `Vmemo.UserSettings`, `Vmemo.Admin.Import`
+- Worker layer: `Vmemo.Workers.*`
+- SDK layer: `SmallSdk.Typesense`, `SmallSdk.Moondream`, `SmallSdk.FileSystem`
+
+### 6.2 Data Flow (Write Path)
+- User action -> Ash action writes PostgreSQL
+- `after_action` enqueues Oban jobs
+- Workers consume jobs and update Typesense or call external AI
+- PubSub pushes status -> LiveView refreshes UI
+
+### 6.3 Data Flow (Read Path)
+- Standard detail read: PostgreSQL
+- Search read: Typesense + PostgreSQL reorder/backfill
+- API and LiveView isolate user data by actor scope
+
+### 6.4 Security and Permission
+- Browser session: `fetch_current_ash_user`
+- API: Bearer token + `VmemoWeb.ApiAuth`
+- MCP: anonymous access allowed; actor injected when token is present
+- Chat/Photos primary queries bind actor or filter by user_id
+
+### 6.5 Operability
+- `Vmemo.Release.migrate/0` handles both AshPostgres and Typesense migrations
+- Dev routes expose dashboard/oban dashboard/external service pages
+- Release image uses single path (root `Dockerfile`, `MIX_ENV=prod`)
+
+---
+
+## 7. Implementation Details
+
+### 7.1 Key Directories
+- `lib/vmemo/**`: core domains and services
+- `lib/vmemo_web/**`: routing, LiveView, controller, auth plugs
+- `lib/small_sdk/**`: external service SDKs
+- `priv/ts/schema.exs`, `priv/ts/schema_migrator.exs`: Typesense schema and migration runner
+- `priv/ts/migrations/**`: Typesense migration scripts
 - `e2e-test/**`: Playwright e2e + visual snapshots
 
-### 7.2 关键路由
+### 7.2 Key Routes
 - Landing: `/`
 - Auth: `/register`, `/login`, `/reset-password`
 - App: `/home`, `/photos`, `/photos/upload`, `/photos/:id`, `/notes/:id`, `/chat`, `/tokens`, `/settings`
 - API: `/api/v1/photos`
 - MCP: `/mcp`
-- Admin: `/admin/login`, `/admin/import`, `/admin`(AshAdmin)
+- Admin: `/admin/login`, `/admin/import`, `/admin` (AshAdmin)
 
-### 7.3 Typesense 迁移策略
-- `mix ts.migrate` / `Vmemo.Release.ts_migrate/0` 会动态加载 `priv/ts/schema.exs` 与 `priv/ts/schema_migrator.exs`
-- `Vmemo.Ts.SchemaMigrator.migrate/0` 读取 `priv/ts/migrations/*.exs`
-- 迁移版本记录到 `ts_schema_migrations`
-- 支持幂等：集合已存在/字段已存在时可容忍
+### 7.3 Typesense Migration Strategy
+- `mix ts.migrate` / `Vmemo.Release.ts_migrate/0` dynamically load `priv/ts/schema.exs` and `priv/ts/schema_migrator.exs`
+- `Vmemo.Ts.SchemaMigrator.migrate/0` reads `priv/ts/migrations/*.exs`
+- Migration versions are recorded in `ts_schema_migrations`
+- Idempotency is supported when collections/fields already exist
 
-### 7.4 异步任务清单
-- `SyncPhotoToTypesense`（含可选自动 caption）
+### 7.4 Async Job List
+- `SyncPhotoToTypesense` (with optional auto-caption)
 - `SyncNoteToTypesense`
 - `ProcessCaptionRequest`
 - `ProcessMoondreamRequest`
 - `ProcessImportRequest`
 - AshOban triggers: chat message respond / conversation naming
 
-### 7.5 关键非功能要求（从现状提炼）
-- 失败时不应强制跳转，应就地反馈
-- 表单验证失败不丢输入
-- 列表默认按 `inserted_at desc`
-- UI 与测试覆盖移动端 + 桌面端
+### 7.5 Key Non-Functional Requirements
+- Do not force redirect on failure; show in-place feedback
+- Keep user input when validation fails
+- Default list ordering: `inserted_at desc`
+- UI and tests should cover both mobile and desktop
 
 ---
 
 ## 8. Detailed Release Checklist
 
-### 8.1 发布前准备（代码与范围）
-- [ ] 明确 release 范围与变更摘要（功能、修复、风险）
-- [ ] 确认分支已合并到发布来源分支
-- [ ] 确认无临时调试代码、临时配置、临时账号
-- [ ] 确认不提交 `_local_docs/**`、`.playwright-mcp/**` 等本地文件
-- [ ] 更新必要文档（README、API 文档、迁移说明）
+### 8.1 Pre-release Preparation (Code and Scope)
+- [ ] Define release scope and change summary (features, fixes, risks)
+- [ ] Confirm branch is merged into release source branch
+- [ ] Confirm no temporary debug code/config/accounts
+- [ ] Confirm local-only files like `_local_docs/**`, `.playwright-mcp/**` are not committed
+- [ ] Update required docs (README, API docs, migration notes)
 
-### 8.2 质量门禁（自动化）
-- [ ] CI `Elixir Checks` 通过（`mix test`）
-- [ ] 需要时触发 e2e（PR label 或 workflow_dispatch）
-- [ ] e2e 双 viewport 全通过（iPhone SE + MacBook 13）
-- [ ] visual snapshots 变更已审阅并提交（若有）
-- [ ] 无阻塞级错误日志与已知回归
+### 8.2 Quality Gates (Automation)
+- [ ] CI `Elixir Checks` passes (`mix test`)
+- [ ] Trigger e2e when needed (PR label or workflow_dispatch)
+- [ ] Dual viewport e2e fully passes (iPhone SE + MacBook 13)
+- [ ] Visual snapshot changes reviewed and committed (if any)
+- [ ] No blocking errors or known regressions
 
-### 8.3 配置与密钥检查
-- [ ] 生产环境变量已配置完整：`DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
-- [ ] `SENTRY_ENV`（可选）已按环境配置
-- [ ] `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6` 符合部署环境
-- [ ] 关键 env 值格式校验通过（不会触发 runtime raise）
+### 8.3 Config and Secrets Check
+- [ ] Production env vars fully configured: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
+- [ ] `SENTRY_ENV` (optional) configured per environment
+- [ ] `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6` match deployment environment
+- [ ] Critical env formats validated (no runtime raise)
 
-### 8.4 数据与迁移检查
-- [ ] PostgreSQL 备份策略已执行/验证
-- [ ] Typesense 数据备份策略已执行/验证（如需要）
-- [ ] 演练 `Vmemo.Release.migrate()` 成功
-- [ ] 验证 Ash migrations 与 Typesense migrations 均幂等
-- [ ] 验证新 schema 与旧数据兼容（必要时回填脚本就绪）
+### 8.4 Data and Migration Check
+- [ ] PostgreSQL backup strategy executed/verified
+- [ ] Typesense backup strategy executed/verified (if needed)
+- [ ] Rehearse `Vmemo.Release.migrate()` successfully
+- [ ] Verify Ash and Typesense migrations are idempotent
+- [ ] Verify schema compatibility with old data (backfill script ready if required)
 
-### 8.5 制品构建与发布
-- [ ] 使用根目录 `Dockerfile` 构建 `MIX_ENV=prod` 镜像
-- [ ] 分别构建并推送 `amd64` / `arm64` 镜像
-- [ ] 创建并验证 multi-arch manifest tag
-- [ ] 创建 GitHub Release（CalVer：`YYYY.M.Patch`）
-- [ ] 若同 tag 覆盖发布，已显式确认 overwrite 选项
+### 8.5 Artifact Build and Release
+- [ ] Build `MIX_ENV=prod` image from root `Dockerfile`
+- [ ] Build and push both `amd64` / `arm64` images
+- [ ] Create and validate multi-arch manifest tag
+- [ ] Create GitHub Release (CalVer: `YYYY.M.Patch`)
+- [ ] If same tag is overwritten, explicitly confirm overwrite option
 
-### 8.6 上线前冒烟（staging 或 prod-like）
-- [ ] 启动容器后健康检查通过（app/postgres/typesense）
-- [ ] 登录/注册/重置密码流程可用
-- [ ] 上传图片、编辑 note/caption、删除图片可用
-- [ ] 文本搜索与以图搜图可用
-- [ ] API Token 创建与 API 上传/查询/删除可用
-- [ ] Chat 发消息与 AI 回复链路可用（如启用）
-- [ ] 用户导出/导入与 Admin 导入链路可用
+### 8.6 Pre-go-live Smoke (Staging or Prod-like)
+- [ ] Health checks pass after startup (app/postgres/typesense)
+- [ ] Login/registration/reset-password flow works
+- [ ] Upload image, edit note/caption, and delete image work
+- [ ] Text search and search-by-photo work
+- [ ] API token creation and API upload/query/delete work
+- [ ] Chat messaging and AI response chain works (if enabled)
+- [ ] User export/import and Admin import flows work
 
-### 8.7 上线执行
-- [ ] 按计划窗口发布并记录开始时间
-- [ ] 执行 `Vmemo.Release.migrate()`
-- [ ] 启动新版本实例并确认 readiness
-- [ ] 进行生产冒烟（最小真实路径）
-- [ ] 确认核心指标稳定（错误率、延迟、任务积压）
+### 8.7 Go-live Execution
+- [ ] Release in planned window and record start time
+- [ ] Run `Vmemo.Release.migrate()`
+- [ ] Start new version instances and verify readiness
+- [ ] Run production smoke checks (minimal real path)
+- [ ] Confirm core metrics are stable (error rate, latency, queue backlog)
 
-### 8.8 上线后验证（30~120 分钟）
-- [ ] Sentry 无新增高优先级异常
-- [ ] Oban 队列无持续堆积（default/sync_typesense/chat_queues）
-- [ ] Typesense 查询成功率与响应时间正常
-- [ ] 核心页面交互稳定（home/photos/photo/chat/settings/tokens）
-- [ ] Public API 调用成功率正常
+### 8.8 Post-release Verification (30-120 Minutes)
+- [ ] No new high-priority exceptions in Sentry
+- [ ] Oban queues have no sustained backlog (default/sync_typesense/chat_queues)
+- [ ] Typesense query success rate and response time are normal
+- [ ] Core pages are stable (`home/photos/photo/chat/settings/tokens`)
+- [ ] Public API success rate is normal
 
-### 8.9 回滚预案
-- [ ] 保留上一版本镜像 tag 可快速回滚
-- [ ] 回滚步骤文档化（切换镜像 + 重启 + 验证）
-- [ ] 明确“可回滚/不可回滚”迁移项
-- [ ] 回滚后数据一致性检查项已定义
+### 8.9 Rollback Plan
+- [ ] Keep previous image tag for fast rollback
+- [ ] Document rollback steps (switch image + restart + verify)
+- [ ] Identify reversible/non-reversible migration items
+- [ ] Define post-rollback data consistency checks
 
-### 8.10 发布收尾
-- [ ] 更新 release notes（用户可感知变更 + 破坏性变更）
-- [ ] 记录线上问题与后续任务（docs/tasks）
-- [ ] 如有规范变化，更新 `AGENTS.md` / coding guidelines
-- [ ] 归档本次发布检查清单与结果
+### 8.10 Release Wrap-up
+- [ ] Update release notes (user-facing changes + breaking changes)
+- [ ] Record production issues and follow-up tasks (`docs/tasks`)
+- [ ] Update `AGENTS.md` / coding guidelines when conventions change
+- [ ] Archive this release checklist and results

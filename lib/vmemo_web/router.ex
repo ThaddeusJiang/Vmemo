@@ -84,7 +84,7 @@ defmodule VmemoWeb.Router do
   scope "/", VmemoWeb do
     pipe_through [:browser]
 
-    # 注册和登录页面允许已登录用户访问（会显示提示信息）
+    # Registration and sign-in pages allow authenticated users (with a notice)
     live_session :auth_pages,
       on_mount: [{VmemoWeb.UserAuth, :mount_current_user}] do
       live "/register", UserRegistrationLive, :new
@@ -97,7 +97,7 @@ defmodule VmemoWeb.Router do
   scope "/", VmemoWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    # 密码重置页面不允许已登录用户访问
+    # Password reset pages do not allow authenticated users
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{VmemoWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/reset-password", UserForgotPasswordLive, :new
@@ -124,7 +124,7 @@ defmodule VmemoWeb.Router do
       live "/chat", ChatLive
       live "/chat/:conversation_id", ChatLive
 
-      # API Token 管理路由
+      # API Token management routes
       live "/tokens", ApiTokenLive.Index, :index
       live "/tokens/new", ApiTokenLive.Form, :new
       live "/tokens/:id", ApiTokenLive.Show, :show

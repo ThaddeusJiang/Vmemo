@@ -24,7 +24,7 @@ defmodule VmemoWeb.UserRegistrationLive do
   def handle_event("register", %{"form" => form_params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form.source, params: form_params) do
       {:ok, user} ->
-        # 发送确认邮件
+        # Send confirmation email
         Vmemo.Account.deliver_user_confirmation_instructions(
           user,
           &url(~p"/users/confirm/#{&1}")

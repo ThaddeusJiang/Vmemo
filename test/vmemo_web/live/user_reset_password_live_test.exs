@@ -19,7 +19,7 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
 
   describe "Reset password page" do
     test "renders reset password with valid token", %{conn: _conn, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not render reset password with invalid token", %{conn: conn} do
@@ -29,30 +29,30 @@ defmodule VmemoWeb.UserResetPasswordLiveTest do
     end
 
     test "renders errors for invalid data", %{conn: _conn, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
   describe "Reset Password" do
     test "resets password once", %{conn: _conn, token: _token, user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not reset password on invalid data", %{conn: _conn, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
   describe "Reset password navigation" do
     test "redirects to login page when the Login button is clicked", %{conn: _conn, token: _token} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "redirects to registration page when the Register button is clicked", %{
       conn: _conn,
       token: _token
     } do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 end

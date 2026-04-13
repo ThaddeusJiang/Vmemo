@@ -1,79 +1,73 @@
-# Search-by-photo：独立 Typesense collection（不写入 DB / storage）
+# Search-by-photo: Dedicated Typesense Collection (No DB / Storage Write)
 
-## 问题定义
+## Problem Definition
 
-- 以图搜图（search-by-photo）不应再走「上传照片 → 落库 + 落盘 + Oban 同步 Typesense」路径。
-- 检索用的临时图片只需进入 Typesense 的专用索引，用于生成与 `photos` 同模型的向量，并在 `photos` 集合上做相似检索。
-- 避免异步队列导致的「先空结果、后出图」体验；锚点写入与向量就绪应在同一次用户操作内完成（可接受短轮询等待 embedding）。
+- Search-by-photo should no longer use the path "upload photo -> write DB + storage + Oban sync to Typesense".
+- Temporary query images only need to go into a dedicated Typesense index to generate vectors compatible with `photos`, then run similarity search against `photos`.
+- Avoid async queue UX where users see empty results first; anchor write and vector readiness should finish within one user interaction (short polling for embedding is acceptable).
 
-## 方案对比（结论优先）
+## Option Comparison (Conclusion First)
 
-### 采用：专用 collection `search_photos` + 读出向量后在 `photos` 上 KNN
+### Adopted: dedicated collection `search_photos` + read vector then KNN on `photos`
 
-**做法**：新建与 `photos` 相同 CLIP 嵌入配置（`ts/clip-vit-b-p32`）的集合 `search_photos`，仅含 `image`、`inserted_at`、`inserted_by`、`image_embedding`。用户提交后：创建临时文档 → 轮询 GET 直至 `image_embedding` 可用 → 用 Typesense 支持的**字面向量** `vector_query` 对 `photos` 做 hybrid / similar 检索。URL 使用 `search_anchor_id`（与 `similar_photo_id` 区分）。实现模块为 `Vmemo.SearchEngine.TsSearchPhotos`（`index_image/2`、`get_embedding/2`、`delete/1`）。
+Approach: create `search_photos` with the same CLIP embedding model (`ts/clip-vit-b-p32`) as `photos`, containing only `image`, `inserted_at`, `inserted_by`, `image_embedding`. After submit: create temporary doc -> poll GET until `image_embedding` is available -> run hybrid/similar search on `photos` using literal vector in `vector_query`. URL uses `search_anchor_id` (distinct from `similar_photo_id`). Implementation module: `Vmemo.SearchEngine.TsSearchPhotos` (`index_image/2`, `get_embedding/2`, `delete/1`).
 
-**理由**：
+Reasons:
 
-- Typesense 文档明确：`vector_query` 中的 `id:` 表示「**同一被搜索 collection 内**文档的 ID」，不能直接把另一 collection 的文档 ID 当作 `photos` 检索的锚点（见 [Vector Search](https://typesense.org/docs/27.1/api/vector-search.html) 中 `id` 参数说明及字面向量示例）。
-- 字面向量查询与现有 `search_similar_photos` 语义一致，仅向量来源从「photos 内某条」改为「anchor 文档生成后读出」。
-- `inserted_by` 与 URL 中的 anchor id 结合服务端校验，避免跨用户复用临时锚点。
+- Typesense docs specify that `id:` in `vector_query` refers to a document ID in the same searched collection; you cannot directly use an ID from another collection as a `photos` search anchor.
+- Literal vector query keeps semantics aligned with existing `search_similar_photos`; only vector source changes.
+- Server-side validation using `inserted_by` + anchor ID in URL prevents cross-user anchor reuse.
 
-### 未采纳方案（折叠）
+### Not Adopted
 
-<details>
-<summary>继续把临时图写入 <code>photos</code> 并打标 <code>ephemeral</code></summary>
+1. Keep writing temporary images into `photos` with `ephemeral` flag.
 
-- **原因**：污染用户正式图库与业务资源，违背「不插入 database」要求；清理与权限边界更复杂。
-</details>
+- Reason: pollutes user data and violates "do not write into database" requirement.
 
-<details>
-<summary>仅依赖 Oban 同步 <code>photos</code> 后再 <code>similar_photo_id</code> 检索（当前修复思路的延伸）</summary>
+2. Depend on Oban sync into `photos` then use `similar_photo_id`.
 
-- **原因**：仍会把检索图当作正式 Photo；且强依赖队列时序，与「不走传统 upload」不一致。
-</details>
+- Reason: still treats query image as a normal Photo and depends on queue timing.
 
-<details>
-<summary>前端 / Session 携带整图 base64 再检索</summary>
+3. Keep full-image base64 in frontend/session then search.
 
-- **原因**：体积大、易触 URL/ Cookie 限制，LiveView 状态也不适合长期持有大图。
-</details>
+- Reason: payload is large and can hit URL/Cookie limits.
 
-## 技术选型
+## Technical Choices
 
-- **索引**：Typesense，嵌入模型与 `photos` 保持一致（`priv/ts/schema.exs` 中同一 `image_embedding` 定义）。
-- **ID**：`Ash.UUIDv7.generate()` 作为 anchor 文档 id。
-- **轮询**：创建 anchor 后有限次 `get_document` 直至 `image_embedding` 非空（嵌入生成在 Typesense 侧可能略慢于写入返回）。
+- Index: Typesense, same embedding definition as `photos` in `priv/ts/schema.exs`.
+- ID: `Ash.UUIDv7.generate()` for anchor document ID.
+- Polling: bounded `get_document` polling until `image_embedding` is present.
 
-## 架构与数据流
+## Architecture and Data Flow
 
-1. LiveView `SearchBox`：`consume_uploaded_entry` 读临时文件 → Base64 → `TsSearchPhotos.index_image/2`。
-2. 成功 → `push_navigate` 至 `/photos?search_anchor_id=<uuid>`。
-3. `PhotosIndexLive`：`Photo.hybrid_search` / `hybrid_search_count` 传入 `search_anchor_id`；域内从 anchor 取向量（再次校验 `inserted_by`），`TsPhoto` 对 `photos` 发起带字面 `image_embedding:([...], k:, distance_threshold:)` 的 multi_search。
-4. 用户 `clear-search` 时可选 `delete_document` 回收 anchor（刷新带同一 query 仍依赖 anchor 存在，故不在首次 load 后立刻删）。
+1. LiveView `SearchBox`: `consume_uploaded_entry` -> Base64 -> `TsSearchPhotos.index_image/2`.
+2. Success -> `push_navigate` to `/photos?search_anchor_id=<uuid>`.
+3. `PhotosIndexLive`: pass `search_anchor_id` to `Photo.hybrid_search` / `hybrid_search_count`; domain fetches anchor vector with `inserted_by` validation; `TsPhoto` sends multi_search on `photos` with literal vector.
+4. On `clear-search`, optionally call `delete_document` for anchor cleanup.
 
-## 风险
+## Risks
 
-- **嵌入延迟**：弱机器上轮询上限内仍可能超时 → 需明确错误文案，可适当调大重试次数/间隔。
-- **运维**：新集合需执行 `mix ts.migrate`（及发布流程中的 TS migrate）；`ts.drop`/reset 需包含该 collection。
-- **存量链接**：旧 `similar_photo_id` 仍表示「库内照片相似」，与 `search_anchor_id` 并存；需文档说明。
+- Embedding delay can still timeout on weak machines.
+- New collection requires `mix ts.migrate` and migration support in release flow.
+- Old `similar_photo_id` links still represent in-library similarity and coexist with `search_anchor_id`.
 
-## Dev tasks
+## Checklist
 
-- [x] `priv/ts/migrations/2026-04-11.exs`：`change_2` 创建 `search_photos`。
-- [x] `priv/ts/migrations/2026-04-12.exs`：`change_3` 删除旧集合 `photo_search_anchors` 并确保 `search_photos`。
-- [x] `Vmemo.Ts.Schema.reset/0`：`drop` `search_photos` 与遗留 `photo_search_anchors`。
-- [x] `Vmemo.SearchEngine.TsSearchPhotos`（`index_image/2`、`get_embedding/2`、`delete/1`）。
-- [x] `TsPhoto` / `Photo`：`search_anchor_id` 贯通 hybrid 与 count。
-- [x] `SearchBox` / `PhotosIndexLive`：新 query 参数与 UI（无缩略图时文案头）。
+- [x] `priv/ts/migrations/2026-04-11.exs`: `change_2` creates `search_photos`.
+- [x] `priv/ts/migrations/2026-04-12.exs`: `change_3` drops `photo_search_anchors` and ensures `search_photos`.
+- [x] `Vmemo.Ts.Schema.reset/0`: drops `search_photos` and legacy `photo_search_anchors`.
+- [x] `Vmemo.SearchEngine.TsSearchPhotos` (`index_image/2`, `get_embedding/2`, `delete/1`).
+- [x] `TsPhoto` / `Photo`: plumb `search_anchor_id` through hybrid search and count.
+- [x] `SearchBox` / `PhotosIndexLive`: new query param and UI behavior.
 
-## Test checklist
+## Acceptance
 
-- [ ] `mix ts.migrate` 后本地存在 `search_photos` collection。
-- [ ] Home search-by-photo：不落库、不落盘；跳转后首屏即有相似结果（在 Typesense 正常前提下）。
-- [ ] `similar_photo_id`（从单张详情「找相似」等入口）行为与改前一致。
-- [ ] `clear-search` 从 anchor 模式返回 home 无异常（可选验证 anchor 文档被删）。
+- [ ] After `mix ts.migrate`, local Typesense has `search_photos`.
+- [ ] Home search-by-photo writes neither DB nor storage; similar results appear on first screen load when Typesense is healthy.
+- [ ] Existing `similar_photo_id` behavior remains unchanged.
+- [ ] `clear-search` from anchor mode returns to home without issues.
 
-## Release manual
+## Release Notes
 
-- 部署前/后执行 Typesense 迁移（与现有 `photos`/`notes` 流程一致）：`mix ts.migrate` 或 release 内等价步骤。
-- 若使用 `mix ts.drop` / 全量 reset，确认脚本会删除 `search_photos`（及遗留 `photo_search_anchors`）。
+- Run Typesense migrations before/after deployment: `mix ts.migrate` or equivalent release step.
+- If using `mix ts.drop` / full reset, confirm scripts remove `search_photos` (and legacy `photo_search_anchors`).

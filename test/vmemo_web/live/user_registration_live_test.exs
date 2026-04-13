@@ -6,7 +6,7 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
 
   describe "Registration page" do
     test "renders registration page", %{conn: _conn} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "shows warning if already logged in", %{conn: conn} do
@@ -23,13 +23,13 @@ defmodule VmemoWeb.UserRegistrationLiveTest do
     end
 
     test "renders errors for invalid data", %{conn: _conn} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
   describe "register user" do
     test "creates account and logs the user in", %{conn: _conn} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

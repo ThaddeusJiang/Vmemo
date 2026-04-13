@@ -13,7 +13,7 @@ defmodule VmemoWeb.UserSessionController do
            "password" => password
          }) do
       {:ok, %{confirmed_at: %DateTime{}} = user} ->
-        # 使用 UserAuth 处理登录，传递 user_params 以支持 remember_me
+        # Use UserAuth for sign-in and pass user_params to support remember_me
         conn
         |> maybe_put_action_flash(action)
         |> log_in_with_action(user, user_params, action)
@@ -60,7 +60,7 @@ defmodule VmemoWeb.UserSessionController do
   defp maybe_put_action_flash(conn, _), do: conn
 
   def delete(conn, params) do
-    # 支持 return_to 参数，退出后返回指定页面
+    # Support return_to so sign-out can redirect to a specific page
     return_to = params["return_to"] || conn.query_params["return_to"] || ~p"/"
 
     conn

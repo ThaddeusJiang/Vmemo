@@ -126,7 +126,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   def handle_event("save-token", params, socket) do
     user = socket.assigns.current_user
 
-    # 处理表单参数
+    # Handle form params
     form_params =
       case params do
         %{"form" => form_params} -> form_params
@@ -136,7 +136,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
     socket = assign(socket, :loading, true)
 
-    # 使用 ApiTokenService 创建 token（包含 token 生成逻辑）
+    # Use ApiTokenService to create token (includes token generation logic)
     case ApiTokens.create_api_token(user, form_params) do
       {:ok, token, raw_token} ->
         {:noreply,
@@ -145,11 +145,11 @@ defmodule VmemoWeb.ApiTokenLive.Form do
          |> assign(:new_token, raw_token)
          |> assign(:new_token_expires_at, token.expires_at)
          |> assign(:loading, false)
-         |> put_flash(:info, "API Token 创建成功")}
+         |> put_flash(:info, "API Token created successfully")}
 
       {:error, _changeset} ->
-        # 使用 AshPhoenix.Form 验证表单以显示错误
-        # 错误信息会通过 validate 自动映射到字段
+        # Use AshPhoenix.Form to validate form and show errors
+        # Error messages are mapped to fields automatically via validate
         form =
           AshPhoenix.Form.for_create(Vmemo.Account.ApiToken, :create)
           |> AshPhoenix.Form.validate(form_params)
@@ -181,7 +181,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     {:noreply,
      socket
      |> push_event("copy_to_clipboard", %{text: token})
-     |> put_flash(:info, "Token 已复制到剪贴板")}
+     |> put_flash(:info, "Token copied to clipboard")}
   end
 
   # Helper functions

@@ -124,7 +124,7 @@ defmodule Vmemo.Account.User do
     identity :unique_email, [:email]
   end
 
-  # 密码哈希函数
+  # Password hashing function
   def hash_password(changeset, _context) do
     case Ash.Changeset.get_argument(changeset, :password) do
       nil ->

@@ -48,13 +48,13 @@ defmodule VmemoWeb.UserSessionLiveTest do
     test "redirects to login page with a flash error if there are no valid credentials", %{
       conn: _conn
     } do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
   end
 
   describe "login navigation" do
     test "redirects to registration page when the Register button is clicked", %{conn: _conn} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "redirects to forgot password page when the Forgot Password button is clicked", %{
