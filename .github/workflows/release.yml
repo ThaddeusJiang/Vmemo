@@ -75,14 +75,28 @@ jobs:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push image by digest
+        id: build
         uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: ./Dockerfile
-          push: true
           platforms: ${{ matrix.platform }}
-          tags: thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}-${{ matrix.arch }}
+          outputs: type=image,name=thaddeusjiang/vmemo,push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          DIGEST="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${DIGEST#sha256:}"
+
+      - name: Upload digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
 
   publish:
     runs-on: ubuntu-latest
@@ -102,14 +116,25 @@ jobs:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Download digest artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: digests-*
+          path: /tmp/digests
+          merge-multiple: true
+
       - name: Create multi-platform manifest tag
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
 
+          SOURCES=()
+          for FILE in /tmp/digests/*; do
+            SOURCES+=("thaddeusjiang/vmemo@sha256:$(basename "$FILE")")
+          done
+
           docker buildx imagetools create \
             -t "thaddeusjiang/vmemo:${VERSION}" \
-            "thaddeusjiang/vmemo:${VERSION}-amd64" \
-            "thaddeusjiang/vmemo:${VERSION}-arm64"
+            "${SOURCES[@]}"
 
       - name: Verify multi-platform manifest
         run: docker buildx imagetools inspect "thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}"
