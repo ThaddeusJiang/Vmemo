@@ -1,6 +1,6 @@
 defmodule VmemoWeb.Api.V1.ImageControllerTest do
   @moduledoc """
-  Image API 测试
+  Image API tests
   """
 
   use VmemoWeb.ConnCase, async: true

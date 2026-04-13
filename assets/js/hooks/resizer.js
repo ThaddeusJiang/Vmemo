@@ -3,7 +3,7 @@ export const Resizer = {
 
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                const width = entry.contentRect.width; // 获取新宽度
+                const width = entry.contentRect.width; // get new width
 
                 let col = 2;
 

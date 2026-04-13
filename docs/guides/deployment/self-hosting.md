@@ -1,245 +1,138 @@
-# Self-hosting Vmemo
+# Self-hosting with Docker Compose
 
-这个目录提供 Vmemo 的 Docker Compose 自托管入口，包含：
+This directory provides the Docker Compose self-hosting entrypoint for Vmemo.
 
-- `vmemo`
-- `postgres`
-- `typesense`
-- optional `cloudflared`
+## Quick Start (Recommended)
 
-## 最简单版本（推荐先跑通）
+Use the templates directly under `docs/guides/deployment/self-hosting`.
 
-适合快速启动，直接使用 `docs/guides/deployment/self-hosting` 里的样板文件。
-
-1. 进入样板目录：
+1. Enter template directory:
 
 ```bash
 cd docs/guides/deployment/self-hosting
 ```
 
-2. 复制环境变量模板并填写必要变量：
+2. Copy env template and fill required variables:
 
 ```bash
 cp .env.example .env
 ```
 
-必填变量：
+Required variables:
 
+- `DATABASE_URL`
 - `SECRET_KEY_BASE`
 - `ADMIN_PASSWORD`
-- `DATABASE_URL`
+- `RESEND_API_KEY`
 - `TYPESENSE_URL`
 - `TYPESENSE_API_KEY`
 - `MOONDREAM_API_KEY`
 - `OPENROUTER_API_KEY`
-- `RESEND_API_KEY`
 - `SENTRY_DSN`
 
-可选：
+Optional:
 
-- `SENTRY_ENV`
-- `MOONDREAM_URL`（默认 `https://api.moondream.ai/v1/`）
+- `MOONDREAM_URL` (default `https://api.moondream.ai/v1/`)
 
-如果你在本地运行 moondream，请在 `.env` 设置：
+If you run Moondream locally, set it in `.env`.
 
-```env
-MOONDREAM_URL=http://host.docker.internal:2020/v1/
-```
+3. Start services:
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
+docker compose up -d
 ```
 
-3. 启动服务：
+4. Check status and logs:
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
+docker compose ps
+docker compose logs -f
 ```
 
-4. 检查状态和日志：
-
-```bash
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml ps
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml logs -f vmemo
-```
-
-5. 打开：
+5. Open app:
 
 ```text
-http://localhost:14000
+http://localhost:4000
 ```
 
-## 最全版本（从零自定义）
+## Full Custom Setup
 
-适合你要完全控制 `.env` 与 compose 内容，或需要可选公开域名。
+Use this mode when you want full control over `.env`, compose content, or optional public domain exposure.
 
-### 1) 准备 `.env`
+### 1) Prepare `.env`
 
-你可以从模板开始：
+Start from template and customize values.
+
+Generate `SECRET_KEY_BASE`:
 
 ```bash
-cp docs/guides/deployment/self-hosting/.env.example .env
+mix phx.gen.secret
 ```
 
-示例：
+### 2) Prepare Compose
 
-```env
-PHX_HOST=localhost
-PHX_SERVER=true
-PORT=4000
-SECRET_KEY_BASE=replace_with_a_long_random_secret
-ADMIN_PASSWORD=replace_with_a_strong_admin_password
-DATABASE_URL=postgres://postgres:postgres@postgres/vmemo
-TYPESENSE_URL=http://typesense:8108
-TYPESENSE_API_KEY=replace_with_a_strong_typesense_key
-RESEND_API_KEY=replace_with_your_resend_api_key
-SENTRY_DSN=https://public@example.com/1
-SENTRY_ENV=production
-OPENROUTER_API_KEY=replace_with_your_openrouter_key
-MOONDREAM_API_KEY=replace_with_your_moondream_key
-# Optional, default is https://api.moondream.ai/v1/
-MOONDREAM_URL=
-```
+This repository already includes a default compose file as a starting point.
 
-生成 `SECRET_KEY_BASE`：
+Pay special attention to the `vmemo` storage volume mapping.
+
+PostgreSQL 18 note:
+
+- Mount data volume to `/var/lib/postgresql` (not `/var/lib/postgresql/data`).
+- Wrong mount path may cause restart loops or failing health checks.
+
+### 3) Startup and Validation
+
+Bring up services and validate:
 
 ```bash
-openssl rand -hex 64
+docker compose up -d
+docker compose ps
+docker compose logs -f vmemo
 ```
 
-### 2) 准备 compose
-
-本仓库已提交默认 compose 文件，可直接作为起点并按需编辑：
-
-```bash
-${EDITOR:-vi} docs/guides/deployment/self-hosting/docker-compose.yml
-```
-
-重点确认 `vmemo` 的 storage volume：
-
-```yaml
-services:
-  vmemo:
-    volumes:
-      - ./vmemo_data/storage:/app/storage
-```
-
-PostgreSQL 18 注意事项：
-
-- data volume 应挂载到 `/var/lib/postgresql`（而不是 `/var/lib/postgresql/data`）。
-- 否则可能出现容器反复重启或 healthcheck 长时间不通过。
-
-### 3) 启动和验证
-
-```bash
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml ps
-```
-
-访问：
-
-```text
-http://localhost:14000
-```
-
-容器启动流程（release）：
+Release startup flow:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
 2. `bin/vmemo start`
 
-说明：
+Notes:
 
-- 当前项目统一使用 Ash + ash_postgres。
-- `Vmemo.Release.migrate()` 是该项目首选的 release 迁移入口。
-- 它会同时执行 AshPostgres repo migrations 与 Typesense migrations。
-- 本地迁移建议使用 Ash 任务（如 `mix ash.migrate`），不建议使用 `mix ecto.*`。
+- This project standardizes on Ash + ash_postgres.
+- `Vmemo.Release.migrate()` is the primary release migration entrypoint.
+- It executes both AshPostgres repo migrations and Typesense migrations.
+- For local migration, prefer Ash tasks such as `mix ash.migrate`; avoid `mix ecto.*`.
 
-远程 IEx：
-
-```bash
-docker exec -it <container_name> /app/bin/vmemo remote
-```
-
-### 4) 可选：Cloudflare Tunnel 对外暴露（Docker）
-
-1. 在 Cloudflare Zero Trust 创建 remotely-managed tunnel，并拿到 token。
-2. 在 `.env` 设置：
-
-```env
-CLOUDFLARED_TOKEN=replace_with_your_tunnel_token
-PHX_HOST=your.public.hostname
-```
-
-3. 启动服务（包含 tunnel）：
+Remote IEx example:
 
 ```bash
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml up -d
+docker exec -it <vmemo_container> /app/bin/vmemo remote
 ```
 
-4. 验证：
+### 4) Optional: Expose with Cloudflare Tunnel (Docker)
 
-```bash
-docker compose -f docs/guides/deployment/self-hosting/docker-compose.yml ps
-curl -I https://your.public.hostname
-```
+1. Create a remotely-managed tunnel in Cloudflare Zero Trust and get the token.
+2. Set token in `.env`.
+3. Start services including tunnel.
+4. Verify tunnel status and domain resolution.
 
-说明：
+Notes:
 
-- 这里使用 `--url` 只会把公网请求转发到 `vmemo`（`http://vmemo:4000`）。
-- `postgres` 和 `typesense` 仅供 `vmemo` 容器内部依赖，不会被 cloudflared 直接公开。
-- 这个 Docker 方案不依赖 `~/.cloudflared/config.yml` 等 Docker 外部配置文件。
-- 如果你已经在宿主机用 `~/.cloudflared/config.yml` 跑 tunnel（常见为 `service: http://localhost:14000`），不要同时启用 compose 里的 `cloudflared`，二选一即可。
+- Using `--url` forwards public requests only to `vmemo` (`http://vmemo:4000`).
+- `postgres` and `typesense` remain internal dependencies and are not exposed directly.
+- This Docker mode does not rely on host-side `~/.cloudflared/config.yml`.
+- If you already run a host tunnel via `~/.cloudflared/config.yml`, do not enable compose `cloudflared` at the same time.
 
-CLI 方式请参考：
+### 5) Cloudflare 1033 / 530 Quick Troubleshooting
 
-- `docs/guides/deployment/cloudflare-tunnel-cli.md`
-- CLI 指南同样使用 `--url` 模式，不需要 `~/.cloudflared/config.yml`。
+`1033` usually means the hostname is bound to a tunnel but the tunnel has no active connection yet.
 
-### 5) Cloudflare 1033 / 530 快速排查
+1. Check tunnel connection count.
+2. Confirm DNS route is bound to the expected tunnel.
+3. If host has `~/.cloudflared/config.yml`, ensure it is not hijacking traffic to another tunnel.
+4. Validate in order: connector health -> route binding -> domain reachability.
 
-`1033` 的本质是：hostname 已绑定 tunnel，但 tunnel 当前没有可用连接（或边缘还未收敛）。
+## Additional Notes
 
-1. 先看 tunnel 连接数：
-
-```bash
-cloudflared tunnel list
-```
-
-如果目标 tunnel 的 `CONNECTIONS` 为空，先启动 connector：
-
-```bash
-nohup cloudflared tunnel --no-autoupdate run <tunnel-name> > /tmp/cloudflared-<tunnel-name>.log 2>&1 &
-```
-
-2. 确认域名路由是否绑定到预期 tunnel：
-
-```bash
-cloudflared tunnel route dns <tunnel-name> <public-hostname>
-```
-
-如果你需要覆盖历史错误绑定，使用：
-
-```bash
-cloudflared tunnel route dns --overwrite-dns <tunnel-name> <public-hostname>
-```
-
-3. 若本机存在 `~/.cloudflared/config.yml`，避免被默认配置“劫持”到其他 tunnel：
-
-```bash
-cloudflared --config /dev/null tunnel route dns --overwrite-dns <tunnel-name> <public-hostname>
-cloudflared --config /dev/null tunnel --no-autoupdate --url <origin-url> run --token "$(cloudflared --config /dev/null tunnel token <tunnel-name>)"
-```
-
-4. 验证顺序建议：
-
-```bash
-curl -I <origin-url>
-curl -I https://<public-hostname>
-tail -f /tmp/cloudflared-<tunnel-name>.log
-```
-
-## Notes
-
-- 默认镜像标签是 `thaddeusjiang/vmemo`；如需固定版本，可在 compose 文件改为具体 tag（例如 `2026.4.12`）。
-- compose 依赖容器启动时自动执行数据库迁移和 Typesense 迁移。
-- 如需公网访问，请在入口层或反向代理启用 HTTPS。
+- Default image tag is `thaddeusjiang/vmemo`; pin a specific version tag if needed (for example `2026.4.12`).
+- Compose startup depends on automatic database + Typesense migration at container start.
+- For public access, enable HTTPS at ingress or reverse proxy.

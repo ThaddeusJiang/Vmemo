@@ -19,7 +19,7 @@ defmodule VmemoWeb.UserAuth do
       delete_user_session_token(old_token)
     end
 
-    # 使用 Ash Authentication 的 token 系统
+    # Use Ash Authentication token system
     # Generate a NEW token for this login
     token = generate_user_session_token(user)
 
@@ -49,13 +49,13 @@ defmodule VmemoWeb.UserAuth do
   defp maybe_put_return_flash(conn, _), do: conn
 
   defp generate_user_session_token(user) do
-    # 使用 Ash Authentication JWT 生成 session token
+    # Use Ash Authentication JWT to generate session token
     case AshAuthentication.Jwt.token_for_user(user) do
       {:ok, token, _claims} ->
         token
 
       _ ->
-        # 如果失败，生成一个简单的 session token
+        # If it fails, generate a simple session token
         :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
     end
   end
@@ -103,7 +103,7 @@ defmodule VmemoWeb.UserAuth do
   end
 
   defp delete_user_session_token(token) do
-    # 使用 Ash Authentication JWT 验证 token
+    # Use Ash Authentication JWT to verify token
     case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
         revoke_token_by_jti(Map.get(claims, "jti"))
@@ -146,7 +146,7 @@ defmodule VmemoWeb.UserAuth do
   end
 
   defp get_user_by_session_token(token) do
-    # 使用 Ash Authentication JWT 验证 token
+    # Use Ash Authentication JWT to verify token
     case AshAuthentication.Jwt.verify(token, User) do
       {:ok, claims, _resource} ->
         claims

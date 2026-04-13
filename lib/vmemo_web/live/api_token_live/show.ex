@@ -237,14 +237,14 @@ defmodule VmemoWeb.ApiTokenLive.Show do
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> put_flash(:info, "API Token 已删除")
+         |> put_flash(:info, "API Token deleted")
          |> push_navigate(to: ~p"/tokens")}
 
       {:error, _} ->
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, "删除失败，请重试")}
+         |> assign(:error_message, "Delete failed, please try again")}
     end
   end
 
@@ -255,7 +255,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
     case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
-        status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
+        status_text = if updated_token.is_active, do: "Enabled", else: "Disabled"
 
         {:noreply,
          socket
@@ -267,7 +267,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, "状态切换失败")}
+         |> assign(:error_message, "Failed to toggle status")}
     end
   end
 
@@ -277,7 +277,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
   # Helper functions
   defp display_token_preview(api_token) do
-    # 只显示创建时间和 hash 的前4位
+    # Show only creation time and first 4 chars of hash
     created_date = format_datetime_to_local(api_token.inserted_at, "date")
     hash_preview = String.slice(api_token.token_hash, 0, 4)
     "#{created_date}_#{hash_preview}..."
@@ -286,7 +286,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   defp format_datetime_to_local(datetime, format)
 
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
+    # Convert UTC time to China timezone (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
     Calendar.strftime(local_datetime, format_string(format))
   end
@@ -300,7 +300,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
   defp expired?(token) do
     case token.expires_at do
-      # 永不过期
+      # Never expires
       nil -> false
       expires_at -> DateTime.compare(DateTime.utc_now(), expires_at) == :gt
     end

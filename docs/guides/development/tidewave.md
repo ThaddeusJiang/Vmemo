@@ -1,10 +1,10 @@
-# Tidewave 配置
+# Tidewave Configuration
 
-本文档记录在 Vmemo 中启用 Tidewave 的步骤与注意事项。
+This document describes how to enable Tidewave in Vmemo and the related caveats.
 
-## 安装
+## Installation
 
-1. 在 `mix.exs` 添加依赖：
+1. Add dependency in `mix.exs`:
 
 ```elixir
 def deps do
@@ -14,7 +14,7 @@ def deps do
 end
 ```
 
-2. 在 `lib/vmemo_web/endpoint.ex` 中，放在 `if code_reloading? do` 之前：
+2. In `lib/vmemo_web/endpoint.ex`, place this before `if code_reloading? do`:
 
 ```elixir
 if Code.ensure_loaded?(Tidewave) do
@@ -26,7 +26,7 @@ if code_reloading? do
 end
 ```
 
-3. 在 `config/dev.exs` 打开 LiveView 调试标记（Phoenix v1.8+ 默认已开启）：
+3. Enable LiveView debug annotations in `config/dev.exs` (enabled by default in Phoenix v1.8+):
 
 ```elixir
 config :phoenix_live_view,
@@ -34,13 +34,13 @@ config :phoenix_live_view,
   debug_attributes: true
 ```
 
-## MCP 端点
+## MCP Endpoint
 
-Tidewave MCP 默认在同一端口提供服务，例如 `http://localhost:4000/tidewave/mcp`。将该地址配置到编辑器或 AI 工具中。
+By default, Tidewave MCP is served on the same port, for example `http://localhost:4000/tidewave/mcp`. Configure this URL in your editor or AI tool.
 
-## 远程访问与来源限制
+## Remote Access and Origin Restrictions
 
-默认只允许 localhost 访问。如果在 Docker 或远程环境开发，需要显式允许：
+Default behavior allows localhost access only. For Docker or remote environments, enable explicitly:
 
 ```elixir
 if Code.ensure_loaded?(Tidewave) do
@@ -50,9 +50,9 @@ if Code.ensure_loaded?(Tidewave) do
 end
 ```
 
-## 多 Host/子域名开发
+## Multi-host / Subdomain Development
 
-如果使用多个 host 或子域名，建议使用 `*.localhost`，并在 `@session_options` 定义后添加：
+If you use multiple hosts or subdomains, prefer `*.localhost`, and add this after `@session_options`:
 
 ```elixir
 @session_options [
@@ -64,6 +64,6 @@ if code_reloading? do
 end
 ```
 
-## 内容安全策略（CSP）
+## Content Security Policy (CSP)
 
-若启用了 CSP，Tidewave 会自动在 `script-src` 中启用 `unsafe-eval`，并禁用 `frame-ancestors`。
+When CSP is enabled, Tidewave automatically enables `unsafe-eval` in `script-src` and disables `frame-ancestors`.

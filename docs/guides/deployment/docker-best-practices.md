@@ -1,28 +1,28 @@
-# Docker 最佳实践
+# Docker Best Practices
 
-本文档说明 Vmemo 在 Docker 部署中推荐的 release 启动方案，重点覆盖迁移与启动顺序。
+This document describes the recommended release startup approach for Vmemo Docker deployment, with focus on migration and startup order.
 
-## 核心原则
+## Core Principles
 
-1. 使用单一 prod Dockerfile
-2. 使用 Elixir release 启动（`bin/vmemo start`）
-3. 在入口点执行统一 release 迁移（包含 Postgres + Typesense）
+1. Use a single production Dockerfile.
+2. Start with Elixir release (`bin/vmemo start`).
+3. Run unified release migration at entrypoint (Postgres + Typesense).
 
-## 入口点脚本
+## Entrypoint Script
 
-[`rel/entrypoint.sh`](/Users/amami/git/my-personal-2026/Vmemo/rel/entrypoint.sh)：
+[`rel/entrypoint.sh`](/Users/amami/git/my-personal-2026/Vmemo/rel/entrypoint.sh):
 
 ```bash
 /app/bin/vmemo eval "Vmemo.Release.migrate()"
 exec /app/bin/vmemo "$@"
 ```
 
-说明：
+Notes:
 
-- 迁移失败时立即退出，避免不完整状态启动
-- 主进程始终为 release 命令（默认 `start`）
+- Exit immediately on migration failure to avoid partial startup states.
+- Main process should always be the release command (`start` by default).
 
-## Dockerfile 模式
+## Dockerfile Pattern
 
 ```dockerfile
 RUN mix release
@@ -33,7 +33,7 @@ ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["start"]
 ```
 
-## 使用示例
+## Example Usage
 
 ```bash
 docker run -p 4000:4000 \
@@ -50,14 +50,14 @@ docker run -p 4000:4000 \
   vmemo:latest
 ```
 
-容器启动顺序：
+Container startup sequence:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
 2. `bin/vmemo start`
 
-## 手动运维
+## Manual Operations
 
-如需手动执行迁移：
+Run migration manually:
 
 ```bash
 docker run --rm \
@@ -66,7 +66,7 @@ docker run --rm \
   eval "Vmemo.Release.migrate()"
 ```
 
-如需交互调试：
+Run interactive debugging:
 
 ```bash
 docker run --rm -it \
@@ -75,7 +75,7 @@ docker run --rm -it \
   vmemo:latest
 ```
 
-## 参考
+## References
 
 - [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
 - [Phoenix Deployment Guide](https://hexdocs.pm/phoenix/deployment.html)

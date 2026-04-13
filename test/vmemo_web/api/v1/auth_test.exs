@@ -1,6 +1,6 @@
 defmodule VmemoWeb.Api.V1.AuthTest do
   @moduledoc """
-  API 认证测试
+  API authentication tests
   """
 
   use VmemoWeb.ConnCase, async: true

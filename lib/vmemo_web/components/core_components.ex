@@ -675,7 +675,7 @@ defmodule VmemoWeb.CoreComponents do
 
   # Helper functions for datetime formatting
   defp format_to_local_date(datetime) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
+    # Convert UTC time to China timezone (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
     Calendar.strftime(local_datetime, "%Y-%m-%d")
   end
@@ -683,7 +683,7 @@ defmodule VmemoWeb.CoreComponents do
   defp format_to_local_date(_), do: ""
 
   defp format_to_local_time(datetime) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
+    # Convert UTC time to China timezone (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
     Calendar.strftime(local_datetime, "%H:%M:%S")
   end
@@ -691,7 +691,7 @@ defmodule VmemoWeb.CoreComponents do
   defp format_to_local_time(_), do: ""
 
   defp format_to_local_datetime(datetime) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
+    # Convert UTC time to China timezone (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
     Calendar.strftime(local_datetime, "%Y-%m-%d %H:%M")
   end
@@ -699,7 +699,7 @@ defmodule VmemoWeb.CoreComponents do
   defp format_to_local_datetime(_), do: ""
 
   defp format_to_local_custom(datetime, format) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
+    # Convert UTC time to China timezone (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
     Calendar.strftime(local_datetime, format)
   end

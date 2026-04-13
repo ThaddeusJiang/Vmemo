@@ -214,13 +214,13 @@ defmodule VmemoWeb.ApiTokenLive.Index do
          |> assign(:show_delete_modal, false)
          |> assign(:token_to_delete, nil)
          |> assign(:loading, false)
-         |> put_flash(:info, "API Token 已删除")}
+         |> put_flash(:info, "API Token deleted")}
 
       {:error, _} ->
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, "删除失败，请重试")}
+         |> assign(:error_message, "Delete failed, please try again")}
     end
   end
 
@@ -233,7 +233,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
         updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
-        status_text = if updated_token.is_active, do: "已启用", else: "已禁用"
+        status_text = if updated_token.is_active, do: "Enabled", else: "Disabled"
 
         {:noreply,
          socket
@@ -245,7 +245,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, "状态切换失败")}
+         |> assign(:error_message, "Failed to toggle status")}
     end
   end
 
@@ -255,9 +255,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   # Helper functions
   defp display_token_preview(api_token) do
-    # 显示 token 前缀格式：vmemo_ + hash 的前8位
-    # 注意：数据库中只存储 hash，不存储原始 token，所以无法显示真实的 token 前部分
-    # 这里显示的是基于 hash 的预览，格式类似真实 token：vmemo_xxxxxxxx...
+    # Display token prefix format: vmemo_ + first 8 chars of hash
+    # Note: only hash is stored in DB; raw token is not, so the real token prefix cannot be shown
+    # This shows a hash-based preview, formatted like a real token: vmemo_xxxxxxxx...
     hash_preview = String.slice(api_token.token_hash, 0, 8)
     "vmemo_#{hash_preview}..."
   end
@@ -265,7 +265,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   defp format_datetime_to_local(datetime, format \\ "datetime")
 
   defp format_datetime_to_local(datetime, format) when not is_nil(datetime) do
-    # 将 UTC 时间转换为中国时区 (UTC+8)
+    # Convert UTC time to China timezone (UTC+8)
     local_datetime = DateTime.add(datetime, 8 * 60 * 60, :second)
     Calendar.strftime(local_datetime, format_string(format))
   end
@@ -279,7 +279,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   defp expired?(token) do
     case token.expires_at do
-      # 永不过期
+      # Never expires
       nil -> false
       expires_at -> DateTime.compare(DateTime.utc_now(), expires_at) == :gt
     end

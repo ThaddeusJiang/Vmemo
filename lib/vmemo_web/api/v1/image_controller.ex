@@ -2,7 +2,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   @moduledoc """
   API V1 Image Controller
 
-  处理照片的 CRUD 操作
+  Handles photo CRUD operations
   """
 
   use VmemoWeb, :controller
@@ -14,14 +14,14 @@ defmodule VmemoWeb.Api.V1.ImageController do
   require Logger
 
   @doc """
-  创建新照片
+  Create a new photo
 
   POST /api/v1/images
   Content-Type: multipart/form-data
 
   Parameters:
-  - file: 图片文件 (required)
-  - note: 备注 (optional)
+  - file: Image file (required)
+  - note: Note (optional)
   """
   def create(conn, params) do
     current_user = conn.assigns.current_user
@@ -36,7 +36,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   @doc """
-  获取照片信息
+  Get photo information
 
   GET /api/v1/images/:id
   """
@@ -58,7 +58,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   @doc """
-  删除照片
+  Delete photo
 
   DELETE /api/v1/images/:id
   """
@@ -93,12 +93,12 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   defp validate_and_process_upload(%Plug.Upload{} = upload) do
-    # 验证文件类型
+    # Validate file type
     allowed_extensions = ~w(.png .jpg .jpeg .gif .webp)
     file_extension = Path.extname(upload.filename) |> String.downcase()
 
     if file_extension in allowed_extensions do
-      # 验证文件内容
+      # Validate file content
       case validate_image_content(upload.path) do
         :ok ->
           filename = generate_filename(upload.filename)
@@ -115,7 +115,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   defp validate_image_content(path) do
     case File.read(path) do
       {:ok, content} ->
-        # 检查文件头
+        # Check file header
         case content do
           # PNG
           <<0x89, 0x50, 0x4E, 0x47, _::binary>> -> :ok
@@ -147,10 +147,10 @@ defmodule VmemoWeb.Api.V1.ImageController do
   defp process_photo_upload(conn, path, filename, params, current_user) do
     user_id = to_string(current_user.id)
 
-    # 复制文件到存储目录
+    # Copy file to storage directory
     {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
 
-    # 创建照片记录（不写入 base64）
+    # Create photo record (without storing base64)
     note = Map.get(params, "note", "")
 
     case Image.create_with_sync(

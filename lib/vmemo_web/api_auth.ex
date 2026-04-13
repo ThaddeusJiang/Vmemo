@@ -1,8 +1,8 @@
 defmodule VmemoWeb.ApiAuth do
   @moduledoc """
-  API Token 认证模块
+  API Token authentication module
 
-  处理 API 请求的 Bearer Token 认证
+  Handles Bearer Token authentication for API requests
   """
 
   import Plug.Conn
@@ -25,7 +25,7 @@ defmodule VmemoWeb.ApiAuth do
   defp verify_token(conn, token) do
     case Vmemo.Account.ApiTokens.verify_api_token(token) do
       {:ok, api_token} ->
-        # 将用户信息添加到连接中
+        # Attach user info to the connection
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_user, api_token.user)

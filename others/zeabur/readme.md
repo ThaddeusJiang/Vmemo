@@ -23,7 +23,7 @@ npx zeabur template update -c H3EL85 -f vmemo.yml
 
 ## Zeabur Deploy Checklist
 
-以下清单适用于 Vmemo 在 Zeabur 的部署与发布。
+The checklist below applies to Vmemo deployment and release on Zeabur.
 
 ### 1. Code and Branch
 

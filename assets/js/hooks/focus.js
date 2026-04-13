@@ -1,6 +1,6 @@
 export const Focus = {
     mounted() {
-        // 全局监听 focus 事件
+        // Listen to focus events globally
     },
     
     handleEvent(event, payload) {
@@ -16,7 +16,7 @@ export const Focus = {
             if (element && typeof element.focus === 'function') {
                 element.focus();
                 
-                // 只有支持 select() 方法的元素才尝试选中文本
+                // Only attempt text selection for elements that support select()
                 if (payload?.select_all && typeof element.select === 'function') {
                     element.select();
                 }
@@ -25,7 +25,7 @@ export const Focus = {
     }
 }
 
-// 全局的 window 事件监听器
+// Global window event listener
 window.addEventListener('phx:focus', (event) => {
     const { selector, delay = 100 } = event.detail;
     setTimeout(() => {
@@ -33,7 +33,7 @@ window.addEventListener('phx:focus', (event) => {
         if (element && typeof element.focus === 'function') {
             element.focus();
             
-            // 只有支持 select() 方法的元素才尝试选中文本
+            // Only attempt text selection for elements that support select()
             if (event.detail.select_all && typeof element.select === 'function') {
                 element.select();
             }

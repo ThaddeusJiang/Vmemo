@@ -31,7 +31,7 @@ defmodule VmemoWeb.UserConfirmationInstructionsLiveTest do
     end
 
     test "does not send confirmation token if user is confirmed", %{conn: _conn, user: _user} do
-      # TODO: 今后编写
+      # TODO: to be written later
     end
 
     test "does not send confirmation token if email is invalid", %{conn: conn} do

@@ -1,13 +1,13 @@
 defmodule VmemoWeb.ApiFixtures do
   @moduledoc """
-  测试辅助函数：API 相关 fixtures
+  Test helper functions: API-related fixtures
   """
 
   alias Vmemo.Account
   alias Vmemo.Account.ApiTokens
 
   @doc """
-  创建测试用户并返回
+  Create and return a test user
   """
   def test_user do
     case Account.get_user_by_email("test@example.com") do
@@ -26,7 +26,7 @@ defmodule VmemoWeb.ApiFixtures do
   end
 
   @doc """
-  创建测试 API token 并返回 raw token
+  Create a test API token and return the raw token
   """
   def create_test_token(user, attrs \\ %{}) do
     default_attrs = %{
