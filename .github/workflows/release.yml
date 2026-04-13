@@ -17,14 +17,15 @@ permissions:
   contents: write
 
 jobs:
-  prepare:
+  release:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.tags.outputs.version }}
+    env:
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+      DOCKER_BUILD_SUMMARY: "false"
 
     steps:
-      - name: Compute Docker tags
-        id: tags
+      - name: Compute release version
+        id: version
         run: |
           INPUT_VERSION="${{ github.event.inputs.version }}"
           VERSION="${INPUT_VERSION}"
@@ -39,30 +40,13 @@ jobs:
             exit 1
           fi
 
-          {
-            echo "version=$VERSION"
-          } >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-  build:
-    runs-on: ${{ matrix.runner }}
-    needs: prepare
-    env:
-      DOCKER_BUILD_RECORD_UPLOAD: "false"
-      DOCKER_BUILD_SUMMARY: "false"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            platform: linux/amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            platform: linux/arm64/v8
-            runner: ubuntu-24.04-arm
-
-    steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.0.0
@@ -75,78 +59,26 @@ jobs:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push image by digest
-        id: build
+      - name: Build and push multi-platform image
         uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: ./Dockerfile
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,name=thaddeusjiang/vmemo,push-by-digest=true,name-canonical=true,push=true
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          DIGEST="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${DIGEST#sha256:}"
-
-      - name: Upload digest artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ matrix.arch }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  publish:
-    runs-on: ubuntu-latest
-    needs:
-      - prepare
-      - build
-
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
-        with:
-          driver: docker-container
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4.0.0
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Download digest artifacts
-        uses: actions/download-artifact@v5
-        with:
-          pattern: digests-*
-          path: /tmp/digests
-          merge-multiple: true
-
-      - name: Create multi-platform manifest tag
-        run: |
-          VERSION="${{ needs.prepare.outputs.version }}"
-
-          SOURCES=()
-          for FILE in /tmp/digests/*; do
-            SOURCES+=("thaddeusjiang/vmemo@sha256:$(basename "$FILE")")
-          done
-
-          docker buildx imagetools create \
-            -t "thaddeusjiang/vmemo:${VERSION}" \
-            "${SOURCES[@]}"
+          push: true
+          platforms: linux/amd64,linux/arm64/v8
+          tags: thaddeusjiang/vmemo:${{ steps.version.outputs.version }}
 
       - name: Verify multi-platform manifest
-        run: docker buildx imagetools inspect "thaddeusjiang/vmemo:${{ needs.prepare.outputs.version }}"
+        run: docker buildx imagetools inspect "thaddeusjiang/vmemo:${{ steps.version.outputs.version }}"
 
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          tag: ${{ needs.prepare.outputs.version }}
+          tag: ${{ steps.version.outputs.version }}
           commit: main
-          name: Vmemo ${{ needs.prepare.outputs.version }}
+          name: Vmemo ${{ steps.version.outputs.version }}
           draft: true
           generateReleaseNotes: true
           allowUpdates: ${{ github.event.inputs.overwrite_existing_release == 'true' }}
