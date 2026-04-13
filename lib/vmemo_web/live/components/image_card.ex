@@ -40,7 +40,9 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
   defp resolve_navigate(%{navigate: navigate}) when is_binary(navigate) and navigate != "",
     do: navigate
 
-  defp resolve_navigate(%{image: %{id: id}}) when is_binary(id) and id != "", do: ~p"/images/#{id}"
+  defp resolve_navigate(%{image: %{id: id}}) when is_binary(id) and id != "",
+    do: ~p"/images/#{id}"
+
   defp resolve_navigate(_), do: nil
 
   defp resolve_photo_url(%{image: %{url: url}}), do: normalize_photo_url(url)
