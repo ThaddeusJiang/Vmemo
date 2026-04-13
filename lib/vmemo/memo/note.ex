@@ -51,6 +51,7 @@ defmodule Vmemo.Memo.Note do
     end
 
     update :update do
+      primary? true
       accept [:text]
       require_atomic? false
       change run_oban_trigger(:sync_typesense)
