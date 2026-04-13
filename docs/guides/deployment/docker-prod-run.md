@@ -12,7 +12,9 @@ Vmemo keeps a single production-image path for Docker workflows.
 
 Use the repository root `docker-compose.yml` for dependency services such as PostgreSQL and Typesense.
 
-Start dependencies:
+Default `docker compose up -d` starts **dev** Postgres and Typesense only. Optional `postgres-test` / `typesense-test` are behind profile `test` (`docker compose --profile test up -d`).
+
+Start dependencies (explicit service names also work):
 
 ```bash
 docker compose up -d postgres typesense
