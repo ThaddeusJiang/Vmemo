@@ -624,10 +624,10 @@ defmodule VmemoWeb.ChatLive do
   end
 
   defp normalize_photo(data) when is_map(data) do
-    id = Map.get(data, "id") || Map.get(data, :id)
     url = Map.get(data, "url") || Map.get(data, :url)
+    id = Map.get(data, "id") || Map.get(data, :id)
 
-    if id && url do
+    if url do
       %{
         id: id,
         url: normalize_photo_url(url),
@@ -636,6 +636,14 @@ defmodule VmemoWeb.ChatLive do
     else
       nil
     end
+  end
+
+  defp normalize_photo(data) when is_binary(data) and data != "" do
+    %{
+      id: nil,
+      url: normalize_photo_url(data),
+      note: ""
+    }
   end
 
   defp normalize_photo(_), do: nil
