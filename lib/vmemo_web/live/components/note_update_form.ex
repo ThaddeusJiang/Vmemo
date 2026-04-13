@@ -98,7 +98,8 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   end
 
   @impl true
-  def handle_event("validate", %{"note" => note_text}, socket) do
+  def handle_event("validate", params, socket) do
+    note_text = extract_note_text(params)
     note_dirty = note_text != socket.assigns.original_note_text
 
     {:noreply,
@@ -108,7 +109,8 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   end
 
   @impl true
-  def handle_event("save", %{"note" => note_text}, socket) do
+  def handle_event("save", params, socket) do
+    note_text = extract_note_text(params)
     actor = socket.assigns.current_user
 
     case Ash.update(socket.assigns.note, %{text: note_text}, actor: actor, load: [:images]) do
@@ -139,4 +141,10 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
+
+  defp extract_note_text(%{"note" => %{"note" => note_text}}) when is_binary(note_text),
+    do: note_text
+
+  defp extract_note_text(%{"note" => note_text}) when is_binary(note_text), do: note_text
+  defp extract_note_text(_params), do: ""
 end
