@@ -39,7 +39,20 @@ defmodule Vmemo.Memo.Note do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      require_atomic? false
+      change {Vmemo.Memo.Changes.DeleteImageNoteLinksBeforeDestroy, by: :note_id}
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, note ->
+          # Keep Typesense in sync with Postgres on hard delete.
+          _ = TsNote.delete(note.id)
+          {:ok, note}
+        end)
+      end
+    end
 
     create :create_with_sync do
       accept [:text, :user_id]
