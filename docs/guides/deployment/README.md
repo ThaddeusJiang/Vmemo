@@ -1,17 +1,23 @@
-# Deployment
+# Deployment (For Maintainers)
 
-- [Deployment Modes (Self-hosting Scope)](self-hosting.md)
+This section is for maintainers who publish new Vmemo versions.
+
+## Scope
+
+- How to cut a GitHub Release
+- How to publish Docker images
+- How to validate release startup behavior
+
+## Guides
+
+- [GitHub Release](github-release.md)
+- [Docker Publish](docker-publish.md)
 - [Docker Production Run](docker-prod-run.md)
 - [Docker Best Practices](docker-best-practices.md)
 - [Docker Startup Check](docker-startup-check.md)
-- [Cloudflare Tunnel CLI](cloudflare-tunnel-cli.md)
-- Self-hosting directories:
-  - `self-hosting/local-machine`
-  - `self-hosting/zeabur`
-  - `self-hosting/fly`
-- Templates:
-  - `self-hosting/local-machine/.env.example`
-  - `self-hosting/local-machine/docker-compose.yml`
-  - `self-hosting/zeabur/.env.example`
-  - `self-hosting/zeabur/vmemo.yml`
-  - `self-hosting/fly/.env.example`
+
+## Not In Scope
+
+User-facing self-hosting docs are maintained in:
+
+- `docs/guides/self-hosting`
