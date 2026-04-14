@@ -20,8 +20,22 @@ mise install
 
 The repository includes a root `docker-compose.yml` for Postgres, Typesense, and related services.
 
+By default, `docker compose up -d` starts **dev** Postgres and Typesense only. Test-scoped containers (`postgres-test`, `typesense-test`) use Compose profile `test` and are not started unless you opt in.
+
 ```bash
 docker compose up -d
+```
+
+To run `mix test` against local Docker dependencies, start the test profile as well (one-shot):
+
+```bash
+docker compose --profile test up -d
+```
+
+Or keep dev services up and add test services only:
+
+```bash
+docker compose --profile test up -d postgres-test typesense-test
 ```
 
 3. Install dependencies and initialize the app:
@@ -47,7 +61,7 @@ http://localhost:4000
 
 ## Daily Workflow
 
-Run the test suite:
+Run the test suite (requires test Postgres and Typesense on ports `25432` / `28108`, or set `POSTGRES_PORT` / `TYPESENSE_URL` accordingly):
 
 ```bash
 mix test
@@ -73,7 +87,8 @@ mix ts.reset
 
 For a full local reset workflow, use the Local Development reset sequence
 (`pkill -f "mix phx.server" || true`, `docker compose down -v`,
-`docker compose up -d`, `mix setup`).
+`docker compose up -d`, `mix setup`). If you also run `mix test` locally with Docker,
+use `docker compose --profile test up -d` instead of `docker compose up -d` after the reset.
 
 ## Local Environment Variables
 
