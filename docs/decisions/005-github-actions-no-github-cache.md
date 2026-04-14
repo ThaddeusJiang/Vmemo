@@ -1,4 +1,4 @@
-# GitHub workflows do not use GitHub cache
+# GitHub Actions do not use GitHub cache
 
 Date: 2026-04-14
 
