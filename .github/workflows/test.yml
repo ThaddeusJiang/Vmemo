@@ -2,10 +2,10 @@ name: Test
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
 
 jobs:
   mix-check:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
@@ -42,6 +42,7 @@ jobs:
         run: mix sobelow --config
 
   mix-test:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
