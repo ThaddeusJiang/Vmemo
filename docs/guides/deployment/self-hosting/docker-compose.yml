@@ -13,6 +13,8 @@ services:
         condition: service_healthy
       typesense:
         condition: service_healthy
+      moondream-station:
+        condition: service_started
 
   postgres:
     image: postgres:18
@@ -52,6 +54,16 @@ services:
       timeout: 5s
       retries: 30
       start_period: 5s
+
+  # Exposes Moondream Station bridge as an internal service for vmemo.
+  moondream-station:
+    image: alpine/socat
+    restart: on-failure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - "TCP-LISTEN:2020,fork,reuseaddr"
+      - "TCP:host.docker.internal:2020"
 
   cloudflared:
     image: cloudflare/cloudflared:2026.3.0
