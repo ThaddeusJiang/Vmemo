@@ -7,23 +7,20 @@ concurrency:
   group: test-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  MIX_ENV: test
+
 jobs:
   mix-check:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    env:
-      MIX_ENV: test
-    strategy:
-      matrix:
-        otp: ["28"]
-        elixir: ["1.19.5"]
-    name: Check / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: erlef/setup-beam@v1.23.0
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
+          otp-version: "28"
+          elixir-version: "1.19.5"
 
       - name: Install dependencies
         run: mix deps.get
@@ -49,7 +46,6 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     env:
-      MIX_ENV: test
       TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
       TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
       POSTGRES_PORT: "5432"
@@ -68,17 +64,13 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    strategy:
-      matrix:
-        otp: ["28"]
-        elixir: ["1.19.5"]
-    name: Tests / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
+
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: erlef/setup-beam@v1.23.0
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
+          otp-version: "28"
+          elixir-version: "1.19.5"
 
       - name: Install dependencies
         run: mix deps.get
