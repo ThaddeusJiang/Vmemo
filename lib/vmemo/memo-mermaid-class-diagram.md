@@ -2,8 +2,8 @@
 classDiagram
     class Image {
         UUID id
-        destroy()
         read()
+        destroy()
         create_immediate(String url, String note, String caption, String file_id, ...)
         create_for_image_search(String url, String note, String caption, String file_id, ...)
         import(UUID id, String url, String note, String caption, ...)
@@ -29,8 +29,8 @@ classDiagram
     }
     class Note {
         UUID id
-        destroy()
         read()
+        destroy()
         create_with_sync(String text, UUID user_id)
         import(UUID id, String text, UUID user_id)
         update(String text)
