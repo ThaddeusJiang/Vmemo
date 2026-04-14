@@ -347,6 +347,18 @@ defmodule Vmemo.AccountTest do
       %{user: user_fixture()}
     end
 
+    test "marks user as confirmed after password reset", %{user: user} do
+      assert is_nil(user.confirmed_at)
+
+      assert {:ok, reset_user} =
+               Account.reset_user_password(user, %{
+                 password: "new strong password",
+                 password_confirmation: "new strong password"
+               })
+
+      refute is_nil(reset_user.confirmed_at)
+    end
+
     test "validates password", %{user: _user} do
       # TODO: to be written later
     end
