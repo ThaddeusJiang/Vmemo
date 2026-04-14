@@ -29,7 +29,6 @@ Top-level modules:
 - [Development](guides/development/README.md)
 - [Deployment](guides/deployment/README.md)
 - [Self-hosting](guides/self-hosting/README.md)
-- [Archive](guides/archive/README.md)
 
 ## development specs
 

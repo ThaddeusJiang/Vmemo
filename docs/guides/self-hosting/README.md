@@ -1,21 +1,21 @@
-# Self-hosting (For Users)
-
-This section is for users who deploy and run Vmemo.
+# Self-hosting
 
 ## Directory Layout
 
 ```text
 docs/guides/self-hosting/
 ├── local-machine/
+│   ├── README.md
 │   ├── .env.example
-│   └── docker-compose.yml
+│   ├── docker-compose.yml
+│   └── cloudflare-tunnel-cli.md
 ├── zeabur/
+│   ├── README.md
 │   ├── .env.example
-│   ├── vmemo.yml
-│   └── README.md
-├── fly/
-│   └── .env.example
-└── cloudflare-tunnel-cli.md
+│   └── vmemo.yml
+└── fly/
+    ├── README.md
+    └── .env.example
 ```
 
 ## Dependency Matrix
@@ -26,30 +26,8 @@ docs/guides/self-hosting/
 | Zeabur | self-hosted | self-hosted (Zeabur service) | self-hosted (Zeabur service) | managed service (`moondream.ai`) |
 | Fly.io | self-hosted | managed service | managed service | managed service (`moondream.ai`) |
 
-## Quick Start by Mode
+## Mode Guides
 
-### Local machine
-
-```bash
-cd docs/guides/self-hosting/local-machine
-cp .env.example .env
-docker compose up -d
-```
-
-### Zeabur
-
-```bash
-cd docs/guides/self-hosting/zeabur
-cp .env.example .env
-```
-
-### Fly.io
-
-```bash
-cd docs/guides/self-hosting/fly
-cp .env.example .env
-```
-
-## Additional Guide
-
-- [Cloudflare Tunnel CLI](cloudflare-tunnel-cli.md)
+- [Local Machine](local-machine/README.md)
+- [Zeabur](zeabur/README.md)
+- [Fly.io](fly/README.md)
