@@ -10,4 +10,4 @@ Documents may be superseded (see `Status` and cross-links in each file). Use the
 - [002-use-elixir-release](002-use-elixir-release.md)
 - [003-release-image-build-latency](003-release-image-build-latency.md)
 - [004-release-workflow-prioritize-simplicity](004-release-workflow-prioritize-simplicity.md)
-- [005-release-workflow-no-build-cache](005-release-workflow-no-build-cache.md)
+- [005-workflows-no-github-cache](005-workflows-no-github-cache.md)
