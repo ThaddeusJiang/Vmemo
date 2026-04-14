@@ -97,7 +97,20 @@ defmodule Vmemo.Memo.Image do
   defp valid_uuid?(_), do: false
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      require_atomic? false
+      change {Vmemo.Memo.Changes.DeleteImageNoteLinksBeforeDestroy, by: :image_id}
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, image ->
+          # Keep Typesense in sync with Postgres on hard delete.
+          _ = TsImage.delete_image(image.id)
+          {:ok, image}
+        end)
+      end
+    end
 
     create :create_immediate do
       accept [:url, :note, :caption, :file_id, :user_id]

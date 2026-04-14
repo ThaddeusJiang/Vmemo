@@ -137,8 +137,9 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
       {:ok, _note} ->
         {:noreply, socket |> put_flash(:info, "Deleted") |> push_navigate(to: ~p"/home")}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+      {:error, error} ->
+        {:noreply,
+         socket |> put_flash(:error, "Failed to delete note: #{Exception.message(error)}")}
     end
   end
 

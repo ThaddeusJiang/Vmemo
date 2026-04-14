@@ -5,6 +5,11 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
 
   use VmemoWeb.ConnCase, async: true
 
+  alias Ash
+  alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageNote
+  alias Vmemo.Memo.Note
+
   import Vmemo.AccountFixtures
   import VmemoWeb.ApiFixtures
 
@@ -110,6 +115,33 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
 
       assert conn.status == 401
     end
+
+    test "deletes image successfully when image has linked notes", %{
+      conn: conn,
+      user: user,
+      raw_token: raw_token
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/delete-linked-image.png",
+          note: "image to delete",
+          caption: "caption",
+          file_id: "delete-linked-image",
+          user_id: user.id
+        })
+
+      note = create_note!(%{text: "linked note", user_id: user.id})
+      create_image_note!(image.id, note.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> delete(~p"/api/v1/images/#{image.id}")
+
+      assert conn.status == 200
+      assert json_response(conn, 200)["status"] == "success"
+      assert json_response(conn, 200)["data"]["message"] == "Image deleted successfully"
+    end
   end
 
   # Helper functions
@@ -134,5 +166,32 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
 
     File.write!(temp_file, png_data)
     temp_file
+  end
+
+  defp create_image!(attrs) do
+    attrs = Map.put_new(attrs, :inner_purpose, nil)
+
+    case Ash.create(Image, attrs, action: :import, actor: nil, authorize?: false) do
+      {:ok, image} -> image
+      {:error, error} -> raise "failed to create image: #{inspect(error)}"
+    end
+  end
+
+  defp create_note!(attrs) do
+    case Ash.create(Note, attrs, action: :import, actor: nil, authorize?: false) do
+      {:ok, note} -> note
+      {:error, error} -> raise "failed to create note: #{inspect(error)}"
+    end
+  end
+
+  defp create_image_note!(image_id, note_id) do
+    case Ash.create(ImageNote, %{image_id: image_id, note_id: note_id},
+           action: :import,
+           actor: nil,
+           authorize?: false
+         ) do
+      {:ok, _link} -> :ok
+      {:error, error} -> raise "failed to create image_note: #{inspect(error)}"
+    end
   end
 end

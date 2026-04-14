@@ -36,12 +36,24 @@ defmodule VmemoWeb.ImageIdLive do
 
     case Ash.get(Image, id, actor: user) do
       {:ok, image} ->
-        Image.destroy(image, actor: user)
+        case Image.destroy(image, actor: user) do
+          :ok ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Deleted")
+             |> push_navigate(to: ~p"/images")}
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Deleted")
-         |> push_navigate(to: ~p"/images")}
+          {:ok, _deleted} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Deleted")
+             |> push_navigate(to: ~p"/images")}
+
+          {:error, reason} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to delete image: #{Exception.message(reason)}")}
+        end
 
       _ ->
         {:noreply,

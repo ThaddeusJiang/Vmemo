@@ -71,6 +71,9 @@ defmodule VmemoWeb.Api.V1.ImageController do
           :ok ->
             success_response(conn, %{message: "Image deleted successfully"})
 
+          {:ok, _deleted} ->
+            success_response(conn, %{message: "Image deleted successfully"})
+
           {:error, _reason} ->
             error_response(conn, 500, "DELETE_FAILED", "Failed to delete image")
         end
