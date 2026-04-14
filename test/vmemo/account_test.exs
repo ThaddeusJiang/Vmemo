@@ -15,6 +15,13 @@ defmodule Vmemo.AccountTest do
       %{id: id} = user = user_fixture()
       assert %User{id: ^id} = Account.get_user_by_email(user.email)
     end
+
+    test "returns the user when email includes spaces and mixed case" do
+      %{id: id} = user = user_fixture()
+      input = "  " <> String.upcase(user.email) <> " "
+
+      assert %User{id: ^id} = Account.get_user_by_email(input)
+    end
   end
 
   describe "get_user_by_email_and_password/2" do
