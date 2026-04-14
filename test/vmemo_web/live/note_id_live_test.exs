@@ -55,7 +55,10 @@ defmodule VmemoWeb.NoteIdLiveTest do
 
       :ok = create_image_note!(image.id, note.id)
 
-      assert {:ok, _deleted_note} = Note.destroy(note, actor: user)
+      case Note.destroy(note, actor: user) do
+        :ok -> :ok
+        {:ok, _deleted_note} -> :ok
+      end
     end
   end
 
