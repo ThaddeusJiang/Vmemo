@@ -78,6 +78,7 @@ defmodule Vmemo.Account.User do
         message: "does not match password"
 
       change &hash_password/2
+      change &mark_email_confirmed_on_password_reset/2
       require_atomic? false
     end
   end
@@ -133,6 +134,13 @@ defmodule Vmemo.Account.User do
       password ->
         hashed_password = Bcrypt.hash_pwd_salt(password)
         Ash.Changeset.change_attribute(changeset, :hashed_password, hashed_password)
+    end
+  end
+
+  def mark_email_confirmed_on_password_reset(changeset, _context) do
+    case Ash.Changeset.get_data(changeset, :confirmed_at) do
+      nil -> Ash.Changeset.change_attribute(changeset, :confirmed_at, DateTime.utc_now())
+      _confirmed_at -> changeset
     end
   end
 
