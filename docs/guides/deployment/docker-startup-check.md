@@ -16,7 +16,7 @@ This document lists the configuration checks required before container startup (
 - Runner copies release artifacts only.
 - Uses `ENTRYPOINT + CMD`, with `CMD ["start"]`.
 
-### 3. Zeabur Config (`others/zeabur/vmemo.yml`)
+### 3. Zeabur Config (`docs/guides/self-hosting/zeabur/vmemo.yml`)
 
 - Includes `PHX_SERVER=true`.
 - Includes `ADMIN_PASSWORD`.

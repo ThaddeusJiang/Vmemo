@@ -2,7 +2,7 @@
 
 - [Development](development/README.md)
 - [Deployment](deployment/README.md)
-- [Archive](archive/README.md)
+- [Self-hosting](self-hosting/README.md)
 
 ## Quick References
 
