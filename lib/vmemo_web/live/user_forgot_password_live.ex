@@ -2,6 +2,7 @@ defmodule VmemoWeb.UserForgotPasswordLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Account
+  require Logger
 
   def render(assigns) do
     ~H"""
@@ -32,11 +33,25 @@ defmodule VmemoWeb.UserForgotPasswordLive do
   end
 
   def handle_event("send-email", %{"user" => %{"email" => email}}, socket) do
-    if user = Account.get_user_by_email(email) do
-      Account.deliver_user_reset_password_instructions(
-        user,
-        &url(~p"/reset-password/#{&1}")
-      )
+    case Account.get_user_by_email(email) do
+      nil ->
+        Logger.info("Password reset requested for unknown email")
+
+      user ->
+        case Account.deliver_user_reset_password_instructions(
+               user,
+               &url(~p"/reset-password/#{&1}")
+             ) do
+          {:ok, _email} ->
+            Logger.info("Password reset email enqueued", user_id: user.id)
+
+          {:error, reason} ->
+            Logger.error(
+              "Password reset email delivery failed",
+              user_id: user.id,
+              reason: inspect(reason)
+            )
+        end
     end
 
     info =

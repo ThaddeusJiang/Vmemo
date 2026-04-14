@@ -39,14 +39,18 @@ defmodule Vmemo.Account do
     Ash.read!(User)
   end
 
-  def get_user_by_email(email) do
+  def get_user_by_email(email) when is_binary(email) do
+    normalized_email = normalize_email(email)
+
     case User
-         |> Ash.Query.filter(email == ^email)
+         |> Ash.Query.filter(email == ^normalized_email)
          |> Ash.read_one() do
       {:ok, user} -> user
       {:error, _} -> nil
     end
   end
+
+  def get_user_by_email(_), do: nil
 
   def get_user!(id), do: Ash.get!(User, id)
 
@@ -87,4 +91,10 @@ defmodule Vmemo.Account do
   def generate_user_session_token(user), do: Sessions.generate_user_session_token(user)
   def get_user_by_session_token(token), do: Sessions.get_user_by_session_token(token)
   def delete_user_session_token(token), do: Sessions.delete_user_session_token(token)
+
+  defp normalize_email(email) do
+    email
+    |> String.trim()
+    |> String.downcase()
+  end
 end
