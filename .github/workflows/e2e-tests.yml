@@ -2,7 +2,7 @@ name: E2E Tests
 
 on:
   pull_request:
-    types: [ready_for_review]
+    types: [labeled]
   workflow_dispatch:
     inputs:
       update_snapshots:
@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   e2e:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-e2e-testing') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -128,17 +129,6 @@ jobs:
       - name: Run e2e tests
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.update_snapshots }}
         run: bun run e2e
-
-      - name: Upload e2e artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-artifacts
-          path: |
-            /tmp/vmemo-e2e-*.png
-            e2e-test/test-results/**
-            e2e-test/tests/**-snapshots/**
-          if-no-files-found: warn
 
       - name: Print app logs
         if: failure()
