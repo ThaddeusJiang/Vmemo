@@ -8,11 +8,15 @@ services:
       - "14000:4000"
     volumes:
       - ./vmemo_data/storage:/app/storage
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
       typesense:
         condition: service_healthy
+      moondream-station:
+        condition: service_started
 
   postgres:
     image: postgres:18
@@ -52,6 +56,15 @@ services:
       timeout: 5s
       retries: 30
       start_period: 5s
+
+  # Forwards 127.0.0.1:2020 inside the vmemo network namespace to Moondream Station on the Docker host.
+  moondream-station:
+    image: alpine/socat
+    restart: on-failure
+    network_mode: "service:vmemo"
+    command:
+      - "TCP-LISTEN:2020,bind=127.0.0.1,fork,reuseaddr"
+      - "TCP:host.docker.internal:2020"
 
   cloudflared:
     image: cloudflare/cloudflared:2026.3.0
