@@ -4,9 +4,9 @@ Centralized coding guidelines live in this directory.
 
 ## Core
 
-- [Elixir](elixir.md)
 - [Phoenix + Ash All-in-One](phoenix-ash-all-in-one.md)
 - [UI/UX](ui-ux.md)
+- [Testing and Debugging](testing.md)
 
 ## Notes
 

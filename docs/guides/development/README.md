@@ -10,5 +10,4 @@
 
 ## Direct Links
 
-- [Elixir](../../coding-guidelines/elixir.md)
 - [Phoenix + Ash All-in-One](../../coding-guidelines/phoenix-ash-all-in-one.md)

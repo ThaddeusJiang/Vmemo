@@ -78,3 +78,4 @@ lib/vmemo/*-mermaid-*.png
 
 # Intermediate Mermaid source output
 lib/vmemo/*-mermaid-*.mmd
+AGENTS.local.md

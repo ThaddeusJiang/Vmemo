@@ -25,6 +25,38 @@ When conflicts appear, follow project-specific conventions first.
 - Prefer OTP primitives and explicit names where required (`DynamicSupervisor`, `Registry`).
 - Use `Task.async_stream/3` for bounded concurrent enumeration when suitable.
 
+### 2.1 Configuration style
+
+#### `config/dev.exs`
+
+- Prefer explicit local defaults.
+- Hardcoded local values are acceptable and recommended for developer experience.
+- Example:
+
+```elixir
+config :vmemo, typesense_url: "http://localhost:8766"
+config :vmemo, typesense_api_key: "xyz"
+config :vmemo, moondream_url: "http://localhost:2020/v1/"
+config :vmemo, moondream_api_key: "xyz"
+```
+
+#### `config/test.exs`
+
+- Keep test config deterministic.
+- You may use hardcoded defaults, or `System.get_env("KEY", "default")` when CI overrides are required.
+
+#### `config/runtime.exs`
+
+- Follow Phoenix runtime style for production:
+  - Read from env.
+  - Raise immediately when required env is missing or invalid.
+- Use `runtime.exs` for production env overrides and strict validation.
+
+#### Docker Compose
+
+- Do not define application default behavior in compose files.
+- Compose should only pass env values through.
+
 ## 3) Phoenix Basics
 
 - Be aware of router `scope` alias behavior; avoid duplicated module prefixes in route definitions.
@@ -147,8 +179,16 @@ Use this pattern for long-running work that must continue after page leave:
 
 ## 7) Ash Framework
 
-- For **inner** attributes (not shown or edited by end users), follow [elixir.md § Ash resources: inner attributes](elixir.md#ash-resources-inner-attributes) (`public? false`, `source :_column` when the DB/search index uses a leading underscore).
-- For module naming migration and call boundaries, follow [elixir.md § Ash resources: module naming and calls](elixir.md#ash-resources-module-naming-and-calls) (no `defdelegate` alias wrappers for Ash resources; call canonical resources directly).
+- For **inner** attributes (not shown or edited by end users):
+  - Prefer a descriptive resource attribute name without a leading underscore (for example `inner_purpose`).
+  - Set `public? false`, and map persisted DB/search fields with leading underscore via `source :_field_name`.
+  - Prefer `nil` for unset optional tags; only persist `""` when empty string has explicit business meaning.
+  - Use short opaque tokens for non-default buckets (for example `"search"`).
+  - Do not reserve or branch on future values until there is a real feature requirement.
+- For module naming and calls:
+  - Do not create alias wrapper modules for Ash resources using `defdelegate` (for example `Vmemo.Memo.Image -> Vmemo.Memo.Photo`).
+  - Call the canonical Ash resource module directly from web/domain/service code.
+  - If naming migration is needed (for example `photo` -> `image`), do it as a planned refactor: canonical modules/resources/actions first, then call sites, without runtime compatibility wrappers.
 - Model business logic in resources/actions/policies, not in web templates.
 - Register resources in domains and expose clear interfaces through `code_interface`.
 - Keep action naming business-oriented and consistent.
@@ -159,6 +199,7 @@ Use this pattern for long-running work that must continue after page leave:
 
 - Use `AshPostgres.DataLayer`.
 - Use `uuidv7` as primary key strategy.
+- Avoid `LIKE`; use PostgreSQL full-text search when applicable.
 - Add indexes for query hotspots (resource id, status, inserted_at, etc.).
 - Set explicit `on_delete` strategy for relationship integrity.
 - Prefer deterministic ordering in read actions used by UI.
@@ -166,9 +207,13 @@ Use this pattern for long-running work that must continue after page leave:
 ## 9) Ash Oban
 
 - Use `AshOban`/Oban integration for async work tied to resource actions.
+- Keep database updates synchronous; run Typesense sync asynchronously via Oban jobs.
 - Keep queue/worker details inside domain/worker boundary.
 - Do not expose queue/job concepts in UI copy or event naming.
 - Keep async flow observable with persisted status and PubSub updates.
+- Worker names should use service/tool-prefixed hierarchical modules, such as:
+  - `Typesense.CreatePhoto`
+  - `Moondream.Caption`
 
 ## 10) Ash Auth
 

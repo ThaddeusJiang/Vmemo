@@ -5,17 +5,26 @@
 Use this document for shared UI and interaction conventions.
 Do not put framework-specific implementation details here.
 
+## Visual baseline
+
+- Design baseline: shadcn/ui style with daisyUI components.
+
 ## Form layout and actions
 
 - Field groups should use `space-y-2`.
 - Keep a total visual gap of 16px between fields and action area.
 - Form actions (`cancel` / `save` or `submit`) must align right; prefer `flex justify-end gap-2`.
 - Button order is fixed: left `cancel`, right `save/submit`.
+- Button color policy:
+  - default: `outline`
+  - save/submit: `primary` or `accent`
+  - destructive: `error`
 - `cancel` should use `ghost`.
-- `save/submit` should use `neutral`.
+- `save/submit` should use `primary`.
 - Do not place destructive actions (for example `delete`) in the primary bottom action row.
 - For note-edit forms, place destructive actions in a top-right overflow menu (three-dot dropdown) on the field header row (same row as the `Note` label).
-- Overflow menus should use elevated panel styling for clarity (`shadow-lg` with clear separation from background).
+- Overflow menus should use elevated panel styling for clarity (`shadow-lg` with grouped separators and clear separation from background).
+- Always size images with Tailwind classes (`w-* h-*` or `size-*`), never `width` / `height` HTML attributes.
 
 ## Form behavior
 
@@ -37,4 +46,3 @@ Do not put framework-specific implementation details here.
   - `>= 768px`: 3 columns
   - `>= 1024px`: 4 columns
 - Do not use narrower main containers (for example `max-w-screen-lg`) on photo grid pages, to avoid blocking the 4-column layout on large screens.
-
