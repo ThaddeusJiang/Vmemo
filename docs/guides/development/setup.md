@@ -104,6 +104,8 @@ This section lists project-available tasks used in day-to-day development, group
   - Expands to: `mix ash_postgres.drop`
 - `mix ts.reset`
   - Expands to: internal Typesense drop step, then `mix ts.setup`
+- `mix ts.drop`
+  - Drops Typesense collections managed by the schema
 
 ### 5. Database Migrate And Rollback
 
@@ -119,6 +121,11 @@ This section lists project-available tasks used in day-to-day development, group
 - `mix ts.setup`
 - `mix ts.reset`
   - Runs reset flow including an internal drop step
+- `mix ts.drop`
+- `mix ts.collections`
+  - List all Typesense collections
+- `mix ts.collection <collection_name>`
+  - Show one collection definition
 
 ### 7. Assets
 

@@ -2,7 +2,11 @@ defmodule Mix.Tasks.Ts.Drop do
   use Mix.Task
 
   @shortdoc "Drop Typesense collections"
-  @moduledoc false
+
+  @moduledoc """
+  Usage:
+    mix ts.drop
+  """
 
   @impl Mix.Task
   def run(_args) do

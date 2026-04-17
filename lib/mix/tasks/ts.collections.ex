@@ -1,13 +1,13 @@
-defmodule Mix.Tasks.Ts.ListCollections do
+defmodule Mix.Tasks.Ts.Collections do
   use Mix.Task
 
   @shortdoc "List Typesense collections"
 
   @moduledoc """
   Usage:
-    mix ts.list_collections
-    mix ts.list_collections --json
-    mix ts.list_collections --names
+    mix ts.collections
+    mix ts.collections --json
+    mix ts.collections --names
   """
 
   @impl Mix.Task
