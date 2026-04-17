@@ -1,6 +1,6 @@
-# Development Setup
+# Development
 
-This guide is written in a practical contributor style and focuses on getting a local Vmemo environment ready quickly.
+This guide focuses on local development workflows and project-available `mix` tasks.
 
 ## Prerequisites
 
@@ -20,22 +20,16 @@ mise install
 
 The repository includes a root `docker-compose.yml` for Postgres, Typesense, and related services.
 
-By default, `docker compose up -d` starts **dev** Postgres and Typesense only. Test-scoped containers (`postgres-test`, `typesense-test`) use Compose profile `test` and are not started unless you opt in.
+By default, `docker compose up -d` starts dev Postgres and Typesense only. Test-scoped containers (`postgres-test`, `typesense-test`) use Compose profile `test` and are not started unless you opt in.
 
 ```bash
 docker compose up -d
 ```
 
-To run `mix test` against local Docker dependencies, start the test profile as well (one-shot):
+To run `mix test` against local Docker dependencies, start the test profile as well:
 
 ```bash
 docker compose --profile test up -d
-```
-
-Or keep dev services up and add test services only:
-
-```bash
-docker compose --profile test up -d postgres-test typesense-test
 ```
 
 3. Install dependencies and initialize the app:
@@ -43,9 +37,6 @@ docker compose --profile test up -d postgres-test typesense-test
 ```bash
 mix setup
 ```
-
-`mix setup` only initializes shared development data and does not create local test users or test API tokens.
-For e2e auth fixtures, use the SQL seed flow in `e2e-test/fixtures/prepare-e2e-auth.sql`.
 
 4. Run the app locally:
 
@@ -59,36 +50,100 @@ iex -S mix phx.server
 http://localhost:4000
 ```
 
-## Daily Workflow
+## Mix Tasks By Scenario
 
-Run the test suite (requires test Postgres and Typesense on ports `25432` / `28108`, or set `POSTGRES_PORT` / `TYPESENSE_URL` accordingly):
+This section lists project-available tasks used in day-to-day development, grouped by usage scenario.
 
-```bash
-mix test
-```
+### 1. Setup
 
-Inspect routes:
+- `mix setup`
+  - Expands to: `mix deps.get`, `mix db.setup`, `mix ts.setup`, `mix assets.setup`, `mix assets.build`
+- `mix deps.get`
+- `mix db.setup`
+  - Expands to: `mix db.create`, `mix db.migrate`, `mix db.seed`
+- `mix db.create`
+  - Expands to: `mix ash_postgres.create`
+- `mix db.migrate`
+  - Expands to: `mix ash.migrate`
+- `mix db.seed`
+  - Expands to: `mix run priv/repo/seeds.exs`
+- `mix ts.setup`
+  - Expands to: `mix ts.migrate`
+- `mix assets.setup`
+  - Expands to: `mix tailwind.install --if-missing`, `mix esbuild.install --if-missing`
+- `mix assets.build`
+  - Expands to: `mix tailwind vmemo`, `mix esbuild vmemo`
 
-```bash
-mix phx.routes
-```
+### 2. Start Development
 
-Format code:
+- `mix phx.server`
+- `iex -S mix phx.server`
+- `mix phx.routes`
+- `mix compile`
 
-```bash
-mix format
-```
+### 3. Test And Quality
 
-Reset local DB + Typesense state when needed:
+- `mix test`
+  - Alias behavior: ensure DB and Typesense migration tasks run before tests
+- `mix check`
+  - Runs formatter check, compile warnings as errors, xref cycles, credo, sobelow, hex audit, deps unused check, test with warnings as errors, dialyzer
+- `mix format`
+- `mix format --check-formatted`
+- `mix credo --strict`
+- `mix sobelow --config`
+- `mix dialyzer --format short`
+- `mix xref graph --format cycles --label compile --fail-above 0`
 
-```bash
-mix ts.reset
-```
+### 4. Reset And Recovery
 
-For a full local reset workflow, use the Local Development reset sequence
-(`pkill -f "mix phx.server" || true`, `docker compose down -v`,
-`docker compose up -d`, `mix setup`). If you also run `mix test` locally with Docker,
-use `docker compose --profile test up -d` instead of `docker compose up -d` after the reset.
+- `mix reset`
+  - Expands to: `mix db.reset`, `mix ts.reset`
+- `mix db.reset`
+  - Expands to: `mix db.drop`, `mix db.setup`
+- `mix db.drop`
+  - Expands to: `mix ash_postgres.drop`
+- `mix ts.reset`
+  - Expands to: internal Typesense drop step, then `mix ts.setup`
+
+### 5. Database Migrate And Rollback
+
+- `mix db.migrate`
+- `mix db.rollback`
+  - Expands to: `mix ash_postgres.rollback`
+- `mix ash.migrate`
+- `mix ash_postgres.rollback`
+
+### 6. Search Index (Typesense)
+
+- `mix ts.migrate`
+- `mix ts.setup`
+- `mix ts.reset`
+  - Runs reset flow including an internal drop step
+
+### 7. Assets
+
+- `mix assets.setup`
+- `mix assets.build`
+- `mix assets.deploy`
+  - Expands to: `mix tailwind vmemo --minify`, `mix esbuild vmemo --minify`, `mix phx.digest`
+
+## Common Workflows
+
+- First-time local setup:
+  1. `mise install`
+  2. `docker compose up -d`
+  3. `mix setup`
+  4. `iex -S mix phx.server`
+
+- Run tests locally with Docker test dependencies:
+  1. `docker compose --profile test up -d`
+  2. `mix test`
+
+- Full local reset:
+  1. `pkill -f "mix phx.server" || true`
+  2. `docker compose down -v`
+  3. `docker compose up -d`
+  4. `mix reset`
 
 ## Local Environment Variables
 

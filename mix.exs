@@ -115,9 +115,10 @@ defmodule Vmemo.MixProject do
       extras:
         [
           {"README.md", [filename: "home", title: "Home"]},
+          {"docs/features/api-tokens.md", [title: "API Token (REST API Preparation)"]},
           {"docs/features/public-rest-api.md", [title: "REST API"]},
-          {"docs/features/api-tokens.md", [title: "API Token"]},
-          "docs/guides/development/setup.md",
+          {"docs/features/mcp-server.md", [title: "MCP Server"]},
+          {"docs/guides/development/setup.md", [title: "Development"]},
           "docs/guides/deployment/docker-prod-run.md"
         ] ++ resource_diagram_extras
     ]

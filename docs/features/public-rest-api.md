@@ -30,10 +30,10 @@ vmemo_<43-char-random-string>
 
 ## Endpoints
 
-### Upload Photo
+### Upload Image
 
 - Method: `POST`
-- Path: `/api/v1/photos`
+- Path: `/api/v1/images`
 - Content-Type: `multipart/form-data`
 
 Request form fields:
@@ -41,12 +41,12 @@ Request form fields:
 | Name | Type | Required | Description |
 |---|---|---|---|
 | `file` | File | Yes | Image file (`PNG`, `JPG`, `JPEG`, `GIF`, `WEBP`) |
-| `note` | String | No | Optional user note |
+| `note` | String | No | User note for the image |
 
 Example:
 
 ```bash
-curl -X POST https://your-domain.com/api/v1/photos \
+curl -X POST https://your-domain.com/api/v1/images \
   -H "Authorization: Bearer vmemo_your_token" \
   -F "file=@/path/to/image.jpg" \
   -F "note=My vacation photo"
@@ -58,23 +58,27 @@ Success response (`200`):
 {
   "status": "success",
   "data": {
-    "id": "01JKQM8X9Y7Z6W5V4U3T2S1R0P",
-    "url": "/storage/v1/<user_id>/photos/20250126_103045_image.jpg",
+    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
+    "url": "/storage/v1/<user_id>/images/<timestamp>_<file_id>.jpg",
     "note": "My vacation photo",
-    "inserted_at": "2025-01-26T10:30:45Z"
+    "inserted_at": "2026-04-17T07:09:47.519172Z"
   }
 }
 ```
 
-### Get Photo
+After upload, the system automatically:
+- Indexes the image in Typesense for search
+- Generates a caption via Moondream AI
+
+### Get Image
 
 - Method: `GET`
-- Path: `/api/v1/photos/:id`
+- Path: `/api/v1/images/:id`
 
 Example:
 
 ```bash
-curl -X GET https://your-domain.com/api/v1/photos/01JKQM8X9Y7Z6W5V4U3T2S1R0P \
+curl -X GET https://your-domain.com/api/v1/images/e1015cc4-245c-47b9-a86f-50d8874652d0 \
   -H "Authorization: Bearer vmemo_your_token"
 ```
 
@@ -84,25 +88,23 @@ Success response (`200`):
 {
   "status": "success",
   "data": {
-    "id": "01JKQM8X9Y7Z6W5V4U3T2S1R0P",
-    "url": "/storage/v1/user_abc123/photos/20250126_103045_image.jpg",
+    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
+    "url": "/storage/v1/<user_id>/images/<timestamp>_<file_id>.jpg",
     "note": "My vacation photo",
-    "caption": "A beautiful sunset over the ocean",
-    "inserted_at": "2025-01-26T10:30:45Z",
-    "updated_at": "2025-01-26T10:31:00Z"
+    "inserted_at": "2026-04-17T07:09:47.519172Z"
   }
 }
 ```
 
-### Delete Photo
+### Delete Image
 
 - Method: `DELETE`
-- Path: `/api/v1/photos/:id`
+- Path: `/api/v1/images/:id`
 
 Example:
 
 ```bash
-curl -X DELETE https://your-domain.com/api/v1/photos/01JKQM8X9Y7Z6W5V4U3T2S1R0P \
+curl -X DELETE https://your-domain.com/api/v1/images/e1015cc4-245c-47b9-a86f-50d8874652d0 \
   -H "Authorization: Bearer vmemo_your_token"
 ```
 
@@ -111,7 +113,9 @@ Success response (`200`):
 ```json
 {
   "status": "success",
-  "message": "Photo deleted successfully"
+  "data": {
+    "message": "Image deleted successfully"
+  }
 }
 ```
 
@@ -129,18 +133,68 @@ All API errors follow this shape:
 }
 ```
 
-Common status codes:
+### Error Codes
 
-| HTTP | Meaning |
-|---|---|
-| `200` | Success |
-| `400` | Invalid input |
-| `401` | Missing/invalid/expired token |
-| `404` | Resource not found |
-| `500` | Internal server error |
+| HTTP | Code | Meaning |
+|---|---|---|
+| `400` | `INVALID_FILE` | No file provided, invalid file type, or invalid image format |
+| `401` | `UNAUTHORIZED` | Missing, invalid, disabled, or expired token |
+| `404` | `PHOTO_NOT_FOUND` | Image not found or not owned by token user |
+| `500` | `CREATE_FAILED` | Failed to create image record |
+| `500` | `DELETE_FAILED` | Failed to delete image |
 
 ## File Constraints
 
 - Allowed formats: `PNG`, `JPG`, `JPEG`, `GIF`, `WEBP`
-- Max file size: `10MB` (default, configurable)
-- Validation: file header/content validation is enforced
+- Validation: both file extension and file header (magic bytes) are checked
+- Files with non-image content (e.g. a `.png` extension on a PDF) are rejected
+
+## Usage Examples
+
+### Upload with note (curl)
+
+```bash
+curl -X POST http://localhost:4000/api/v1/images \
+  -H "Authorization: Bearer vmemo_fuqOukQ4iBPZhBGFbRBtrf2n9WWlxIATmj_xIfo6eDM" \
+  -F "file=@wall-e.png" \
+  -F "note=Wall-E robot from Pixar movie"
+```
+
+### Upload without note (curl)
+
+```bash
+curl -X POST http://localhost:4000/api/v1/images \
+  -H "Authorization: Bearer vmemo_your_token" \
+  -F "file=@photo.jpg"
+```
+
+### Python
+
+```python
+import requests
+
+url = "https://your-domain.com/api/v1/images"
+headers = {"Authorization": "Bearer vmemo_your_token"}
+files = {"file": open("image.jpg", "rb")}
+data = {"note": "My photo"}
+
+response = requests.post(url, headers=headers, files=files, data=data)
+print(response.json())
+```
+
+### JavaScript (fetch)
+
+```javascript
+const formData = new FormData();
+formData.append("file", fileInput.files[0]);
+formData.append("note", "My photo");
+
+const response = await fetch("https://your-domain.com/api/v1/images", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer vmemo_your_token"
+  },
+  body: formData
+});
+const result = await response.json();
+```

@@ -6,6 +6,7 @@ Top-level modules:
 - `decisions`
 - `features`
 - `guides`
+- `test-manual`
 
 ## coding-guidelines
 
@@ -22,6 +23,7 @@ Top-level modules:
 - Ash data models: [Architecture](https://github.com/ThaddeusJiang/Vmemo#architecture) (repository README)
 - [REST API](features/public-rest-api.md)
 - [API Token](features/api-tokens.md)
+- [MCP Server](features/mcp-server.md)
 
 ## guides
 
@@ -29,6 +31,11 @@ Top-level modules:
 - [Development](guides/development/README.md)
 - [Deployment](guides/deployment/README.md)
 - [Self-hosting](guides/self-hosting/README.md)
+
+## test-manual
+
+- [Test Manual Index](test-manual/README.md)
+- [External Test: Token Integrations](test-manual/external-test-token-integrations.md)
 
 ## development specs
 
