@@ -143,51 +143,10 @@ jobs:
           fi
 
       - name: Remove temporary architecture tags
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKERHUB_USERNAME: thaddeusjiang
         run: |
-          set -euo pipefail
-          # Give Docker Hub a short propagation window before deleting temp tags.
-          sleep 20
-
-          namespace="${IMAGE_NAME%/*}"
-          repository="${IMAGE_NAME#*/}"
-
-          jwt="$(
-            curl -fsSL \
-              -H "Content-Type: application/json" \
-              -d "{\"username\":\"thaddeusjiang\",\"password\":\"${{ secrets.DOCKERHUB_TOKEN }}\"}" \
-              https://hub.docker.com/v2/users/login/ | jq -r '.token'
-          )"
-
-          if [ -z "${jwt}" ] || [ "${jwt}" = "null" ]; then
-            echo "Failed to obtain Docker Hub JWT token"
-            exit 1
-          fi
-
-          delete_tag() {
-            local tag="$1"
-            local url="https://hub.docker.com/v2/namespaces/${namespace}/repositories/${repository}/tags/${tag}/"
-            local body_file
-            local code
-
-            body_file="$(mktemp)"
-            code="$(
-              curl -sS -o "${body_file}" -w "%{http_code}" \
-                -X DELETE \
-                -H "Authorization: JWT ${jwt}" \
-                "${url}"
-            )"
-
-            if [ "${code}" = "204" ] || [ "${code}" = "404" ]; then
-              echo "Deleted tag ${tag} (HTTP ${code})"
-              rm -f "${body_file}"
-              return 0
-            fi
-
-            echo "Failed to delete tag ${tag} (HTTP ${code})"
-            cat "${body_file}"
-            rm -f "${body_file}"
-            return 1
-          }
-
-          delete_tag "${TARGET_TAG}-amd64"
-          delete_tag "${TARGET_TAG}-arm64"
+          bash scripts/ci/delete-dockerhub-temp-tags.sh \
+            "${TARGET_TAG}-amd64" \
+            "${TARGET_TAG}-arm64"
