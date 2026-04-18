@@ -21,20 +21,19 @@ env:
   CHECKOUT_REF: ${{ github.event_name == 'release' && format('refs/tags/{0}', github.event.release.tag_name) || github.ref }}
 
 jobs:
-  build_amd64_image:
-    name: build amd64 image
+  prepare_tags:
+    name: prepare tags
     if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
-    runs-on: ubuntu-24.04
-    env:
-      DOCKER_BUILD_RECORD_UPLOAD: "false"
-      DOCKER_BUILD_SUMMARY: "false"
+    runs-on: ubuntu-latest
+    outputs:
+      checkout_ref: ${{ steps.compute.outputs.checkout_ref }}
+      temp_tag_amd64: ${{ steps.compute.outputs.temp_tag_amd64 }}
+      temp_tag_arm64: ${{ steps.compute.outputs.temp_tag_arm64 }}
+      image_ref_amd64: ${{ steps.compute.outputs.image_ref_amd64 }}
+      image_ref_arm64: ${{ steps.compute.outputs.image_ref_arm64 }}
+      publish_refs: ${{ steps.compute.outputs.publish_refs }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-        with:
-          ref: ${{ env.CHECKOUT_REF }}
-
       - name: Validate release tag format
         if: ${{ github.event_name == 'release' }}
         run: |
@@ -43,6 +42,54 @@ jobs:
             echo "Invalid release tag: ${TARGET_TAG}"
             exit 1
           fi
+
+      - name: Compute image tags
+        id: compute
+        run: |
+          set -euo pipefail
+          temp_tag_amd64="${TARGET_TAG}-amd64"
+          temp_tag_arm64="${TARGET_TAG}-arm64"
+
+          echo "checkout_ref=${CHECKOUT_REF}" >> "${GITHUB_OUTPUT}"
+          echo "temp_tag_amd64=${temp_tag_amd64}" >> "${GITHUB_OUTPUT}"
+          echo "temp_tag_arm64=${temp_tag_arm64}" >> "${GITHUB_OUTPUT}"
+          echo "image_ref_amd64=${IMAGE_NAME}:${temp_tag_amd64}" >> "${GITHUB_OUTPUT}"
+          echo "image_ref_arm64=${IMAGE_NAME}:${temp_tag_arm64}" >> "${GITHUB_OUTPUT}"
+
+          {
+            echo "publish_refs<<EOF"
+            echo "${IMAGE_NAME}:${TARGET_TAG}"
+            if [ "${{ github.event_name }}" = "release" ]; then
+              echo "${IMAGE_NAME}:latest"
+            fi
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+  build_by_arch:
+    name: build ${{ matrix.arch }} image
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - prepare_tags
+    env:
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+      DOCKER_BUILD_SUMMARY: "false"
+      CHECKOUT_REF: ${{ needs.prepare_tags.outputs.checkout_ref }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ env.CHECKOUT_REF }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.0.0
@@ -53,62 +100,27 @@ jobs:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push amd64 image
+      - name: Build and push ${{ matrix.arch }} image
         uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: linux/amd64
-          tags: ${{ env.IMAGE_NAME }}:${{ env.TARGET_TAG }}-amd64
-
-  build_arm64_image:
-    name: build arm64 image
-    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
-    runs-on: ubuntu-24.04-arm
-    env:
-      DOCKER_BUILD_RECORD_UPLOAD: "false"
-      DOCKER_BUILD_SUMMARY: "false"
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-        with:
-          ref: ${{ env.CHECKOUT_REF }}
-
-      - name: Validate release tag format
-        if: ${{ github.event_name == 'release' }}
-        run: |
-          set -euo pipefail
-          if ! [[ "${TARGET_TAG}" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$ ]]; then
-            echo "Invalid release tag: ${TARGET_TAG}"
-            exit 1
-          fi
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v4.0.0
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push arm64 image
-        uses: docker/build-push-action@v7.0.0
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          platforms: linux/arm64
-          tags: ${{ env.IMAGE_NAME }}:${{ env.TARGET_TAG }}-arm64
+          platforms: ${{ matrix.platform }}
+          tags: ${{ env.IMAGE_NAME }}:${{ env.TARGET_TAG }}-${{ matrix.arch }}
 
   push_image:
     name: push image
     runs-on: ubuntu-latest
     needs:
-      - build_amd64_image
-      - build_arm64_image
+      - prepare_tags
+      - build_by_arch
+    env:
+      AMD64_IMAGE_REF: ${{ needs.prepare_tags.outputs.image_ref_amd64 }}
+      ARM64_IMAGE_REF: ${{ needs.prepare_tags.outputs.image_ref_arm64 }}
+      PUBLISH_REFS: ${{ needs.prepare_tags.outputs.publish_refs }}
+      TEMP_TAG_AMD64: ${{ needs.prepare_tags.outputs.temp_tag_amd64 }}
+      TEMP_TAG_ARM64: ${{ needs.prepare_tags.outputs.temp_tag_arm64 }}
 
     steps:
       - name: Set up Docker Buildx
@@ -123,24 +135,21 @@ jobs:
       - name: Create and push multi-platform manifest
         run: |
           set -euo pipefail
-          docker buildx imagetools create \
-            -t "${IMAGE_NAME}:${TARGET_TAG}" \
-            "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
-            "${IMAGE_NAME}:${TARGET_TAG}-arm64"
-
-          if [ "${{ github.event_name }}" = "release" ]; then
+          while IFS= read -r publish_ref; do
+            [ -z "${publish_ref}" ] && continue
             docker buildx imagetools create \
-              -t "${IMAGE_NAME}:latest" \
-              "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
-              "${IMAGE_NAME}:${TARGET_TAG}-arm64"
-          fi
+              -t "${publish_ref}" \
+              "${AMD64_IMAGE_REF}" \
+              "${ARM64_IMAGE_REF}"
+          done <<< "${PUBLISH_REFS}"
 
       - name: Verify multi-platform manifest
         run: |
-          docker buildx imagetools inspect "${IMAGE_NAME}:${TARGET_TAG}"
-          if [ "${{ github.event_name }}" = "release" ]; then
-            docker buildx imagetools inspect "${IMAGE_NAME}:latest"
-          fi
+          set -euo pipefail
+          while IFS= read -r publish_ref; do
+            [ -z "${publish_ref}" ] && continue
+            docker buildx imagetools inspect "${publish_ref}"
+          done <<< "${PUBLISH_REFS}"
 
       - name: Remove temporary architecture tags
         env:
@@ -148,5 +157,5 @@ jobs:
           DOCKERHUB_USERNAME: thaddeusjiang
         run: |
           bash scripts/ci/delete-dockerhub-temp-tags.sh \
-            "${TARGET_TAG}-amd64" \
-            "${TARGET_TAG}-arm64"
+            "${TEMP_TAG_AMD64}" \
+            "${TEMP_TAG_ARM64}"
