@@ -21,7 +21,7 @@ spec:
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
-          image: docker.io/thaddeusjiang/vmemo:develop
+          image: docker.io/thaddeusjiang/vmemo:latest
         ports:
           - id: web
             port: 4000
@@ -57,10 +57,13 @@ spec:
             default: ${PASSWORD}
             expose: false
           SENTRY_DSN:
+            default: https://examplePublicKey@o0.ingest.sentry.io/0
             expose: false
           RESEND_API_KEY:
+            default: re_fake_1234567890
             expose: false
           OPENROUTER_API_KEY:
+            default: sk-or-v1-fake-1234567890
             expose: false
           MOONDREAM_URL:
             expose: false
