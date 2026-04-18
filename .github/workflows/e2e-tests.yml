@@ -60,7 +60,7 @@ jobs:
       PHX_SERVER: "true"
       ECTO_IPV6: "false"
       POOL_SIZE: "10"
-      ADMIN_PASSWORD: test-admin-password
+      ADMIN_TOKEN: test-admin-password
       E2E_PGDATABASE: vmemo
       SENTRY_DSN: https://public@example.com/1
       SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest

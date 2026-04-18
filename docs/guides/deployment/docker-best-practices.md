@@ -39,7 +39,7 @@ CMD ["start"]
 docker run -p 4000:4000 \
   -e DATABASE_URL=postgresql://user:pass@host:port/database \
   -e SECRET_KEY_BASE=your_secret_key_base \
-  -e ADMIN_PASSWORD=your_admin_password \
+  -e ADMIN_TOKEN=your_admin_token \
   -e RESEND_API_KEY=your_resend_key \
   -e TYPESENSE_URL=http://typesense:8108 \
   -e TYPESENSE_API_KEY=your_typesense_key \

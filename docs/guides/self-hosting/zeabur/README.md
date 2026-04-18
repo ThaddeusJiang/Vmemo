@@ -15,9 +15,9 @@ npx zeabur template update -c H3EL85 -f vmemo.yml
 - `ENTRYPOINT` runs release migration tasks
 - `CMD` runs `start` (resolved to `bin/vmemo start`)
 - `PHX_SERVER=true` must be set
-- `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `SENTRY_DSN`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, and `MOONDREAM_URL` are required
+- `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_TOKEN`, `SENTRY_DSN`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, and `MOONDREAM_URL` are required
 - `OPENROUTER_API_KEY` is optional
-- `ADMIN_PASSWORD` must be provided explicitly and should not rely on template placeholder defaults
+- `ADMIN_TOKEN` must be provided explicitly and should not rely on template placeholder defaults
 - Typesense access should expose the API key only when the template needs real external access
 - Template configuration should not expose secrets in instructions or logs
 
@@ -44,7 +44,7 @@ These must all be set, otherwise container startup will exit early:
 
 - [ ] `DATABASE_URL`
 - [ ] `SECRET_KEY_BASE`
-- [ ] `ADMIN_PASSWORD`
+- [ ] `ADMIN_TOKEN`
 - [ ] `SENTRY_DSN`
 - [ ] `RESEND_API_KEY`
 - [ ] `TYPESENSE_URL`

@@ -19,14 +19,14 @@ This document lists the configuration checks required before container startup (
 ### 3. Zeabur Config (`docs/guides/self-hosting/zeabur/vmemo.yml`)
 
 - Includes `PHX_SERVER=true`.
-- Includes `ADMIN_PASSWORD`.
+- Includes `ADMIN_TOKEN`.
 - Keeps other required envs (`SECRET_KEY_BASE`, `RESEND_API_KEY`, etc.).
 - Includes `SENTRY_DSN`.
 
 ## Required Environment Variables
 
 1. `SECRET_KEY_BASE`
-2. `ADMIN_PASSWORD`
+2. `ADMIN_TOKEN`
 3. `RESEND_API_KEY`
 4. `DATABASE_URL`
 5. `TYPESENSE_URL`
