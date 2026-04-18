@@ -21,7 +21,7 @@ spec:
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
-          image: docker.io/thaddeusjiang/vmemo:latest
+          image: thaddeusjiang/vmemo:latest
         ports:
           - id: web
             port: 4000
