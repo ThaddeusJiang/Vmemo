@@ -22,18 +22,18 @@ env:
 
 jobs:
   build_by_arch:
+    name: build ${{ matrix.arch }} image
     if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: linux/amd64
+          - arch: amd64
+            platform: linux/amd64
             runner: ubuntu-24.04
-            arch_suffix: amd64
-          - platform: linux/arm64
+          - arch: arm64
+            platform: linux/arm64
             runner: ubuntu-24.04-arm
-            arch_suffix: arm64
-
     runs-on: ${{ matrix.runner }}
     env:
       DOCKER_BUILD_RECORD_UPLOAD: "false"
@@ -63,18 +63,20 @@ jobs:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push image by architecture tag
+      - name: Build and push ${{ matrix.arch }} image
         uses: docker/build-push-action@v7.0.0
         with:
           context: .
           file: ./Dockerfile
           push: true
           platforms: ${{ matrix.platform }}
-          tags: ${{ env.IMAGE_NAME }}:${{ env.TARGET_TAG }}-${{ matrix.arch_suffix }}
+          tags: ${{ env.IMAGE_NAME }}:${{ env.TARGET_TAG }}-${{ matrix.arch }}
 
-  merge_manifest:
+  push_image:
+    name: push image
     runs-on: ubuntu-latest
-    needs: build_by_arch
+    needs:
+      - build_by_arch
 
     steps:
       - name: Set up Docker Buildx
@@ -103,15 +105,17 @@ jobs:
 
       - name: Verify multi-platform manifest
         run: |
+          set -euo pipefail
           docker buildx imagetools inspect "${IMAGE_NAME}:${TARGET_TAG}"
           if [ "${{ github.event_name }}" = "release" ]; then
             docker buildx imagetools inspect "${IMAGE_NAME}:latest"
           fi
 
       - name: Remove temporary architecture tags
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKERHUB_USERNAME: thaddeusjiang
         run: |
-          set -euo pipefail
-          # Give Docker Hub a short propagation window before deleting temp tags.
-          sleep 20
-          docker buildx imagetools rm "${IMAGE_NAME}:${TARGET_TAG}-amd64" || true
-          docker buildx imagetools rm "${IMAGE_NAME}:${TARGET_TAG}-arm64" || true
+          bash scripts/ci/delete-dockerhub-temp-tags.sh \
+            "${TARGET_TAG}-amd64" \
+            "${TARGET_TAG}-arm64"
