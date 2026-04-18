@@ -67,10 +67,10 @@ if config_env() == :prod do
       """
 
   admin_token =
-    System.get_env("ADMIN_PASSWORD") ||
+    System.get_env("ADMIN_TOKEN") ||
       raise """
-      environment variable ADMIN_PASSWORD is missing.
-      Please set a secure admin password for production.
+      environment variable ADMIN_TOKEN is missing.
+      Please set a secure admin token for production.
       """
 
   secret_key_base =

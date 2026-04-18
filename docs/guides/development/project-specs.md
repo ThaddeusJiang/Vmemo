@@ -160,7 +160,7 @@
 - Sentry: error reporting
 
 ### 5.2 Config and Environment Variables (Production-Critical)
-- Required: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
+- Required: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_TOKEN`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
 - Common optional: `MOONDREAM_URL`, `SENTRY_ENV`
 - Production default: `MOONDREAM_URL` defaults to `https://api.moondream.ai/v1/`
 - Strict validation: invalid numeric env values (for example import chunk size) raise at runtime
@@ -266,7 +266,7 @@
 - [ ] No blocking errors or known regressions
 
 ### 8.3 Config and Secrets Check
-- [ ] Production env vars fully configured: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
+- [ ] Production env vars fully configured: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_TOKEN`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
 - [ ] `SENTRY_ENV` (optional) configured per environment
 - [ ] `PHX_HOST`, `PORT`, `POOL_SIZE`, `ECTO_IPV6` match deployment environment
 - [ ] Critical env formats validated (no runtime raise)

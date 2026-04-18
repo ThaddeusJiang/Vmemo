@@ -11,7 +11,6 @@ docs/guides/self-hosting/
 │   └── cloudflare-tunnel-cli.md
 ├── zeabur/
 │   ├── README.md
-│   ├── .env.example
 │   └── vmemo.yml
 └── fly/
     ├── README.md

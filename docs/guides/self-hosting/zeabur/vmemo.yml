@@ -4,17 +4,20 @@ kind: Template
 metadata:
   name: Vmemo
 spec:
-  description: Record your life with impactful visuals, not plain, forgettable text.
+  description: Vmemo is a visual memo app that captures life with images, allows AI-based searching, and enables quick reviewing of moments without the need for long text notes.
   icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
   variables:
     - key: PUBLIC_DOMAIN
       type: DOMAIN
-      name: Domain
-      description: What is the domain you want for your service?
+      name: Public Domain
+      description: Public domain for the Vmemo web service.
   services:
     - name: Vmemo
       domainKey: PUBLIC_DOMAIN
       template: PREBUILT_V2
+      dependencies:
+        - postgresql
+        - typesense
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
@@ -27,19 +30,19 @@ spec:
           - id: data
             dir: /app/storage
         instructions:
-          - type: TEXT
-            title: URL
-            content: ${ZEABUR_WEB_URL}
-            category: Hostname & Port
+          - type: PASSWORD
+            title: Admin Token
+            content: ${ADMIN_TOKEN}
+            category: Credentials
         env:
           DATABASE_URL:
             default: ${POSTGRES_CONNECTION_STRING}
             expose: false
           TYPESENSE_URL:
-            default: ${TYPESENSE_URL}
+            default: ${TYPESENSE_SERVICE_URL}
             expose: false
           TYPESENSE_API_KEY:
-            default: ${TYPESENSE_API_KEY}
+            default: ${TYPESENSE_SERVICE_API_KEY}
             expose: false
           PHX_HOST:
             default: ${ZEABUR_WEB_DOMAIN}
@@ -48,16 +51,23 @@ spec:
             default: "true"
             expose: false
           SECRET_KEY_BASE:
+            default: ${TYPESENSE_SERVICE_API_KEY}_${TYPESENSE_SERVICE_API_KEY}
             expose: false
-          ADMIN_PASSWORD:
+          ADMIN_TOKEN:
+            default: ${PASSWORD}
             expose: false
           SENTRY_DSN:
+            default: https://examplePublicKey@o0.ingest.sentry.io/0
             expose: false
           RESEND_API_KEY:
+            default: re_fake_1234567890
             expose: false
           OPENROUTER_API_KEY:
+            default: sk-or-v1-fake-1234567890
             expose: false
           MOONDREAM_URL:
+            expose: false
+          MOONDREAM_API_KEY:
             expose: false
         configs: []
 
@@ -90,11 +100,11 @@ spec:
             content: ${POSTGRES_USERNAME}
             category: Credentials
           - type: PASSWORD
-            title: PostgresSQL password
+            title: PostgreSQL password
             content: ${POSTGRES_PASSWORD}
             category: Credentials
           - type: TEXT
-            title: PostgresSQL database
+            title: PostgreSQL database
             content: ${POSTGRES_DATABASE}
             category: Credentials
           - type: TEXT
@@ -176,11 +186,17 @@ spec:
         instructions:
           - type: TEXT
             title: Typesense URL
-            content: ${ZEABUR_WEB_DOMAIN}
+            content: ${ZEABUR_WEB_URL}
           - type: TEXT
             title: Typesense API Key
             content: ${PASSWORD}
         env:
+          TYPESENSE_SERVICE_URL:
+            default: http://${CONTAINER_HOSTNAME}:${WEB_PORT}
+            expose: true
+          TYPESENSE_SERVICE_API_KEY:
+            default: ${PASSWORD}
+            expose: true
           TYPESENSE_API_KEY:
             default: ${PASSWORD}
             expose: true

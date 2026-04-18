@@ -52,7 +52,7 @@ PHX_HOST=localhost
 PHX_SERVER=true
 
 SECRET_KEY_BASE=replace_with_a_long_random_secret
-ADMIN_PASSWORD=replace_with_a_strong_admin_password
+ADMIN_TOKEN=replace_with_a_strong_admin_token
 
 # Integrations
 OPENROUTER_API_KEY=replace_with_your_openrouter_api_key
@@ -82,7 +82,7 @@ services:
       TYPESENSE_URL: http://typesense:8108
       TYPESENSE_API_KEY: xyz
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?ADMIN_TOKEN is required}
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
     env_file:
       - .env
@@ -163,7 +163,7 @@ Open `http://localhost:4000`.
 | `PORT`               |          | App port (`4000` default)                                          |
 | `POOL_SIZE`          |          | DB pool size (`10` default)                                        |
 | `ECTO_IPV6`          |          | Enable IPv6 when set to `true` or `1`                              |
-| `ADMIN_PASSWORD`     | Yes      | Admin password for protected actions                               |
+| `ADMIN_TOKEN`      | Yes      | Admin token for protected actions                                  |
 
 ## Tech Stack
 
@@ -174,7 +174,7 @@ Open `http://localhost:4000`.
 
 ## Security Notes
 
-- Use strong random values for `SECRET_KEY_BASE` and `ADMIN_PASSWORD`.
+- Use strong random values for `SECRET_KEY_BASE` and `ADMIN_TOKEN`.
 - Keep API tokens private and rotate periodically.
 - Use HTTPS in production.
 - Store secrets in environment variables or a secrets manager.
