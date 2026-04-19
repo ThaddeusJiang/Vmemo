@@ -30,3 +30,7 @@ docs/guides/self-hosting/
 - [Local Machine](local-machine/README.md)
 - [Zeabur](zeabur/README.md)
 - [Fly.io](fly/README.md)
+
+## Shared Docker Reference
+
+- [Docker Guide (Entry Point)](../docker/README.md)

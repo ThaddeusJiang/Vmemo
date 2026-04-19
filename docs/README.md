@@ -2,15 +2,20 @@
 
 Top-level modules:
 
-- `coding-guidelines`
+- `guides/coding`
+- `guides/docker`
 - `decisions`
 - `features`
 - `guides`
 - `test-manual`
 
-## coding-guidelines
+## guides/coding
 
-- [Coding Guidelines Index](coding-guidelines/README.md)
+- [Coding Guidelines Index](guides/coding/README.md)
+
+## guides/docker
+
+- [Docker Guide](guides/docker/README.md)
 
 ## decisions
 

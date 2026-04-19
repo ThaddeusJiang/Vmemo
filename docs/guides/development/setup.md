@@ -176,4 +176,5 @@ Before opening a pull request:
 
 - REST API: `docs/features/public-rest-api.md`
 - API Token: `docs/features/api-tokens.md`
-- Deployment: `docs/guides/deployment/docker-prod-run.md`
+- Docker (entry): `docs/guides/docker/README.md`
+- Deployment: `docs/guides/deployment/docker.md`

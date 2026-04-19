@@ -6,8 +6,9 @@
 - [Resource Diagrams](resource-diagrams.md)
 - [Project Specs](project-specs.md)
 - [Oban Queue Design](oban-queue-design.md)
-- [Coding Guidelines](../../coding-guidelines/README.md)
+- [Coding Guidelines](../coding/README.md)
+- [Docker Guide](../docker/README.md)
 
 ## Direct Links
 
-- [Phoenix + Ash All-in-One](../../coding-guidelines/phoenix-ash-all-in-one.md)
+- [Elixir](../coding/elixir.md)

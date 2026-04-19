@@ -7,17 +7,6 @@ description: "Create GitHub pull requests with smart base branch inference, conv
 
 Use this skill when the user asks to create a pull request.
 
-## Environment bootstrap
-
-Before running project scripts/commands, always execute:
-
-```bash
-mise trust
-mise install
-```
-
-Then use direct commands (`git`, `gh`, etc.) without `mise exec`.
-
 ## Goal
 
 Create a high-quality PR with:
@@ -204,9 +193,7 @@ Return:
 
 ## Guardrails
 
-- Always run `mise trust` and `mise install` before executing project scripts/commands.
-- Prefer direct commands (`git`, `gh`, `mix`) instead of `mise exec`.
-- If sandbox/toolchain issues appear, rerun `mise trust` and `mise install` first.
+- Follow global Codex `AGENTS.md` for dependency/tooling constraints.
 - Never silently target only the repository default branch.
 - Never skip base-branch reasoning.
 - Never use a PR title without conventional prefix.

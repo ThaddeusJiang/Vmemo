@@ -61,9 +61,6 @@ e2e-test/playwright/.cache/
 debug.log
 .alma-snapshots
 
-# mise local configuration (contains sensitive env vars)
-*.local.toml
-*.local.yml
 .env
 node_modules
 test-results
@@ -78,4 +75,4 @@ lib/vmemo/*-mermaid-*.png
 
 # Intermediate Mermaid source output
 lib/vmemo/*-mermaid-*.mmd
-AGENTS.local.md
+AGENTS.override.md
