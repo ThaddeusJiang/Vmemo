@@ -4,6 +4,7 @@
 - [Docker](docker/README.md)
 - [Deployment](deployment/README.md)
 - [Self-hosting](self-hosting/README.md)
+- [Test Manual](test-manual/README.md)
 
 ## Quick References
 
