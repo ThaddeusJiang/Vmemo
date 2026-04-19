@@ -94,6 +94,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Create and push multi-platform manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           docker buildx imagetools create \
@@ -102,18 +104,42 @@ jobs:
             "${IMAGE_NAME}:${TARGET_TAG}-arm64"
 
           if [ "${{ github.event_name }}" = "release" ]; then
-            docker buildx imagetools create \
-              -t "${IMAGE_NAME}:latest" \
-              "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
-              "${IMAGE_NAME}:${TARGET_TAG}-arm64"
+            IS_PRERELEASE="$(jq -r '.release.prerelease // false' "${GITHUB_EVENT_PATH}")"
+            if [ "${IS_PRERELEASE}" = "true" ]; then
+              docker buildx imagetools create \
+                -t "${IMAGE_NAME}:pre-release" \
+                "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
+                "${IMAGE_NAME}:${TARGET_TAG}-arm64"
+            else
+              LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
+              if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
+                docker buildx imagetools create \
+                  -t "${IMAGE_NAME}:latest" \
+                  "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
+                  "${IMAGE_NAME}:${TARGET_TAG}-arm64"
+              else
+                echo "Skip latest image: current release ${TARGET_TAG} is not repository latest release (${LATEST_RELEASE_TAG})."
+              fi
+            fi
           fi
 
       - name: Verify multi-platform manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           docker buildx imagetools inspect "${IMAGE_NAME}:${TARGET_TAG}"
+
           if [ "${{ github.event_name }}" = "release" ]; then
-            docker buildx imagetools inspect "${IMAGE_NAME}:latest"
+            IS_PRERELEASE="$(jq -r '.release.prerelease // false' "${GITHUB_EVENT_PATH}")"
+            if [ "${IS_PRERELEASE}" = "true" ]; then
+              docker buildx imagetools inspect "${IMAGE_NAME}:pre-release"
+            else
+              LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
+              if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
+                docker buildx imagetools inspect "${IMAGE_NAME}:latest"
+              fi
+            fi
           fi
 
       - name: Remove temporary architecture tags
