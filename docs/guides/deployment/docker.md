@@ -130,5 +130,5 @@ Missing environment variables:
 
 ## Related
 
-- GitHub Release flow: `docs/guides/deployment/github-release.md`
+- Release flow: `docs/guides/development/release.md`
 - Cross-section Docker entry: `docs/guides/docker/README.md`
