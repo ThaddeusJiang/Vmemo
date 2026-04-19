@@ -7,6 +7,7 @@
 - [Project Specs](project-specs.md)
 - [Oban Queue Design](oban-queue-design.md)
 - [Coding Guidelines](../coding/README.md)
+- [Docker Guide](../docker/README.md)
 
 ## Direct Links
 

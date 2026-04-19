@@ -3,6 +3,7 @@
 Top-level modules:
 
 - `guides/coding`
+- `guides/docker`
 - `decisions`
 - `features`
 - `guides`
@@ -11,6 +12,10 @@ Top-level modules:
 ## guides/coding
 
 - [Coding Guidelines Index](guides/coding/README.md)
+
+## guides/docker
+
+- [Docker Guide](guides/docker/README.md)
 
 ## decisions
 

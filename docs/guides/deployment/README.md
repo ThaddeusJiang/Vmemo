@@ -5,16 +5,12 @@ This section is for maintainers who publish new Vmemo versions.
 ## Scope
 
 - How to cut a GitHub Release
-- How to publish Docker images
-- How to validate release startup behavior
+- How to run and publish Docker images
 
 ## Guides
 
 - [GitHub Release](github-release.md)
-- [Docker Publish](docker-publish.md)
-- [Docker Production Run](docker-prod-run.md)
-- [Docker Best Practices](docker-best-practices.md)
-- [Docker Startup Check](docker-startup-check.md)
+- [Docker Deployment (Single Doc)](docker.md)
 
 ## Not In Scope
 

@@ -22,5 +22,5 @@ Reasons:
 
 ## Others
 
-- Build/runtime details: [docker-prod-run.md](../guides/deployment/docker-prod-run.md).
+- Build/runtime details: [docker.md](../guides/deployment/docker.md).
 - Re-evaluate Release if future scale or security policies require removing Mix from runtime containers.
