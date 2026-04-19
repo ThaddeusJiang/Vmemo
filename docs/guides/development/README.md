@@ -5,7 +5,7 @@
 - [Tidewave](tidewave.md)
 - [Resource Diagrams](resource-diagrams.md)
 - [Project Specs](project-specs.md)
-- [GitHub Release](github-release.md)
+- [Release](release.md)
 - [Oban Queue Design](oban-queue-design.md)
 - [Coding Guidelines](../coding/README.md)
 - [Docker Guide](../docker/README.md)
