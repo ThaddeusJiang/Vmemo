@@ -119,7 +119,7 @@ defmodule Vmemo.MixProject do
           {"docs/features/public-rest-api.md", [title: "REST API"]},
           {"docs/features/mcp-server.md", [title: "MCP Server"]},
           {"docs/guides/development/setup.md", [title: "Development"]},
-          "docs/guides/deployment/docker-prod-run.md"
+          "docs/guides/deployment/docker.md"
         ] ++ resource_diagram_extras
     ]
   end
