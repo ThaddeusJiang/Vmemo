@@ -7,7 +7,7 @@ Top-level modules:
 - `decisions`
 - `features`
 - `guides`
-- `test-manual`
+- `guides/test-manual`
 
 ## guides/coding
 
@@ -37,10 +37,10 @@ Top-level modules:
 - [Deployment](guides/deployment/README.md)
 - [Self-hosting](guides/self-hosting/README.md)
 
-## test-manual
+## guides/test-manual
 
-- [Test Manual Index](test-manual/README.md)
-- [External Test: Token Integrations](test-manual/external-test-token-integrations.md)
+- [Test Manual Index](guides/test-manual/README.md)
+- [External Test: Token Integrations](guides/test-manual/external-test-token-integrations.md)
 
 ## development specs
 
