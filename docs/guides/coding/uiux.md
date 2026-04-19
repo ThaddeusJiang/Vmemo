@@ -1,4 +1,4 @@
-# UI/UX coding guidelines
+# UI/UX Guidelines
 
 ## Scope
 

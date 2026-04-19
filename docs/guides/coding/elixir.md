@@ -1,4 +1,4 @@
-# Phoenix + Ash All-in-One Guidelines
+# Elixir Guidelines
 
 This document is the single merged guideline for Phoenix + LiveView + Ash practices in this project.
 
@@ -6,7 +6,7 @@ When conflicts appear, follow project-specific conventions first.
 
 ## 1) Scope and Principles
 
-- Keep `docs/coding-guidelines/` as source of truth.
+- Keep `docs/guides/coding/` as source of truth.
 - Keep domain/business logic in `lib/vmemo/**`.
 - Keep web/presentation logic in `lib/vmemo_web/**`.
 - Keep module names aligned with file paths.

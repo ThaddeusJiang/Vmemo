@@ -1,8 +1,8 @@
-# Testing and Debugging Guidelines
+# Debug Guidelines
 
 ## Scope
 
-Use this document for shared testing and debugging conventions.
+Use this document for shared debugging and local testing conventions.
 
 ## Testing principles
 

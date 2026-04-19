@@ -6,7 +6,7 @@
 
 ## Quick References
 
-- Coding Guidelines Index: ../coding-guidelines/README.md
+- Coding Guidelines Index: coding/README.md
 - Oban queue design: development/oban-queue-design.md
 - Monitoring: https://sentry.io
 - Elixir on GitHub Actions: https://github.com/erlef/setup-beam?tab=readme-ov-file#erlangotp--elixir-on-ubuntu

@@ -26,6 +26,8 @@
 
 ## Workflow
 - Read relevant files first.
+- Before making decisions, review existing decisions to avoid repeating past mistakes.
+- When implementing features, review corresponding feature specs first.
 - Propose a short plan for non-trivial changes.
 - Implement in small steps.
 - Run minimal relevant validation.
@@ -56,10 +58,10 @@
 - ADRs: `docs/adr/` (numbered, append-only).
 - Large feature plans: `docs/plan/`.
 - Coding conventions source of truth:
-  - `docs/coding-guidelines/README.md`
-  - `docs/coding-guidelines/phoenix-ash-all-in-one.md`
-  - `docs/coding-guidelines/ui-ux.md`
-  - `docs/coding-guidelines/testing.md`
+  - `docs/guides/coding/README.md`
+  - `docs/guides/coding/elixir.md`
+  - `docs/guides/coding/uiux.md`
+  - `docs/guides/coding/debug.md`
 
 ## Architecture and framework conventions
 - Use Ash (not Ecto-first modeling).
@@ -86,7 +88,6 @@
 - Fail fast on invalid or missing env values.
 
 ## Tooling
-- Use `mise` for Elixir/Erlang version management.
 - Prefer Tidewave tools for Phoenix-aware discovery and runtime checks.
 - Use `mix` for project tasks.
 - Do not use Python for ad-hoc project automation.
@@ -95,7 +96,6 @@
 Run before project scripts:
 
 ```bash
-mise trust && mise install
 mix deps.get
 ```
 
