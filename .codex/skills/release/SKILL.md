@@ -1,19 +1,19 @@
 ---
 name: "release"
-description: "Prepare and execute a Vmemo release with explicit config-change confirmation gates."
+description: "Prepare a Vmemo release PR with explicit config-change confirmation gates."
 ---
 
 # Release
 
-Use this skill when the user asks to create/publish a release tag or GitHub release.
+Use this skill when the user asks to prepare a release PR for version bump.
 
 ## Goal
 
-Ship a release safely while making config changes explicit before publish.
+Prepare a release PR safely while making config changes explicit before merge.
 
 ## Scope
 
-- This skill focuses on release readiness, versioning, and release execution.
+- This skill focuses on release readiness, versioning, and release PR creation.
 - If release includes config changes, you must pause and get explicit user confirmation before continuing.
 
 ## Required workflow
@@ -23,9 +23,7 @@ Ship a release safely while making config changes explicit before publish.
 3. Detect and review config changes (mandatory gate)
 4. Update `mix.exs` version
 5. Open a release PR to `main`
-6. Prepare release notes and confirm with user
-7. Execute release (tag + GitHub draft release)
-8. Post-release verification summary
+6. Post-release-PR summary
 
 ## Step 1: Preflight checks
 
@@ -77,7 +75,7 @@ Required behavior:
 
 - Update `mix.exs` project version to the resolved release version.
 - Keep change focused: only update `project/0` `version` field.
-- Show the diff and require explicit user confirmation before tagging/releasing.
+- Show the diff and require explicit user confirmation before creating PR.
 
 Example check:
 
@@ -89,7 +87,7 @@ git diff -- mix.exs
 ## Step 5: Open a release PR to `main`
 
 - After updating `mix.exs` version, create a dedicated release PR targeting `main`.
-- The release workflow must pause here until the PR is merged.
+- The release workflow ends at PR creation and waits for merge.
 - If current branch is not release-dedicated, create one first (for example `release/<VERSION>`).
 - PR title/body should follow repository conventions and clearly state this is the release PR for `<VERSION>`.
 
@@ -105,35 +103,10 @@ gh pr create --base main --title "chore(release): <VERSION>" --body-file <PR_BOD
 
 Required behavior:
 
-- Do not continue to tagging or GitHub release before PR merge to `main` is confirmed.
+- Do not tag or publish GitHub release in this skill flow.
+- GitHub release is handled by CI after release PR merge.
 
-## Step 6: Release notes
-
-- Generate or collect release notes for the resolved version.
-- Show notes to user and wait for explicit confirmation.
-- If edits requested, update notes first.
-
-## Step 7: Execute release
-
-Use the unified release path: tag first, then create GitHub draft release.
-
-Typical commands:
-
-```bash
-git tag -a <VERSION> -m "release: <VERSION>"
-git push origin <VERSION>
-gh release create <VERSION> \
-  --draft \
-  --title "Vmemo <VERSION>" \
-  --notes-file <RELEASE_NOTES_FILE>
-```
-
-Rules:
-
-- Must create draft release (do not publish directly).
-- Release title must be exactly `Vmemo <VERSION>`.
-
-## Step 8: Final report
+## Step 6: Final report
 
 Return:
 
@@ -142,8 +115,7 @@ Return:
 - Release PR URL (target: `main`) and merge status
 - Base ref used for config diff
 - Whether config changes were detected and confirmed
-- Tag / GitHub release URL (if available)
-- Manual verification checklist (release page completeness, downstream workflow trigger, rollback target)
+- Note that GitHub release will be created by action after PR merge
 
 ## Guardrails
 
@@ -151,7 +123,5 @@ Return:
 - Never hide config/env changes in summary.
 - Never skip updating `mix.exs` version when running this release workflow.
 - Never skip the release PR to `main` after version bump.
-- Never tag/release from unmerged release PR state.
-- Never claim release published if only tag push is done.
-- Never create a non-draft GitHub release in this workflow.
+- Never tag/release directly in this workflow.
 - If required tools (`git`, `gh`, `mix`) are missing, report and stop.
