@@ -1,15 +1,13 @@
-# Deployment (For Maintainers)
+## Deployment
 
-This section is for maintainers who publish new Vmemo versions.
+This section is for end-user deployment and runtime operations guides.
 
 ## Scope
 
-- How to cut a GitHub Release
 - How to run and publish Docker images
 
 ## Guides
 
-- [GitHub Release](github-release.md)
 - [Docker Deployment (Single Doc)](docker.md)
 
 ## Not In Scope
