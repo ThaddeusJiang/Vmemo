@@ -79,6 +79,11 @@ jobs:
       - build_by_arch
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ env.CHECKOUT_REF }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.0.0
 
