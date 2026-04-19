@@ -31,7 +31,11 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          VERSION="$(rg -No1 'version:\s*"([0-9]{4}\.[0-9]{1,2}\.[0-9]+)"' mix.exs -r '$1')"
+          VERSION="$(
+            grep -Eo 'version:\s*"[0-9]{4}\.[0-9]{1,2}\.[0-9]+"' mix.exs \
+              | head -n1 \
+              | sed -E 's/.*"([0-9]{4}\.[0-9]{1,2}\.[0-9]+)".*/\1/'
+          )"
           if [ -z "${VERSION}" ]; then
             echo "Failed to resolve release version from mix.exs"
             exit 1
