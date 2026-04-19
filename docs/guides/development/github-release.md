@@ -4,7 +4,7 @@ This guide describes the unified Vmemo release path: use release skill/scripts, 
 
 ## 1) Prepare
 
-- Ensure target branch is up to date (`develop` or `main`, based on current release policy).
+- Ensure target branch is up to date (`main`).
 - Ensure CI is green.
 - Resolve release version and prepare release notes.
 - Run config-change gate and get explicit confirmation if config/env changes are detected.
@@ -21,7 +21,7 @@ mix run --no-start .codex/skills/release/scripts/check_config_changes.exs [BASE_
 Use a calendar-like version for consistency, for example `2026.4.14`.
 
 ```bash
-git checkout develop
+git checkout main
 git pull --ff-only
 git tag -a 2026.4.14 -m "release: 2026.4.14"
 git push origin 2026.4.14
