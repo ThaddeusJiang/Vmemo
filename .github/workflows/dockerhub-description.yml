@@ -18,5 +18,5 @@ jobs:
           username: thaddeusjiang
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: thaddeusjiang/vmemo
-          readme-filepath: ./README.md
+          readme-filepath: ./.github/workflows/dockerhub-description.md
           short-description: ${{ github.event.repository.description }}
