@@ -1,18 +1,39 @@
 import Config
 
+config :ash, policies: [show_policy_breakdowns?: true]
+
 # Configure your database
 config :vmemo, Vmemo.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
   database: "vmemo_dev",
-  port: 54321,
+  port: 15432,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :vmemo, typesense_url: "http://localhost:8765"
+config :vmemo, typesense_url: "http://localhost:18108"
 config :vmemo, typesense_api_key: "xyz"
+
+config :vmemo, moondream_url: "http://localhost:2020/v1/"
+config :vmemo, moondream_api_key: "xyz"
+
+# Admin token for development
+config :vmemo, admin_token: "admin"
+
+config :vmemo, Oban,
+  repo: Vmemo.Repo,
+  notifier: Oban.Notifiers.PG,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [
+    default: 10,
+    chat_responses: 10,
+    conversations: 10,
+    sync_typesense: 10,
+    ai_vision: 10,
+    import_requests: 10
+  ]
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -20,6 +41,12 @@ config :vmemo, typesense_api_key: "xyz"
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
+# Store secret_key_base in application config for JWT signing
+# JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
+config :vmemo,
+       :secret_key_base,
+       "m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC"
+
 config :vmemo, VmemoWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
@@ -73,6 +100,10 @@ config :vmemo, dev_routes: true
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
+config :os_mon,
+  start_cpu_sup: false,
+  start_memsup: false
+
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
@@ -84,7 +115,9 @@ config :phoenix_live_view,
   # Include HEEx debug annotations as HTML comments in rendered markup
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
-  enable_expensive_runtime_checks: true
+  enable_expensive_runtime_checks: true,
+  # Enable debug attributes for Tidewave
+  debug_attributes: true
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

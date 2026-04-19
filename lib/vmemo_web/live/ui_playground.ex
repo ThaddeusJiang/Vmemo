@@ -1,4 +1,5 @@
 defmodule VmemoWeb.Live.UiPlayground do
+  @moduledoc false
   use VmemoWeb, :live_view
 
   def render(assigns) do
@@ -6,7 +7,7 @@ defmodule VmemoWeb.Live.UiPlayground do
     <div>
       <h1>Hello, LiveView!</h1>
 
-      <div class="flex flex-col space-y-4 justify-start">
+      <div class="flex flex-col space-y-2 justify-start">
         <h1>buttons</h1>
 
         <.button>

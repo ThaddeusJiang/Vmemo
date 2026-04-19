@@ -1,43 +1,50 @@
-FROM elixir:1.17.3 AS builder
+# syntax=docker/dockerfile:1.6
+FROM elixir:1.19.5-otp-28 AS base
+
+FROM base AS builder
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git nodejs npm \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
+  apt-get install -y build-essential libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates git && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY mix.exs mix.lock ./
-RUN mix do local.hex --force, local.rebar --force, deps.get --only prod
+ENV MIX_ENV=prod
+ENV HEX_HTTP_TIMEOUT=120
+ENV HEX_HTTP_CONCURRENCY=1
+ENV HEX_HTTP_RETRIES=3
 
-ENV MIX_ENV="prod"
+COPY mix.exs mix.lock ./
+RUN mix local.hex --force && \
+    mix local.rebar --force && \
+    mix deps.get --only prod
 
 COPY . .
-# install node modules
-RUN cd assets && npm install
 RUN mix compile
 RUN mix assets.deploy
+RUN mix release
 
-# ------------------ runner ------------------
-FROM elixir:1.17.3 AS runner
+# ------------------ runner (Release runtime) ------------------
+FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y build-essential libstdc++6 openssl libncurses5 locales ca-certificates git \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-RUN mix local.hex --force && \
-  mix local.rebar --force
+  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 WORKDIR /app
-COPY --from=builder /app ./
+COPY --from=builder /app/_build/prod/rel/vmemo /app
 
-ENV MIX_ENV=prod
+COPY rel/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 启动 Phoenix 服务器
-CMD ["mix", "phx.server"]
+ENV HOME=/app
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["start"]

@@ -47,5 +47,32 @@ _local
 storage
 .DS_Store
 .elixir_ls
-docker-compose.test.yml
-todo.md
+
+# E2E test results
+e2e-test/node_modules/
+e2e-test/test-results/
+e2e-test/playwright-report/
+e2e-test/playwright/.cache/
+.playwright-cli/
+
+# Ash Postgres resource snapshots (generated build artifacts)
+/priv/resource_snapshots/
+
+debug.log
+.alma-snapshots
+
+.env
+node_modules
+test-results
+*-darwin.png
+_local_docs/
+
+# Dialyzer PLT cache
+/priv/plts/
+
+# Optional PNG output from `mix ash.generate_resource_diagrams --format png`
+lib/vmemo/*-mermaid-*.png
+
+# Intermediate Mermaid source output
+lib/vmemo/*-mermaid-*.mmd
+AGENTS.override.md

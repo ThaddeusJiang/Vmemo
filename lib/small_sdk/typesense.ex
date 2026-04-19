@@ -1,40 +1,51 @@
 defmodule SmallSdk.Typesense do
+  @moduledoc false
   require Logger
+
+  @debug_log_max_items 5
+  @debug_log_max_chars 200
 
   ###
   # Collections start
   ###
+  @create_collection_receive_timeout 120_000
+
   def create_collection(schema) do
     req = build_request("/collections")
-    res = Req.post(req, json: schema)
+
+    res =
+      request(:post, req,
+        json: schema,
+        receive_timeout: @create_collection_receive_timeout
+      )
 
     handle_response(res)
   end
 
   def get_collection(collection_name) do
     req = build_request("/collections/#{collection_name}")
-    res = Req.get(req)
+    res = request(:get, req)
 
     handle_response(res)
   end
 
   def update_collection(collection_name, schema) do
     req = build_request("/collections/#{collection_name}")
-    res = Req.patch(req, json: schema)
+    res = request(:patch, req, json: schema)
 
     handle_response(res)
   end
 
   def drop_collection(collection_name) do
     req = build_request("/collections/#{collection_name}")
-    res = Req.delete(req)
+    res = request(:delete, req)
 
     handle_response(res)
   end
 
-  def list_collections() do
+  def list_collections do
     req = build_request("/collections")
-    res = Req.get(req)
+    res = request(:get, req)
 
     handle_response(res)
   end
@@ -49,14 +60,14 @@ defmodule SmallSdk.Typesense do
 
   def create_document(collection_name, document) do
     req = build_request("/collections/#{collection_name}/documents")
-    res = Req.post(req, json: document)
+    res = request(:post, req, json: document)
 
     handle_response(res)
   end
 
   def get_document(collection_name, document_id) do
     req = build_request("/collections/#{collection_name}/documents/#{document_id}")
-    res = Req.get(req)
+    res = request(:get, req)
 
     case handle_response(res) do
       {:ok, data} -> {:ok, data}
@@ -72,40 +83,89 @@ defmodule SmallSdk.Typesense do
   """
   def update_document(collection_name, document) do
     req = build_request("/collections/#{collection_name}/documents/#{document[:id]}")
-    res = Req.patch(req, json: document)
+    res = request(:patch, req, json: document)
 
     handle_response(res)
   end
 
   def delete_document(collection_name, document_id) do
     req = build_request("/collections/#{collection_name}/documents/#{document_id}")
-    res = Req.delete(req)
+    res = request(:delete, req)
 
     handle_response(res)
   end
 
   def list_documents!(collection_name, per_page \\ 100, page \\ 1) do
     req = build_request("/collections/#{collection_name}/documents")
-    res = Req.get(req, params: [per_page: per_page, page: page])
+    res = request(:get, req, params: [per_page: per_page, page: page])
 
     handle_response(res)
+  end
+
+  def search_documents(collection_name, params) when is_list(params) do
+    req = build_request("/collections/#{collection_name}/documents/search")
+    res = request(:get, req, params: params)
+
+    case handle_response(res) do
+      {:ok, %{"hits" => hits} = body} when is_list(hits) ->
+        documents = Enum.map(hits, &Map.get(&1, "document"))
+        {:ok, %{documents: documents, found: body["found"] || 0, page: body["page"] || 1}}
+
+      {:ok, _body} ->
+        {:ok, %{documents: [], found: 0, page: 1}}
+
+      error ->
+        error
+    end
+  end
+
+  def import_documents(collection_name, documents, opts \\ [])
+      when is_binary(collection_name) and is_list(documents) do
+    if documents == [] do
+      {:ok, %{success: 0, failed: 0, items: []}}
+    else
+      action = Keyword.get(opts, :action, "upsert")
+
+      body =
+        Enum.map_join(documents, "\n", &Jason.encode!/1)
+
+      req = build_request("/collections/#{collection_name}/documents/import")
+
+      res =
+        request(:post, req,
+          params: [action: action],
+          headers: [{"Content-Type", "text/plain"}],
+          body: body
+        )
+
+      case handle_response(res) do
+        {:ok, raw} when is_binary(raw) ->
+          {:ok, parse_import_result(raw)}
+
+        {:ok, _raw} ->
+          {:ok, %{success: 0, failed: length(documents), items: []}}
+
+        error ->
+          error
+      end
+    end
   end
 
   ###
   # Documents end
   ###
 
-  def create_search_key() do
+  def create_search_key do
     {url, _} = get_env()
 
     req = build_request("/keys")
 
     res =
-      Req.post(req,
+      request(:post, req,
         json: %{
-          "description" => "Search-only photos key",
+          "description" => "Search-only memo images key",
           "actions" => ["documents:search"],
-          "collections" => ["photos"]
+          "collections" => ["memo_images"]
         }
       )
 
@@ -147,8 +207,8 @@ defmodule SmallSdk.Typesense do
     end
   end
 
-  def handle_response({:error, _}) do
-    {:error, "Request failed"}
+  def handle_response({:error, reason}) do
+    {:error, "Request failed: #{inspect(reason)}"}
   end
 
   def handle_response!(%{status: status, body: body}) do
@@ -172,26 +232,40 @@ defmodule SmallSdk.Typesense do
   def handle_multi_search_res(res) do
     case handle_response(res) do
       {:ok, data} ->
-        # data= %{
-        #   "results" => [
-        #     %{
-        #       "code" => 404,
-        #       "error" => "Could not find a field named `default_sorting_field` in the schema for sorting."
-        #     }
-        #   ]
-        # }
-
-        documents =
-          data["results"] |> hd() |> Map.get("hits") |> Enum.map(&Map.get(&1, "document"))
-
-        {:ok, documents}
+        build_multi_search_result(data["results"])
 
       {:error, "Not Found"} ->
-        {:ok, %{"results" => []}}
+        {:ok, {[], 0, 1}}
 
-      _ ->
-        {:error, "Request failed"}
+      {:error, reason} = error when is_binary(reason) ->
+        if should_log_multi_search_error?(reason) do
+          Logger.warning("Typesense multi search failed: #{inspect(error)}")
+        end
+
+        {:ok, {[], 0, 1}}
     end
+  end
+
+  defp build_multi_search_result([%{"hits" => hits, "found" => found, "page" => page} | _])
+       when is_list(hits) do
+    documents = Enum.map(hits, &decorate_multi_search_hit/1)
+    {:ok, {documents, found, page}}
+  end
+
+  defp build_multi_search_result(_), do: {:ok, {[], 0, 1}}
+
+  defp decorate_multi_search_hit(hit) do
+    document = Map.get(hit, "document")
+    vector_distance = get_in(hit, ["vector_distance"])
+    text_match_info = get_in(hit, ["text_match_info"])
+
+    document
+    |> Map.put("_vector_distance", vector_distance)
+    |> Map.put("_text_match_info", text_match_info)
+  end
+
+  defp should_log_multi_search_error?(reason) do
+    not String.contains?(reason, "Req.TransportError")
   end
 
   def build_request(path) do
@@ -200,6 +274,9 @@ defmodule SmallSdk.Typesense do
     Req.new(
       base_url: url,
       url: path,
+      retry: :transient,
+      max_retries: 2,
+      retry_log_level: false,
       headers: [
         {"Content-Type", "application/json"},
         {"X-TYPESENSE-API-KEY", api_key}
@@ -207,21 +284,111 @@ defmodule SmallSdk.Typesense do
     )
   end
 
-  defp get_env() do
-    url = Application.fetch_env!(:vmemo, :typesense_url) |> validate_url!()
+  def request(method, req, opts \\ []) when method in [:get, :post, :patch, :delete] do
+    path = request_path(req)
 
+    color =
+      case method do
+        :post -> :green
+        :patch -> :yellow
+        _ -> nil
+      end
+
+    Logger.debug(
+      [
+        "[Typesense] request",
+        inspect(
+          [
+            method: method,
+            path: path,
+            params: sanitize_value(Keyword.get(opts, :params)),
+            json: sanitize_value(Keyword.get(opts, :json)),
+            body: sanitize_value(Keyword.get(opts, :body))
+          ],
+          limit: 50,
+          printable_limit: 500
+        )
+      ],
+      ansi_color: color
+    )
+
+    res = apply(Req, method, [req, opts])
+
+    Logger.debug(
+      [
+        "[Typesense] response",
+        inspect([response: sanitize_response(res)], limit: 50, printable_limit: 500)
+      ],
+      ansi_color: color
+    )
+
+    res
+  end
+
+  defp get_env do
+    url = Application.fetch_env!(:vmemo, :typesense_url)
     api_key = Application.fetch_env!(:vmemo, :typesense_api_key)
 
     {url, api_key}
   end
 
-  defp validate_url!(url) do
-    uri = URI.parse(url)
+  defp parse_import_result(raw) do
+    items =
+      raw
+      |> String.split("\n", trim: true)
+      |> Enum.map(fn line ->
+        case Jason.decode(line) do
+          {:ok, item} -> item
+          {:error, _reason} -> %{"success" => false, "error" => "invalid import response line"}
+        end
+      end)
 
-    if uri.scheme in ["http", "https"] and uri.host do
-      url
+    success = Enum.count(items, &(Map.get(&1, "success") == true))
+    failed = length(items) - success
+
+    %{success: success, failed: failed, items: items}
+  end
+
+  defp request_path(%Req.Request{url: %URI{} = url}) do
+    url.path
+  end
+
+  defp request_path(_), do: nil
+
+  defp sanitize_response({:ok, %{status: status, body: body}}) do
+    %{status: status, body: sanitize_value(body)}
+  end
+
+  defp sanitize_response({:error, reason}) do
+    %{error: inspect(reason, limit: 20, printable_limit: @debug_log_max_chars)}
+  end
+
+  defp sanitize_response(other) do
+    %{other: inspect(other, limit: 20, printable_limit: @debug_log_max_chars)}
+  end
+
+  defp sanitize_value(nil), do: nil
+
+  defp sanitize_value(data_url) when is_binary(data_url) do
+    if String.starts_with?(data_url, "data:") and String.contains?(data_url, ";base64,") do
+      [meta | _] = String.split(data_url, ",", parts: 2)
+      "#{meta},[BASE64_REDACTED length=#{byte_size(data_url)}]"
     else
-      raise ArgumentError, "Invalid URL: #{url}"
+      String.slice(data_url, 0, @debug_log_max_chars)
     end
   end
+
+  defp sanitize_value(value) when is_list(value) do
+    value
+    |> Enum.take(@debug_log_max_items)
+    |> Enum.map(&sanitize_value/1)
+  end
+
+  defp sanitize_value(value) when is_map(value) do
+    value
+    |> Enum.take(@debug_log_max_items)
+    |> Enum.into(%{}, fn {k, v} -> {k, sanitize_value(v)} end)
+  end
+
+  defp sanitize_value(value), do: value
 end

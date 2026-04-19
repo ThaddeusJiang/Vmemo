@@ -1,168 +1,153 @@
 defmodule Vmemo.Account.User do
-  use Ecto.Schema
-  import Ecto.Changeset
+  @moduledoc false
+  use Ash.Resource,
+    domain: Vmemo.Account,
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshAuthentication, AshAdmin.Resource]
 
-  schema "account_users" do
-    field :email, :string
-    field :password, :string, virtual: true, redact: true
-    field :hashed_password, :string, redact: true
-    field :current_password, :string, virtual: true, redact: true
-    field :confirmed_at, :utc_datetime
-    field :display_name, :string
-
-    timestamps(type: :utc_datetime)
+  postgres do
+    table "auth_users"
+    repo Vmemo.Repo
   end
 
-  @doc """
-  A user changeset for registration.
+  authentication do
+    session_identifier(:jti)
 
-  It is important to validate the length of both email and password.
-  Otherwise databases may truncate the email without warnings, which
-  could lead to unpredictable or insecure behaviour. Long passwords may
-  also be very expensive to hash for certain algorithms.
+    strategies do
+      password :password do
+        identity_field(:email)
+        sign_in_tokens_enabled?(true)
+      end
+    end
 
-  ## Options
-
-    * `:hash_password` - Hashes the password so it can be stored securely
-      in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
-
-    * `:validate_email` - Validates the uniqueness of the email, in case
-      you don't want to validate the uniqueness of the email (like when
-      using this changeset for validations on a LiveView form before
-      submitting the form), this option can be set to `false`.
-      Defaults to `true`.
-  """
-  def registration_changeset(user, attrs, opts \\ []) do
-    user
-    |> cast(attrs, [:email, :password])
-    |> validate_email(opts)
-    |> validate_password(opts)
-  end
-
-  defp validate_email(changeset, opts) do
-    changeset
-    |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
-    |> maybe_validate_unique_email(opts)
-  end
-
-  defp validate_password(changeset, opts) do
-    changeset
-    |> validate_required([:password])
-    |> validate_length(:password, min: 12, max: 72)
-    # Examples of additional password validation:
-    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
-    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
-    |> maybe_hash_password(opts)
-  end
-
-  defp maybe_hash_password(changeset, opts) do
-    hash_password? = Keyword.get(opts, :hash_password, true)
-    password = get_change(changeset, :password)
-
-    if hash_password? && password && changeset.valid? do
-      changeset
-      # If using Bcrypt, then further validate it is at most 72 bytes long
-      |> validate_length(:password, max: 72, count: :bytes)
-      # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
-      # would keep the database transaction open longer and hurt performance.
-      |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
-      |> delete_change(:password)
-    else
-      changeset
+    tokens do
+      enabled?(true)
+      token_lifetime(60 * 24 * 60 * 60)
+      signing_secret(&get_signing_secret/2)
+      token_resource(Vmemo.Account.UserToken)
     end
   end
 
-  defp maybe_validate_unique_email(changeset, opts) do
-    if Keyword.get(opts, :validate_email, true) do
-      changeset
-      |> unsafe_validate_unique(:email, Vmemo.Repo)
-      |> unique_constraint(:email)
-    else
-      changeset
+  admin do
+    name "User"
+  end
+
+  code_interface do
+    define :get_by_email, action: :read, get_by: [:email]
+    define :register_with_password, action: :register
+    define :sign_in_with_password, action: :sign_in_with_password
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    create :register do
+      accept [:email]
+
+      argument :password, :string, allow_nil?: false
+      argument :password_confirmation, :string, allow_nil?: true
+
+      change &hash_password/2
+    end
+
+    create :import do
+      accept [:id, :email, :hashed_password, :confirmed_at]
+    end
+
+    update :update_profile do
+      accept [:email, :confirmed_at]
+      require_atomic? false
+    end
+
+    update :change_password do
+      argument :password, :string, allow_nil?: false
+      argument :password_confirmation, :string, allow_nil?: true
+
+      validate confirm(:password, :password_confirmation),
+        message: "does not match password"
+
+      change &hash_password/2
+      require_atomic? false
+    end
+
+    update :reset_password do
+      argument :password, :string, allow_nil?: false
+      argument :password_confirmation, :string, allow_nil?: true
+
+      validate confirm(:password, :password_confirmation),
+        message: "does not match password"
+
+      change &hash_password/2
+      change &mark_email_confirmed_on_password_reset/2
+      require_atomic? false
     end
   end
 
-  @doc """
-  A user changeset for changing the email.
+  validations do
+    validate present(:email), on: [:create, :update]
+    validate match(:email, ~r/@/), message: "must have the @ sign and no spaces"
 
-  It requires the email to change otherwise an error is added.
-  """
-  def email_changeset(user, attrs, opts \\ []) do
-    user
-    |> cast(attrs, [:email])
-    |> validate_email(opts)
-    |> case do
-      %{changes: %{email: _}} = changeset -> changeset
-      %{} = changeset -> add_error(changeset, :email, "did not change")
+    validate fn changeset, _context ->
+               password = Ash.Changeset.get_argument(changeset, :password)
+
+               cond do
+                 is_nil(password) ->
+                   :ok
+
+                 String.length(password) < 8 ->
+                   {:error, field: :password, message: "should be at least 8 character(s)"}
+
+                 String.length(password) > 72 ->
+                   {:error, field: :password, message: "should be at most 72 character(s)"}
+
+                 true ->
+                   :ok
+               end
+             end,
+             on: [:create, :update]
+  end
+
+  attributes do
+    uuid_primary_key :id, writable?: true
+
+    attribute :email, :string, allow_nil?: false, public?: true
+    attribute :hashed_password, :string, allow_nil?: false, sensitive?: true
+    attribute :confirmed_at, :utc_datetime, public?: true
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    has_many :api_tokens, Vmemo.Account.ApiToken
+  end
+
+  identities do
+    identity :unique_email, [:email]
+  end
+
+  # Password hashing function
+  def hash_password(changeset, _context) do
+    case Ash.Changeset.get_argument(changeset, :password) do
+      nil ->
+        changeset
+
+      password ->
+        hashed_password = Bcrypt.hash_pwd_salt(password)
+        Ash.Changeset.change_attribute(changeset, :hashed_password, hashed_password)
     end
   end
 
-  def display_name_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:display_name])
-    |> validate_length(:display_name, min: 2, max: 160)
+  def mark_email_confirmed_on_password_reset(changeset, _context) do
+    case Ash.Changeset.get_data(changeset, :confirmed_at) do
+      nil -> Ash.Changeset.change_attribute(changeset, :confirmed_at, DateTime.utc_now())
+      _confirmed_at -> changeset
+    end
   end
 
-  @doc """
-  A user changeset for changing the password.
-
-  ## Options
-
-    * `:hash_password` - Hashes the password so it can be stored securely
-      in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
-  """
-  def password_changeset(user, attrs, opts \\ []) do
-    user
-    |> cast(attrs, [:password])
-    |> validate_confirmation(:password, message: "does not match password")
-    |> validate_password(opts)
-  end
-
-  @doc """
-  Confirms the account by setting `confirmed_at`.
-  """
-  def confirm_changeset(user) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-    change(user, confirmed_at: now)
-  end
-
-  @doc """
-  Verifies the password.
-
-  If there is no user or the user doesn't have a password, we call
-  `Bcrypt.no_user_verify/0` to avoid timing attacks.
-  """
-  def valid_password?(%Vmemo.Account.User{hashed_password: hashed_password}, password)
-      when is_binary(hashed_password) and byte_size(password) > 0 do
-    Bcrypt.verify_pass(password, hashed_password)
-  end
-
-  def valid_password?(_, _) do
-    Bcrypt.no_user_verify()
-    false
-  end
-
-  @doc """
-  Validates the current password otherwise adds an error to the changeset.
-  """
-  def validate_current_password(changeset, password) do
-    changeset = cast(changeset, %{current_password: password}, [:current_password])
-
-    if valid_password?(changeset.data, password) do
-      changeset
-    else
-      add_error(changeset, :current_password, "is not valid")
+  defp get_signing_secret(_resource, _opts) do
+    case Application.get_env(:vmemo, :secret_key_base) do
+      nil -> :error
+      secret -> {:ok, secret}
     end
   end
 end

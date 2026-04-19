@@ -1,4 +1,5 @@
 defmodule Vmemo.Account.UserNotifier do
+  @moduledoc false
   import Swoosh.Email
 
   alias Vmemo.Mailer

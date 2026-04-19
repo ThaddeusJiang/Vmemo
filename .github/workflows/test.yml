@@ -1,0 +1,92 @@
+name: Test
+
+on:
+  pull_request:
+
+concurrency:
+  group: test-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  MIX_ENV: test
+
+jobs:
+  mix-check:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: |
+          mix compile --warnings-as-errors
+          mix xref graph --format cycles --label compile-connected --fail-above 0
+
+      - name: Format
+        run: |
+          mix format --check-formatted
+
+      - name: Credo
+        continue-on-error: true
+        run: mix credo --strict
+
+      - name: Sobelow
+        continue-on-error: true
+        run: mix sobelow --config
+
+  mix-test:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    env:
+      TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
+      TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
+      POSTGRES_PORT: "5432"
+
+    services:
+      postgres:
+        image: postgres:18
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vmemo_test
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: erlef/setup-beam@v1.23.0
+        with:
+          otp-version: "28"
+          elixir-version: "1.19.5"
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for postgres..."
+            sleep 1
+          done
+
+      - name: Reset Typesense
+        run: mix ts.reset
+
+      - name: Run tests
+        run: mix test

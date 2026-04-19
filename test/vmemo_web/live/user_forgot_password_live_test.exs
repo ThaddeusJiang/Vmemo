@@ -4,23 +4,20 @@ defmodule VmemoWeb.UserForgotPasswordLiveTest do
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
 
-  alias Vmemo.Account
-  alias Vmemo.Repo
-
   describe "Forgot password page" do
     test "renders email page", %{conn: conn} do
-      {:ok, lv, html} = live(conn, ~p"/users/reset_password")
+      {:ok, lv, html} = live(conn, ~p"/reset-password")
 
       assert html =~ "Forgot your password?"
-      assert has_element?(lv, ~s|a[href="#{~p"/users/register"}"]|, "Register")
-      assert has_element?(lv, ~s|a[href="#{~p"/users/log_in"}"]|, "Log in")
+      assert has_element?(lv, ~s|a[href="#{~p"/register"}"]|, "Register")
+      assert has_element?(lv, ~s|a[href="#{~p"/login"}"]|, "Login")
     end
 
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/users/reset_password")
+        |> live(~p"/reset-password")
         |> follow_redirect(conn, ~p"/home")
 
       assert {:ok, _conn} = result
@@ -33,31 +30,31 @@ defmodule VmemoWeb.UserForgotPasswordLiveTest do
     end
 
     test "sends a new reset password token", %{conn: conn, user: user} do
-      {:ok, lv, _html} = live(conn, ~p"/users/reset_password")
+      {:ok, lv, _html} = live(conn, ~p"/reset-password")
 
-      {:ok, conn} =
+      html =
         lv
-        |> form("#reset_password_form", user: %{"email" => user.email})
+        |> form("#forgot_password_form", user: %{"email" => user.email})
         |> render_submit()
-        |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert html =~ "If your email is in our system"
 
-      assert Repo.get_by!(Account.UserToken, user_id: user.id).context ==
-               "reset_password"
+      # Token verification removed - Ash uses JWT tokens instead of UserToken records
+      # assert Repo.get_by!(Account.UserToken, user_id: user.id).context ==
+      #          "reset_password"
     end
 
     test "does not send reset password token if email is invalid", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/reset_password")
+      {:ok, lv, _html} = live(conn, ~p"/reset-password")
 
-      {:ok, conn} =
+      html =
         lv
-        |> form("#reset_password_form", user: %{"email" => "unknown@vmemo.app"})
+        |> form("#forgot_password_form", user: %{"email" => "unknown@vmemo.app"})
         |> render_submit()
-        |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-      assert Repo.all(Account.UserToken) == []
+      assert html =~ "If your email is in our system"
+      # Token verification removed - Ash uses JWT tokens instead of UserToken records
+      # assert Repo.all(Account.UserToken) == []
     end
   end
 end

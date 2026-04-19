@@ -14,44 +14,20 @@
       </div>
 
       <ul class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-        <%= if @current_user do %>
-          <div class="avatar placeholder online">
-            <div class="bg-accent text-accent-content w-8 rounded-full">
-              <span>
-                {String.at(@current_user.display_name || @current_user.email, 0)}
-              </span>
-            </div>
-          </div>
-          <li>
-            <.link
-              href={~p"/users/settings"}
-              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-            >
-              Settings
-            </.link>
-          </li>
-          <li>
-            <.link
-              href={~p"/users/log_out"}
-              method="delete"
-              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-            >
-              Log out
-            </.link>
-          </li>
-        <% else %>
-          <li>
-            <a class="btn btn-accent rounded-full" data-headlessui-state="" href="/users/log_in">
-              Get started
-            </a>
-          </li>
-        <% end %>
+        <li>
+          <a data-headlessui-state="" href="/login" class="btn btn-primary rounded-full">
+            Get started
+          </a>
+        </li>
       </ul>
     </div>
   </header>
 
   <div class=" grow flex flex-col">
-    <.flash_group flash={@flash} />
+    <.flash_group
+      flash={@flash}
+      class="fixed top-8 left-1/2 -translate-x-1/2"
+    />
 
     <div class="relative">
       <div class="relative px-6 lg:px-8">
@@ -65,9 +41,9 @@
             </p>
             <div class="mt-12 flex flex-row gap-x-6 gap-y-4 ">
               <a
-                class="btn btn-accent rounded-3xl"
+                class="btn btn-primary rounded-3xl"
                 data-headlessui-state=""
-                href="/users/register"
+                href="/register"
               >
                 Get started
               </a>
@@ -80,4 +56,43 @@
       </div>
     </div>
   </div>
+
+  <footer class="border-t border-base-300 bg-base-100 px-4 py-4">
+    <div class="flex flex-wrap items-center justify-center gap-4 text-sm text-base-content">
+      <span class="font-medium">
+        © 2026 <a href="https://thaddeusjiang.com" class="link link-hover">ThaddeusJiang</a>
+      </span>
+      <a
+        href="https://github.com/ThaddeusJiang/vmemo"
+        class="link link-hover inline-flex items-center"
+        aria-label="GitHub repository"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-4"
+          aria-hidden="true"
+        >
+          <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5a4.6 4.6 0 0 0-1.3-3.5 4.2 4.2 0 0 0-.1-3.5s-1.1 0-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.4 2 5.3 2 5.3 2a4.2 4.2 0 0 0-.1 3.5A4.6 4.6 0 0 0 4 9c0 3.5 3 5.5 6 5.5A4.8 4.8 0 0 0 9 18v4" />
+          <path d="M9 18c-4.51 2-5-2-7-2" />
+        </svg>
+      </a>
+      <a
+        href="https://zeabur.com/referral?referralCode=ThaddeusJiang"
+        class="inline-flex items-center"
+        aria-label="Deployed on Zeabur"
+      >
+        <img
+          src="https://zeabur.com/deployed-on-zeabur-dark.svg"
+          alt="Deployed on Zeabur"
+          class="h-5 w-auto"
+        />
+      </a>
+    </div>
+  </footer>
 </main>

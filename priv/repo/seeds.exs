@@ -9,3 +9,9 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
+# Seed shared image fixture for all environments.
+Code.require_file("seeds/image.exs", __DIR__)
+
+# Always execute image seed in mix setup / db.seed.
+Vmemo.Seeds.Image.run()

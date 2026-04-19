@@ -1,4 +1,5 @@
 defmodule VmemoWeb.LiveComponents.Waterfall do
+  @moduledoc false
   use VmemoWeb, :live_component
 
   @impl true
@@ -14,7 +15,7 @@ defmodule VmemoWeb.LiveComponents.Waterfall do
   end
 
   @impl true
-  def handle_event("change_col", %{"col" => col}, socket) do
+  def handle_event("change-col", %{"col" => col}, socket) do
     {:noreply,
      socket
      |> assign(:col, col)}
@@ -43,7 +44,7 @@ defmodule VmemoWeb.LiveComponents.Waterfall do
         <%= if @empty do %>
           {render_slot(@empty)}
         <% else %>
-          <div class="text-center text-gray-500 mt-5">No photos found.</div>
+          <div class="text-center text-gray-500 mt-4">No images found.</div>
         <% end %>
       <% else %>
         <div id={@id} phx-hook="Resizer" phx-target={@myself} data-col={@col}>
@@ -56,7 +57,7 @@ defmodule VmemoWeb.LiveComponents.Waterfall do
               _ -> "hidden"
             end
           ]}>
-            <div :for={items <- @items |> split_list(@col)} class="space-y-3">
+            <div :for={items <- @items |> split_list(@col)} class="space-y-2">
               <%= for item <- items do %>
                 {render_slot(@card, item)}
               <% end %>

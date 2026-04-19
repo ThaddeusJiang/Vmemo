@@ -1,0 +1,56 @@
+services:
+  e2e-seed:
+    image: postgres:18
+    restart: "no"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PGHOST: host.docker.internal
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: vmemo
+    volumes:
+      - ./fixtures/prepare-e2e-auth.sql:/e2e/prepare-e2e-auth.sql:ro
+    command:
+      - sh
+      - -lc
+      - |
+        for i in $(seq 1 120); do
+          if psql -tAc "SELECT to_regclass('public.auth_users')" 2>/dev/null | grep -q auth_users; then
+            break
+          fi
+          sleep 1
+        done
+        psql -tAc "SELECT to_regclass('public.auth_users')" 2>/dev/null | grep -q auth_users || {
+          echo "auth_users table was not ready after waiting"
+          exit 3
+        }
+        psql -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql
+
+  vmemo:
+    platform: linux/amd64
+    image: thaddeusjiang/vmemo:e2e
+    command: ["start"]
+    restart: on-failure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
+      TYPESENSE_URL: http://host.docker.internal:8108
+      TYPESENSE_API_KEY: xyz
+      OPENROUTER_API_KEY: ""
+      MOONDREAM_URL: ""
+      MOONDREAM_API_KEY: ""
+      RESEND_API_KEY: test-resend-key
+      PHX_SERVER: "true"
+      ECTO_IPV6: "false"
+      POOL_SIZE: "10"
+      ADMIN_TOKEN: test-admin-password
+      SENTRY_DSN: https://public@example.com/1
+      SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
+      PHX_HOST: localhost
+      PORT: "4000"
+      DNS_CLUSTER_QUERY: ""

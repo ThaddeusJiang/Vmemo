@@ -1,5 +1,7 @@
 import Config
 
+config :ash, policies: [show_policy_breakdowns?: true]
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
@@ -12,12 +14,29 @@ config :vmemo, Vmemo.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "25432")),
   database: "vmemo_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:8765")
+config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:28108")
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
+
+config :vmemo, moondream_url: System.get_env("MOONDREAM_URL", "http://localhost:2020/v1/")
+config :vmemo, moondream_api_key: System.get_env("MOONDREAM_API_KEY", "xyz")
+
+# Admin token for test
+config :vmemo, admin_token: "admin"
+
+config :vmemo, Oban,
+  repo: Vmemo.Repo,
+  testing: :inline
+
+# Store secret_key_base in application config for JWT signing
+# JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
+config :vmemo,
+       :secret_key_base,
+       "qcL8bHOhBq7jlQEGhUr0/fY2FJCoMWQZ/lfGYLr03lgXzx8bWSaBis3Zhx0ISBe7"
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

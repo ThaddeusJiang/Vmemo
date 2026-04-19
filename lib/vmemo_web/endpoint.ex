@@ -1,4 +1,5 @@
 defmodule VmemoWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :vmemo
 
   # The session will be stored in the cookie and signed,
@@ -27,8 +28,18 @@ defmodule VmemoWeb.Endpoint do
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
+  if Code.ensure_loaded?(Tidewave) do
+    plug Tidewave
+  end
+
   if code_reloading? do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
+
+    plug AshAi.Mcp.Dev,
+      # see the note below on protocol versions below
+      protocol_version_statement: "2024-11-05",
+      otp_app: :vmemo
+
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :vmemo
@@ -49,5 +60,6 @@ defmodule VmemoWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+  plug Sentry.PlugContext
   plug VmemoWeb.Router
 end

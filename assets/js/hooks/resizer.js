@@ -3,7 +3,7 @@ export const Resizer = {
 
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                const width = entry.contentRect.width; // 获取新宽度
+                const width = entry.contentRect.width; // get new width
 
                 let col = 2;
 
@@ -17,7 +17,7 @@ export const Resizer = {
                     this.el.dataset.col = col;
                     console.debug("change_col", col);
 
-                    this.pushEventTo(this.el, "change_col", {
+                    this.pushEventTo(this.el, "change-col", {
                         col: col
                     })
                 }

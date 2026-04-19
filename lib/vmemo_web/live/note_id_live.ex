@@ -2,7 +2,8 @@ defmodule VmemoWeb.NoteIdLive do
   require Logger
   use VmemoWeb, :live_view
 
-  alias Vmemo.PhotoService.TsNote
+  alias Ash
+  alias Vmemo.Memo.Note
   alias VmemoWeb.LiveComponents.NoteUpdateForm
 
   @impl true
@@ -12,37 +13,41 @@ defmodule VmemoWeb.NoteIdLive do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    user_id = socket.assigns.current_user.id
-    {:ok, %{note: note, photos: photos}} = TsNote.get(id, :photos)
+    actor = socket.assigns.current_user
 
-    if note == nil || note.belongs_to != Integer.to_string(user_id) do
-      {:noreply,
-       socket
-       |> assign(note: nil)
-       |> assign(photos: [])}
-    else
-      {:noreply,
-       socket
-       |> assign(note: note)
-       |> assign(photos: photos)}
+    case Ash.get(Note, id, actor: actor, load: [:images]) do
+      {:ok, note} ->
+        {:noreply,
+         socket
+         |> assign(note: note)
+         |> assign(images: note.images || [])}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(note: nil)
+         |> assign(images: [])}
     end
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="w-full mx-auto max-w-3xl p-4 sm:py-6 lg:px-8">
-      <%= if @note do %>
-        <.live_component
-          id="note_update_form"
-          module={NoteUpdateForm}
-          note={@note}
-          photos={@photos}
-          patch={~p"/notes/#{@note.id}"}
-        />
-      <% else %>
-        <.not_found />
-      <% end %>
+    <section class="p-4 sm:p-4 lg:p-4 grow">
+      <div class="w-full max-w-screen-xl mx-auto">
+        <%= if @note do %>
+          <.live_component
+            id="note_update_form"
+            module={NoteUpdateForm}
+            note={@note}
+            images={@images}
+            patch={~p"/notes/#{@note.id}"}
+            current_user={@current_user}
+          />
+        <% else %>
+          <.not_found />
+        <% end %>
+      </div>
     </section>
     """
   end

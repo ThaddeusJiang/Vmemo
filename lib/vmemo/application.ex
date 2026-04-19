@@ -7,6 +7,12 @@ defmodule Vmemo.Application do
 
   @impl true
   def start(_type, _args) do
+    Application.ensure_all_started(:os_mon)
+
+    :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{
+      config: %{metadata: [:file, :line]}
+    })
+
     children = [
       VmemoWeb.Telemetry,
       Vmemo.Repo,
@@ -14,6 +20,8 @@ defmodule Vmemo.Application do
       {Phoenix.PubSub, name: Vmemo.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Vmemo.Finch},
+      # Start Oban
+      {Oban, Application.fetch_env!(:vmemo, Oban)},
       # Start a worker by calling: Vmemo.Worker.start_link(arg)
       # {Vmemo.Worker, arg},
       # Start to serve requests, typically the last entry

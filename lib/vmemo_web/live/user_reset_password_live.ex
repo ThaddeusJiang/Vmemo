@@ -5,85 +5,167 @@ defmodule VmemoWeb.UserResetPasswordLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:py-6 lg:px-8">
-      <.header class="text-center">Reset Password</.header>
+    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
+      <.header>Reset Password</.header>
 
-      <.simple_form
-        for={@form}
-        id="reset_password_form"
-        phx-submit="reset_password"
-        phx-change="validate"
-      >
-        <.error :if={@form.errors != []}>
-          Oops, something went wrong! Please check the errors below.
-        </.error>
+      <%= if @token_error do %>
+        <div class="text-error text-center mb-4">
+          <span>{@token_error}</span>
+        </div>
+        <div class="text-center mt-4">
+          <.link href={~p"/reset-password"} class="btn btn-neutral">
+            Request a new reset password link
+          </.link>
+        </div>
+      <% else %>
+        <.simple_form
+          for={@form}
+          id="reset_password_form"
+          phx-submit="reset-password"
+        >
+          <.error :if={@form.errors != []}>
+            Oops, something went wrong! Please check the errors below.
+          </.error>
 
-        <.input field={@form[:password]} type="password" label="New password" required />
-        <.input
-          field={@form[:password_confirmation]}
-          type="password"
-          label="Confirm new password"
-          required
-        />
-        <:actions>
-          <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
-        </:actions>
-      </.simple_form>
-
-      <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Log in</.link>
-      </p>
+          <.input field={@form[:password]} type="password" label="New password" required />
+          <.input
+            field={@form[:password_confirmation]}
+            type="password"
+            label="Confirm new password"
+            required
+          />
+          <:actions>
+            <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
+          </:actions>
+        </.simple_form>
+      <% end %>
     </div>
     """
   end
 
   def mount(params, _session, socket) do
-    socket = assign_user_and_token(socket, params)
+    case params do
+      %{"token" => token} ->
+        case Account.verify_reset_password_token(token) do
+          {:ok, user} ->
+            {:ok,
+             socket
+             |> assign(:user, user)
+             |> assign(:token, token)
+             |> assign(:token_error, nil)
+             |> assign(:form, to_form(%{}, as: "user"))}
 
-    form_source =
-      case socket.assigns do
-        %{user: user} ->
-          Account.change_user_password(user)
+          {:error, reason} ->
+            error_message = get_error_message(reason)
 
-        _ ->
-          %{}
-      end
+            {:ok,
+             socket
+             |> assign(:token_error, error_message)
+             |> assign(:user, nil)
+             |> assign(:token, nil)
+             |> assign(:form, to_form(%{}, as: "user"))}
+        end
 
-    {:ok, assign_form(socket, form_source), temporary_assigns: [form: nil]}
+      _ ->
+        {:ok,
+         socket
+         |> assign(:token_error, "Reset password link is missing.")
+         |> assign(:user, nil)
+         |> assign(:token, nil)
+         |> assign(:form, to_form(%{}, as: "user"))}
+    end
   end
 
-  # Do not log in the user after reset password to avoid a
-  # leaked token giving the user access to the account.
-  def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Account.reset_user_password(socket.assigns.user, user_params) do
-      {:ok, _} ->
+  defp get_error_message(_reason), do: "Reset password link is invalid or it has expired."
+
+  def handle_event("reset-password", %{"user" => user_params}, socket) do
+    case socket.assigns.token do
+      nil -> {:noreply, assign_missing_token_error(socket, user_params)}
+      token -> handle_reset_with_token(token, user_params, socket)
+    end
+  end
+
+  defp validate_password(%{"password" => password, "password_confirmation" => confirmation}) do
+    cond do
+      is_nil(password) or password == "" ->
+        [password: {"can't be blank", []}]
+
+      is_nil(confirmation) or confirmation == "" ->
+        [password_confirmation: {"can't be blank", []}]
+
+      password != confirmation ->
+        [password_confirmation: {"does not match password", []}]
+
+      String.length(password) < 8 ->
+        [password: {"should be at least 8 character(s)", []}]
+
+      String.length(password) > 72 ->
+        [password: {"should be at most 72 character(s)", []}]
+
+      true ->
+        []
+    end
+  end
+
+  defp validate_password(_), do: [password: {"can't be blank", []}]
+
+  defp revoke_reset_password_token(token) do
+    case AshAuthentication.Jwt.verify(token, Vmemo.Account.User) do
+      {:ok, claims, _resource} -> claims |> Map.get("jti") |> destroy_user_token_by_jti()
+      _ -> :ok
+    end
+  end
+
+  defp handle_reset_with_token(token, user_params, socket) do
+    case Account.verify_reset_password_token(token) do
+      {:ok, user} -> maybe_reset_password(user, token, user_params, socket)
+      {:error, reason} -> {:noreply, assign_token_error(socket, user_params, reason)}
+    end
+  end
+
+  defp maybe_reset_password(user, token, user_params, socket) do
+    case validate_password(user_params) do
+      [] -> do_reset_password(user, token, user_params, socket)
+      errors -> {:noreply, assign(socket, form: to_form(user_params, as: "user", errors: errors))}
+    end
+  end
+
+  defp do_reset_password(user, token, user_params, socket) do
+    case Account.reset_user_password(user, user_params) do
+      {:ok, _user} ->
+        revoke_reset_password_token(token)
+
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully.")
-         |> redirect(to: ~p"/users/log_in")}
+         |> redirect(to: ~p"/login")}
 
-      {:error, changeset} ->
-        {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to reset password. Please try again.")
+         |> assign(:form, to_form(user_params, as: "user"))}
     end
   end
 
-  def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Account.change_user_password(socket.assigns.user, user_params)
-    {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
+  defp assign_missing_token_error(socket, user_params) do
+    socket
+    |> assign(:token_error, "Reset password link is missing.")
+    |> assign(:form, to_form(user_params, as: "user"))
   end
 
-  defp assign_user_and_token(socket, %{"token" => token}) do
-    if user = Account.get_user_by_reset_password_token(token) do
-      assign(socket, user: user, token: token)
-    else
-      socket
-      |> put_flash(:error, "Reset password link is invalid or it has expired.")
-      |> redirect(to: ~p"/")
+  defp assign_token_error(socket, user_params, reason) do
+    socket
+    |> assign(:token_error, get_error_message(reason))
+    |> assign(:form, to_form(user_params, as: "user"))
+  end
+
+  defp destroy_user_token_by_jti(nil), do: :ok
+
+  defp destroy_user_token_by_jti(jti) do
+    case Ash.get(Vmemo.Account.UserToken, jti) do
+      {:ok, token_record} -> Ash.destroy(token_record)
+      _ -> :ok
     end
-  end
-
-  defp assign_form(socket, %{} = source) do
-    assign(socket, :form, to_form(source, as: "user"))
   end
 end

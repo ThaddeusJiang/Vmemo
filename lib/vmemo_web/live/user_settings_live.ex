@@ -2,36 +2,32 @@ defmodule VmemoWeb.UserSettingsLive do
   use VmemoWeb, :live_view
 
   alias Vmemo.Account
+  alias Vmemo.UserSettings
+  alias VmemoWeb.Uploads.ImportZipWriter
 
   def render(assigns) do
+    import_entries = assigns.uploads.import_zip.entries
+
+    assigns =
+      assigns
+      |> assign(:has_import_file, Enum.any?(import_entries))
+      |> assign(:import_upload_progress, import_upload_progress(import_entries))
+      |> assign(:import_upload_complete, import_upload_complete?(import_entries))
+
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:py-6 lg:px-8">
-      <.header class="text-center">
+    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
+      <.header>
         Account Settings
-        <:subtitle>Manage your account email address and password settings</:subtitle>
+        <:subtitle>Manage your account email and password settings</:subtitle>
       </.header>
 
-      <div class="space-y-12 divide-y mx-auto w-full max-w-md ">
-        <div>
-          <%!-- change display_name --%>
-          <.simple_form
-            for={@display_name_form}
-            id="display_name_form"
-            phx-submit="update_dispaly_name"
-            phx-change="validate_display_name"
-          >
-            <.input field={@display_name_form[:display_name]} label="Display Name" />
-            <:actions>
-              <.button phx-disable-with="Changing...">Change</.button>
-            </:actions>
-          </.simple_form>
-        </div>
+      <div class="space-y-6 mx-auto w-full max-w-md ">
         <div>
           <.simple_form
             for={@email_form}
             id="email_form"
-            phx-submit="update_email"
-            phx-change="validate_email"
+            phx-submit="update-email"
+            phx-change="validate-email"
           >
             <.input field={@email_form[:email]} type="email" label="Email" required />
             <.input
@@ -52,12 +48,13 @@ defmodule VmemoWeb.UserSettingsLive do
           <.simple_form
             for={@password_form}
             id="password_form"
-            action={~p"/users/log_in?_action=password_updated"}
+            action={~p"/users/update-password"}
             method="post"
-            phx-change="validate_password"
-            phx-submit="update_password"
+            phx-change="validate-password"
+            phx-submit="update-password"
             phx-trigger-action={@trigger_submit}
           >
+            <input name="action" type="hidden" value="update_password" />
             <input
               name={@password_form[:email].name}
               type="hidden"
@@ -84,6 +81,117 @@ defmodule VmemoWeb.UserSettingsLive do
             </:actions>
           </.simple_form>
         </div>
+
+        <div class="space-y-2">
+          <div class="border border-base-300 rounded-md p-4 space-y-2">
+            <h2 class="text-base font-medium">Data Export</h2>
+            <p class="text-sm text-base-content/70">
+              Download your images, notes, and linked files as a ZIP file.
+            </p>
+            <div class="py-2">
+              <.link href={~p"/settings/export"} class="btn btn-outline">
+                Export Data
+              </.link>
+            </div>
+          </div>
+
+          <div class="border border-base-300 rounded-md p-4 space-y-2">
+            <h2 class="text-base font-medium">Data Import</h2>
+            <p class="text-sm text-base-content/70">
+              Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.
+            </p>
+
+            <.form
+              for={@import_form}
+              phx-submit="import-data"
+              phx-change="validate-import"
+              class="space-y-2"
+            >
+              <div class="space-y-2">
+                <.live_file_input
+                  upload={@uploads.import_zip}
+                  class="file-input file-input-bordered w-full"
+                />
+
+                <ul class="space-y-1">
+                  <li
+                    :for={entry <- @uploads.import_zip.entries}
+                    class="flex items-center justify-between text-sm"
+                  >
+                    <span class="truncate">{entry.client_name}</span>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-ghost"
+                      phx-click="cancel-import-upload"
+                      phx-value-ref={entry.ref}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                </ul>
+
+                <p :for={err <- upload_errors(@uploads.import_zip)} class="text-error text-sm">
+                  {error_to_string(err)}
+                </p>
+
+                <p :if={@import_error} class="text-error text-sm">{@import_error}</p>
+
+                <div :if={@has_import_file} class="space-y-1">
+                  <div class="flex items-center justify-between text-xs text-base-content/70">
+                    <span>Upload progress</span>
+                    <span>{@import_upload_progress}%</span>
+                  </div>
+                  <progress
+                    class="progress progress-accent w-full"
+                    value={@import_upload_progress}
+                    max="100"
+                  >
+                  </progress>
+                </div>
+              </div>
+
+              <div class="py-2 flex items-center gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  disabled={@is_importing || not @has_import_file || not @import_upload_complete}
+                >
+                  Import Data
+                </button>
+              </div>
+            </.form>
+
+            <div :if={@import_result} class="border border-base-300 rounded-md p-2 text-sm space-y-1">
+              <p class="font-medium">Import Result</p>
+              <% files = result_value(@import_result, [:files, "files"], %{}) %>
+              <% images = result_value(@import_result, [:images, "images"], %{}) %>
+              <% notes = result_value(@import_result, [:notes, "notes"], %{}) %>
+              <% image_notes = result_value(@import_result, [:image_notes, "image_notes"], %{}) %>
+              <% typesense = result_value(@import_result, [:typesense, "typesense"], %{}) %>
+              <% typesense_images = result_value(typesense, [:images, "images"], %{}) %>
+              <% typesense_notes = result_value(typesense, [:notes, "notes"], %{}) %>
+              <% errors = result_value(@import_result, [:errors, "errors"], []) %>
+              <% error_count = result_value(@import_result, [:error_count, "error_count"], 0) %>
+              <p>Files copied: {result_value(files, [:copied, "copied"], 0)}</p>
+              <p>Files skipped: {result_value(files, [:skipped, "skipped"], 0)}</p>
+              <p>Images created: {result_value(images, [:created, "created"], 0)}</p>
+              <p>Images skipped: {result_value(images, [:skipped, "skipped"], 0)}</p>
+              <p>Notes created: {result_value(notes, [:created, "created"], 0)}</p>
+              <p>Notes skipped: {result_value(notes, [:skipped, "skipped"], 0)}</p>
+              <p>Links created: {result_value(image_notes, [:created, "created"], 0)}</p>
+              <p>Links skipped: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
+              <p>
+                Typesense images upserted: {result_value(typesense_images, [:success, "success"], 0)}
+              </p>
+              <p>
+                Typesense notes upserted: {result_value(typesense_notes, [:success, "success"], 0)}
+              </p>
+              <p :if={errors != []} class="text-error">
+                Errors: {error_count}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -92,48 +200,119 @@ defmodule VmemoWeb.UserSettingsLive do
   def mount(%{"token" => token}, _session, socket) do
     socket =
       case Account.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
+        {:ok, _user} ->
           put_flash(socket, :info, "Email changed successfully.")
 
-        :error ->
+        {:error, _changeset} ->
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
       end
 
-    {:ok, push_navigate(socket, to: ~p"/users/settings")}
+    {:ok, push_navigate(socket, to: ~p"/settings")}
   end
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_changeset = Account.change_user_email(user)
-    password_changeset = Account.change_user_password(user)
-    display_name_changeset = Account.change_display_name(user)
 
     socket =
       socket
+      |> allow_upload(:import_zip,
+        accept: ~w(.zip),
+        max_entries: 1,
+        max_file_size: 1024 * 1024 * 1024,
+        chunk_size: 8 * 1024 * 1024,
+        chunk_timeout: 120_000,
+        auto_upload: true,
+        writer: &import_zip_writer/3
+      )
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
-      |> assign(:email_form, to_form(email_changeset))
-      |> assign(:password_form, to_form(password_changeset))
-      |> assign(:display_name_form, to_form(display_name_changeset))
+      |> assign(:email_form, to_form(%{"email" => user.email}, as: :user))
+      |> assign(:password_form, to_form(%{}, as: :user))
       |> assign(:trigger_submit, false)
+      |> assign(:import_form, to_form(%{}))
+      |> assign(:import_result, nil)
+      |> assign(:import_error, nil)
+      |> assign(:is_importing, false)
 
     {:ok, socket}
   end
 
-  def handle_event("validate_email", params, socket) do
+  def handle_event("validate-import", _params, socket) do
+    {:noreply, assign(socket, import_error: nil)}
+  end
+
+  def handle_event("cancel-import-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :import_zip, ref)}
+  end
+
+  def handle_event("import-data", _params, socket) do
+    entries = socket.assigns.uploads.import_zip.entries
+
+    cond do
+      entries == [] ->
+        {:noreply, assign(socket, import_error: "Please choose a ZIP file to import.")}
+
+      not import_upload_complete?(entries) ->
+        {:noreply, assign(socket, import_error: "Upload is still in progress.")}
+
+      true ->
+        socket = assign(socket, is_importing: true, import_error: nil)
+
+        uploaded =
+          consume_uploaded_entries(socket, :import_zip, fn %{path: path}, entry ->
+            {:ok, %{path: path, filename: entry.client_name}}
+          end)
+
+        case uploaded do
+          [%{path: zip_path}] ->
+            case UserSettings.import_user_zip(socket.assigns.current_user.id, zip_path) do
+              {:ok, result} ->
+                {:noreply,
+                 socket
+                 |> assign(:is_importing, false)
+                 |> assign(:import_result, result)}
+
+              {:error, %{} = result} ->
+                {:noreply,
+                 socket
+                 |> assign(:is_importing, false)
+                 |> assign(:import_result, result)
+                 |> assign(:import_error, "Import completed with errors.")}
+
+              {:error, reason} ->
+                {:noreply,
+                 socket
+                 |> assign(:is_importing, false)
+                 |> assign(:import_error, "Import failed: #{format_error(reason)}")}
+            end
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(:is_importing, false)
+             |> assign(:import_error, "Failed to read ZIP file.")}
+        end
+    end
+  end
+
+  def handle_event("validate-email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_user
 
     email_form =
-      socket.assigns.current_user
-      |> Account.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      case Account.apply_user_email(user, password, user_params) do
+        {:ok, _applied_user} ->
+          to_form(user_params, as: :user)
+
+        {:error, error_map} ->
+          to_form(user_params, as: :user, errors: Map.get(error_map, :errors, []))
+      end
 
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
 
-  def handle_event("update_email", params, socket) do
+  def handle_event("update-email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
 
@@ -142,75 +321,81 @@ defmodule VmemoWeb.UserSettingsLive do
         Account.deliver_user_update_email_instructions(
           applied_user,
           user.email,
-          &url(~p"/users/settings/confirm_email/#{&1}")
+          &url(~p"/settings/confirm_email/#{&1}")
         )
 
         info = "A link to confirm your email change has been sent to the new address."
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+      {:error, error_map} ->
+        # Include current_password in form data so errors can be displayed
+        form_data = Map.put(user_params, "current_password", password)
+        email_form = to_form(form_data, as: :user, errors: Map.get(error_map, :errors, []))
+        {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
     end
   end
 
-  def handle_event("validate_password", params, socket) do
+  def handle_event("validate-password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_user
 
     password_form =
-      socket.assigns.current_user
-      |> Account.change_user_password(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      case Account.update_user_password(user, password, user_params) do
+        {:ok, _user} ->
+          to_form(user_params, as: :user)
+
+        {:error, error_map} ->
+          to_form(user_params, as: :user, errors: Map.get(error_map, :errors, []))
+      end
 
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
 
-  def handle_event("update_password", params, socket) do
+  def handle_event("update-password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
 
     case Account.update_user_password(user, password, user_params) do
-      {:ok, user} ->
-        password_form =
-          user
-          |> Account.change_user_password(user_params)
-          |> to_form()
+      {:ok, _user} ->
+        password_form = to_form(user_params, as: :user)
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+      {:error, error_map} ->
+        # Include current_password in form data so errors can be displayed
+        form_data = Map.put(user_params, "current_password", password)
+        password_form = to_form(form_data, as: :user, errors: Map.get(error_map, :errors, []))
+        {:noreply, assign(socket, password_form: password_form, current_password: password)}
     end
   end
 
-  # validate display_name
-  def handle_event("validate_display_name", params, socket) do
-    display_name_form =
-      socket.assigns.current_user
-      |> Account.change_display_name(params["user"])
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, display_name_form: display_name_form)}
-  end
-
-  # update display_name
-  def handle_event("update_dispaly_name", params, socket) do
-    user = socket.assigns.current_user
-
-    case Account.update_user_display_name(user, params["user"]) do
-      {:ok, _} ->
-        display_name_form =
-          user
-          |> Account.change_display_name(params["user"])
-          |> to_form()
-
-        socket = socket |> put_flash(:info, "Display name changed successfully.")
-
-        {:noreply, assign(socket, display_name_form: display_name_form)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, display_name_form: to_form(changeset))}
+  defp import_upload_progress(entries) do
+    case entries do
+      [] -> 0
+      _ -> entries |> Enum.map(& &1.progress) |> Enum.max()
     end
   end
+
+  defp import_upload_complete?(entries) do
+    entries != [] and Enum.all?(entries, &(&1.progress == 100))
+  end
+
+  defp import_zip_writer(_name, entry, _socket) do
+    dest_dir = Path.join(System.tmp_dir!(), "vmemo-user-import-upload")
+    {ImportZipWriter, dest_dir: dest_dir, filename: entry.client_name}
+  end
+
+  defp result_value(result, keys, default) when is_map(result) do
+    Enum.find_value(keys, default, fn key ->
+      Map.get(result, key)
+    end)
+  end
+
+  defp result_value(_result, _keys, default), do: default
+
+  defp error_to_string(:too_large), do: "Too large"
+  defp error_to_string(:too_many_files), do: "You have selected too many files"
+  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+
+  defp format_error(error), do: inspect(error)
 end

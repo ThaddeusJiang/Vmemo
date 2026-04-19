@@ -3,21 +3,21 @@ export const Toast = {
         const id = this.el.id;
         const key = this.el.dataset.key;
 
-        // 5 秒后执行 JS.push 和隐藏操作
+        // Execute JS.push and hide after 5 seconds
         setTimeout(() => {
-            // 发送事件到 LiveView
+            // Send event to LiveView
             this.pushEvent("lv:clear-flash", { key: key });
 
-            // 执行隐藏效果
+            // Apply hide effect
             const element = document.getElementById(id);
             if (element) {
                 element.style.transition = "opacity 0.5s ease-out";
                 element.style.opacity = "0";
 
                 // setTimeout(() => {
-                //     element.remove(); // 完全移除 DOM
-                // }, 500); // 等待动画结束
+                //     element.remove(); // Fully remove from DOM
+                // }, 500); // Wait for animation to finish
             }
-        }, 5000); // 5 秒延迟
+        }, 5000); // 5-second delay
     }
 }

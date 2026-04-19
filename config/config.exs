@@ -7,9 +7,66 @@
 # General application configuration
 import Config
 
+config :vmemo, Oban,
+  queues: [
+    default: [limit: 10],
+    chat_responses: [limit: 10],
+    conversations: [limit: 10],
+    sync_typesense: [limit: 10],
+    ai_vision: [limit: 10],
+    import_requests: [limit: 10]
+  ]
+
+config :ash,
+  allow_forbidden_field_for_relationships_by_default?: true,
+  include_embedded_source_by_default?: false,
+  show_keysets_for_all_actions?: false,
+  default_page_type: :keyset,
+  policies: [no_filter_static_forbidden_reads?: false],
+  keep_read_action_loads_when_loading?: false,
+  default_actions_require_atomic?: true,
+  read_action_after_action_hooks_in_order?: true,
+  bulk_actions_default_to_errors?: true,
+  transaction_rollback_on_error?: true
+
+config :spark,
+  formatter: [
+    remove_parens?: false,
+    "Ash.Resource": [
+      section_order: [
+        :resource,
+        :code_interface,
+        :actions,
+        :policies,
+        :pub_sub,
+        :preparations,
+        :changes,
+        :validations,
+        :multitenancy,
+        :attributes,
+        :relationships,
+        :calculations,
+        :aggregates,
+        :identities
+      ]
+    ],
+    "Ash.Domain": [section_order: [:resources, :policies, :authorization, :domain, :execution]]
+  ]
+
 config :vmemo,
   ecto_repos: [Vmemo.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  ash_domains: [Vmemo.Admin, Vmemo.Account, Vmemo.Memo, Vmemo.Ai, Vmemo.Chat],
+  user_data_import_typesense_chunk_size: 50,
+  user_data_import_typesense_chunk_pause_ms: 50
+
+config :vmemo, :ash_domains, [
+  Vmemo.Admin,
+  Vmemo.Account,
+  Vmemo.Memo,
+  Vmemo.Ai,
+  Vmemo.Chat
+]
 
 # Configures the endpoint
 config :vmemo, VmemoWeb.Endpoint,
@@ -43,14 +100,13 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.4.3",
+  version: "4.1.7",
   vmemo: [
     args: ~w(
-      --config=tailwind.config.js
-      --input=css/app.css
-      --output=../priv/static/assets/app.css
+      --input=assets/css/app.css
+      --output=priv/static/assets/app.css
     ),
-    cd: Path.expand("../assets", __DIR__)
+    cd: Path.expand("..", __DIR__)
   ]
 
 # Configures Elixir's Logger
@@ -60,6 +116,15 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Register text/event-stream MIME type for MCP server SSE support
+config :mime, :types, %{
+  "text/event-stream" => ["event-stream"]
+}
+
+# Disable Tesla deprecation warning
+# Tesla is a transitive dependency via resend, and we don't use it directly
+config :tesla, disable_deprecated_builder_warning: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

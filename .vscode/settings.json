@@ -1,0 +1,12 @@
+{
+  "files.readonlyInclude": {
+    "assets/vendor/**": true
+  },
+  "editor.formatOnSave": true,
+  "cSpell.words": [
+    "Moondream",
+    "oban",
+    "typesense",
+    "Vmemo"
+  ]
+}
