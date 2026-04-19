@@ -79,22 +79,13 @@ Required behavior:
 
 ## Step 5: Execute release
 
-Choose the release path user wants:
-
-- Manual tag + GitHub UI draft/publish, or
-- GitHub Actions workflow (`Release Draft`) trigger.
+Use the unified release path: tag first, then create/publish release in GitHub UI.
 
 Typical commands:
 
 ```bash
 git tag -a <VERSION> -m "release: <VERSION>"
 git push origin <VERSION>
-```
-
-Or with GitHub CLI workflow dispatch:
-
-```bash
-gh workflow run "Release Draft" -f version=<VERSION>
 ```
 
 ## Step 6: Final report
@@ -111,5 +102,5 @@ Return:
 
 - Never skip config-change detection.
 - Never hide config/env changes in summary.
-- Never claim release published if only tag/workflow trigger is done.
+- Never claim release published if only tag push is done.
 - If required tools (`git`, `gh`, `mix`) are missing, report and stop.
