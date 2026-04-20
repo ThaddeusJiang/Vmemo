@@ -135,21 +135,12 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   end
 
   defp to_notification(job) do
-    status = job.status
-
     %{
       id: job.image_id,
       image_id: job.image_id,
-      upload_batch_id: job.upload_batch_id,
       image_url: job.image_url,
-      caption: job.caption,
-      reason: job.failure_reason || job.reason,
       description: notification_message(job),
-      status: status,
-      total_count: 1,
-      failed_count: if(status == "failed", do: 1, else: 0),
-      processing_count: if(status == "processing", do: 1, else: 0),
-      success_count: if(status == "success", do: 1, else: 0),
+      status: job.status,
       inserted_at: job.inserted_at,
       updated_at: job.updated_at
     }

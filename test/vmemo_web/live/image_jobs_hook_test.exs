@@ -46,18 +46,10 @@ defmodule VmemoWeb.ImageJobsHookTest do
                [image_a.id, image_b.id] |> Enum.sort()
 
       failed = notification_by_id[image_a.id]
-      assert failed.upload_batch_id == batch_id
-      assert failed.total_count == 1
-      assert failed.failed_count == 1
-      assert failed.success_count == 0
       assert failed.status == "failed"
       assert failed.description =~ "Indexing error"
 
       success = notification_by_id[image_b.id]
-      assert success.upload_batch_id == batch_id
-      assert success.total_count == 1
-      assert success.failed_count == 0
-      assert success.success_count == 1
       assert success.status == "success"
       assert success.description == "batch-a-2"
     end
@@ -81,9 +73,6 @@ defmodule VmemoWeb.ImageJobsHookTest do
       assert length(notifications) == 1
       [notification] = notifications
       assert notification.image_id == image.id
-      assert notification.upload_batch_id == nil
-      assert notification.total_count == 1
-      assert notification.processing_count == 1
       assert notification.status == "processing"
     end
   end
