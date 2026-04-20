@@ -39,6 +39,31 @@
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_user] || assigns[:current_user] do %>
+          <.link
+            href={~p"/jobs"}
+            class="btn btn-ghost btn-circle relative"
+            aria-label="Jobs"
+            title="Jobs"
+          >
+            <.icon name="hero-bell" class="h-5 w-5" />
+            <span
+              :if={
+                (assigns[:global_image_jobs_processing_count] || 0) > 0 ||
+                  (assigns[:global_image_jobs_failed_count] || 0) > 0
+              }
+              class="absolute -top-1 -right-1 badge badge-error badge-sm min-w-5 h-5 text-[10px] px-1"
+            >
+              {assigns[:global_image_jobs_processing_count] || 0}
+            </span>
+          </.link>
+          <.link
+            href={~p"/jobs"}
+            class="hidden md:inline text-xs text-base-content/70 hover:text-base-content"
+          >
+            Processing {assigns[:global_image_jobs_processing_count] || 0} / Failed {assigns[
+              :global_image_jobs_failed_count
+            ] || 0}
+          </.link>
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
@@ -56,6 +81,14 @@
               tabindex="0"
               class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border border-base-300 shadow-lg"
             >
+              <li>
+                <.link
+                  href={~p"/jobs"}
+                  class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                >
+                  <.icon name="hero-bell" class="size-6" /> Jobs
+                </.link>
+              </li>
               <li>
                 <.link
                   href={~p"/settings"}
@@ -145,6 +178,7 @@
       flash={@flash}
       class="fixed top-8 left-1/2 -translate-x-1/2"
     />
+
     {@inner_content}
   </section>
 </main>
