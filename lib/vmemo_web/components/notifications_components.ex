@@ -66,8 +66,6 @@ defmodule VmemoWeb.NotificationsComponents do
     ~H"""
     <.link
       href={~p"/jobs/#{@notification.id}"}
-      phx-hook="NotificationTransitionLink"
-      data-transition-name={"notification-#{@notification.id}"}
       class="flex items-start gap-2 rounded-lg border border-base-300/70 p-2 hover:border-base-content/40 hover:shadow-sm transition-all"
       style={"view-transition-name: notification-#{@notification.id};"}
     >
