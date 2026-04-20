@@ -39,89 +39,10 @@
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_user] || assigns[:current_user] do %>
-          <div class="dropdown dropdown-end">
-            <div
-              tabindex="0"
-              role="button"
-              class="btn btn-ghost btn-circle relative"
-              aria-label="Notifications"
-              title="Notifications"
-            >
-              <.icon name="hero-bell" class="h-5 w-5" />
-              <span
-                :if={(assigns[:global_notifications_unresolved_count] || 0) > 0}
-                class="absolute -top-1 -right-1 badge badge-error badge-sm min-w-5 h-5 text-[10px] px-1"
-              >
-                {assigns[:global_notifications_unresolved_count] || 0}
-              </span>
-            </div>
-            <div
-              tabindex="0"
-              class="dropdown-content z-[20] mt-2 w-[22rem] max-w-[90vw] rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
-            >
-              <div class="px-2 py-1.5 text-xs font-semibold text-base-content/70">
-                Notifications
-              </div>
-              <div
-                :if={Enum.empty?(assigns[:global_notifications] || [])}
-                class="px-2 py-4 text-sm text-base-content/60"
-              >
-                No notifications yet
-              </div>
-              <div
-                :if={not Enum.empty?(assigns[:global_notifications] || [])}
-                class="max-h-80 overflow-y-auto space-y-1"
-              >
-                <.link
-                  :for={notification <- assigns[:global_notifications] || []}
-                  href={~p"/jobs/#{notification.id}"}
-                  phx-hook="NotificationTransitionLink"
-                  data-transition-name={"notification-#{notification.id}"}
-                  class="flex items-start gap-2 rounded-lg border border-base-300/70 p-2 hover:border-base-content/40 hover:shadow-sm transition-all"
-                  style={"view-transition-name: notification-#{notification.id};"}
-                >
-                  <img
-                    src={notification.image_url}
-                    alt={notification.id}
-                    class="notification-item-thumb mt-0.5 h-10 w-10 rounded-md border border-base-300 object-cover"
-                    loading="lazy"
-                  />
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="text-xs text-base-content/70">Image job</span>
-                      <span class={[
-                        "badge badge-xs",
-                        case notification.status do
-                          "success" -> "badge-success"
-                          "failed" -> "badge-error"
-                          "partial_failed" -> "badge-warning"
-                          _ -> "badge-info"
-                        end
-                      ]}>
-                        {case notification.status do
-                          "partial_failed" -> "Partial Failed"
-                          "failed" -> "Failed"
-                          "success" -> "Success"
-                          _ -> "Processing"
-                        end}
-                      </span>
-                    </div>
-                    <div class="mt-1 text-xs text-base-content/90 line-clamp-2">
-                      {notification.description}
-                    </div>
-                    <div class="mt-1 text-[11px] text-base-content/50">
-                      {Calendar.strftime(notification.updated_at, "%Y-%m-%d %H:%M")}
-                    </div>
-                  </div>
-                </.link>
-              </div>
-              <div class="mt-2 border-t border-base-300 pt-2">
-                <.link href={~p"/jobs"} class="btn btn-ghost btn-sm w-full justify-start text-xs">
-                  View all jobs
-                </.link>
-              </div>
-            </div>
-          </div>
+          <.notifications_dropdown
+            notifications={assigns[:global_notifications] || []}
+            unresolved_count={assigns[:global_notifications_unresolved_count] || 0}
+          />
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
