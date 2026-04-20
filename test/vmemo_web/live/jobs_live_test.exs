@@ -41,7 +41,7 @@ defmodule VmemoWeb.JobsLiveTest do
         moondream_status: "completed"
       })
 
-      %{conn: conn}
+      %{conn: conn, user: user}
     end
 
     test "renders readable failure mapping", %{conn: conn} do
@@ -61,6 +61,40 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Notifications"
       refute html =~ "Processing 1 / Failed 1"
       refute Regex.match?(~r/<a[^>]*href="\/jobs"[^>]*btn btn-ghost btn-circle/, html)
+    end
+
+    test "aggregates multiple images from one upload batch into a single notification", %{
+      conn: conn,
+      user: user
+    } do
+      batch_id = Ecto.UUID.generate()
+
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/batch-live-1.jpg",
+        note: "batch-live-1",
+        caption: "batch-live-1",
+        file_id: "batch-live-1.jpg",
+        user_id: user.id,
+        upload_batch_id: batch_id,
+        typesense_status: "processing",
+        moondream_status: "processing"
+      })
+
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/batch-live-2.jpg",
+        note: "batch-live-2",
+        caption: "batch-live-2",
+        file_id: "batch-live-2.jpg",
+        user_id: user.id,
+        upload_batch_id: batch_id,
+        typesense_status: "processing",
+        moondream_status: "processing"
+      })
+
+      {:ok, _lv, html} = live(conn, ~p"/home")
+
+      assert html =~ "2 images processing"
+      assert length(Regex.scan(~r/2 images processing/, html)) == 1
     end
   end
 
