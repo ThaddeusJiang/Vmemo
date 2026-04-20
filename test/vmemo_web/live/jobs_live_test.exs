@@ -94,26 +94,50 @@ defmodule VmemoWeb.JobsLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/home")
 
       assert Regex.match?(~r/href="\/jobs\/[^"]+"/, html)
+      assert html =~ "notification-item-thumb"
     end
 
-    test "renders job detail page", %{conn: conn, user: user} do
-      image =
+    test "renders caption failure reason in job detail page", %{conn: conn, user: user} do
+      failed_image =
         create_image!(%{
-          url: "/storage/v1/#{user.id}/images/detail.jpg",
-          note: "detail",
-          caption: "detail",
-          file_id: "detail.jpg",
+          url: "/storage/v1/#{user.id}/images/detail-failed.jpg",
+          note: "detail-failed",
+          caption: "detail-failed",
+          file_id: "detail-failed.jpg",
           user_id: user.id,
-          typesense_status: "failed",
-          moondream_status: "processing"
+          typesense_status: "completed",
+          moondream_status: "failed"
         })
 
-      {:ok, _lv, html} = live(conn, ~p"/jobs/#{image.id}")
+      {:ok, _lv, html} = live(conn, ~p"/jobs/#{failed_image.id}")
 
-      assert html =~ "Job details"
-      assert html =~ "Job ID:"
-      assert html =~ image.id
-      assert html =~ "Back to jobs"
+      assert html =~ "Jobs"
+      assert html =~ failed_image.id
+      assert html =~ "Caption result"
+      assert html =~ "Timeout"
+      assert html =~ ~s(href="/images/#{failed_image.id}")
+    end
+
+    test "renders caption text when caption succeeds in job detail page", %{
+      conn: conn,
+      user: user
+    } do
+      completed_image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/detail-success.jpg",
+          note: "detail-success",
+          caption: "detail-success-caption",
+          file_id: "detail-success.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "completed"
+        })
+
+      {:ok, _lv, html} = live(conn, ~p"/jobs/#{completed_image.id}")
+
+      assert html =~ "Caption result"
+      assert html =~ "detail-success-caption"
+      assert html =~ ~s(href="/jobs")
     end
   end
 

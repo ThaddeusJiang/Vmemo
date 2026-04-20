@@ -51,6 +51,7 @@ defmodule VmemoWeb.ImageJobsHookTest do
       assert failed.failed_count == 1
       assert failed.success_count == 0
       assert failed.status == "failed"
+      assert failed.description =~ "Indexing error"
 
       success = notification_by_id[image_b.id]
       assert success.upload_batch_id == batch_id
@@ -58,6 +59,7 @@ defmodule VmemoWeb.ImageJobsHookTest do
       assert success.failed_count == 0
       assert success.success_count == 1
       assert success.status == "success"
+      assert success.description == "batch-a-2"
     end
 
     test "includes images without upload_batch_id as independent notifications" do

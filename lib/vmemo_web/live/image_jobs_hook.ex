@@ -119,6 +119,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       image_id: image.id,
       upload_batch_id: image.upload_batch_id,
       image_url: image.url,
+      caption: image.caption,
       file_name: image.file_id || image.id,
       status: job_status(image),
       reason: failure_summary(image),
@@ -140,8 +141,10 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       id: job.image_id,
       image_id: job.image_id,
       upload_batch_id: job.upload_batch_id,
-      title: notification_title(1),
-      description: notification_description(1, status, if(status == "failed", do: 1, else: 0)),
+      image_url: job.image_url,
+      caption: job.caption,
+      reason: job.failure_reason || job.reason,
+      description: notification_message(job),
       status: status,
       total_count: 1,
       failed_count: if(status == "failed", do: 1, else: 0),
@@ -152,33 +155,31 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     }
   end
 
-  defp notification_title(total_count) when total_count == 1, do: "Image processing"
-  defp notification_title(total_count), do: "#{total_count} images processing"
+  defp notification_message(job) do
+    case job.status do
+      "success" ->
+        case blank_to_nil(job.caption) do
+          nil -> "Caption completed."
+          caption -> caption
+        end
 
-  defp notification_description(total_count, "processing", _failed_count) do
-    if total_count == 1,
-      do: "1 image is still processing.",
-      else: "#{total_count} images are still processing."
-  end
+      "failed" ->
+        job.failure_reason || job.reason || "Processing failed."
 
-  defp notification_description(total_count, "success", _failed_count) do
-    if total_count == 1,
-      do: "1 image processed successfully.",
-      else: "#{total_count} images processed successfully."
-  end
-
-  defp notification_description(total_count, "failed", failed_count) do
-    if total_count == 1,
-      do: "1 image processing failed.",
-      else: "#{failed_count}/#{total_count} images failed."
-  end
-
-  defp notification_description(total_count, "partial_failed", failed_count) do
-    "#{failed_count}/#{total_count} images failed, remaining tasks are still running or completed."
+      _ ->
+        "Caption is processing."
+    end
   end
 
   defp count_unresolved_notifications(notifications) do
     Enum.count(notifications, &(&1.status in ["processing", "failed", "partial_failed"]))
+  end
+
+  defp blank_to_nil(nil), do: nil
+
+  defp blank_to_nil(value) when is_binary(value) do
+    value = String.trim(value)
+    if value == "", do: nil, else: value
   end
 
   defp datetime_sort_value(%DateTime{} = datetime), do: DateTime.to_unix(datetime, :microsecond)

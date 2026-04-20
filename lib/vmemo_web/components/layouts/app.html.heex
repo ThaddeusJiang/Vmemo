@@ -77,31 +77,41 @@
                   href={~p"/jobs/#{notification.id}"}
                   phx-hook="NotificationTransitionLink"
                   data-transition-name={"notification-#{notification.id}"}
-                  class="block rounded-lg border border-base-300/70 p-2 text-sm hover:border-base-content/40 hover:shadow-sm transition-all"
+                  class="flex items-start gap-2 rounded-lg border border-base-300/70 p-2 hover:border-base-content/40 hover:shadow-sm transition-all"
                   style={"view-transition-name: notification-#{notification.id};"}
                 >
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="font-medium text-base-content">{notification.title}</div>
-                    <span class={[
-                      "badge badge-xs",
-                      case notification.status do
-                        "success" -> "badge-success"
-                        "failed" -> "badge-error"
-                        "partial_failed" -> "badge-warning"
-                        _ -> "badge-info"
-                      end
-                    ]}>
-                      {case notification.status do
-                        "partial_failed" -> "Partial Failed"
-                        "failed" -> "Failed"
-                        "success" -> "Success"
-                        _ -> "Processing"
-                      end}
-                    </span>
-                  </div>
-                  <div class="mt-1 text-xs text-base-content/70">{notification.description}</div>
-                  <div class="mt-1 text-[11px] text-base-content/50">
-                    {Calendar.strftime(notification.updated_at, "%Y-%m-%d %H:%M")}
+                  <img
+                    src={notification.image_url}
+                    alt={notification.id}
+                    class="notification-item-thumb mt-0.5 h-10 w-10 rounded-md border border-base-300 object-cover"
+                    loading="lazy"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-xs text-base-content/70">Image job</span>
+                      <span class={[
+                        "badge badge-xs",
+                        case notification.status do
+                          "success" -> "badge-success"
+                          "failed" -> "badge-error"
+                          "partial_failed" -> "badge-warning"
+                          _ -> "badge-info"
+                        end
+                      ]}>
+                        {case notification.status do
+                          "partial_failed" -> "Partial Failed"
+                          "failed" -> "Failed"
+                          "success" -> "Success"
+                          _ -> "Processing"
+                        end}
+                      </span>
+                    </div>
+                    <div class="mt-1 text-xs text-base-content/90 line-clamp-2">
+                      {notification.description}
+                    </div>
+                    <div class="mt-1 text-[11px] text-base-content/50">
+                      {Calendar.strftime(notification.updated_at, "%Y-%m-%d %H:%M")}
+                    </div>
                   </div>
                 </.link>
               </div>

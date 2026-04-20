@@ -154,9 +154,11 @@ defmodule VmemoWeb.JobsLive do
         </div>
 
         <div :if={@live_action == :show and @job} class="flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold">Job details</h1>
-            <.link href={~p"/jobs"} class="btn btn-ghost btn-sm">Back to jobs</.link>
+          <div class="breadcrumbs text-sm text-base-content/70">
+            <ul>
+              <li><.link href={~p"/jobs"}>Jobs</.link></li>
+              <li class="font-medium text-base-content">{@job.image_id}</li>
+            </ul>
           </div>
 
           <article
@@ -165,20 +167,20 @@ defmodule VmemoWeb.JobsLive do
             style={"view-transition-name: notification-#{@job.image_id};"}
           >
             <div class="flex items-start gap-4">
-              <img
-                src={@job.image_url}
-                alt={@job.image_id}
-                class="h-16 w-16 rounded-md object-cover border border-base-300"
-                loading="lazy"
-              />
+              <.link href={~p"/images/#{@job.image_id}"} class="block">
+                <img
+                  src={@job.image_url}
+                  alt={@job.image_id}
+                  class="h-16 w-16 rounded-md object-cover border border-base-300"
+                  loading="lazy"
+                />
+              </.link>
 
               <div class="flex-1 space-y-3">
-                <div class="text-xs text-base-content/60">Job ID: {@job.image_id}</div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div class="rounded-md border border-base-300 p-3">
-                    <div class="text-xs text-base-content/60 mb-1">Search embedding</div>
                     <div class="flex items-center gap-2">
+                      <span class="text-xs text-base-content/60">Search</span>
                       <span class={service_status_badge_class(@job.typesense_status)}>
                         {service_status_label(@job.typesense_status)}
                       </span>
@@ -189,11 +191,15 @@ defmodule VmemoWeb.JobsLive do
                   </div>
 
                   <div class="rounded-md border border-base-300 p-3">
-                    <div class="text-xs text-base-content/60 mb-1">Vision embedding</div>
                     <div class="flex items-center gap-2">
+                      <span class="text-xs text-base-content/60">Caption</span>
                       <span class={service_status_badge_class(@job.moondream_status)}>
                         {service_status_label(@job.moondream_status)}
                       </span>
+                    </div>
+                    <div class="text-xs text-base-content/60 mt-2">Caption result</div>
+                    <div class="text-sm text-base-content/90 break-words mt-1">
+                      {caption_result_text(@job)}
                     </div>
                     <div :if={@job.moondream_failure_reason} class="text-error text-xs mt-1">
                       {@job.moondream_failure_reason}
@@ -222,9 +228,6 @@ defmodule VmemoWeb.JobsLive do
                   >
                     Retry vision embedding
                   </.button>
-                  <.link href={~p"/images/#{@job.image_id}"} class="btn btn-outline btn-xs">
-                    Open image
-                  </.link>
                 </div>
               </div>
             </div>
@@ -253,6 +256,22 @@ defmodule VmemoWeb.JobsLive do
       _ -> "Pending"
     end
   end
+
+  defp caption_result_text(job) do
+    cond do
+      job.moondream_status == "completed" and present?(job.caption) ->
+        job.caption
+
+      job.moondream_status == "failed" ->
+        job.moondream_failure_reason || job.failure_reason || "Caption generation failed."
+
+      true ->
+        "Caption is being generated."
+    end
+  end
+
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(_), do: false
 
   defp refresh_jobs(socket) do
     user = socket.assigns.current_user
