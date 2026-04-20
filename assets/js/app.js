@@ -23,6 +23,7 @@ import { Toast } from "./hooks/toast"
 import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
 import { DirectoryUpload } from "./hooks/directory_upload"
+import { NotificationTransitionLink } from "./hooks/notification_navigation"
 
 const FormatDatetime = {
   format() {
@@ -65,6 +66,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     Focus,
     MoondreamOverlay,
     DirectoryUpload,
+    NotificationTransitionLink,
     FormatDatetime,
   },
   longPollFallbackMs: 2500,

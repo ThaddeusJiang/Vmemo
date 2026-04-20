@@ -8,60 +8,81 @@ defmodule VmemoWeb.ImageJobsHookTest do
   import Vmemo.AccountFixtures
 
   describe "list_notifications/2" do
-    test "aggregates multiple uploaded images into one notification by upload_batch_id" do
+    test "maps uploaded images to one notification per job" do
       user = user_fixture()
       batch_id = Ecto.UUID.generate()
 
-      create_image!(%{
-        url: "/storage/v1/#{user.id}/images/batch-a-1.jpg",
-        note: "batch-a-1",
-        caption: "batch-a-1",
-        file_id: "batch-a-1.jpg",
-        user_id: user.id,
-        upload_batch_id: batch_id,
-        typesense_status: "failed",
-        moondream_status: "processing"
-      })
+      image_a =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/batch-a-1.jpg",
+          note: "batch-a-1",
+          caption: "batch-a-1",
+          file_id: "batch-a-1.jpg",
+          user_id: user.id,
+          upload_batch_id: batch_id,
+          typesense_status: "failed",
+          moondream_status: "processing"
+        })
 
-      create_image!(%{
-        url: "/storage/v1/#{user.id}/images/batch-a-2.jpg",
-        note: "batch-a-2",
-        caption: "batch-a-2",
-        file_id: "batch-a-2.jpg",
-        user_id: user.id,
-        upload_batch_id: batch_id,
-        typesense_status: "completed",
-        moondream_status: "completed"
-      })
+      image_b =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/batch-a-2.jpg",
+          note: "batch-a-2",
+          caption: "batch-a-2",
+          file_id: "batch-a-2.jpg",
+          user_id: user.id,
+          upload_batch_id: batch_id,
+          typesense_status: "completed",
+          moondream_status: "completed"
+        })
+
+      {:ok, notifications} = ImageJobsHook.list_notifications(user, limit: 20)
+
+      assert length(notifications) == 2
+
+      notification_by_id = Map.new(notifications, &{&1.image_id, &1})
+
+      assert Map.keys(notification_by_id) |> Enum.sort() ==
+               [image_a.id, image_b.id] |> Enum.sort()
+
+      failed = notification_by_id[image_a.id]
+      assert failed.upload_batch_id == batch_id
+      assert failed.total_count == 1
+      assert failed.failed_count == 1
+      assert failed.success_count == 0
+      assert failed.status == "failed"
+
+      success = notification_by_id[image_b.id]
+      assert success.upload_batch_id == batch_id
+      assert success.total_count == 1
+      assert success.failed_count == 0
+      assert success.success_count == 1
+      assert success.status == "success"
+    end
+
+    test "includes images without upload_batch_id as independent notifications" do
+      user = user_fixture()
+
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/no-batch.jpg",
+          note: "no-batch",
+          caption: "no-batch",
+          file_id: "no-batch.jpg",
+          user_id: user.id,
+          typesense_status: "processing",
+          moondream_status: "processing"
+        })
 
       {:ok, notifications} = ImageJobsHook.list_notifications(user, limit: 20)
 
       assert length(notifications) == 1
-
       [notification] = notifications
-      assert notification.upload_batch_id == batch_id
-      assert notification.total_count == 2
-      assert notification.failed_count == 1
-      assert notification.success_count == 1
-      assert notification.status == "partial_failed"
-    end
-
-    test "ignores images without upload_batch_id" do
-      user = user_fixture()
-
-      create_image!(%{
-        url: "/storage/v1/#{user.id}/images/no-batch.jpg",
-        note: "no-batch",
-        caption: "no-batch",
-        file_id: "no-batch.jpg",
-        user_id: user.id,
-        typesense_status: "processing",
-        moondream_status: "processing"
-      })
-
-      {:ok, notifications} = ImageJobsHook.list_notifications(user, limit: 20)
-
-      assert notifications == []
+      assert notification.image_id == image.id
+      assert notification.upload_batch_id == nil
+      assert notification.total_count == 1
+      assert notification.processing_count == 1
+      assert notification.status == "processing"
     end
   end
 

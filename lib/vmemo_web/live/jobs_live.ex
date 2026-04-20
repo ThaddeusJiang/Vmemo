@@ -6,7 +6,29 @@ defmodule VmemoWeb.JobsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, refresh_jobs(socket)}
+    {:ok, socket |> assign(:job, nil) |> refresh_jobs()}
+  end
+
+  @impl true
+  def handle_params(%{"id" => id}, _uri, socket) do
+    user = socket.assigns.current_user
+
+    socket =
+      case ImageJobsHook.get_job(user, id) do
+        {:ok, job} ->
+          assign(socket, :job, job)
+
+        _ ->
+          socket
+          |> put_flash(:error, "Job not found")
+          |> push_navigate(to: ~p"/jobs")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_params(_params, _uri, socket) do
+    {:noreply, assign(socket, :job, nil)}
   end
 
   @impl true
@@ -52,11 +74,14 @@ defmodule VmemoWeb.JobsLive do
     ~H"""
     <section class="p-4 sm:p-4 lg:p-4 grow">
       <div class="w-full max-w-screen-xl mx-auto flex flex-col gap-4">
-        <div>
+        <div :if={@live_action == :index}>
           <h1 class="text-2xl font-bold">Jobs</h1>
         </div>
 
-        <div class="rounded-lg border border-base-300 bg-base-100 overflow-hidden">
+        <div
+          :if={@live_action == :index}
+          class="rounded-lg border border-base-300 bg-base-100 overflow-hidden"
+        >
           <div class="overflow-x-auto">
             <table class="table table-sm md:table-md">
               <thead>
@@ -73,7 +98,7 @@ defmodule VmemoWeb.JobsLive do
 
                 <tr :for={job <- @jobs}>
                   <td>
-                    <.link href={~p"/images/#{job.image_id}"} class="block w-fit">
+                    <.link href={~p"/jobs/#{job.image_id}"} class="block w-fit">
                       <img
                         src={job.image_url}
                         alt={job.image_id}
@@ -126,6 +151,84 @@ defmodule VmemoWeb.JobsLive do
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div :if={@live_action == :show and @job} class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold">Job details</h1>
+            <.link href={~p"/jobs"} class="btn btn-ghost btn-sm">Back to jobs</.link>
+          </div>
+
+          <article
+            id={"job-detail-#{@job.image_id}"}
+            class="rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5 shadow-sm"
+            style={"view-transition-name: notification-#{@job.image_id};"}
+          >
+            <div class="flex items-start gap-4">
+              <img
+                src={@job.image_url}
+                alt={@job.image_id}
+                class="h-16 w-16 rounded-md object-cover border border-base-300"
+                loading="lazy"
+              />
+
+              <div class="flex-1 space-y-3">
+                <div class="text-xs text-base-content/60">Job ID: {@job.image_id}</div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="rounded-md border border-base-300 p-3">
+                    <div class="text-xs text-base-content/60 mb-1">Search embedding</div>
+                    <div class="flex items-center gap-2">
+                      <span class={service_status_badge_class(@job.typesense_status)}>
+                        {service_status_label(@job.typesense_status)}
+                      </span>
+                    </div>
+                    <div :if={@job.typesense_failure_reason} class="text-error text-xs mt-1">
+                      {@job.typesense_failure_reason}
+                    </div>
+                  </div>
+
+                  <div class="rounded-md border border-base-300 p-3">
+                    <div class="text-xs text-base-content/60 mb-1">Vision embedding</div>
+                    <div class="flex items-center gap-2">
+                      <span class={service_status_badge_class(@job.moondream_status)}>
+                        {service_status_label(@job.moondream_status)}
+                      </span>
+                    </div>
+                    <div :if={@job.moondream_failure_reason} class="text-error text-xs mt-1">
+                      {@job.moondream_failure_reason}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-1">
+                  <.button
+                    :if={@job.typesense_status == "failed"}
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    phx-click="retry-search-embedding"
+                    phx-value-image_id={@job.image_id}
+                  >
+                    Retry search embedding
+                  </.button>
+                  <.button
+                    :if={@job.moondream_status == "failed"}
+                    type="button"
+                    size="xs"
+                    variant="outline"
+                    phx-click="retry-vision-embedding"
+                    phx-value-image_id={@job.image_id}
+                  >
+                    Retry vision embedding
+                  </.button>
+                  <.link href={~p"/images/#{@job.image_id}"} class="btn btn-outline btn-xs">
+                    Open image
+                  </.link>
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
       </div>
     </section>

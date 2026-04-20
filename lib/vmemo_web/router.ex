@@ -118,6 +118,7 @@ defmodule VmemoWeb.Router do
       live "/images/upload", ImageUploadLive
       live "/images/:id", ImageIdLive
       live "/jobs", JobsLive, :index
+      live "/jobs/:id", JobsLive, :show
 
       live "/notes/:id", NoteIdLive
 

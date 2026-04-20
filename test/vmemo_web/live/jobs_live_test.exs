@@ -63,7 +63,7 @@ defmodule VmemoWeb.JobsLiveTest do
       refute Regex.match?(~r/<a[^>]*href="\/jobs"[^>]*btn btn-ghost btn-circle/, html)
     end
 
-    test "aggregates multiple images from one upload batch into a single notification", %{
+    test "renders notification items as links to job detail page", %{
       conn: conn,
       user: user
     } do
@@ -93,8 +93,27 @@ defmodule VmemoWeb.JobsLiveTest do
 
       {:ok, _lv, html} = live(conn, ~p"/home")
 
-      assert html =~ "2 images processing"
-      assert length(Regex.scan(~r/2 images processing/, html)) == 1
+      assert Regex.match?(~r/href="\/jobs\/[^"]+"/, html)
+    end
+
+    test "renders job detail page", %{conn: conn, user: user} do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/detail.jpg",
+          note: "detail",
+          caption: "detail",
+          file_id: "detail.jpg",
+          user_id: user.id,
+          typesense_status: "failed",
+          moondream_status: "processing"
+        })
+
+      {:ok, _lv, html} = live(conn, ~p"/jobs/#{image.id}")
+
+      assert html =~ "Job details"
+      assert html =~ "Job ID:"
+      assert html =~ image.id
+      assert html =~ "Back to jobs"
     end
   end
 

@@ -77,6 +77,15 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     end
   end
 
+  def get_job(nil, _id), do: {:error, :not_found}
+
+  def get_job(user, id) do
+    case Ash.get(Image, id, actor: user) do
+      {:ok, image} -> {:ok, to_job(image)}
+      error -> error
+    end
+  end
+
   def list_notifications(user, opts \\ [])
 
   def list_notifications(nil, _opts), do: {:ok, []}
@@ -88,8 +97,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     with {:ok, jobs} <- list_jobs(user, include_completed: true, limit: query_limit) do
       notifications =
         jobs
-        |> Enum.reject(&is_nil(&1.upload_batch_id))
-        |> Enum.group_by(& &1.upload_batch_id)
+        |> Enum.reject(&is_nil(&1.image_id))
         |> Enum.map(&to_notification/1)
         |> Enum.sort_by(&datetime_sort_value(&1.updated_at), :desc)
         |> Enum.take(limit)
@@ -125,35 +133,23 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     }
   end
 
-  defp to_notification({upload_batch_id, jobs}) do
-    total_count = length(jobs)
-    failed_count = count_status(jobs, "failed")
-    processing_count = count_status(jobs, "processing")
-    success_count = count_status(jobs, "success")
-    status = notification_status(failed_count, processing_count, success_count)
+  defp to_notification(job) do
+    status = job.status
 
     %{
-      id: upload_batch_id,
-      upload_batch_id: upload_batch_id,
-      title: notification_title(total_count),
-      description: notification_description(total_count, status, failed_count),
+      id: job.image_id,
+      image_id: job.image_id,
+      upload_batch_id: job.upload_batch_id,
+      title: notification_title(1),
+      description: notification_description(1, status, if(status == "failed", do: 1, else: 0)),
       status: status,
-      total_count: total_count,
-      failed_count: failed_count,
-      processing_count: processing_count,
-      success_count: success_count,
-      inserted_at: jobs |> Enum.map(& &1.inserted_at) |> earliest_datetime(),
-      updated_at: jobs |> Enum.map(& &1.updated_at) |> latest_datetime()
+      total_count: 1,
+      failed_count: if(status == "failed", do: 1, else: 0),
+      processing_count: if(status == "processing", do: 1, else: 0),
+      success_count: if(status == "success", do: 1, else: 0),
+      inserted_at: job.inserted_at,
+      updated_at: job.updated_at
     }
-  end
-
-  defp notification_status(failed_count, processing_count, success_count) do
-    cond do
-      failed_count > 0 and (processing_count > 0 or success_count > 0) -> "partial_failed"
-      failed_count > 0 -> "failed"
-      processing_count > 0 -> "processing"
-      true -> "success"
-    end
   end
 
   defp notification_title(total_count) when total_count == 1, do: "Image processing"
@@ -183,18 +179,6 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   defp count_unresolved_notifications(notifications) do
     Enum.count(notifications, &(&1.status in ["processing", "failed", "partial_failed"]))
-  end
-
-  defp earliest_datetime([]), do: NaiveDateTime.utc_now()
-
-  defp earliest_datetime(datetimes) do
-    Enum.min_by(datetimes, &datetime_sort_value/1)
-  end
-
-  defp latest_datetime([]), do: NaiveDateTime.utc_now()
-
-  defp latest_datetime(datetimes) do
-    Enum.max_by(datetimes, &datetime_sort_value/1)
   end
 
   defp datetime_sort_value(%DateTime{} = datetime), do: DateTime.to_unix(datetime, :microsecond)
