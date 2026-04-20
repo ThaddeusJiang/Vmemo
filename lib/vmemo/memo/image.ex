@@ -8,6 +8,7 @@ defmodule Vmemo.Memo.Image do
              :caption,
              :typesense_status,
              :moondream_status,
+             :upload_batch_id,
              :file_id,
              :user_id,
              :inserted_at,
@@ -60,6 +61,8 @@ defmodule Vmemo.Memo.Image do
         action :generate_caption
         queue :ai_vision
         max_attempts 5
+        backoff 30
+        timeout 120_000
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Memo.Image.Workers.GenerateCaption
@@ -113,7 +116,7 @@ defmodule Vmemo.Memo.Image do
     end
 
     create :create_immediate do
-      accept [:url, :note, :caption, :file_id, :user_id]
+      accept [:url, :note, :caption, :file_id, :user_id, :upload_batch_id]
     end
 
     @doc """
@@ -122,16 +125,16 @@ defmodule Vmemo.Memo.Image do
     Moondream caption jobs are upload-only; this action leaves `moondream_status` at the resource default.
     """
     create :create_for_image_search do
-      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose]
+      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose, :upload_batch_id]
       change set_attribute(:typesense_status, "pending")
     end
 
     create :import do
-      accept [:id, :url, :note, :caption, :file_id, :user_id, :inner_purpose]
+      accept [:id, :url, :note, :caption, :file_id, :user_id, :inner_purpose, :upload_batch_id]
     end
 
     create :create_with_sync do
-      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose]
+      accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose, :upload_batch_id]
       change set_attribute(:typesense_status, "pending")
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:sync_typesense)
@@ -750,6 +753,7 @@ defmodule Vmemo.Memo.Image do
 
     attribute :file_id, :string
     attribute :user_id, :uuid
+    attribute :upload_batch_id, :uuid
 
     create_timestamp :inserted_at
     update_timestamp :updated_at

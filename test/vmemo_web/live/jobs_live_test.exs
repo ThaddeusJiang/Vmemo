@@ -55,20 +55,44 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Retry"
     end
 
-    test "shows jobs summary near avatar", %{conn: conn} do
+    test "shows notifications entry near avatar", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/home")
 
-      assert html =~ "Processing 1 / Failed 1"
-      assert html =~ "href=\"/jobs\""
+      assert html =~ "Notifications"
+      refute html =~ "Processing 1 / Failed 1"
+      refute Regex.match?(~r/<a[^>]*href="\/jobs"[^>]*btn btn-ghost btn-circle/, html)
     end
   end
 
   defp create_image!(attrs) do
+    {typesense_status, attrs} = Map.pop(attrs, :typesense_status, "completed")
+    {moondream_status, attrs} = Map.pop(attrs, :moondream_status, "completed")
     attrs = Map.put_new(attrs, :inner_purpose, nil)
 
     case Ash.create(Image, attrs, action: :import, actor: nil, authorize?: false) do
-      {:ok, image} -> image
-      {:error, error} -> raise "failed to create image: #{inspect(error)}"
+      {:ok, image} ->
+        {:ok, image} =
+          Ash.update(
+            image,
+            %{typesense_status: typesense_status},
+            action: :set_typesense_status,
+            actor: nil,
+            authorize?: false
+          )
+
+        {:ok, image} =
+          Ash.update(
+            image,
+            %{moondream_status: moondream_status},
+            action: :set_moondream_status,
+            actor: nil,
+            authorize?: false
+          )
+
+        image
+
+      {:error, error} ->
+        raise "failed to create image: #{inspect(error)}"
     end
   end
 end

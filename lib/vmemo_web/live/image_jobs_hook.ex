@@ -21,6 +21,12 @@ defmodule VmemoWeb.Live.ImageJobsHook do
         _ -> []
       end
 
+    notifications =
+      case list_notifications(user) do
+        {:ok, notifications} -> notifications
+        _ -> []
+      end
+
     socket
     |> Phoenix.Component.assign(:global_image_jobs, jobs)
     |> Phoenix.Component.assign(
@@ -28,6 +34,11 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       count_status(jobs, "processing")
     )
     |> Phoenix.Component.assign(:global_image_jobs_failed_count, count_status(jobs, "failed"))
+    |> Phoenix.Component.assign(:global_notifications, notifications)
+    |> Phoenix.Component.assign(
+      :global_notifications_unresolved_count,
+      count_unresolved_notifications(notifications)
+    )
   end
 
   def list_jobs(user, opts \\ [])
@@ -66,6 +77,27 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     end
   end
 
+  def list_notifications(user, opts \\ [])
+
+  def list_notifications(nil, _opts), do: {:ok, []}
+
+  def list_notifications(user, opts) do
+    limit = Keyword.get(opts, :limit, @max_jobs)
+    query_limit = Keyword.get(opts, :query_limit, max(@default_all_jobs_limit, limit * 4))
+
+    with {:ok, jobs} <- list_jobs(user, include_completed: true, limit: query_limit) do
+      notifications =
+        jobs
+        |> Enum.reject(&is_nil(&1.upload_batch_id))
+        |> Enum.group_by(& &1.upload_batch_id)
+        |> Enum.map(&to_notification/1)
+        |> Enum.sort_by(&datetime_sort_value(&1.updated_at), :desc)
+        |> Enum.take(limit)
+
+      {:ok, notifications}
+    end
+  end
+
   defp maybe_filter_completed(images, true), do: images
   defp maybe_filter_completed(images, false), do: Enum.filter(images, &job_candidate?/1)
 
@@ -77,6 +109,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     %{
       id: image.id,
       image_id: image.id,
+      upload_batch_id: image.upload_batch_id,
       image_url: image.url,
       file_name: image.file_id || image.id,
       status: job_status(image),
@@ -91,6 +124,85 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       updated_at: image.updated_at
     }
   end
+
+  defp to_notification({upload_batch_id, jobs}) do
+    total_count = length(jobs)
+    failed_count = count_status(jobs, "failed")
+    processing_count = count_status(jobs, "processing")
+    success_count = count_status(jobs, "success")
+    status = notification_status(failed_count, processing_count, success_count)
+
+    %{
+      id: upload_batch_id,
+      upload_batch_id: upload_batch_id,
+      title: notification_title(total_count),
+      description: notification_description(total_count, status, failed_count),
+      status: status,
+      total_count: total_count,
+      failed_count: failed_count,
+      processing_count: processing_count,
+      success_count: success_count,
+      inserted_at: jobs |> Enum.map(& &1.inserted_at) |> earliest_datetime(),
+      updated_at: jobs |> Enum.map(& &1.updated_at) |> latest_datetime()
+    }
+  end
+
+  defp notification_status(failed_count, processing_count, success_count) do
+    cond do
+      failed_count > 0 and (processing_count > 0 or success_count > 0) -> "partial_failed"
+      failed_count > 0 -> "failed"
+      processing_count > 0 -> "processing"
+      true -> "success"
+    end
+  end
+
+  defp notification_title(total_count) when total_count == 1, do: "Image processing"
+  defp notification_title(total_count), do: "#{total_count} images processing"
+
+  defp notification_description(total_count, "processing", _failed_count) do
+    if total_count == 1,
+      do: "1 image is still processing.",
+      else: "#{total_count} images are still processing."
+  end
+
+  defp notification_description(total_count, "success", _failed_count) do
+    if total_count == 1,
+      do: "1 image processed successfully.",
+      else: "#{total_count} images processed successfully."
+  end
+
+  defp notification_description(total_count, "failed", failed_count) do
+    if total_count == 1,
+      do: "1 image processing failed.",
+      else: "#{failed_count}/#{total_count} images failed."
+  end
+
+  defp notification_description(total_count, "partial_failed", failed_count) do
+    "#{failed_count}/#{total_count} images failed, remaining tasks are still running or completed."
+  end
+
+  defp count_unresolved_notifications(notifications) do
+    Enum.count(notifications, &(&1.status in ["processing", "failed", "partial_failed"]))
+  end
+
+  defp earliest_datetime([]), do: NaiveDateTime.utc_now()
+
+  defp earliest_datetime(datetimes) do
+    Enum.min_by(datetimes, &datetime_sort_value/1)
+  end
+
+  defp latest_datetime([]), do: NaiveDateTime.utc_now()
+
+  defp latest_datetime(datetimes) do
+    Enum.max_by(datetimes, &datetime_sort_value/1)
+  end
+
+  defp datetime_sort_value(%DateTime{} = datetime), do: DateTime.to_unix(datetime, :microsecond)
+
+  defp datetime_sort_value(%NaiveDateTime{} = datetime),
+    do: DateTime.from_naive!(datetime, "Etc/UTC") |> DateTime.to_unix(:microsecond)
+
+  defp datetime_sort_value(_), do: 0
 
   defp job_status(image) do
     cond do
