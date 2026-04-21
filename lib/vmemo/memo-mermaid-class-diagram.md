@@ -32,9 +32,10 @@ classDiagram
         read()
         destroy()
         create_with_sync(String text, UUID user_id)
-        import(UUID id, String text, UUID user_id)
+        import(UUID id, String text, UUID user_id, String typesense_status)
         update(String text)
         sync_typesense()
+        set_typesense_status(String typesense_status)
         sync_typesense_by_id(UUID note_id)
     }
     class ImageNote {
