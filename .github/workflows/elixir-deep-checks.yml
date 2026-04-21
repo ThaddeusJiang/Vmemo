@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: dev
+      DEV_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_dev
+      DEV_TYPESENSE_URL: http://localhost:8108
     strategy:
       matrix:
         otp: ["28"]
