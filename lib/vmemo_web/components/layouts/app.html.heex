@@ -160,61 +160,57 @@
                       method="post"
                       class="flex items-center gap-2"
                     >
-                      <label
-                        class="swap swap-rotate btn btn-ghost btn-sm btn-square"
-                        title="Light mode"
-                      >
+                      <input
+                        type="hidden"
+                        name="appearance"
+                        value={if profile.appearance == "dark", do: "dark", else: "light"}
+                      />
+                      <label class="toggle text-base-content">
                         <input
-                          type="radio"
-                          name="appearance"
-                          value="light"
-                          checked={profile.appearance == "light"}
-                          class="theme-controller sr-only"
-                          aria-label="Light mode"
-                          onchange="this.form.submit()"
-                        />
-                        <svg
-                          class="swap-on h-5 w-5 fill-current"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M5.64,17l-.71.71L3.51,16.29l.71-.71L5.64,17M5,12l-1,0V10l1,0V12m7-7l0-1h-2l0,1H12m6.36,1.64l1.41-1.41-.71-.71L17.64,5.93l.72.71M17,17l1.41,1.41.71-.71L17.71,16.29,17,17M12,6A6,6 0 0,0 6,12a6,6 0 0,0 6,6 6,6 0 0,0 6-6A6,6 0 0,0 12,6m0,10a4,4 0 0,1-4-4 4,4 0 0,1 4-4 4,4 0 0,1 4,4 4,4 0 0,1-4,4m7-4l1,0V10l-1,0v2Z" />
-                        </svg>
-                        <svg
-                          class="swap-off h-5 w-5 fill-current"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 3a1 1 0 0 1 1 1v1.06a8.001 8.001 0 0 0 5.94 5.94H20a1 1 0 1 1 0 2h-1.06A8.001 8.001 0 0 0 13 18.94V20a1 1 0 1 1-2 0v-1.06A8.001 8.001 0 0 0 5.06 13H4a1 1 0 1 1 0-2h1.06A8.001 8.001 0 0 0 11 5.06V4a1 1 0 0 1 1-1Z" />
-                        </svg>
-                      </label>
-
-                      <label
-                        class="swap swap-rotate btn btn-ghost btn-sm btn-square"
-                        title="Dark mode"
-                      >
-                        <input
-                          type="radio"
-                          name="appearance"
+                          type="checkbox"
                           value="dark"
                           checked={profile.appearance == "dark"}
-                          class="theme-controller sr-only"
-                          aria-label="Dark mode"
-                          onchange="this.form.submit()"
+                          class="theme-controller"
+                          aria-label="Toggle light or dark mode"
+                          onchange="this.form.querySelector('input[type=hidden][name=appearance]').value = this.checked ? 'dark' : 'light'; this.form.submit();"
                         />
                         <svg
-                          class="swap-on h-5 w-5 fill-current"
+                          aria-label="sun"
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
                         >
-                          <path d="M21.64 13a1 1 0 0 1-1.28.7A9 9 0 1 1 10.3 3.64a1 1 0 0 1 1.27 1.27 7 7 0 1 0 8.8 8.8A1 1 0 0 1 21.64 13Z" />
+                          <g
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                            stroke-width="2"
+                            fill="none"
+                            stroke="currentColor"
+                          >
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <path d="M12 2v2"></path>
+                            <path d="M12 20v2"></path>
+                            <path d="m4.93 4.93 1.41 1.41"></path>
+                            <path d="m17.66 17.66 1.41 1.41"></path>
+                            <path d="M2 12h2"></path>
+                            <path d="M20 12h2"></path>
+                            <path d="m6.34 17.66-1.41 1.41"></path>
+                            <path d="m19.07 4.93-1.41 1.41"></path>
+                          </g>
                         </svg>
                         <svg
-                          class="swap-off h-5 w-5 fill-current"
+                          aria-label="moon"
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
                         >
-                          <path d="M21.64 13a1 1 0 0 1-1.28.7A9 9 0 1 1 10.3 3.64a1 1 0 0 1 1.27 1.27 7 7 0 1 0 8.8 8.8A1 1 0 0 1 21.64 13Z" />
+                          <g
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                            stroke-width="2"
+                            fill="none"
+                            stroke="currentColor"
+                          >
+                            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                          </g>
                         </svg>
                       </label>
                     </.form>
