@@ -7,14 +7,25 @@ defmodule VmemoWeb.UserProfileLiveTest do
 
   describe "Profile page" do
     test "renders profile page", %{conn: conn} do
-      {:ok, _lv, html} =
+      {:ok, lv, html} =
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/profile")
 
       assert html =~ "User Profile"
       assert html =~ "Language"
-      assert html =~ "Save Profile"
+      refute html =~ "Save Profile"
+
+      changed_html =
+        lv
+        |> form("form[phx-submit=save]", %{
+          "profile" => %{
+            "name" => "Alice"
+          }
+        })
+        |> render_change()
+
+      assert changed_html =~ "Save Profile"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
