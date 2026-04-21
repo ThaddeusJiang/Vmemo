@@ -16,6 +16,19 @@ classDiagram
         change_password(String password, String password_confirmation)
         reset_password(String password, String password_confirmation)
     }
+    class UserProfile {
+        UUID id
+        UUID user_id
+        String name
+        String avatar_file_id
+        String language
+        String appearance
+        destroy()
+        read()
+        create(UUID user_id, String name, String language, String appearance, ...)
+        update(String name, String language, String appearance, String avatar_file_id)
+        get_by_user_id(UUID user_id)
+    }
     class UserToken {
         Map extra_data
         String purpose
@@ -60,6 +73,7 @@ classDiagram
     }
 
     ApiToken -- User
+    User -- UserProfile
     User -- UserToken
 
 ```
