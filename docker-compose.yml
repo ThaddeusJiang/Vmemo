@@ -6,7 +6,7 @@ services:
     hostname: postgres
     restart: on-failure
     ports:
-      - "15432:5432"
+      - "10001:5432"
     volumes:
       - pg-data:/var/lib/postgresql
     environment:
@@ -19,7 +19,7 @@ services:
     hostname: typesense
     restart: on-failure
     ports:
-      - "18108:8108"
+      - "10002:8108"
     volumes:
       - ts-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
@@ -31,7 +31,7 @@ services:
     hostname: postgres-test
     restart: on-failure
     ports:
-      - "25432:5432"
+      - "10003:5432"
     volumes:
       - pg-test-data:/var/lib/postgresql
     environment:
@@ -46,7 +46,7 @@ services:
     hostname: typesense-test
     restart: on-failure
     ports:
-      - "28108:8108"
+      - "10004:8108"
     volumes:
       - ts-test-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"

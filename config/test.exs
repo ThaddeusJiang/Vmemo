@@ -2,6 +2,9 @@ import Config
 
 config :ash, policies: [show_policy_breakdowns?: true]
 
+test_database_url = System.fetch_env!("TEST_DATABASE_URL")
+test_typesense_url = System.fetch_env!("TEST_TYPESENSE_URL")
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
@@ -11,15 +14,11 @@ config :bcrypt_elixir, :log_rounds, 1
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :vmemo, Vmemo.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  port: String.to_integer(System.get_env("POSTGRES_PORT", "25432")),
-  database: "vmemo_test#{System.get_env("MIX_TEST_PARTITION")}",
+  url: test_database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-config :vmemo, typesense_url: System.get_env("TYPESENSE_URL", "http://localhost:28108")
+config :vmemo, typesense_url: test_typesense_url
 config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
 
 config :vmemo, moondream_url: System.get_env("MOONDREAM_URL", "http://localhost:2020/v1/")

@@ -161,6 +161,18 @@ If needed, set local overrides in `mise.local.toml`:
 OPENROUTER_API_KEY = "your-openrouter-api-key"
 ```
 
+Local defaults are URL-based:
+
+```toml
+[env]
+DEV_DATABASE_URL = "postgres://postgres:postgres@localhost:10001/vmemo_dev"
+DEV_TYPESENSE_URL = "http://localhost:10002"
+TEST_DATABASE_URL = "postgres://postgres:postgres@localhost:10003/vmemo_test"
+TEST_TYPESENSE_URL = "http://localhost:10004"
+```
+
+If you use multiple worktrees in parallel, set a different URL set in each worktree `.env`.
+
 Runtime environment keys are defined in `config/runtime.exs`.
 
 ## Contributor Checklist
