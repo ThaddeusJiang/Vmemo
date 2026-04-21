@@ -11,22 +11,17 @@ defmodule VmemoWeb.UserProfileLive do
     <div class="mx-auto w-full max-w-2xl p-4 sm:p-4 lg:p-4">
       <.header>
         User Profile
-        <:subtitle>Manage your avatar, display name, and language</:subtitle>
       </.header>
 
       <div class="mt-6 rounded-md border border-base-300 p-4 sm:p-6">
         <.form for={@profile_form} phx-submit="save" phx-change="validate" class="space-y-5">
           <div class="space-y-2">
-            <label class="label">
-              <span class="label-text">Avatar</span>
-            </label>
-
-            <div class="flex items-center gap-4">
+            <div class="flex justify-center">
               <label
                 for={@uploads.avatar.ref}
                 class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
               >
-                <div class="w-16 rounded-full bg-base-200 ring-1 ring-base-300">
+                <div class="w-24 rounded-full bg-base-200 ring-1 ring-base-300">
                   <.live_img_preview
                     :if={@uploads.avatar.entries != []}
                     entry={List.first(@uploads.avatar.entries)}
@@ -54,9 +49,6 @@ defmodule VmemoWeb.UserProfileLive do
                   upload={@uploads.avatar}
                   class="hidden"
                 />
-                <p class="text-xs text-base-content/70">
-                  Click avatar to choose image. PNG, JPG, JPEG, WEBP. Max 5MB.
-                </p>
                 <p :for={err <- upload_errors(@uploads.avatar)} class="text-sm text-error">
                   {avatar_upload_error(err)}
                 </p>
@@ -77,8 +69,8 @@ defmodule VmemoWeb.UserProfileLive do
             ]}
           />
 
-          <div class="pt-2">
-            <.button phx-disable-with="Saving...">Confirm</.button>
+          <div :if={@has_changes} class="pt-4 flex justify-center">
+            <.button class="btn-lg px-10" phx-disable-with="Saving...">Save Profile</.button>
           </div>
         </.form>
       </div>
@@ -101,19 +93,20 @@ defmodule VmemoWeb.UserProfileLive do
       |> assign(:profile, profile)
       |> assign(:profile_form, profile_form(profile))
       |> assign(:avatar_preview_url, avatar_url(user.id, profile.avatar_file_id))
+      |> assign(:initial_profile_values, profile_values(profile))
+      |> assign(:has_changes, false)
 
     {:ok, socket}
   end
 
-  def handle_event("validate", %{"profile" => params}, socket) do
-    form =
-      params
-      |> Map.take(["name", "language"])
-      |> Map.put_new("name", "")
-      |> Map.put_new("language", "en")
-      |> to_form(as: :profile)
+  def handle_event("validate", params, socket) do
+    profile_params = build_profile_params(params, socket)
+    has_changes = profile_changed?(socket, profile_params)
 
-    {:noreply, assign(socket, :profile_form, form)}
+    {:noreply,
+     socket
+     |> assign(:profile_form, to_form(profile_params, as: :profile))
+     |> assign(:has_changes, has_changes)}
   end
 
   def handle_event("save", %{"profile" => params}, socket) do
@@ -127,6 +120,8 @@ defmodule VmemoWeb.UserProfileLive do
         |> assign(:profile, profile)
         |> assign(:profile_form, profile_form(profile))
         |> assign(:avatar_preview_url, avatar_url(user.id, profile.avatar_file_id))
+        |> assign(:initial_profile_values, profile_values(profile))
+        |> assign(:has_changes, false)
         |> assign(:current_user_profile, profile)
         |> put_flash(:info, "Profile updated successfully.")
 
@@ -171,13 +166,29 @@ defmodule VmemoWeb.UserProfileLive do
   end
 
   defp profile_form(profile) do
-    to_form(
-      %{
-        "name" => profile.name,
-        "language" => profile.language
-      },
-      as: :profile
-    )
+    to_form(profile_values(profile), as: :profile)
+  end
+
+  defp build_profile_params(params, socket) do
+    existing = socket.assigns.profile_form.params || profile_values(socket.assigns.profile)
+    profile_params = Map.get(params, "profile", %{})
+
+    existing
+    |> Map.merge(Map.take(profile_params, ["name", "language"]))
+    |> Map.put_new("name", "")
+    |> Map.put_new("language", "en")
+  end
+
+  defp profile_values(profile) do
+    %{
+      "name" => profile.name,
+      "language" => profile.language
+    }
+  end
+
+  defp profile_changed?(socket, profile_params) do
+    profile_params != socket.assigns.initial_profile_values ||
+      socket.assigns.uploads.avatar.entries != []
   end
 
   defp avatar_url(_user_id, nil), do: nil
