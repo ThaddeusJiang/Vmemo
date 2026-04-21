@@ -22,16 +22,25 @@ defmodule VmemoWeb.UserProfileLive do
             </label>
 
             <div class="flex items-center gap-4">
-              <div class="avatar">
-                <div class="w-16 rounded-full bg-base-200">
+              <button
+                type="button"
+                class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
+                phx-click={JS.dispatch("click", to: "#avatar-upload-input")}
+              >
+                <div class="w-16 rounded-full bg-base-200 ring-1 ring-base-300">
+                  <.live_img_preview
+                    :if={@uploads.avatar.entries != []}
+                    entry={List.first(@uploads.avatar.entries)}
+                    class="h-full w-full object-cover"
+                  />
                   <img
-                    :if={@avatar_preview_url}
+                    :if={@uploads.avatar.entries == [] && @avatar_preview_url}
                     src={@avatar_preview_url}
                     alt="Avatar preview"
                     class="h-full w-full object-cover"
                   />
                   <div
-                    :if={!@avatar_preview_url}
+                    :if={@uploads.avatar.entries == [] && !@avatar_preview_url}
                     class="flex h-full w-full items-center justify-center"
                   >
                     <span class="text-lg font-semibold">
@@ -39,14 +48,17 @@ defmodule VmemoWeb.UserProfileLive do
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
 
               <div class="grow space-y-2">
                 <.live_file_input
+                  id="avatar-upload-input"
                   upload={@uploads.avatar}
-                  class="file-input file-input-bordered w-full"
+                  class="hidden"
                 />
-                <p class="text-xs text-base-content/70">PNG, JPG, JPEG, WEBP. Max 5MB.</p>
+                <p class="text-xs text-base-content/70">
+                  Click avatar to choose image. PNG, JPG, JPEG, WEBP. Max 5MB.
+                </p>
                 <p :for={err <- upload_errors(@uploads.avatar)} class="text-sm text-error">
                   {avatar_upload_error(err)}
                 </p>
@@ -68,7 +80,7 @@ defmodule VmemoWeb.UserProfileLive do
           />
 
           <div class="pt-2">
-            <.button phx-disable-with="Saving...">Save Profile</.button>
+            <.button phx-disable-with="Saving...">Confirm</.button>
           </div>
         </.form>
       </div>
@@ -86,7 +98,7 @@ defmodule VmemoWeb.UserProfileLive do
         accept: ~w(.jpg .jpeg .png .webp),
         max_entries: 1,
         max_file_size: @max_avatar_size,
-        auto_upload: true
+        auto_upload: false
       )
       |> assign(:profile, profile)
       |> assign(:profile_form, profile_form(profile))
