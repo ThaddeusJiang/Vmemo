@@ -22,10 +22,9 @@ defmodule VmemoWeb.UserProfileLive do
             </label>
 
             <div class="flex items-center gap-4">
-              <button
-                type="button"
+              <label
+                for="avatar-upload-input"
                 class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
-                phx-click={JS.dispatch("click", to: "#avatar-upload-input")}
               >
                 <div class="w-16 rounded-full bg-base-200 ring-1 ring-base-300">
                   <.live_img_preview
@@ -48,7 +47,7 @@ defmodule VmemoWeb.UserProfileLive do
                     </span>
                   </div>
                 </div>
-              </button>
+              </label>
 
               <div class="grow space-y-2">
                 <.live_file_input
