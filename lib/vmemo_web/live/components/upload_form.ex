@@ -137,20 +137,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                               style="--value:100; --size:2rem; --thickness: 2px;"
                               role="progressbar"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                class="size-6"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  d="m4.5 12.75 6 6 9-13.5"
-                                />
-                              </svg>
+                              <.icon name="hero-check" class="size-6" />
                             </div>
                           </div>
                         <% _ -> %>
@@ -160,20 +147,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
                               style={"--value:#{entry.progress}; --size:2rem; --thickness: 2px;"}
                               role="progressbar"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                class="size-6"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  d="m4.5 12.75 6 6 9-13.5"
-                                />
-                              </svg>
+                              <.icon name="hero-check" class="size-6" />
                             </div>
                           </div>
                       <% end %>
@@ -569,30 +543,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     ~H"""
     <%= case @status do %>
       <% :success -> %>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-          <path
-            fill-rule="evenodd"
-            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <.icon name="hero-check-circle" class="size-4" />
       <% :error -> %>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-          <path
-            fill-rule="evenodd"
-            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm9-4.5a.75.75 0 0 0-1.5 0v5.25a.75.75 0 0 0 1.5 0V7.5Zm0 9a.75.75 0 0 0-1.5 0v.75a.75.75 0 0 0 1.5 0v-.75Z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <.icon name="hero-exclamation-circle" class="size-4" />
       <% :processing -> %>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          class="size-4 animate-pulse"
-        >
-          <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.283-3.283L2.06 11.81l2.845-.813a4.5 4.5 0 0 0 3.283-3.283L9 4.86l.813 2.845a4.5 4.5 0 0 0 3.283 3.283l2.845.813-2.845.813a4.5 4.5 0 0 0-3.283 3.283ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.455L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.455L18 2.25l.259 1.036a3.375 3.375 0 0 0 2.455 2.455L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.455ZM16.894 20.567 17.25 21.75l.356-1.183a2.25 2.25 0 0 1 1.567-1.567l1.183-.356-1.183-.356a2.25 2.25 0 0 1-1.567-1.567l-.356-1.183-.356 1.183a2.25 2.25 0 0 1-1.567 1.567l-1.183.356 1.183.356a2.25 2.25 0 0 1 1.567 1.567Z" />
-        </svg>
+        <.icon name="hero-arrow-path" class="size-4 animate-spin" />
     <% end %>
     """
   end

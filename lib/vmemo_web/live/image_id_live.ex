@@ -310,15 +310,7 @@ defmodule VmemoWeb.ImageIdLive do
                   class="absolute bottom-2 right-2 btn btn-circle hidden group-hover:flex sm:group-hover:hidden items-center justify-center group-hover:bg-base-100"
                   aria-label={gettext("expand")}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    class="size-4"
-                  >
-                    <path d="M6.41421 5H10V3H3V10H5V6.41421L9.29289 10.7071L10.7071 9.29289L6.41421 5ZM21 14H19V17.5858L14.7071 13.2929L13.2929 14.7071L17.5858 19H14V21H21V14Z">
-                    </path>
-                  </svg>
+                  <.icon name="hero-arrows-pointing-out" class="size-4" />
                 </.link>
 
                 <.button
@@ -327,15 +319,7 @@ defmodule VmemoWeb.ImageIdLive do
                   aria-label={gettext("expand")}
                   class="absolute top-2 right-2 btn-circle hidden group-hover:hidden sm:group-hover:flex items-center justify-center group-hover:bg-base-100"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    class="h-4 w-4"
-                  >
-                    <path d="M6.41421 5H10V3H3V10H5V6.41421L9.29289 10.7071L10.7071 9.29289L6.41421 5ZM21 14H19V17.5858L14.7071 13.2929L13.2929 14.7071L17.5858 19H14V21H21V14Z">
-                    </path>
-                  </svg>
+                  <.icon name="hero-arrows-pointing-out" class="h-4 w-4" />
                 </.button>
               </figure>
             </div>
@@ -361,34 +345,16 @@ defmodule VmemoWeb.ImageIdLive do
                           else: false
                       }
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+                      <.icon
+                        name="hero-sparkles"
                         class={
-                          "lucide lucide-brain-circuit h-4 w-4 " <>
+                          "h-4 w-4 " <>
                             if(@image.caption && @image.caption != "",
                               do: "text-green-500",
                               else: "text-base-content"
                             )
                         }
-                      >
-                        <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" /><path d="M9 13a4.5 4.5 0 0 0 3-4" /><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" /><path d="M3.477 10.896a4 4 0 0 1 .585-.396" /><path d="M6 18a4 4 0 0 1-1.967-.516" /><path d="M12 13h4" /><path d="M12 18h6a2 2 0 0 1 2 2v1" /><path d="M12 8h8" /><path d="M16 8V5a2 2 0 0 1 2-2" /><circle
-                          cx="16"
-                          cy="13"
-                          r=".5"
-                        /><circle cx="18" cy="3" r=".5" /><circle cx="20" cy="21" r=".5" /><circle
-                          cx="20"
-                          cy="8"
-                          r=".5"
-                        />
-                      </svg>
+                      />
                       <span>
                         {if @image.caption && @image.caption != "",
                           do: gettext("Regenerate caption"),
