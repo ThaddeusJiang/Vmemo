@@ -3,7 +3,7 @@ defmodule VmemoWeb.UserProfileController do
 
   alias Vmemo.Account
 
-  @allowed_appearances ["light", "dark"]
+  @allowed_appearances ["system", "light", "dark"]
 
   def update_appearance(conn, %{"appearance" => appearance})
       when appearance in @allowed_appearances do

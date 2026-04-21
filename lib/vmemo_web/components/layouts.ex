@@ -92,18 +92,32 @@ defmodule VmemoWeb.Layouts do
                 Appearance
               </span>
             </div>
-            <label class="swap swap-rotate text-base-content">
-              <input
-                type="checkbox"
-                value="dark"
-                checked={@profile.appearance == "dark"}
-                class="theme-controller"
-                aria-label="Toggle light or dark mode"
-                onchange="window.updateAppearancePreference?.(this.checked)"
-              />
-              <.icon name="hero-sun" class="swap-off size-5 text-primary" />
-              <.icon name="hero-moon" class="swap-on size-5" />
-            </label>
+            <div class="inline-flex items-center rounded-full bg-base-200 p-1 gap-1">
+              <button
+                type="button"
+                class={appearance_btn_class(@profile.appearance == "system")}
+                aria-label="Use system appearance"
+                onclick="window.updateAppearancePreference?.('system')"
+              >
+                <.icon name="hero-computer-desktop" class="size-4" />
+              </button>
+              <button
+                type="button"
+                class={appearance_btn_class(@profile.appearance == "light")}
+                aria-label="Use light appearance"
+                onclick="window.updateAppearancePreference?.('light')"
+              >
+                <.icon name="hero-sun" class="size-4 text-primary" />
+              </button>
+              <button
+                type="button"
+                class={appearance_btn_class(@profile.appearance == "dark")}
+                aria-label="Use dark appearance"
+                onclick="window.updateAppearancePreference?.('dark')"
+              >
+                <.icon name="hero-moon" class="size-4" />
+              </button>
+            </div>
           </div>
         </li>
         <li class="border-t border-base-300 my-1"></li>
@@ -134,6 +148,12 @@ defmodule VmemoWeb.Layouts do
       _ -> nil
     end
   end
+
+  defp appearance_btn_class(true),
+    do: "btn btn-circle btn-xs bg-base-100 border-base-300 shadow-sm text-base-content"
+
+  defp appearance_btn_class(false),
+    do: "btn btn-circle btn-xs btn-ghost text-base-content/70 hover:text-base-content"
 
   embed_templates "layouts/*"
 end
