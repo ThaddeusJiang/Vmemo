@@ -39,6 +39,10 @@
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_user] || assigns[:current_user] do %>
+          <.notifications_dropdown
+            notifications={assigns[:global_notifications] || []}
+            unresolved_count={assigns[:global_notifications_unresolved_count] || 0}
+          />
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
@@ -56,6 +60,14 @@
               tabindex="0"
               class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border border-base-300 shadow-lg"
             >
+              <li>
+                <.link
+                  href={~p"/jobs"}
+                  class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                >
+                  <.icon name="hero-bell" class="size-6" /> Jobs
+                </.link>
+              </li>
               <li>
                 <.link
                   href={~p"/settings"}
@@ -145,6 +157,7 @@
       flash={@flash}
       class="fixed top-8 left-1/2 -translate-x-1/2"
     />
+
     {@inner_content}
   </section>
 </main>

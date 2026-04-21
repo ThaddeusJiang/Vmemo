@@ -1,6 +1,17 @@
 defmodule Vmemo.Ai.Caption do
   @moduledoc false
 
+  @unreachable_reasons [
+    :connection_refused,
+    :econnrefused,
+    :host_unreachable,
+    :ehostunreach,
+    :enetunreach,
+    :nxdomain,
+    :eai_nodata,
+    :eai_noname
+  ]
+
   alias SmallSdk.Moondream
 
   def generate_caption(image_base64) do
@@ -11,7 +22,7 @@ defmodule Vmemo.Ai.Caption do
         handle_caption_error(reason)
     end
   rescue
-    e -> {:error, e}
+    e -> handle_caption_error(e)
   end
 
   defp handle_caption_error(:file_not_found), do: {:discard, :file_not_found}
@@ -24,6 +35,30 @@ defmodule Vmemo.Ai.Caption do
 
   defp handle_caption_error("Request failed with status 404"),
     do: {:discard, "Request failed with status 404"}
+
+  defp handle_caption_error(:connection_refused), do: {:error, :vision_service_unreachable}
+
+  defp handle_caption_error(%Req.TransportError{reason: reason})
+       when reason in @unreachable_reasons,
+       do: {:error, :vision_service_unreachable}
+
+  defp handle_caption_error(reason) when is_atom(reason) and reason in @unreachable_reasons,
+    do: {:error, :vision_service_unreachable}
+
+  defp handle_caption_error(reason) when is_binary(reason) do
+    reason_downcase = String.downcase(reason)
+
+    cond do
+      String.contains?(reason_downcase, "connection_refused") ->
+        {:error, :vision_service_unreachable}
+
+      String.contains?(reason_downcase, "connection refused") ->
+        {:error, :vision_service_unreachable}
+
+      true ->
+        {:error, reason}
+    end
+  end
 
   defp handle_caption_error(reason), do: {:error, reason}
 end

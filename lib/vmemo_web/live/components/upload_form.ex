@@ -2,6 +2,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   @moduledoc false
   use VmemoWeb, :live_component
 
+  require Logger
+
   import VmemoWeb.Live.FocusHelpers
 
   alias VmemoWeb.LiveComponents.ImageCard
@@ -38,14 +40,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       |> assign_new(:show_full_form, fn -> false end)
       |> assign_new(:uploaded_photos, fn -> [] end)
 
-    # Notify parent component about file state changes and upload ref
-    # Use socket.parent_pid to get parent LiveView PID
     has_files = Enum.any?(socket.assigns.uploads.images.entries)
     upload_ref = socket.assigns.uploads.images.ref
 
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
-      # Ensure ref is always sent (it may change when component updates)
       send(socket.parent_pid, {:upload_form_ref, upload_ref})
     end
 
@@ -265,13 +264,11 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     has_files = current_file_count > 0
     file_count_changed = current_file_count != previous_file_count
 
-    # Notify parent component about file state changes
     if socket.parent_pid do
       send(socket.parent_pid, {:upload_form_has_files, has_files})
       send(socket.parent_pid, {:upload_form_ref, upload_ref})
     end
 
-    # Merge form data
     current_form_data = socket.assigns.form.params || %{}
     new_form_data = Map.merge(current_form_data, params)
 
@@ -333,74 +330,37 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
       case uploaded_entries(socket, :images) do
         {[_ | _] = entries, []} ->
+          upload_batch_id = Ecto.UUID.generate()
+
           results =
-            for entry <- entries do
-              consume_uploaded_entry(socket, entry, fn %{path: path} ->
-                filename = entry.uuid <> Path.extname(entry.client_name)
+            process_upload_entries(socket, entries, note_text, current_user, upload_batch_id)
 
-                {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
+          images =
+            results
+            |> Enum.filter(&match?({:ok, _}, &1))
+            |> Enum.map(fn {:ok, image} -> image end)
 
-                case Image.create_with_sync(
-                       %{
-                         note: note_text,
-                         url: Path.join("/", dest),
-                         file_id: filename,
-                         user_id: user_id,
-                         inner_purpose: nil
-                       },
-                       actor: current_user
-                     ) do
-                  {:ok, image} -> {:ok, {:ok, image}}
-                  {:error, reason} -> {:ok, {:error, reason}}
-                end
-              end)
-            end
+          %{linked: linked_count, failed: link_failed_count} =
+            maybe_link_note_to_photos(note, images, current_user)
 
-          results = Enum.map(results, &normalize_upload_result/1)
-
-          case Enum.find(results, fn result -> match?({:error, _}, result) end) do
-            {:error, %Ash.Error.Unknown{} = ash_error} ->
-              error_msg =
-                ash_error.errors
-                |> List.first()
-                |> case do
-                  %Ash.Error.Unknown.UnknownError{error: msg} when is_binary(msg) ->
-                    # Extract the actual error message from the nested error
-                    msg
-
-                  %{error: msg} when is_binary(msg) ->
-                    msg
-
-                  _ ->
-                    "Database error occurred"
-                end
-
-              {:noreply, socket |> put_flash(:error, error_msg)}
-
-            {:error, reason} when is_binary(reason) ->
-              {:noreply, socket |> put_flash(:error, reason)}
-
-            {:error, _reason} ->
-              {:noreply, socket |> put_flash(:error, "Upload error occurred")}
-
-            nil ->
-              images =
-                results
-                |> Enum.filter(&match?({:ok, _}, &1))
-                |> Enum.map(fn {:ok, image} -> image end)
-
-              case maybe_link_note_to_photos(note, images, current_user) do
-                :ok ->
-                  send(self(), {:upload_success, images})
-
-                  {:noreply,
-                   update(socket, :uploaded_photos, &append_uploaded_photos(&1, images))}
-
-                {:error, _reason} ->
-                  {:noreply,
-                   socket |> put_flash(:error, "Failed to link note to uploaded images")}
-              end
+          if images != [] do
+            send(self(), {:upload_success, images})
           end
+
+          socket =
+            socket
+            |> update(:uploaded_photos, &append_uploaded_photos(&1, images))
+            |> put_upload_result_flash(results, link_failed_count)
+
+          if link_failed_count > 0 do
+            Logger.warning("Failed to link note to #{link_failed_count} uploaded image(s)")
+          end
+
+          Logger.info(
+            "Batch upload completed: total=#{length(entries)} success=#{length(images)} linked=#{linked_count} failed=#{length(results) - length(images)}"
+          )
+
+          {:noreply, socket}
 
         _ ->
           {:noreply, socket}
@@ -414,10 +374,155 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   defp maybe_focus_note_field(socket, false), do: socket
 
+  defp process_upload_entries(socket, entries, note_text, current_user, upload_batch_id) do
+    entries
+    |> Enum.reduce([], fn entry, result_acc ->
+      result =
+        consume_uploaded_entry(socket, entry, fn %{path: path} ->
+          create_image_for_entry(path, entry, note_text, current_user, upload_batch_id)
+        end)
+        |> normalize_upload_result()
+
+      [result | result_acc]
+    end)
+    |> Enum.reverse()
+  end
+
+  defp create_image_for_entry(path, entry, note_text, current_user, upload_batch_id) do
+    user_id = current_user.id
+    filename = entry.uuid <> Path.extname(entry.client_name)
+
+    with {:ok, dest} <- ImageStorage.cp_file(path, user_id, filename),
+         {:ok, image} <-
+           Image.create_with_sync(
+             %{
+               note: note_text,
+               url: Path.join("/", dest),
+               file_id: filename,
+               user_id: user_id,
+               upload_batch_id: upload_batch_id,
+               inner_purpose: nil
+             },
+             actor: current_user
+           ) do
+      {:ok, {:ok, image}}
+    else
+      {:error, reason} -> {:ok, {:error, reason}}
+    end
+  end
+
   defp normalize_upload_result({:ok, %Image{} = image}), do: {:ok, image}
   defp normalize_upload_result({:error, _reason} = error), do: error
   defp normalize_upload_result(%Image{} = image), do: {:ok, image}
-  defp normalize_upload_result(other), do: {:error, inspect(other)}
+  defp normalize_upload_result(other), do: {:error, other}
+
+  defp classify_upload_error(reason) do
+    message = extract_upload_error_message(reason)
+    message_downcase = String.downcase(message)
+
+    cond do
+      String.contains?(message_downcase, "queue is full") ->
+        {:queue_full, "Queue is busy. Please wait and check the job status shortly."}
+
+      String.contains?(message_downcase, "timeout") ->
+        {:timeout, "Request timed out. The job was marked as failed."}
+
+      true ->
+        {:other, message}
+    end
+  end
+
+  defp extract_upload_error_message(%Ash.Error.Unknown{} = ash_error) do
+    ash_error.errors
+    |> List.first()
+    |> case do
+      %Ash.Error.Unknown.UnknownError{error: msg} when is_binary(msg) ->
+        msg
+
+      %{error: msg} when is_binary(msg) ->
+        msg
+
+      _ ->
+        inspect(ash_error)
+    end
+  end
+
+  defp extract_upload_error_message(reason) when is_binary(reason), do: reason
+  defp extract_upload_error_message(reason), do: inspect(reason)
+
+  defp put_upload_result_flash(socket, results, link_failed_count) do
+    total_count = length(results)
+    success_count = Enum.count(results, &match?({:ok, _}, &1))
+    failure_count = total_count - success_count
+
+    queue_full_failed_count =
+      Enum.count(results, fn
+        {:error, reason} ->
+          match?({:queue_full, _}, classify_upload_error(reason))
+
+        _ ->
+          false
+      end)
+
+    timeout_failed_count =
+      Enum.count(results, fn
+        {:error, reason} ->
+          match?({:timeout, _}, classify_upload_error(reason))
+
+        _ ->
+          false
+      end)
+
+    socket
+    |> maybe_put_info_flash(success_count, failure_count, link_failed_count)
+    |> maybe_put_queue_full_flash(queue_full_failed_count)
+    |> maybe_put_timeout_flash(timeout_failed_count)
+    |> maybe_put_generic_error_flash(
+      failure_count - queue_full_failed_count - timeout_failed_count
+    )
+  end
+
+  defp maybe_put_info_flash(socket, 0, _failure_count, _link_failed_count), do: socket
+
+  defp maybe_put_info_flash(socket, success_count, failure_count, link_failed_count) do
+    message =
+      cond do
+        failure_count == 0 and link_failed_count == 0 ->
+          "#{success_count} image(s) uploaded successfully and enqueued for processing."
+
+        true ->
+          "#{success_count} image(s) uploaded successfully. #{failure_count + link_failed_count} job(s) did not complete."
+      end
+
+    put_flash(socket, :info, message)
+  end
+
+  defp maybe_put_queue_full_flash(socket, count) when count > 0 do
+    put_flash(
+      socket,
+      :error,
+      "#{count} image job(s) could not be enqueued because the queue is full."
+    )
+  end
+
+  defp maybe_put_queue_full_flash(socket, _count), do: socket
+
+  defp maybe_put_timeout_flash(socket, count) when count > 0 do
+    put_flash(socket, :error, "#{count} image job(s) timed out during processing.")
+  end
+
+  defp maybe_put_timeout_flash(socket, _count), do: socket
+
+  defp maybe_put_generic_error_flash(socket, count) when count > 0 do
+    put_flash(socket, :error, "#{count} image upload(s) failed. Please retry failed items.")
+  end
+
+  defp maybe_put_generic_error_flash(socket, _count), do: socket
+
+  defp append_uploaded_photos(existing_photos, new_photos) do
+    (existing_photos ++ new_photos)
+    |> Enum.uniq_by(& &1.id)
+  end
 
   attr :image, :map, required: true
 
@@ -532,22 +637,17 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       "failed" -> "Failed"
       "processing" -> "Processing"
       "pending" -> "Pending"
+      nil -> "Pending"
       _ -> "Processing"
     end
   end
 
-  defp append_uploaded_photos(existing_photos, new_photos) do
-    (existing_photos ++ new_photos)
-    |> Enum.uniq_by(& &1.id)
-  end
+  defp maybe_link_note_to_photos(nil, _photos, _current_user), do: %{linked: 0, failed: 0}
 
-  defp maybe_link_note_to_photos(nil, _photos, _current_user), do: :ok
-
-  defp maybe_link_note_to_photos(_note, [], _current_user), do: :ok
+  defp maybe_link_note_to_photos(_note, [], _current_user), do: %{linked: 0, failed: 0}
 
   defp maybe_link_note_to_photos(note, images, current_user) do
-    images
-    |> Enum.reduce_while(:ok, fn image, _acc ->
+    Enum.reduce(images, %{linked: 0, failed: 0}, fn image, stats ->
       case Ash.create(
              ImageNote,
              %{
@@ -558,10 +658,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
              actor: current_user
            ) do
         {:ok, _photo_note} ->
-          {:cont, :ok}
+          %{stats | linked: stats.linked + 1}
 
         {:error, reason} ->
-          {:halt, {:error, reason}}
+          Logger.warning(
+            "Failed to link image #{image.id} to note #{note.id}: #{inspect(reason)}"
+          )
+
+          %{stats | failed: stats.failed + 1}
       end
     end)
   end
