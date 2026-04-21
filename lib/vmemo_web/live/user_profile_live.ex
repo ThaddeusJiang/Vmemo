@@ -16,7 +16,7 @@ defmodule VmemoWeb.UserProfileLive do
       <div class="mt-6 rounded-md border border-base-300 p-4 sm:p-6">
         <.form for={@profile_form} phx-submit="save" phx-change="validate" class="space-y-5">
           <div class="space-y-2">
-            <div class="flex justify-center">
+            <div class="flex flex-col items-center gap-2">
               <label
                 for={@uploads.avatar.ref}
                 class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
@@ -44,15 +44,13 @@ defmodule VmemoWeb.UserProfileLive do
                 </div>
               </label>
 
-              <div class="grow space-y-2">
-                <.live_file_input
-                  upload={@uploads.avatar}
-                  class="hidden"
-                />
-                <p :for={err <- upload_errors(@uploads.avatar)} class="text-sm text-error">
-                  {avatar_upload_error(err)}
-                </p>
-              </div>
+              <.live_file_input
+                upload={@uploads.avatar}
+                class="hidden"
+              />
+              <p :for={err <- upload_errors(@uploads.avatar)} class="text-sm text-error text-center">
+                {avatar_upload_error(err)}
+              </p>
             </div>
           </div>
 
@@ -70,7 +68,7 @@ defmodule VmemoWeb.UserProfileLive do
           />
 
           <div :if={@has_changes} class="pt-4 flex justify-center">
-            <.button class="btn-lg px-10" phx-disable-with="Saving...">Save Profile</.button>
+            <.button class="w-64" phx-disable-with="Saving...">Save Profile</.button>
           </div>
         </.form>
       </div>
