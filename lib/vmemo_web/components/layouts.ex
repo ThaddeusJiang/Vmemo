@@ -92,7 +92,7 @@ defmodule VmemoWeb.Layouts do
                 Appearance
               </span>
             </div>
-            <label class="swap swap-rotate text-base-content">
+            <label class="swap swap-rotate text-base-content rounded-full p-2 bg-base-200/60 border border-base-300/70">
               <input
                 type="checkbox"
                 value="dark"
