@@ -12,11 +12,9 @@ defmodule VmemoWeb.UserProfileControllerTest do
       conn =
         conn
         |> log_in_user(user)
-        |> put_req_header("referer", "/profile")
         |> post(~p"/profile/appearance", %{"appearance" => "dark"})
 
-      assert redirected_to(conn) == ~p"/profile"
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) == "Appearance updated."
+      assert response(conn, 204)
 
       profile = Account.get_user_profile_by_user_id(user.id)
       assert profile.appearance == "dark"
@@ -31,8 +29,7 @@ defmodule VmemoWeb.UserProfileControllerTest do
         |> log_in_user(user)
         |> post(~p"/profile/appearance", %{"appearance" => "invalid"})
 
-      assert redirected_to(conn) == ~p"/home"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid appearance value."
+      assert response(conn, 400)
 
       assert Account.get_user_profile_by_user_id(user.id) == nil
     end
