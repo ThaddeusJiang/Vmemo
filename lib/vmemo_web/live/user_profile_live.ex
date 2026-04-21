@@ -23,7 +23,7 @@ defmodule VmemoWeb.UserProfileLive do
 
             <div class="flex items-center gap-4">
               <label
-                for="avatar-upload-input"
+                for={@uploads.avatar.ref}
                 class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
               >
                 <div class="w-16 rounded-full bg-base-200 ring-1 ring-base-300">
@@ -51,7 +51,6 @@ defmodule VmemoWeb.UserProfileLive do
 
               <div class="grow space-y-2">
                 <.live_file_input
-                  id="avatar-upload-input"
                   upload={@uploads.avatar}
                   class="hidden"
                 />
