@@ -215,4 +215,21 @@
         height: auto;
     }
 
+    .appearance-toggle {
+        transition: border-color 180ms ease, background-color 180ms ease;
+    }
+
+    .appearance-toggle input:not(:checked) + svg {
+        color: var(--color-primary);
+    }
+
+    .appearance-toggle input:not(:checked) ~ svg[aria-label="moon"] {
+        color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+    }
+
+    .appearance-toggle:has(input:not(:checked)) {
+        border-color: color-mix(in oklab, var(--color-primary) 60%, var(--color-base-content) 40%);
+        background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-base-100) 90%);
+    }
+
 }
