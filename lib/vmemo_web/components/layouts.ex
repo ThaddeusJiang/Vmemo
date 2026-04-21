@@ -10,5 +10,130 @@ defmodule VmemoWeb.Layouts do
   """
   use VmemoWeb, :html
 
+  def html_lang(assigns) do
+    case profile_language(assigns) do
+      "zh" -> "zh-CN"
+      "ja" -> "ja"
+      _ -> "en"
+    end
+  end
+
+  def theme_data_value(assigns) do
+    case profile_appearance(assigns) do
+      "light" -> "light"
+      "dark" -> "dark"
+      _ -> nil
+    end
+  end
+
+  attr :current_user, :map, required: true
+  attr :profile, :map, required: true
+
+  def user_dropdown(assigns) do
+    ~H"""
+    <div class="dropdown dropdown-end">
+      <div
+        tabindex="0"
+        role="button"
+        class="avatar avatar-placeholder avatar-online hover:cursor-pointer"
+      >
+        <div class="bg-neutral text-neutral-content w-8 rounded-full overflow-hidden">
+          <img
+            :if={@profile.avatar_file_id}
+            src={~p"/storage/v1/#{@current_user.id}/avatars/#{@profile.avatar_file_id}"}
+            alt="User avatar"
+            class="h-full w-full object-cover"
+          />
+          <span :if={!@profile.avatar_file_id}>{String.at(@current_user.email, 0)}</span>
+        </div>
+      </div>
+
+      <ul
+        tabindex="0"
+        class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border border-base-300 shadow-lg"
+      >
+        <li>
+          <.link
+            href={~p"/profile"}
+            class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
+          >
+            <.icon name="hero-user-circle" class="size-6" /> Profile
+          </.link>
+        </li>
+        <li>
+          <.link
+            href={~p"/jobs"}
+            class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
+          >
+            <.icon name="hero-bell" class="size-6" /> Jobs
+          </.link>
+        </li>
+        <li>
+          <.link
+            href={~p"/settings"}
+            class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
+          >
+            <.icon name="hero-cog-6-tooth" class="size-6" /> Settings
+          </.link>
+        </li>
+        <li>
+          <.link
+            href={~p"/tokens"}
+            class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
+          >
+            <.icon name="hero-key" class="size-6" /> Tokens
+          </.link>
+        </li>
+        <li>
+          <div class="flex min-h-12 items-center justify-between gap-2 px-3 !py-0 rounded-lg hover:bg-base-content/5 cursor-default">
+            <div class="flex items-center gap-3 min-w-0">
+              <.icon name="hero-paint-brush" class="size-6 shrink-0" />
+              <span class="text-[0.8125rem] leading-6 text-base-content font-semibold">
+                Appearance
+              </span>
+            </div>
+            <label class="swap swap-rotate text-base-content rounded-full p-1.5 bg-base-200/60 border border-base-300/70 cursor-pointer transition-all duration-150 hover:bg-base-200 hover:border-base-300 hover:scale-[1.03]">
+              <input
+                type="checkbox"
+                value="dark"
+                checked={@profile.appearance == "dark"}
+                class="theme-controller"
+                aria-label="Toggle light or dark mode"
+                onchange="window.updateAppearancePreference?.(this.checked)"
+              />
+              <.icon name="hero-sun" class="swap-off size-5 text-primary" />
+              <.icon name="hero-moon" class="swap-on size-5" />
+            </label>
+          </div>
+        </li>
+        <li class="border-t border-base-300 my-1"></li>
+        <li>
+          <.link
+            href={~p"/users/logout"}
+            method="delete"
+            class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
+          >
+            <.icon name="hero-arrow-right-on-rectangle" class="size-6" /> Logout
+          </.link>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  defp profile_language(assigns) do
+    case Map.get(assigns, :current_user_profile) do
+      %{language: language} when is_binary(language) -> language
+      _ -> nil
+    end
+  end
+
+  defp profile_appearance(assigns) do
+    case Map.get(assigns, :current_user_profile) do
+      %{appearance: appearance} when is_binary(appearance) -> appearance
+      _ -> nil
+    end
+  end
+
   embed_templates "layouts/*"
 end

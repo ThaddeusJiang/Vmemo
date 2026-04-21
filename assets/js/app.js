@@ -122,6 +122,26 @@ function copyToClipboardFallback(text) {
   document.body.removeChild(textArea)
 }
 
+window.updateAppearancePreference = async (isDark) => {
+  const appearance = isDark ? "dark" : "light"
+  document.documentElement.setAttribute("data-theme", appearance)
+
+  try {
+    await fetch("/profile/appearance", {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "x-csrf-token": csrfToken,
+        "x-requested-with": "XMLHttpRequest",
+      },
+      credentials: "same-origin",
+      body: new URLSearchParams({ appearance }).toString(),
+    })
+  } catch (error) {
+    console.error("Failed to persist appearance preference:", error)
+  }
+}
+
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session

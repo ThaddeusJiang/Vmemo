@@ -21,6 +21,8 @@ defmodule Vmemo.Account do
       define :register_user, action: :register
     end
 
+    resource Vmemo.Account.UserProfile
+
     resource Vmemo.Account.UserToken
     resource Vmemo.Account.ApiToken
   end
@@ -33,6 +35,7 @@ defmodule Vmemo.Account do
   alias Vmemo.Account.Passwords
   alias Vmemo.Account.Sessions
   alias Vmemo.Account.User
+  alias Vmemo.Account.UserProfile
   require Ash.Query
 
   def list_users do
@@ -56,6 +59,52 @@ defmodule Vmemo.Account do
 
   def change_user(%User{} = user, attrs \\ %{}) do
     Ash.Changeset.for_update(user, :update_profile, attrs)
+  end
+
+  def get_user_profile_by_user_id(user_id) when is_binary(user_id) do
+    case UserProfile.get_by_user_id(user_id) do
+      {:ok, profile} -> profile
+      _ -> nil
+    end
+  end
+
+  def get_user_profile_by_user_id(_), do: nil
+
+  def upsert_user_profile(%User{} = user, attrs \\ %{}) do
+    attrs = normalize_profile_attrs(attrs)
+
+    case get_user_profile_by_user_id(user.id) do
+      nil ->
+        create_attrs =
+          attrs
+          |> Map.put(:user_id, user.id)
+          |> Map.put_new(:name, default_profile_name(user.email))
+
+        UserProfile.create(create_attrs)
+
+      profile ->
+        UserProfile.update(profile, attrs)
+    end
+  end
+
+  def default_profile(email) when is_binary(email) do
+    %{
+      user_id: nil,
+      name: default_profile_name(email),
+      avatar_file_id: nil,
+      language: "en",
+      appearance: "system"
+    }
+  end
+
+  def default_profile(_email) do
+    %{
+      user_id: nil,
+      name: "User",
+      avatar_file_id: nil,
+      language: "en",
+      appearance: "system"
+    }
   end
 
   def change_user_email(user, attrs \\ %{}), do: Emails.change_user_email(user, attrs)
@@ -96,5 +145,30 @@ defmodule Vmemo.Account do
     email
     |> String.trim()
     |> String.downcase()
+  end
+
+  defp default_profile_name(email) do
+    email
+    |> String.split("@")
+    |> List.first()
+    |> case do
+      nil -> "User"
+      "" -> "User"
+      name -> String.slice(name, 0, 120)
+    end
+  end
+
+  defp normalize_profile_attrs(attrs) when is_map(attrs) do
+    attrs
+    |> Enum.reduce(%{}, fn
+      {key, value}, acc when key in [:name, :language, :appearance, :avatar_file_id] ->
+        Map.put(acc, key, value)
+
+      {key, value}, acc when key in ["name", "language", "appearance", "avatar_file_id"] ->
+        Map.put(acc, String.to_existing_atom(key), value)
+
+      _entry, acc ->
+        acc
+    end)
   end
 end

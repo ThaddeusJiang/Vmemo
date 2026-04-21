@@ -151,40 +151,18 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
     <div class="grow container dropdown dropdown-open place-self-start">
       <form :if={!@show_expanded} action="/images" method="get" class="form-control container">
         <label class="input input-bordered flex items-center rounded-3xl w-full">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="size-6 text-gray-400"
-          >
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
-          </svg>
+          <.icon name="hero-magnifying-glass" class="size-6 text-gray-400" />
           <input type="search" name="q" class="grow" placeholder="Search" value={@q} />
 
           <div class="flex items-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="size-6 hover:cursor-pointer hover:opacity-80"
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs btn-square"
               phx-click="show-expanded"
               phx-target={@myself}
-              tabIndex={0}
-              role="button"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-              />
-            </svg>
+              <.icon name="hero-camera" class="size-5" />
+            </button>
           </div>
         </label>
       </form>
@@ -233,20 +211,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                           style="--value:100; --size:2rem; --thickness: 2px;"
                           role="progressbar"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            class="size-6"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="m4.5 12.75 6 6 9-13.5"
-                            />
-                          </svg>
+                          <.icon name="hero-check" class="size-6" />
                         </div>
                       </div>
                     <% _ -> %>
@@ -256,20 +221,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                           style={"--value:#{entry.progress}; --size:2rem; --thickness: 2px;"}
                           role="progressbar"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2"
-                            stroke="currentColor"
-                            class="size-6"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="m4.5 12.75 6 6 9-13.5"
-                            />
-                          </svg>
+                          <.icon name="hero-check" class="size-6" />
                         </div>
                       </div>
                   <% end %>

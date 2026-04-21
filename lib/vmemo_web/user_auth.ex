@@ -5,6 +5,7 @@ defmodule VmemoWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
+  alias Vmemo.Account
   alias Vmemo.Account.User
 
   @doc """
@@ -128,7 +129,11 @@ defmodule VmemoWeb.UserAuth do
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && get_user_by_session_token(user_token)
-    assign(conn, :current_user, user)
+    profile = build_profile(user)
+
+    conn
+    |> assign(:current_user, user)
+    |> assign(:current_user_profile, profile)
   end
 
   defp ensure_user_token(conn) do
@@ -232,12 +237,23 @@ defmodule VmemoWeb.UserAuth do
   end
 
   defp mount_current_user(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_user, fn ->
-      if user_token = session["user_token"] do
-        get_user_by_session_token(user_token)
-      end
+    socket =
+      Phoenix.Component.assign_new(socket, :current_user, fn ->
+        if user_token = session["user_token"] do
+          get_user_by_session_token(user_token)
+        end
+      end)
+
+    Phoenix.Component.assign_new(socket, :current_user_profile, fn ->
+      build_profile(socket.assigns.current_user)
     end)
   end
 
   defp signed_in_path(_conn), do: ~p"/home"
+
+  defp build_profile(nil), do: nil
+
+  defp build_profile(user) do
+    Account.get_user_profile_by_user_id(user.id) || Account.default_profile(user.email)
+  end
 end

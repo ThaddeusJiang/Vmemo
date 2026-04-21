@@ -4,11 +4,11 @@
       <div class="flex items-center gap-4">
         <%= if @current_user do %>
           <.link href="/home" class="flex gap-4 items-center font-bold">
-            <img src={~p"/images/logo.svg"} class="h-9" /> Vmemo
+            <img src={~p"/images/logo.svg"} class="h-9 dark:invert" /> Vmemo
           </.link>
         <% else %>
           <a href="/" class="flex gap-4 items-center font-bold">
-            <img src={~p"/images/logo.svg"} class="h-9" /> Vmemo
+            <img src={~p"/images/logo.svg"} class="h-9 dark:invert" /> Vmemo
           </a>
         <% end %>
       </div>
