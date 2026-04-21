@@ -85,14 +85,14 @@ defmodule VmemoWeb.Layouts do
           </.link>
         </li>
         <li>
-          <div class="px-3 py-2 flex items-center justify-between gap-2">
+          <div class="flex min-h-12 items-center justify-between gap-2 px-3 !py-0 rounded-lg hover:bg-base-content/5 cursor-default">
             <div class="flex items-center gap-3 min-w-0">
               <.icon name="hero-paint-brush" class="size-6 shrink-0" />
               <span class="text-[0.8125rem] leading-6 text-base-content font-semibold">
                 Appearance
               </span>
             </div>
-            <label class="swap swap-rotate text-base-content rounded-full p-2 bg-base-200/60 border border-base-300/70">
+            <label class="swap swap-rotate text-base-content rounded-full p-1.5 bg-base-200/60 border border-base-300/70 cursor-pointer transition-all duration-150 hover:bg-base-200 hover:border-base-300 hover:scale-[1.03]">
               <input
                 type="checkbox"
                 value="dark"
