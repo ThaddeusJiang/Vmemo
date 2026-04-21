@@ -122,14 +122,9 @@ function copyToClipboardFallback(text) {
   document.body.removeChild(textArea)
 }
 
-window.updateAppearancePreference = async (appearance) => {
-  if (appearance === "system") {
-    document.documentElement.removeAttribute("data-theme")
-  } else if (appearance === "light" || appearance === "dark") {
-    document.documentElement.setAttribute("data-theme", appearance)
-  } else {
-    return
-  }
+window.updateAppearancePreference = async (isDark) => {
+  const appearance = isDark ? "dark" : "light"
+  document.documentElement.setAttribute("data-theme", appearance)
 
   try {
     await fetch("/profile/appearance", {
