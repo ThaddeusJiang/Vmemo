@@ -28,7 +28,7 @@ defmodule VmemoWeb.ChatLive do
           <img
             src={~p"/images/logo.svg"}
             alt="Vmemo logo"
-            class="w-12 h-12"
+            class="w-12 h-12 dark:invert"
           />
           <div class="mx-2 flex-1 px-2">
             <div :if={@conversation}>
@@ -93,7 +93,7 @@ defmodule VmemoWeb.ChatLive do
                     <img
                       src={~p"/images/logo.svg"}
                       alt="Vmemo logo"
-                      class="w-8 h-8"
+                      class="w-8 h-8 dark:invert"
                     />
                   </div>
                 </div>
