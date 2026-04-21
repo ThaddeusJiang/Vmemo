@@ -66,10 +66,10 @@
     default: false;
     prefersdark: true;
     color-scheme: "dark";
-    --color-base-100: oklch(22.5% 0.014 255);
-    --color-base-200: oklch(20% 0.012 255);
-    --color-base-300: oklch(17.5% 0.01 255);
-    --color-base-content: oklch(92% 0.02 255);
+    --color-base-100: #282A36;
+    --color-base-200: #242631;
+    --color-base-300: #1f212b;
+    --color-base-content: #F8F8F2;
     --btn-color: color-mix(in oklab, var(--color-base-content) 18%, transparent);
     --color-primary: #FD4F00;
     --color-primary-content: #FDF7F0;
