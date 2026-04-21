@@ -2,11 +2,15 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   @moduledoc false
 
   require Ash.Query
+  import Ecto.Query
 
+  alias Oban.Job
   alias Vmemo.Memo.Image
+  alias Vmemo.Repo
 
   @max_jobs 20
   @default_all_jobs_limit 80
+  @generate_caption_worker "Vmemo.Memo.Image.Workers.GenerateCaption"
 
   def on_mount(:default, _params, _session, socket) do
     {:cont, assign_image_jobs(socket)}
@@ -64,10 +68,12 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
     case Ash.read(query, actor: user) do
       {:ok, images} ->
+        caption_error_by_image_id = caption_error_by_image_id(images)
+
         jobs =
           images
           |> maybe_filter_completed(include_completed)
-          |> Enum.map(&to_job/1)
+          |> Enum.map(&to_job(&1, caption_error_by_image_id))
           |> Enum.take(limit)
 
         {:ok, jobs}
@@ -81,8 +87,12 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   def get_job(user, id) do
     case Ash.get(Image, id, actor: user) do
-      {:ok, image} -> {:ok, to_job(image)}
-      error -> error
+      {:ok, image} ->
+        caption_error_by_image_id = caption_error_by_image_id([image])
+        {:ok, to_job(image, caption_error_by_image_id)}
+
+      error ->
+        error
     end
   end
 
@@ -113,7 +123,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     image.typesense_status != "completed" or image.moondream_status != "completed"
   end
 
-  defp to_job(image) do
+  defp to_job(image, caption_error_by_image_id) do
     %{
       id: image.id,
       image_id: image.id,
@@ -122,11 +132,11 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       caption: image.caption,
       file_name: image.file_id || image.id,
       status: job_status(image),
-      reason: failure_summary(image),
+      reason: failure_summary(image, caption_error_by_image_id),
       failure_stage: failure_stage(image),
-      failure_reason: failure_reason(image),
+      failure_reason: failure_reason(image, caption_error_by_image_id),
       typesense_failure_reason: typesense_failure_reason(image),
-      moondream_failure_reason: moondream_failure_reason(image),
+      moondream_failure_reason: moondream_failure_reason(image, caption_error_by_image_id),
       typesense_status: image.typesense_status,
       moondream_status: image.moondream_status,
       inserted_at: image.inserted_at,
@@ -188,8 +198,8 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     end
   end
 
-  defp failure_summary(image) do
-    case {failure_stage(image), failure_reason(image)} do
+  defp failure_summary(image, caption_error_by_image_id) do
+    case {failure_stage(image), failure_reason(image, caption_error_by_image_id)} do
       {nil, _} -> nil
       {stage, nil} -> stage
       {stage, reason} -> "#{stage}. #{reason}."
@@ -212,11 +222,16 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     end
   end
 
-  defp failure_reason(image) do
+  defp failure_reason(image, caption_error_by_image_id) do
     cond do
-      image.moondream_status == "failed" -> "Timeout"
-      image.typesense_status == "failed" -> "Indexing error"
-      true -> nil
+      image.moondream_status == "failed" ->
+        moondream_failure_reason(image, caption_error_by_image_id) || "Caption generation failed."
+
+      image.typesense_status == "failed" ->
+        "Indexing error"
+
+      true ->
+        nil
     end
   end
 
@@ -224,8 +239,77 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     if image.typesense_status == "failed", do: "Indexing error", else: nil
   end
 
-  defp moondream_failure_reason(image) do
-    if image.moondream_status == "failed", do: "Timeout", else: nil
+  defp moondream_failure_reason(image, caption_error_by_image_id) do
+    if image.moondream_status == "failed" do
+      Map.get(caption_error_by_image_id, image.id) || "Caption generation failed."
+    else
+      nil
+    end
+  end
+
+  defp caption_error_by_image_id(images) do
+    failed_image_ids =
+      images
+      |> Enum.filter(&(&1.moondream_status == "failed"))
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
+
+    if failed_image_ids == [] do
+      %{}
+    else
+      Job
+      |> where([j], j.worker == ^@generate_caption_worker)
+      |> where([j], fragment("?->'primary_key'->>'id'", j.args) in ^failed_image_ids)
+      |> order_by([j], desc: j.id)
+      |> select([j], %{image_id: fragment("?->'primary_key'->>'id'", j.args), errors: j.errors})
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn %{image_id: image_id, errors: errors}, acc ->
+        if Map.has_key?(acc, image_id) do
+          acc
+        else
+          case normalize_caption_job_error(errors) do
+            nil -> acc
+            message -> Map.put(acc, image_id, message)
+          end
+        end
+      end)
+    end
+  rescue
+    _ -> %{}
+  end
+
+  defp normalize_caption_job_error(errors) when is_list(errors) do
+    errors
+    |> List.last()
+    |> case do
+      %{"error" => error} when is_binary(error) ->
+        cond do
+          String.contains?(error, ":vision_service_unreachable") ->
+            "Vision service is unreachable."
+
+          true ->
+            extract_unknown_error(error) || "Caption generation failed."
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp normalize_caption_job_error(_), do: nil
+
+  defp extract_unknown_error(error_blob) do
+    case Regex.run(~r/\* unknown error:\s*([^\n]+)/, error_blob) do
+      [_, reason] ->
+        reason
+        |> String.trim()
+        |> String.trim_leading(":")
+        |> String.replace("_", " ")
+        |> String.capitalize()
+
+      _ ->
+        nil
+    end
   end
 
   defp count_status(jobs, status) do

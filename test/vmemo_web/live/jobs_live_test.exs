@@ -50,7 +50,8 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Jobs"
       assert html =~ "Search embedding"
       assert html =~ "Vision embedding"
-      assert html =~ "Timeout"
+      assert html =~ "Caption generation failed."
+      refute html =~ "Timeout"
       assert html =~ "/storage/v1/"
       assert html =~ "Retry"
     end
@@ -113,8 +114,10 @@ defmodule VmemoWeb.JobsLiveTest do
 
       assert html =~ "Jobs"
       assert html =~ failed_image.id
-      assert html =~ "Caption result"
-      assert html =~ "Timeout"
+      assert html =~ "Failure reason"
+      assert html =~ "Caption generation failed."
+      refute html =~ "Timeout"
+      assert html =~ "Retry vision embedding"
       assert html =~ ~s(href="/images/#{failed_image.id}")
     end
 

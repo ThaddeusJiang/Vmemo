@@ -163,71 +163,91 @@ defmodule VmemoWeb.JobsLive do
 
           <article
             id={"job-detail-#{@job.image_id}"}
-            class="rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5 shadow-sm"
+            class="rounded-lg border border-base-300 bg-base-100 p-3 sm:p-4 shadow-sm"
             style={"view-transition-name: notification-#{@job.image_id};"}
           >
-            <div class="flex items-start gap-4">
+            <div class="flex items-start gap-3">
               <.link href={~p"/images/#{@job.image_id}"} class="block">
                 <img
                   src={@job.image_url}
                   alt={@job.image_id}
-                  class="h-16 w-16 rounded-md object-cover border border-base-300"
+                  class="h-14 w-14 rounded-md object-cover border border-base-300"
                   loading="lazy"
                 />
               </.link>
 
-              <div class="flex-1 space-y-3">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div class="rounded-md border border-base-300 p-3">
-                    <div class="flex items-center gap-2">
+              <div class="flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div class="rounded-md border border-base-300 p-2.5">
+                    <div class="flex items-center gap-1.5">
                       <span class="text-xs text-base-content/60">Search</span>
-                      <span class={service_status_badge_class(@job.typesense_status)}>
+                      <.button
+                        :if={@job.typesense_status == "failed"}
+                        type="button"
+                        size="xs"
+                        variant="outline"
+                        class="badge badge-error badge-outline min-h-0 h-auto px-2"
+                        phx-click="retry-search-embedding"
+                        phx-value-image_id={@job.image_id}
+                      >
+                        {service_status_label(@job.typesense_status)}
+                      </.button>
+                      <span
+                        :if={@job.typesense_status != "failed"}
+                        class={service_status_badge_class(@job.typesense_status)}
+                      >
                         {service_status_label(@job.typesense_status)}
                       </span>
                     </div>
-                    <div :if={@job.typesense_failure_reason} class="text-error text-xs mt-1">
+                    <div
+                      :if={@job.typesense_failure_reason}
+                      class="text-error text-xs mt-1 line-clamp-2"
+                    >
                       {@job.typesense_failure_reason}
                     </div>
                   </div>
 
-                  <div class="rounded-md border border-base-300 p-3">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs text-base-content/60">Caption</span>
-                      <span class={service_status_badge_class(@job.moondream_status)}>
-                        {service_status_label(@job.moondream_status)}
-                      </span>
+                  <div class="rounded-md border border-base-300 p-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-base-content/60">Caption</span>
+                        <.button
+                          :if={@job.moondream_status == "failed"}
+                          type="button"
+                          size="xs"
+                          variant="outline"
+                          class="badge badge-error badge-outline min-h-0 h-auto px-2"
+                          phx-click="retry-vision-embedding"
+                          phx-value-image_id={@job.image_id}
+                        >
+                          {service_status_label(@job.moondream_status)}
+                        </.button>
+                        <span
+                          :if={@job.moondream_status != "failed"}
+                          class={service_status_badge_class(@job.moondream_status)}
+                        >
+                          {service_status_label(@job.moondream_status)}
+                        </span>
+                      </div>
+                      <button
+                        :if={@job.moondream_status == "failed"}
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content"
+                        phx-click="retry-vision-embedding"
+                        phx-value-image_id={@job.image_id}
+                        title="Retry vision embedding"
+                        aria-label="Retry vision embedding"
+                      >
+                        <.icon name="hero-arrow-path" class="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                    <div class="text-xs text-base-content/60 mt-2">Caption result</div>
-                    <div class="text-sm text-base-content/90 break-words mt-1">
-                      {caption_result_text(@job)}
+                    <div class="text-xs text-base-content/60 mt-1">
+                      {caption_section_label(@job)}
                     </div>
-                    <div :if={@job.moondream_failure_reason} class="text-error text-xs mt-1">
-                      {@job.moondream_failure_reason}
+                    <div class="text-sm text-base-content/90 break-words mt-0.5 line-clamp-3">
+                      {caption_display_text(@job)}
                     </div>
                   </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2 pt-1">
-                  <.button
-                    :if={@job.typesense_status == "failed"}
-                    type="button"
-                    size="xs"
-                    variant="outline"
-                    phx-click="retry-search-embedding"
-                    phx-value-image_id={@job.image_id}
-                  >
-                    Retry search embedding
-                  </.button>
-                  <.button
-                    :if={@job.moondream_status == "failed"}
-                    type="button"
-                    size="xs"
-                    variant="outline"
-                    phx-click="retry-vision-embedding"
-                    phx-value-image_id={@job.image_id}
-                  >
-                    Retry vision embedding
-                  </.button>
                 </div>
               </div>
             </div>
@@ -257,7 +277,11 @@ defmodule VmemoWeb.JobsLive do
     end
   end
 
-  defp caption_result_text(job) do
+  defp caption_section_label(job) do
+    if job.moondream_status == "failed", do: "Failure reason", else: "Caption result"
+  end
+
+  defp caption_display_text(job) do
     cond do
       job.moondream_status == "completed" and present?(job.caption) ->
         job.caption
