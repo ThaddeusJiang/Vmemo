@@ -9,20 +9,10 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
       case resource.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
         {:ok, true} ->
-          resource.update(record, %{typesense_status: "completed"},
-            action: :set_typesense_status,
-            actor: nil,
-            authorize?: false
-          )
-
-          {:ok, record}
+          update_status_if_supported(resource, record, "completed")
 
         {:ok, false} ->
-          resource.update(record, %{typesense_status: "failed"},
-            action: :set_typesense_status,
-            actor: nil,
-            authorize?: false
-          )
+          _ = update_status_if_supported(resource, record, "failed")
 
           {:error, :sync_failed}
 
@@ -30,14 +20,32 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
           {:ok, record}
 
         {:error, reason} ->
-          resource.update(record, %{typesense_status: "failed"},
-            action: :set_typesense_status,
-            actor: nil,
-            authorize?: false
-          )
+          _ = update_status_if_supported(resource, record, "failed")
 
           {:error, reason}
       end
     end)
+  end
+
+  defp update_status_if_supported(resource, record, status) do
+    if supports_status_update?(resource) do
+      case Ash.update(record, %{typesense_status: status},
+             action: :set_typesense_status,
+             actor: nil,
+             authorize?: false
+           ) do
+        {:ok, _updated} -> {:ok, record}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      {:ok, record}
+    end
+  end
+
+  defp supports_status_update?(resource) do
+    match?(
+      %{name: :set_typesense_status},
+      Ash.Resource.Info.action(resource, :set_typesense_status)
+    )
   end
 end
