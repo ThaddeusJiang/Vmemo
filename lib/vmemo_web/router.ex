@@ -109,11 +109,16 @@ defmodule VmemoWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{VmemoWeb.UserAuth, :ensure_authenticated_user}] do
+      on_mount: [
+        {VmemoWeb.UserAuth, :ensure_authenticated_user},
+        {VmemoWeb.Live.ImageJobsHook, :default}
+      ] do
       live "/home", HomePageLive, :index
       live "/images", ImagesIndexLive, :index
       live "/images/upload", ImageUploadLive
       live "/images/:id", ImageIdLive
+      live "/jobs", JobsLive, :index
+      live "/jobs/:id", JobsLive, :show
 
       live "/notes/:id", NoteIdLive
 

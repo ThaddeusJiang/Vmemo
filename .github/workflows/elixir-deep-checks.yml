@@ -19,9 +19,21 @@ jobs:
       - uses: actions/checkout@v6.0.2
 
       - uses: erlef/setup-beam@v1.23.0
+        id: beam
         with:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
+
+      - name: Cache deps and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-
+          retention-days: 3
 
       - name: Install dependencies
         run: mix deps.get

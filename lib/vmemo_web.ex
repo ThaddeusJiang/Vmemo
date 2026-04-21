@@ -85,6 +85,7 @@ defmodule VmemoWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import VmemoWeb.CoreComponents
+      import VmemoWeb.NotificationsComponents
       import VmemoWeb.Gettext
 
       # Shortcut for generating JS commands

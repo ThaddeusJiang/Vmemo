@@ -43,6 +43,10 @@
           <% profile =
             assigns[:current_user_profile] ||
               %{name: nil, appearance: "system", avatar_file_id: nil} %>
+          <.notifications_dropdown
+            notifications={assigns[:global_notifications] || []}
+            unresolved_count={assigns[:global_notifications_unresolved_count] || 0}
+          />
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
@@ -77,6 +81,14 @@
                   class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
                 >
                   <.icon name="hero-user-circle" class="size-6" /> Profile
+                </.link>
+              </li>
+              <li>
+                <.link
+                  href={~p"/jobs"}
+                  class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                >
+                  <.icon name="hero-bell" class="size-6" /> Jobs
                 </.link>
               </li>
               <li>
@@ -190,6 +202,7 @@
       flash={@flash}
       class="fixed top-8 left-1/2 -translate-x-1/2"
     />
+
     {@inner_content}
   </section>
 </main>

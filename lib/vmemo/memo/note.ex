@@ -13,7 +13,7 @@ defmodule Vmemo.Memo.Note do
   end
 
   admin do
-    table_columns([:id, :text, :user_id, :inserted_at, :updated_at])
+    table_columns([:id, :text, :typesense_status, :user_id, :inserted_at, :updated_at])
   end
 
   oban do
@@ -56,17 +56,19 @@ defmodule Vmemo.Memo.Note do
 
     create :create_with_sync do
       accept [:text, :user_id]
+      change set_attribute(:typesense_status, "pending")
       change run_oban_trigger(:sync_typesense)
     end
 
     create :import do
-      accept [:id, :text, :user_id]
+      accept [:id, :text, :user_id, :typesense_status]
     end
 
     update :update do
       primary? true
       accept [:text]
       require_atomic? false
+      change set_attribute(:typesense_status, "pending")
       change run_oban_trigger(:sync_typesense)
     end
 
@@ -74,7 +76,13 @@ defmodule Vmemo.Memo.Note do
       accept []
       require_atomic? false
       transaction? false
+      change set_attribute(:typesense_status, "processing")
       change {Vmemo.Memo.Changes.SyncTypesense, resource: __MODULE__}
+    end
+
+    update :set_typesense_status do
+      accept [:typesense_status]
+      require_atomic? false
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -100,6 +108,8 @@ defmodule Vmemo.Memo.Note do
     end
 
     attribute :user_id, :uuid
+
+    attribute :typesense_status, :string, allow_nil?: false, default: "completed"
 
     create_timestamp :inserted_at
     update_timestamp :updated_at
