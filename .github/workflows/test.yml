@@ -9,6 +9,8 @@ concurrency:
 
 env:
   MIX_ENV: test
+  TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_test
+  TEST_TYPESENSE_URL: http://localhost:8108
 
 jobs:
   mix-check:
@@ -60,7 +62,8 @@ jobs:
     env:
       TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
       TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
-      POSTGRES_PORT: "5432"
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_test
+      TEST_TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
 
     services:
       postgres:

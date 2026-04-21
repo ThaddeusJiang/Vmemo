@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_test
+      TEST_TYPESENSE_URL: http://localhost:8108
     steps:
       - uses: actions/checkout@v6.0.2
         with:
