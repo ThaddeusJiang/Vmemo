@@ -119,6 +119,7 @@ defmodule Vmemo.Account.User do
 
   relationships do
     has_many :api_tokens, Vmemo.Account.ApiToken
+    has_one :profile, Vmemo.Account.UserProfile
   end
 
   identities do

@@ -119,6 +119,7 @@ defmodule VmemoWeb.Router do
 
       live "/settings", UserSettingsLive, :edit
       live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/profile", UserProfileLive, :edit
 
       # Chat routes
       live "/chat", ChatLive
@@ -132,6 +133,8 @@ defmodule VmemoWeb.Router do
 
     get "/settings/export", UserDataController, :export
     post "/users/update-password", UserSettingsController, :update
+    get "/profile/appearance", UserProfileController, :update_appearance
+    post "/profile/appearance", UserProfileController, :update_appearance
   end
 
   scope "/", VmemoWeb do
@@ -151,6 +154,7 @@ defmodule VmemoWeb.Router do
     pipe_through :browser
 
     get "/:user_id/images/:filename", FileController, :show
+    get "/:user_id/avatars/:filename", FileController, :show_avatar
   end
 
   # Admin authentication routes

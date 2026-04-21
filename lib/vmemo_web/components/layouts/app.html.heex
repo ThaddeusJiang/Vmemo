@@ -39,16 +39,28 @@
 
       <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-zinc-900 ">
         <%= if assigns[:current_user] || assigns[:current_user] do %>
+          <% current_user = assigns[:current_user] || assigns[:current_user] %>
+          <% profile =
+            assigns[:current_user_profile] ||
+              %{name: nil, appearance: "system", avatar_file_id: nil} %>
+          <.notifications_dropdown
+            notifications={assigns[:global_notifications] || []}
+            unresolved_count={assigns[:global_notifications_unresolved_count] || 0}
+          />
           <div class="dropdown dropdown-end">
             <div
               tabindex="0"
               role="button"
               class="avatar avatar-placeholder avatar-online hover:cursor-pointer"
             >
-              <div class="bg-neutral text-neutral-content w-8 rounded-full">
-                <span>
-                  {String.at((assigns[:current_user] || assigns[:current_user]).email, 0)}
-                </span>
+              <div class="bg-neutral text-neutral-content w-8 rounded-full overflow-hidden">
+                <img
+                  :if={profile.avatar_file_id}
+                  src={~p"/storage/v1/#{current_user.id}/avatars/#{profile.avatar_file_id}"}
+                  alt="User avatar"
+                  class="h-full w-full object-cover"
+                />
+                <span :if={!profile.avatar_file_id}>{String.at(current_user.email, 0)}</span>
               </div>
             </div>
 
@@ -56,6 +68,29 @@
               tabindex="0"
               class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border border-base-300 shadow-lg"
             >
+              <li class="pointer-events-none px-3 py-2 text-xs text-base-content/70">
+                <p class="truncate font-semibold text-base-content">
+                  {profile.name || current_user.email}
+                </p>
+                <p class="truncate">{current_user.email}</p>
+              </li>
+              <li class="border-t border-base-300 my-1"></li>
+              <li>
+                <.link
+                  href={~p"/jobs"}
+                  class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                >
+                  <.icon name="hero-bell" class="size-6" /> Jobs
+                </.link>
+              </li>
+              <li>
+                <.link
+                  href={~p"/profile"}
+                  class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+                >
+                  <.icon name="hero-user-circle" class="size-6" /> Profile
+                </.link>
+              </li>
               <li>
                 <.link
                   href={~p"/settings"}
@@ -104,6 +139,28 @@
                   </svg>
                   Tokens
                 </.link>
+              </li>
+              <li>
+                <details>
+                  <summary>Appearance</summary>
+                  <ul class="p-2">
+                    <li>
+                      <.link href={~p"/profile/appearance?appearance=system"}>
+                        Follow system {if profile.appearance == "system", do: "✓", else: ""}
+                      </.link>
+                    </li>
+                    <li>
+                      <.link href={~p"/profile/appearance?appearance=light"}>
+                        Light {if profile.appearance == "light", do: "✓", else: ""}
+                      </.link>
+                    </li>
+                    <li>
+                      <.link href={~p"/profile/appearance?appearance=dark"}>
+                        Dark {if profile.appearance == "dark", do: "✓", else: ""}
+                      </.link>
+                    </li>
+                  </ul>
+                </details>
               </li>
               <li class="border-t border-base-300 my-1"></li>
               <li>

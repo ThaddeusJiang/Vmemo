@@ -10,5 +10,35 @@ defmodule VmemoWeb.Layouts do
   """
   use VmemoWeb, :html
 
+  def html_lang(assigns) do
+    case profile_language(assigns) do
+      "zh" -> "zh-CN"
+      "ja" -> "ja"
+      _ -> "en"
+    end
+  end
+
+  def theme_data_value(assigns) do
+    case profile_appearance(assigns) do
+      "light" -> "light"
+      "dark" -> "dark"
+      _ -> nil
+    end
+  end
+
+  defp profile_language(assigns) do
+    case Map.get(assigns, :current_user_profile) do
+      %{language: language} when is_binary(language) -> language
+      _ -> nil
+    end
+  end
+
+  defp profile_appearance(assigns) do
+    case Map.get(assigns, :current_user_profile) do
+      %{appearance: appearance} when is_binary(appearance) -> appearance
+      _ -> nil
+    end
+  end
+
   embed_templates "layouts/*"
 end
