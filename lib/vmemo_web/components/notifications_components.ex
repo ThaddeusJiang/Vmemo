@@ -8,7 +8,7 @@ defmodule VmemoWeb.NotificationsComponents do
     router: VmemoWeb.Router,
     statics: VmemoWeb.static_paths()
 
-  import VmemoWeb.CoreComponents, only: [icon: 1]
+  import VmemoWeb.CoreComponents, only: [icon: 1, img: 1]
 
   attr :notifications, :list, default: []
   attr :unresolved_count, :integer, default: 0
@@ -27,14 +27,14 @@ defmodule VmemoWeb.NotificationsComponents do
         <.icon name="hero-bell" class="h-5 w-5" />
         <span
           :if={@unresolved_count > 0}
-          class="absolute -top-1 -right-1 badge badge-error badge-sm min-w-5 h-5 text-[10px] px-1"
+          class="absolute -top-1 -right-1 badge badge-sm min-w-5 h-5 text-[10px] px-1 badge-soft-attention"
         >
           {@unresolved_count}
         </span>
       </div>
       <div
         tabindex="0"
-        class="dropdown-content z-[20] mt-2 w-[22rem] max-w-[90vw] rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
+        class="dropdown-content elevated-popover z-[90] mt-2 w-[22rem] max-w-[90vw] rounded-box bg-base-100 p-2"
       >
         <div class="px-2 py-1.5 text-xs font-semibold text-base-content/70">
           Notifications
@@ -42,14 +42,17 @@ defmodule VmemoWeb.NotificationsComponents do
         <div :if={Enum.empty?(@notifications)} class="px-2 py-4 text-sm text-base-content/60">
           No notifications yet
         </div>
-        <div :if={not Enum.empty?(@notifications)} class="max-h-80 overflow-y-auto space-y-1">
+        <div
+          :if={not Enum.empty?(@notifications)}
+          class="notifications-list max-h-80 overflow-y-auto"
+        >
           <.notification_item
             :for={notification <- @notifications}
             notification={notification}
             title={@item_title}
           />
         </div>
-        <div class="mt-2 border-t border-base-300 pt-2">
+        <div class="mt-2 pt-2">
           <.link href={~p"/jobs"} class="btn btn-ghost btn-sm w-full justify-start text-xs">
             View all notifications
           </.link>
@@ -66,13 +69,14 @@ defmodule VmemoWeb.NotificationsComponents do
     ~H"""
     <.link
       href={~p"/jobs/#{@notification.id}"}
-      class="flex items-start gap-2 rounded-lg border border-base-300/70 p-2 hover:border-base-content/40 hover:shadow-sm transition-all"
+      class="notifications-item flex items-start gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-base-content/6"
       style={"view-transition-name: notification-#{@notification.id};"}
     >
-      <img
+      <.img
         src={@notification.image_url}
         alt={@notification.id}
-        class="notification-item-thumb mt-0.5 h-10 w-10 rounded-md border border-base-300 object-cover"
+        wrapper_class="notification-item-thumb mt-0.5 h-10 w-10 shrink-0 rounded-md"
+        class="h-full w-full rounded-md object-cover !shadow-none hover:!shadow-none"
         loading="lazy"
       />
       <div class="min-w-0 flex-1">

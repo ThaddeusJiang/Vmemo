@@ -1,9 +1,12 @@
-<main class="min-h-screen flex flex-col">
-  <header class="px-4 lg:px-4 flex-none ">
-    <div class="flex items-center justify-between border-b border-base-300 h-[60px] text-sm gap-2 sm:gap-4">
-      <div class="flex grow items-center gap-2 sm:gap-4">
-        <%= if assigns[:current_user] || assigns[:current_user] do %>
-          <.link href="/home" class="flex gap-2 sm:gap-4 items-center font-bold ">
+<main class="min-h-screen flex flex-col bg-base-100">
+  <%= if assigns[:current_user] || assigns[:current_user] do %>
+    <header class="px-4 py-3 sm:px-6 lg:px-10 flex-none relative z-50">
+      <div class="mx-auto flex h-14 w-full max-w-7xl items-center justify-between border-b border-base-content/12 px-1 text-sm sm:px-2">
+        <div class="flex grow items-center gap-2 sm:gap-4">
+          <.link
+            href="/home"
+            class="landing-display flex gap-2 sm:gap-4 items-center font-semibold tracking-tight"
+          >
             <img src={~p"/images/logo.svg"} class="h-9 w-9 block dark:invert" />
             <span>Vmemo</span>
           </.link>
@@ -13,15 +16,9 @@
           >
             <.icon name="hero-photo" class="size-6" />
           </.link>
-        <% else %>
-          <a href="/" class="flex gap-2 sm:gap-4 items-center font-bold">
-            <img src={~p"/images/logo.svg"} class="h-9 w-9 block dark:invert" /> Vmemo
-          </a>
-        <% end %>
-      </div>
+        </div>
 
-      <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-base-content ">
-        <%= if assigns[:current_user] || assigns[:current_user] do %>
+        <div class="flex items-center gap-2 sm:gap-4 font-semibold leading-6 text-base-content ">
           <% current_user = assigns[:current_user] || assigns[:current_user] %>
           <% profile =
             assigns[:current_user_profile] ||
@@ -31,16 +28,14 @@
             unresolved_count={assigns[:global_notifications_unresolved_count] || 0}
           />
           <.user_dropdown current_user={current_user} profile={profile} />
-        <% else %>
-          <a href="/login" class="btn btn-primary rounded-full" data-headlessui-state="">
-            Get started
-          </a>
-        <% end %>
+        </div>
       </div>
-    </div>
-  </header>
+    </header>
+  <% else %>
+    <.guest_header logo_href="/" />
+  <% end %>
 
-  <section class=" grow flex flex-col ">
+  <section class="grow flex flex-col">
     <.flash_group
       flash={@flash}
       class="fixed top-8 left-1/2 -translate-x-1/2"

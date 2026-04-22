@@ -28,12 +28,12 @@ defmodule VmemoWeb.HomePageLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col grow">
-      <section class="pt-12 px-4 pb-4 sm:pt-16 sm:px-4 sm:pb-4 lg:pt-20 lg:px-4 lg:pb-4 grow relative">
-        <div class="flex flex-col items-center justify-center h-full gap-8">
-          <div class="flex flex-col items-center space-y-2 w-full max-w-xl px-4">
-            <h1 class="text-4xl font-bold">Search</h1>
+      <section class="page-shell grow relative">
+        <div class="mx-auto w-full max-w-5xl min-h-[18rem] flex flex-col items-center justify-center gap-6">
+          <div class="flex flex-col items-center space-y-2 w-full max-w-2xl px-2">
+            <h1 class="section-title text-4xl">Search</h1>
 
-            <div class="text-sm text-gray-600">
+            <div class="text-sm text-base-content/70">
               Total <span class="font-semibold">{@total_photos}</span> images
             </div>
 

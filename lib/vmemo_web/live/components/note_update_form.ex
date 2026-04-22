@@ -55,7 +55,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
               </div>
               <ul
                 tabindex="0"
-                class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+                class="dropdown-content elevated-popover menu bg-base-100 rounded-box z-[90] w-52 p-2"
               >
                 <li>
                   <button

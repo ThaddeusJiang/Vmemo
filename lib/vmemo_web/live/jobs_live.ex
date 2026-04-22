@@ -6,7 +6,12 @@ defmodule VmemoWeb.JobsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign(:job, nil) |> refresh_jobs()}
+    {:ok,
+     socket
+     |> assign(:job, nil)
+     |> assign(:retrying_search_ids, MapSet.new())
+     |> assign(:retrying_caption_ids, MapSet.new())
+     |> refresh_jobs()}
   end
 
   @impl true
@@ -39,10 +44,14 @@ defmodule VmemoWeb.JobsLive do
       {:ok, image} ->
         case Image.update_search_engine(image, %{}, actor: user) do
           {:ok, _updated_image} ->
-            {:noreply, socket |> refresh_jobs() |> put_flash(:info, "Retrying search embedding")}
+            Process.send_after(self(), {:clear_retrying_search, image_id}, 4_000)
+            {:noreply, socket |> put_retrying_search(image_id) |> refresh_jobs()}
 
           {:error, _reason} ->
-            {:noreply, put_flash(socket, :error, "Failed to retry search embedding")}
+            {:noreply,
+             socket
+             |> clear_retrying_search(image_id)
+             |> put_flash(:error, "Failed to retry search embedding")}
         end
 
       _ ->
@@ -58,10 +67,14 @@ defmodule VmemoWeb.JobsLive do
       {:ok, image} ->
         case Image.request_generate_caption(image, %{}, actor: user) do
           {:ok, _updated_image} ->
-            {:noreply, socket |> refresh_jobs() |> put_flash(:info, "Retrying vision embedding")}
+            Process.send_after(self(), {:clear_retrying_caption, image_id}, 4_000)
+            {:noreply, socket |> put_retrying_caption(image_id) |> refresh_jobs()}
 
           {:error, _reason} ->
-            {:noreply, put_flash(socket, :error, "Failed to retry vision embedding")}
+            {:noreply,
+             socket
+             |> clear_retrying_caption(image_id)
+             |> put_flash(:error, "Failed to retry vision embedding")}
         end
 
       _ ->
@@ -70,12 +83,22 @@ defmodule VmemoWeb.JobsLive do
   end
 
   @impl true
+  def handle_info({:clear_retrying_search, image_id}, socket) do
+    {:noreply, clear_retrying_search(socket, image_id)}
+  end
+
+  @impl true
+  def handle_info({:clear_retrying_caption, image_id}, socket) do
+    {:noreply, clear_retrying_caption(socket, image_id)}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:p-4 lg:p-4 grow">
-      <div class="w-full max-w-screen-xl mx-auto flex flex-col gap-4">
+    <section class="page-shell grow">
+      <div class="content-shell w-full flex flex-col gap-4">
         <div :if={@live_action == :index}>
-          <h1 class="text-2xl font-bold">Jobs</h1>
+          <h1 class="section-title text-2xl">Jobs</h1>
         </div>
 
         <div
@@ -99,24 +122,51 @@ defmodule VmemoWeb.JobsLive do
                 <tr :for={job <- @jobs}>
                   <td>
                     <.link href={~p"/jobs/#{job.image_id}"} class="block w-fit">
-                      <img
+                      <.img
                         src={job.image_url}
                         alt={job.image_id}
-                        class="h-10 w-10 rounded-md object-cover border border-base-300"
+                        wrapper_class="h-10 w-10 shrink-0 rounded-md"
+                        class="h-full w-full rounded-md object-cover border border-base-300 !shadow-none hover:!shadow-none"
                         loading="lazy"
                       />
                     </.link>
                   </td>
                   <td>
                     <div class="flex flex-col items-start gap-1.5 text-xs">
-                      <span class={service_status_badge_class(job.typesense_status)}>
-                        {service_status_label(job.typesense_status)}
+                      <span class={
+                        service_status_badge_class(
+                          display_status(
+                            job.typesense_status,
+                            retrying_search?(@retrying_search_ids, job.image_id)
+                          )
+                        )
+                      }>
+                        {service_status_label(
+                          display_status(
+                            job.typesense_status,
+                            retrying_search?(@retrying_search_ids, job.image_id)
+                          )
+                        )}
                       </span>
-                      <span :if={job.typesense_failure_reason} class="text-error">
+                      <.icon
+                        :if={retrying_search?(@retrying_search_ids, job.image_id)}
+                        name="hero-arrow-path"
+                        class="h-3.5 w-3.5 animate-spin text-base-content/60"
+                      />
+                      <span
+                        :if={
+                          present?(job.typesense_failure_reason) &&
+                            not retrying_search?(@retrying_search_ids, job.image_id)
+                        }
+                        class="text-error"
+                      >
                         {job.typesense_failure_reason}
                       </span>
                       <.button
-                        :if={job.typesense_status == "failed"}
+                        :if={
+                          job.typesense_status == "failed" and
+                            not retrying_search?(@retrying_search_ids, job.image_id)
+                        }
                         type="button"
                         size="xs"
                         variant="outline"
@@ -129,14 +179,40 @@ defmodule VmemoWeb.JobsLive do
                   </td>
                   <td>
                     <div class="flex flex-col items-start gap-1.5 text-xs">
-                      <span class={service_status_badge_class(job.moondream_status)}>
-                        {service_status_label(job.moondream_status)}
+                      <span class={
+                        service_status_badge_class(
+                          display_status(
+                            job.moondream_status,
+                            retrying_caption?(@retrying_caption_ids, job.image_id)
+                          )
+                        )
+                      }>
+                        {service_status_label(
+                          display_status(
+                            job.moondream_status,
+                            retrying_caption?(@retrying_caption_ids, job.image_id)
+                          )
+                        )}
                       </span>
-                      <span :if={job.moondream_failure_reason} class="text-error">
+                      <.icon
+                        :if={retrying_caption?(@retrying_caption_ids, job.image_id)}
+                        name="hero-arrow-path"
+                        class="h-3.5 w-3.5 animate-spin text-base-content/60"
+                      />
+                      <span
+                        :if={
+                          present?(job.moondream_failure_reason) &&
+                            not retrying_caption?(@retrying_caption_ids, job.image_id)
+                        }
+                        class="text-error"
+                      >
                         {job.moondream_failure_reason}
                       </span>
                       <.button
-                        :if={job.moondream_status == "failed"}
+                        :if={
+                          job.moondream_status == "failed" and
+                            not retrying_caption?(@retrying_caption_ids, job.image_id)
+                        }
                         type="button"
                         size="xs"
                         variant="outline"
@@ -168,10 +244,11 @@ defmodule VmemoWeb.JobsLive do
           >
             <div class="flex items-start gap-3">
               <.link href={~p"/images/#{@job.image_id}"} class="block">
-                <img
+                <.img
                   src={@job.image_url}
                   alt={@job.image_id}
-                  class="h-14 w-14 rounded-md object-cover border border-base-300"
+                  wrapper_class="h-14 w-14 shrink-0 rounded-md"
+                  class="h-full w-full rounded-md object-cover border border-base-300 !shadow-none hover:!shadow-none"
                   loading="lazy"
                 />
               </.link>
@@ -182,7 +259,10 @@ defmodule VmemoWeb.JobsLive do
                     <div class="flex items-center gap-1.5">
                       <span class="text-xs text-base-content/60">Search</span>
                       <.button
-                        :if={@job.typesense_status == "failed"}
+                        :if={
+                          @job.typesense_status == "failed" and
+                            not retrying_search?(@retrying_search_ids, @job.image_id)
+                        }
                         type="button"
                         size="xs"
                         variant="outline"
@@ -193,14 +273,37 @@ defmodule VmemoWeb.JobsLive do
                         {service_status_label(@job.typesense_status)}
                       </.button>
                       <span
-                        :if={@job.typesense_status != "failed"}
-                        class={service_status_badge_class(@job.typesense_status)}
+                        :if={
+                          @job.typesense_status != "failed" or
+                            retrying_search?(@retrying_search_ids, @job.image_id)
+                        }
+                        class={
+                          service_status_badge_class(
+                            display_status(
+                              @job.typesense_status,
+                              retrying_search?(@retrying_search_ids, @job.image_id)
+                            )
+                          )
+                        }
                       >
-                        {service_status_label(@job.typesense_status)}
+                        {service_status_label(
+                          display_status(
+                            @job.typesense_status,
+                            retrying_search?(@retrying_search_ids, @job.image_id)
+                          )
+                        )}
                       </span>
+                      <.icon
+                        :if={retrying_search?(@retrying_search_ids, @job.image_id)}
+                        name="hero-arrow-path"
+                        class="h-3.5 w-3.5 animate-spin text-base-content/60"
+                      />
                     </div>
                     <div
-                      :if={@job.typesense_failure_reason}
+                      :if={
+                        present?(@job.typesense_failure_reason) &&
+                          not retrying_search?(@retrying_search_ids, @job.image_id)
+                      }
                       class="text-error text-xs mt-1 line-clamp-2"
                     >
                       {@job.typesense_failure_reason}
@@ -212,7 +315,10 @@ defmodule VmemoWeb.JobsLive do
                       <div class="flex items-center gap-1.5">
                         <span class="text-xs text-base-content/60">Caption</span>
                         <.button
-                          :if={@job.moondream_status == "failed"}
+                          :if={
+                            @job.moondream_status == "failed" and
+                              not retrying_caption?(@retrying_caption_ids, @job.image_id)
+                          }
                           type="button"
                           size="xs"
                           variant="outline"
@@ -223,14 +329,37 @@ defmodule VmemoWeb.JobsLive do
                           {service_status_label(@job.moondream_status)}
                         </.button>
                         <span
-                          :if={@job.moondream_status != "failed"}
-                          class={service_status_badge_class(@job.moondream_status)}
+                          :if={
+                            @job.moondream_status != "failed" or
+                              retrying_caption?(@retrying_caption_ids, @job.image_id)
+                          }
+                          class={
+                            service_status_badge_class(
+                              display_status(
+                                @job.moondream_status,
+                                retrying_caption?(@retrying_caption_ids, @job.image_id)
+                              )
+                            )
+                          }
                         >
-                          {service_status_label(@job.moondream_status)}
+                          {service_status_label(
+                            display_status(
+                              @job.moondream_status,
+                              retrying_caption?(@retrying_caption_ids, @job.image_id)
+                            )
+                          )}
                         </span>
+                        <.icon
+                          :if={retrying_caption?(@retrying_caption_ids, @job.image_id)}
+                          name="hero-arrow-path"
+                          class="h-3.5 w-3.5 animate-spin text-base-content/60"
+                        />
                       </div>
                       <button
-                        :if={@job.moondream_status == "failed"}
+                        :if={
+                          @job.moondream_status == "failed" and
+                            not retrying_caption?(@retrying_caption_ids, @job.image_id)
+                        }
                         type="button"
                         class="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content"
                         phx-click="retry-vision-embedding"
@@ -242,10 +371,16 @@ defmodule VmemoWeb.JobsLive do
                       </button>
                     </div>
                     <div class="text-xs text-base-content/60 mt-1">
-                      {caption_section_label(@job)}
+                      {caption_section_label(
+                        @job,
+                        retrying_caption?(@retrying_caption_ids, @job.image_id)
+                      )}
                     </div>
                     <div class="text-sm text-base-content/90 break-words mt-0.5 line-clamp-3">
-                      {caption_display_text(@job)}
+                      {caption_display_text(
+                        @job,
+                        retrying_caption?(@retrying_caption_ids, @job.image_id)
+                      )}
                     </div>
                   </div>
                 </div>
@@ -277,12 +412,19 @@ defmodule VmemoWeb.JobsLive do
     end
   end
 
-  defp caption_section_label(job) do
-    if job.moondream_status == "failed", do: "Failure reason", else: "Caption result"
+  defp caption_section_label(job, retrying) do
+    cond do
+      retrying -> "Caption status"
+      job.moondream_status == "failed" -> "Failure reason"
+      true -> "Caption result"
+    end
   end
 
-  defp caption_display_text(job) do
+  defp caption_display_text(job, retrying) do
     cond do
+      retrying ->
+        "Retry requested. Caption is being generated."
+
       job.moondream_status == "completed" and present?(job.caption) ->
         job.caption
 
@@ -297,6 +439,24 @@ defmodule VmemoWeb.JobsLive do
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(_), do: false
 
+  defp display_status(_status, true), do: "processing"
+  defp display_status(status, false), do: status
+
+  defp retrying_search?(ids, image_id), do: MapSet.member?(ids, image_id)
+  defp retrying_caption?(ids, image_id), do: MapSet.member?(ids, image_id)
+
+  defp put_retrying_search(socket, image_id),
+    do: update(socket, :retrying_search_ids, &MapSet.put(&1, image_id))
+
+  defp clear_retrying_search(socket, image_id),
+    do: update(socket, :retrying_search_ids, &MapSet.delete(&1, image_id))
+
+  defp put_retrying_caption(socket, image_id),
+    do: update(socket, :retrying_caption_ids, &MapSet.put(&1, image_id))
+
+  defp clear_retrying_caption(socket, image_id),
+    do: update(socket, :retrying_caption_ids, &MapSet.delete(&1, image_id))
+
   defp refresh_jobs(socket) do
     user = socket.assigns.current_user
 
@@ -306,10 +466,45 @@ defmodule VmemoWeb.JobsLive do
         _ -> []
       end
 
+    current_job = socket.assigns[:job]
+
+    updated_current_job =
+      case current_job do
+        %{image_id: image_id} -> Enum.find(jobs, &(&1.image_id == image_id)) || current_job
+        _ -> current_job
+      end
+
     socket
     |> assign(:jobs, jobs)
+    |> assign(:job, updated_current_job)
+    |> assign(
+      :retrying_search_ids,
+      keep_retrying_ids(
+        socket.assigns.retrying_search_ids,
+        jobs,
+        &(&1.typesense_status == "failed")
+      )
+    )
+    |> assign(
+      :retrying_caption_ids,
+      keep_retrying_ids(
+        socket.assigns.retrying_caption_ids,
+        jobs,
+        &(&1.moondream_status == "failed")
+      )
+    )
     |> assign(:global_image_jobs, Enum.filter(jobs, &(&1.status != "success")))
     |> assign(:global_image_jobs_processing_count, Enum.count(jobs, &(&1.status == "processing")))
     |> assign(:global_image_jobs_failed_count, Enum.count(jobs, &(&1.status == "failed")))
+  end
+
+  defp keep_retrying_ids(ids, jobs, failed_status_fn) do
+    failed_ids =
+      jobs
+      |> Enum.filter(failed_status_fn)
+      |> Enum.map(& &1.image_id)
+      |> MapSet.new()
+
+    MapSet.intersection(ids, failed_ids)
   end
 end

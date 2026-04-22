@@ -8,6 +8,8 @@ Do not put framework-specific implementation details here.
 ## Visual baseline
 
 - Design baseline: shadcn/ui style with daisyUI components.
+- Keep one calm background plane per page. Do not stack multiple tinted section backgrounds unless needed for functional grouping.
+- Header should feel consistent across landing/auth/app: same container rhythm, similar CTA sizing family, and stable vertical alignment.
 
 ## Form layout and actions
 
@@ -23,7 +25,9 @@ Do not put framework-specific implementation details here.
 - `save/submit` should use `primary`.
 - Do not place destructive actions (for example `delete`) in the primary bottom action row.
 - For note-edit forms, place destructive actions in a top-right overflow menu (three-dot dropdown) on the field header row (same row as the `Note` label).
-- Overflow menus should use elevated panel styling for clarity (`shadow-lg` with grouped separators and clear separation from background).
+- Overflow menus and popovers must use the shared elevation style (`elevated-popover`), not ad-hoc `shadow-*` classes.
+- Rationale: global `.dropdown-content` intentionally disables default border/shadow to keep surfaces quiet; only explicit elevated surfaces should opt in via `elevated-popover`.
+- For consistency, any floating layer (notifications, user menu, kebab menus, context actions) should share this same class and `z-[90]` unless a specific stacking need is documented.
 - Always size images with Tailwind classes (`w-* h-*` or `size-*`), never `width` / `height` HTML attributes.
 
 ## Form behavior
@@ -36,7 +40,27 @@ Do not put framework-specific implementation details here.
 
 - Toast container should be fixed at top-right (`top-4 right-4`) with safe spacing from viewport edges.
 - Stack toasts vertically with clear spacing between items.
-- Use toast for global action feedback; use inline error text for field-specific validation.
+- Do not overuse toast for local actions. Prefer feedback near the action control (status badge, button state, inline helper text).
+- For async retries/queueing actions (for example retry caption/search generation), do not show success toast on request acceptance. Update nearby status to `pending/processing` instead.
+- Use toast for global feedback or failures that are not clearly visible near the action.
+
+## Images and fallback behavior
+
+- Use shared `<.img>` as the default image primitive so fallback behavior stays consistent.
+- List thumbnails must use fixed-size wrappers (`h-* w-* + shrink-0`); image should fill wrapper (`h-full w-full object-cover`).
+- Detail image regions should use stable containers (fixed aspect/min-height) to avoid blank layout collapse.
+- Image-unavailable fallback should be icon-first (hero photo icon), with hover tooltip text.
+
+## Navigation and method safety
+
+- Custom click-navigation enhancement must not intercept links that rely on method semantics (`data-method`) or LiveView metadata (`data-phx-link`, `data-to`).
+- Logout and other method-based actions must preserve HTTP verb behavior.
+
+## Document boundary
+
+- This file is the implementation-level source for UI coding decisions.
+- `DESIGN.md` keeps higher-level design principles; avoid duplicating class-level details there.
+- When rules conflict during implementation, follow this file first, then update `DESIGN.md` only if product-level principles changed.
 
 ## Photo grid and responsive columns
 

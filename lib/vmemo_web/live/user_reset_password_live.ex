@@ -5,40 +5,42 @@ defmodule VmemoWeb.UserResetPasswordLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header>Reset Password</.header>
+    <div class="auth-shell">
+      <div class="auth-card">
+        <.header>Reset Password</.header>
 
-      <%= if @token_error do %>
-        <div class="text-error text-center mb-4">
-          <span>{@token_error}</span>
-        </div>
-        <div class="text-center mt-4">
-          <.link href={~p"/reset-password"} class="btn btn-neutral">
-            Request a new reset password link
-          </.link>
-        </div>
-      <% else %>
-        <.simple_form
-          for={@form}
-          id="reset_password_form"
-          phx-submit="reset-password"
-        >
-          <.error :if={@form.errors != []}>
-            Oops, something went wrong! Please check the errors below.
-          </.error>
+        <%= if @token_error do %>
+          <div class="text-error text-center mb-4">
+            <span>{@token_error}</span>
+          </div>
+          <div class="text-center mt-4">
+            <.link href={~p"/reset-password"} class="btn btn-neutral">
+              Request a new reset password link
+            </.link>
+          </div>
+        <% else %>
+          <.simple_form
+            for={@form}
+            id="reset_password_form"
+            phx-submit="reset-password"
+          >
+            <.error :if={@form.errors != []}>
+              Oops, something went wrong! Please check the errors below.
+            </.error>
 
-          <.input field={@form[:password]} type="password" label="New password" required />
-          <.input
-            field={@form[:password_confirmation]}
-            type="password"
-            label="Confirm new password"
-            required
-          />
-          <:actions>
-            <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
-          </:actions>
-        </.simple_form>
-      <% end %>
+            <.input field={@form[:password]} type="password" label="New password" required />
+            <.input
+              field={@form[:password_confirmation]}
+              type="password"
+              label="Confirm new password"
+              required
+            />
+            <:actions>
+              <.button phx-disable-with="Resetting..." class="w-full">Reset Password</.button>
+            </:actions>
+          </.simple_form>
+        <% end %>
+      </div>
     </div>
     """
   end

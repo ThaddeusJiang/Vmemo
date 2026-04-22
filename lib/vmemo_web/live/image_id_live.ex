@@ -165,8 +165,7 @@ defmodule VmemoWeb.ImageIdLive do
       {:ok, updated_photo} ->
         {:noreply,
          socket
-         |> assign(:image, updated_photo)
-         |> put_flash(:info, "Retrying Typesense sync")}
+         |> assign(:image, updated_photo)}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Failed to retry Typesense sync")}
@@ -182,8 +181,7 @@ defmodule VmemoWeb.ImageIdLive do
       {:ok, updated_photo} ->
         {:noreply,
          socket
-         |> assign(:image, updated_photo)
-         |> put_flash(:info, "Retrying caption generation")}
+         |> assign(:image, updated_photo)}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Failed to retry caption generation")}
@@ -287,14 +285,14 @@ defmodule VmemoWeb.ImageIdLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-4 sm:p-4 lg:p-4">
+    <div class="page-shell">
       <%= if @image == nil do %>
         <.not_found />
       <% else %>
-        <div class=" flex flex-col space-y-6 w-full mx-auto max-w-screen-xl">
+        <div class="content-shell flex flex-col space-y-6 w-full mx-auto">
           <div class=" gap-2 space-y-2 sm:grid sm:grid-cols-2 sm:space-y-0 max-h-[60%] ">
             <div class="space-y-2 flex flex-col items-center justify-center relative min-h-[400px]">
-              <figure class="w-auto h-auto group relative">
+              <figure class="group relative w-full max-w-[640px] aspect-[4/3]">
                 <%!-- <figcaption class="text-lg font-semibold text-gray-900">
                   <%= @image.note %>
                 </figcaption> --%>
@@ -302,7 +300,8 @@ defmodule VmemoWeb.ImageIdLive do
                 <.img
                   src={@image.url}
                   alt={@image.note}
-                  class="block !w-auto !max-w-full !h-auto !max-h-[400px] mx-auto !object-contain rounded-lg shadow hover:shadow-lg transition-shadow"
+                  wrapper_class="w-full h-full rounded-lg"
+                  class="block !w-full !h-full !max-w-none !max-h-none !object-contain rounded-lg shadow hover:shadow-lg transition-shadow"
                 />
 
                 <.link
@@ -331,7 +330,7 @@ defmodule VmemoWeb.ImageIdLive do
                 </div>
                 <ul
                   tabindex="0"
-                  class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border border-base-300"
+                  class="dropdown-content elevated-popover menu bg-base-100 rounded-box z-[90] w-52 p-2"
                 >
                   <li>
                     <button

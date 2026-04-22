@@ -5,167 +5,169 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
-      <.header>
-        Tokens
-        <:subtitle>Manage your API access tokens</:subtitle>
-      </.header>
+    <div class="page-shell">
+      <div class="content-shell max-w-6xl mx-auto">
+        <.header>
+          Tokens
+          <:subtitle>Manage your API access tokens</:subtitle>
+        </.header>
 
-      <div class="mt-8">
-        <!-- Expiration alerts -->
-        <div :if={length(@expired_tokens) > 0} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
-          <div>
-            <div class="font-semibold">{length(@expired_tokens)} tokens have expired</div>
-            <div class="text-sm">Please update or delete expired tokens promptly</div>
-          </div>
-        </div>
-
-        <div :if={length(@expiring_tokens) > 0} class="alert alert-warning mb-4">
-          <.icon name="hero-clock" class="h-5 w-5" />
-          <div>
-            <div class="font-semibold">
-              {length(@expiring_tokens)} tokens will expire within 7 days
+        <div class="mt-8">
+          <!-- Expiration alerts -->
+          <div :if={length(@expired_tokens) > 0} class="alert alert-error mb-4">
+            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+            <div>
+              <div class="font-semibold">{length(@expired_tokens)} tokens have expired</div>
+              <div class="text-sm">Please update or delete expired tokens promptly</div>
             </div>
-            <div class="text-sm">It's recommended to update these tokens in advance</div>
           </div>
-        </div>
-        
+
+          <div :if={length(@expiring_tokens) > 0} class="alert alert-warning mb-4">
+            <.icon name="hero-clock" class="h-5 w-5" />
+            <div>
+              <div class="font-semibold">
+                {length(@expiring_tokens)} tokens will expire within 7 days
+              </div>
+              <div class="text-sm">It's recommended to update these tokens in advance</div>
+            </div>
+          </div>
+          
     <!-- Error message -->
-        <div :if={@error_message} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
-          <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear-error">Close</.button>
+          <div :if={@error_message} class="alert alert-error mb-4">
+            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+            <span>{@error_message}</span>
+            <.button variant="ghost" phx-click="clear-error">Close</.button>
+          </div>
+          
+    <!-- Loading state -->
+          <div :if={@loading} class="flex justify-center items-center py-8">
+            <div class="loading loading-spinner loading-lg text-primary"></div>
+            <span class="ml-2 text-lg">Processing...</span>
+          </div>
+
+          <div :if={!@loading} class="space-y-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-semibold">Tokens</h2>
+              <.link navigate={~p"/tokens/new"} class="btn btn-primary">
+                <.icon name="hero-plus" class="h-4 w-4" /> Create New Token
+              </.link>
+            </div>
+            
+    <!-- Statistics cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div class="stat bg-base-100 rounded-box shadow border-r-0">
+                <div class="stat-figure text-primary">
+                  <.icon name="hero-key" class="h-6 w-6 sm:h-8 sm:w-8" />
+                </div>
+                <div class="stat-title text-sm sm:text-base">Total Tokens</div>
+                <div class="stat-value text-primary text-lg sm:text-2xl">{length(@api_tokens)}</div>
+              </div>
+
+              <div class="stat bg-base-100 rounded-box shadow border-r-0">
+                <div class="stat-figure text-success">
+                  <.icon name="hero-check-circle" class="h-6 w-6 sm:h-8 sm:w-8" />
+                </div>
+                <div class="stat-title text-sm sm:text-base">Active Tokens</div>
+                <div class="stat-value text-success text-lg sm:text-2xl">{@active_tokens_count}</div>
+              </div>
+
+              <div class="stat bg-base-100 rounded-box shadow border-r-0">
+                <div class="stat-figure text-error">
+                  <.icon name="hero-exclamation-triangle" class="h-6 w-6 sm:h-8 sm:w-8" />
+                </div>
+                <div class="stat-title text-sm sm:text-base">Expired Tokens</div>
+                <div class="stat-value text-error text-lg sm:text-2xl">{@expired_tokens_count}</div>
+              </div>
+
+              <div class="stat bg-base-100 rounded-box shadow border-r-0">
+                <div class="stat-figure text-info">
+                  <.icon name="hero-chart-bar" class="h-6 w-6 sm:h-8 sm:w-8" />
+                </div>
+                <div class="stat-title text-sm sm:text-base">Today's Usage</div>
+                <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
+              </div>
+            </div>
+            
+    <!-- Token list -->
+            <div class="surface-card overflow-x-auto">
+              <.table id="api-tokens" rows={@api_tokens}>
+                <:col :let={token} label="Name">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-sm sm:text-base">{token.name}</span>
+                    <span :if={!token.is_active} class="badge badge-warning badge-sm">Disabled</span>
+                    <span :if={expired?(token)} class="badge badge-error badge-sm">Expired</span>
+                  </div>
+                </:col>
+                <:col :let={token} label="Token">
+                  <div class="flex items-center gap-2">
+                    <code class="text-xs bg-base-200 px-2 py-1 rounded">
+                      {display_token_preview(token)}
+                    </code>
+                  </div>
+                </:col>
+                <:col :let={token} label="Expires">
+                  <span class="text-sm">
+                    {if token.expires_at,
+                      do: format_datetime_to_local(token.expires_at),
+                      else: "Never expires"}
+                  </span>
+                </:col>
+                <:col :let={token} label="Usage Count">
+                  <span class="badge badge-info badge-ghost">{token.usage_count || 0}</span>
+                </:col>
+                <:action :let={token}>
+                  <div class="flex gap-1">
+                    <.button
+                      variant="outline"
+                      phx-click="toggle-token-status"
+                      phx-value-id={token.id}
+                      class={
+                        if token.is_active,
+                          do: "btn-square text-warning",
+                          else: "btn-square text-success"
+                      }
+                    >
+                      <.icon
+                        name={if token.is_active, do: "hero-pause", else: "hero-play"}
+                        class="h-4 w-4"
+                      />
+                    </.button>
+                    <.button
+                      variant="outline"
+                      phx-click="delete-token"
+                      phx-value-id={token.id}
+                      class="btn-square text-error"
+                    >
+                      <.icon name="hero-trash" class="h-4 w-4" />
+                    </.button>
+                  </div>
+                </:action>
+              </.table>
+            </div>
+          </div>
         </div>
         
-    <!-- Loading state -->
-        <div :if={@loading} class="flex justify-center items-center py-8">
-          <div class="loading loading-spinner loading-lg text-primary"></div>
-          <span class="ml-2 text-lg">Processing...</span>
-        </div>
-
-        <div :if={!@loading} class="space-y-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Tokens</h2>
-            <.link navigate={~p"/tokens/new"} class="btn btn-primary">
-              <.icon name="hero-plus" class="h-4 w-4" /> Create New Token
-            </.link>
-          </div>
-          
-    <!-- Statistics cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="stat bg-base-100 rounded-box shadow border-r-0">
-              <div class="stat-figure text-primary">
-                <.icon name="hero-key" class="h-6 w-6 sm:h-8 sm:w-8" />
-              </div>
-              <div class="stat-title text-sm sm:text-base">Total Tokens</div>
-              <div class="stat-value text-primary text-lg sm:text-2xl">{length(@api_tokens)}</div>
-            </div>
-
-            <div class="stat bg-base-100 rounded-box shadow border-r-0">
-              <div class="stat-figure text-success">
-                <.icon name="hero-check-circle" class="h-6 w-6 sm:h-8 sm:w-8" />
-              </div>
-              <div class="stat-title text-sm sm:text-base">Active Tokens</div>
-              <div class="stat-value text-success text-lg sm:text-2xl">{@active_tokens_count}</div>
-            </div>
-
-            <div class="stat bg-base-100 rounded-box shadow border-r-0">
-              <div class="stat-figure text-error">
-                <.icon name="hero-exclamation-triangle" class="h-6 w-6 sm:h-8 sm:w-8" />
-              </div>
-              <div class="stat-title text-sm sm:text-base">Expired Tokens</div>
-              <div class="stat-value text-error text-lg sm:text-2xl">{@expired_tokens_count}</div>
-            </div>
-
-            <div class="stat bg-base-100 rounded-box shadow border-r-0">
-              <div class="stat-figure text-info">
-                <.icon name="hero-chart-bar" class="h-6 w-6 sm:h-8 sm:w-8" />
-              </div>
-              <div class="stat-title text-sm sm:text-base">Today's Usage</div>
-              <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
-            </div>
-          </div>
-          
-    <!-- Token list -->
-          <div class="bg-base-100 rounded-box shadow overflow-x-auto">
-            <.table id="api-tokens" rows={@api_tokens}>
-              <:col :let={token} label="Name">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-sm sm:text-base">{token.name}</span>
-                  <span :if={!token.is_active} class="badge badge-warning badge-sm">Disabled</span>
-                  <span :if={expired?(token)} class="badge badge-error badge-sm">Expired</span>
-                </div>
-              </:col>
-              <:col :let={token} label="Token">
-                <div class="flex items-center gap-2">
-                  <code class="text-xs bg-base-200 px-2 py-1 rounded">
-                    {display_token_preview(token)}
-                  </code>
-                </div>
-              </:col>
-              <:col :let={token} label="Expires">
-                <span class="text-sm">
-                  {if token.expires_at,
-                    do: format_datetime_to_local(token.expires_at),
-                    else: "Never expires"}
-                </span>
-              </:col>
-              <:col :let={token} label="Usage Count">
-                <span class="badge badge-info badge-ghost">{token.usage_count || 0}</span>
-              </:col>
-              <:action :let={token}>
-                <div class="flex gap-1">
-                  <.button
-                    variant="outline"
-                    phx-click="toggle-token-status"
-                    phx-value-id={token.id}
-                    class={
-                      if token.is_active,
-                        do: "btn-square text-warning",
-                        else: "btn-square text-success"
-                    }
-                  >
-                    <.icon
-                      name={if token.is_active, do: "hero-pause", else: "hero-play"}
-                      class="h-4 w-4"
-                    />
-                  </.button>
-                  <.button
-                    variant="outline"
-                    phx-click="delete-token"
-                    phx-value-id={token.id}
-                    class="btn-square text-error"
-                  >
-                    <.icon name="hero-trash" class="h-4 w-4" />
-                  </.button>
-                </div>
-              </:action>
-            </.table>
-          </div>
-        </div>
-      </div>
-      
     <!-- Delete confirmation Modal -->
-      <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
-        <:header>
-          <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
-        </:header>
+        <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
+          <:header>
+            <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
+          </:header>
 
-        <div class="space-y-2">
-          <p>
-            Are you sure you want to delete the token "<span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
-          </p>
-          <p class="text-sm text-base-content/70">
-            This action cannot be undone. Applications using this token will no longer be able to access the API.
-          </p>
-        </div>
+          <div class="space-y-2">
+            <p>
+              Are you sure you want to delete the token "<span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
+            </p>
+            <p class="text-sm text-base-content/70">
+              This action cannot be undone. Applications using this token will no longer be able to access the API.
+            </p>
+          </div>
 
-        <:footer>
-          <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
-          <.button variant="danger" phx-click="confirm-delete">Delete</.button>
-        </:footer>
-      </.modal>
+          <:footer>
+            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
+            <.button variant="danger" phx-click="confirm-delete">Delete</.button>
+          </:footer>
+        </.modal>
+      </div>
     </div>
     """
   end

@@ -8,69 +8,71 @@ defmodule VmemoWeb.UserProfileLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-2xl p-4 sm:p-4 lg:p-4">
-      <.header>
-        User Profile
-      </.header>
+    <div class="page-shell">
+      <div class="content-shell max-w-2xl mx-auto">
+        <.header>
+          User Profile
+        </.header>
 
-      <div class="mt-6 rounded-md border border-base-300 p-4 sm:p-6">
-        <.form for={@profile_form} phx-submit="save" phx-change="validate" class="space-y-5">
-          <div class="space-y-2">
-            <div class="flex flex-col items-center gap-2">
-              <label
-                for={@uploads.avatar.ref}
-                class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
-              >
-                <div class="w-24 rounded-full bg-base-200 ring-1 ring-base-300">
-                  <.live_img_preview
-                    :if={@uploads.avatar.entries != []}
-                    entry={List.first(@uploads.avatar.entries)}
-                    class="h-full w-full object-cover"
-                  />
-                  <img
-                    :if={@uploads.avatar.entries == [] && @avatar_preview_url}
-                    src={@avatar_preview_url}
-                    alt="Avatar preview"
-                    class="h-full w-full object-cover"
-                  />
-                  <div
-                    :if={@uploads.avatar.entries == [] && !@avatar_preview_url}
-                    class="flex h-full w-full items-center justify-center"
-                  >
-                    <span class="text-lg font-semibold">
-                      {String.first(@profile_form[:name].value || "U")}
-                    </span>
+        <div class="mt-6 surface-card p-4 sm:p-6">
+          <.form for={@profile_form} phx-submit="save" phx-change="validate" class="space-y-5">
+            <div class="space-y-2">
+              <div class="flex flex-col items-center gap-2">
+                <label
+                  for={@uploads.avatar.ref}
+                  class="avatar cursor-pointer transition-transform hover:scale-[1.02]"
+                >
+                  <div class="w-24 rounded-full bg-base-200 ring-1 ring-base-300">
+                    <.live_img_preview
+                      :if={@uploads.avatar.entries != []}
+                      entry={List.first(@uploads.avatar.entries)}
+                      class="h-full w-full object-cover"
+                    />
+                    <img
+                      :if={@uploads.avatar.entries == [] && @avatar_preview_url}
+                      src={@avatar_preview_url}
+                      alt="Avatar preview"
+                      class="h-full w-full object-cover"
+                    />
+                    <div
+                      :if={@uploads.avatar.entries == [] && !@avatar_preview_url}
+                      class="flex h-full w-full items-center justify-center"
+                    >
+                      <span class="text-lg font-semibold">
+                        {String.first(@profile_form[:name].value || "U")}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </label>
+                </label>
 
-              <.live_file_input
-                upload={@uploads.avatar}
-                class="hidden"
-              />
-              <p :for={err <- upload_errors(@uploads.avatar)} class="text-sm text-error text-center">
-                {avatar_upload_error(err)}
-              </p>
+                <.live_file_input
+                  upload={@uploads.avatar}
+                  class="hidden"
+                />
+                <p :for={err <- upload_errors(@uploads.avatar)} class="text-sm text-error text-center">
+                  {avatar_upload_error(err)}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <.input field={@profile_form[:name]} type="text" label="Name" required />
+            <.input field={@profile_form[:name]} type="text" label="Name" required />
 
-          <.input
-            field={@profile_form[:language]}
-            type="select"
-            label="Language"
-            options={[
-              {"English", "en"},
-              {"中文", "zh"},
-              {"日本語", "ja"}
-            ]}
-          />
+            <.input
+              field={@profile_form[:language]}
+              type="select"
+              label="Language"
+              options={[
+                {"English", "en"},
+                {"中文", "zh"},
+                {"日本語", "ja"}
+              ]}
+            />
 
-          <div :if={@has_changes} class="pt-4 flex justify-center">
-            <.button class="w-64" phx-disable-with="Saving...">Save Profile</.button>
-          </div>
-        </.form>
+            <div :if={@has_changes} class="pt-4 flex justify-center">
+              <.button class="w-64" phx-disable-with="Saving...">Save Profile</.button>
+            </div>
+          </.form>
+        </div>
       </div>
     </div>
     """

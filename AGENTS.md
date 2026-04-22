@@ -63,6 +63,17 @@
   - `docs/guides/coding/uiux.md`
   - `docs/guides/coding/debug.md`
 
+## Design docs ownership (keep maintenance simple)
+- `DESIGN.md`: design intent, visual system decisions, and stable product-level principles.
+- `docs/guides/coding/uiux.md`: implementable UI rules used during coding and review.
+- `.impeccable.md`: design context and creative direction for design-driven generation workflows.
+- `AGENTS.md`: engineering workflow, boundaries, and repo-level collaboration rules.
+- Conflict resolution priority: `AGENTS.md` > `docs/guides/coding/*` > `DESIGN.md` > `.impeccable.md`.
+- When changing UI behavior or patterns, update at most:
+  - `uiux.md` for executable rules
+  - optionally `DESIGN.md` only if the product-level principle changed
+  - keep `.impeccable.md` unchanged unless design direction itself changed
+
 ## Architecture and framework conventions
 - Use Ash (not Ecto-first modeling).
 - Domain/business logic: `lib/vmemo/**`.

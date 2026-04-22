@@ -5,204 +5,206 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-4xl p-4 sm:p-6 lg:p-8">
-      <.header>
-        API Token Details
-        <:subtitle>{@api_token.name}</:subtitle>
-      </.header>
+    <div class="page-shell">
+      <div class="content-shell max-w-4xl mx-auto">
+        <.header>
+          API Token Details
+          <:subtitle>{@api_token.name}</:subtitle>
+        </.header>
 
-      <div class="mt-8">
-        <!-- Error message -->
-        <div :if={@error_message} class="alert alert-error mb-4">
-          <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
-          <span>{@error_message}</span>
-          <.button variant="ghost" phx-click="clear-error">Close</.button>
+        <div class="mt-8">
+          <!-- Error message -->
+          <div :if={@error_message} class="alert alert-error mb-4">
+            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+            <span>{@error_message}</span>
+            <.button variant="ghost" phx-click="clear-error">Close</.button>
+          </div>
+          
+    <!-- Loading state -->
+          <div :if={@loading} class="flex justify-center items-center py-8">
+            <div class="loading loading-spinner loading-lg text-primary"></div>
+            <span class="ml-2 text-lg">Processing...</span>
+          </div>
+
+          <div :if={!@loading} class="space-y-6">
+            <!-- Token status cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div class="stat surface-card">
+                <div class="stat-figure text-primary">
+                  <.icon name="hero-key" class="h-6 w-6" />
+                </div>
+                <div class="stat-title">Token Status</div>
+                <div class="stat-value text-sm">
+                  <span
+                    :if={@api_token.is_active && !expired?(@api_token)}
+                    class="badge badge-success"
+                  >
+                    Active
+                  </span>
+                  <span :if={!@api_token.is_active} class="badge badge-warning">Disabled</span>
+                  <span :if={expired?(@api_token)} class="badge badge-error">Expired</span>
+                </div>
+              </div>
+
+              <div class="stat surface-card">
+                <div class="stat-figure text-info">
+                  <.icon name="hero-calendar" class="h-6 w-6" />
+                </div>
+                <div class="stat-title">Created</div>
+                <div class="stat-value text-sm">
+                  {format_datetime_to_local(@api_token.inserted_at, "date")}
+                </div>
+              </div>
+
+              <div class="stat surface-card">
+                <div class="stat-figure text-warning">
+                  <.icon name="hero-clock" class="h-6 w-6" />
+                </div>
+                <div class="stat-title">Expires</div>
+                <div class="stat-value text-sm">
+                  {if @api_token.expires_at,
+                    do: format_datetime_to_local(@api_token.expires_at, "date"),
+                    else: "Never expires"}
+                </div>
+              </div>
+            </div>
+            
+    <!-- Token details -->
+            <div class="surface-card p-6">
+              <h3 class="text-lg font-semibold mb-4">Token Information</h3>
+
+              <div class="space-y-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-semibold">Token Name</span>
+                    </label>
+                    <div class="text-sm">{@api_token.name}</div>
+                  </div>
+
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-semibold">Token Preview</span>
+                    </label>
+                    <code class="text-xs bg-base-200 px-2 py-1 rounded">
+                      {display_token_preview(@api_token)}
+                    </code>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-semibold">Created</span>
+                    </label>
+                    <div class="text-sm">
+                      {format_datetime_to_local(@api_token.inserted_at, "%Y-%m-%d %H:%M:%S")}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-semibold">Expires</span>
+                    </label>
+                    <div class="text-sm">
+                      {if @api_token.expires_at,
+                        do: format_datetime_to_local(@api_token.expires_at, "%Y-%m-%d %H:%M:%S"),
+                        else: "Never expires"}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-semibold">Last Used</span>
+                    </label>
+                    <div class="text-sm">
+                      {if @api_token.last_used_at,
+                        do: format_datetime_to_local(@api_token.last_used_at, "%Y-%m-%d %H:%M:%S"),
+                        else: "Never used"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-semibold">Usage Count</span>
+                    </label>
+                    <div class="text-sm">{@api_token.usage_count || 0}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+    <!-- Usage statistics -->
+            <div class="surface-card p-6">
+              <h3 class="text-lg font-semibold mb-4">Usage Statistics</h3>
+
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="stat">
+                  <div class="stat-title">Today</div>
+                  <div class="stat-value text-primary">0</div>
+                </div>
+
+                <div class="stat">
+                  <div class="stat-title">This Week</div>
+                  <div class="stat-value text-info">0</div>
+                </div>
+
+                <div class="stat">
+                  <div class="stat-title">This Month</div>
+                  <div class="stat-value text-success">0</div>
+                </div>
+
+                <div class="stat">
+                  <div class="stat-title">Total Usage</div>
+                  <div class="stat-value text-warning">0</div>
+                </div>
+              </div>
+            </div>
+            
+    <!-- Action buttons -->
+            <div class="flex flex-wrap gap-2 justify-center">
+              <.button
+                variant="outline"
+                phx-click="toggle-token-status"
+                class={if @api_token.is_active, do: "text-warning", else: "text-success"}
+              >
+                <.icon
+                  name={if @api_token.is_active, do: "hero-pause", else: "hero-play"}
+                  class="h-4 w-4"
+                />
+                {if @api_token.is_active, do: "Disable", else: "Enable"}
+              </.button>
+
+              <.button variant="danger" phx-click="delete-token">
+                <.icon name="hero-trash" class="h-4 w-4" /> Delete Token
+              </.button>
+            </div>
+          </div>
         </div>
         
-    <!-- Loading state -->
-        <div :if={@loading} class="flex justify-center items-center py-8">
-          <div class="loading loading-spinner loading-lg text-primary"></div>
-          <span class="ml-2 text-lg">Processing...</span>
-        </div>
-
-        <div :if={!@loading} class="space-y-6">
-          <!-- Token status cards -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="stat bg-base-100 rounded-box shadow">
-              <div class="stat-figure text-primary">
-                <.icon name="hero-key" class="h-6 w-6" />
-              </div>
-              <div class="stat-title">Token Status</div>
-              <div class="stat-value text-sm">
-                <span
-                  :if={@api_token.is_active && !expired?(@api_token)}
-                  class="badge badge-success"
-                >
-                  Active
-                </span>
-                <span :if={!@api_token.is_active} class="badge badge-warning">Disabled</span>
-                <span :if={expired?(@api_token)} class="badge badge-error">Expired</span>
-              </div>
-            </div>
-
-            <div class="stat bg-base-100 rounded-box shadow">
-              <div class="stat-figure text-info">
-                <.icon name="hero-calendar" class="h-6 w-6" />
-              </div>
-              <div class="stat-title">Created</div>
-              <div class="stat-value text-sm">
-                {format_datetime_to_local(@api_token.inserted_at, "date")}
-              </div>
-            </div>
-
-            <div class="stat bg-base-100 rounded-box shadow">
-              <div class="stat-figure text-warning">
-                <.icon name="hero-clock" class="h-6 w-6" />
-              </div>
-              <div class="stat-title">Expires</div>
-              <div class="stat-value text-sm">
-                {if @api_token.expires_at,
-                  do: format_datetime_to_local(@api_token.expires_at, "date"),
-                  else: "Never expires"}
-              </div>
-            </div>
-          </div>
-          
-    <!-- Token details -->
-          <div class="bg-base-100 rounded-box shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Token Information</h3>
-
-            <div class="space-y-2">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Token Name</span>
-                  </label>
-                  <div class="text-sm">{@api_token.name}</div>
-                </div>
-
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Token Preview</span>
-                  </label>
-                  <code class="text-xs bg-base-200 px-2 py-1 rounded">
-                    {display_token_preview(@api_token)}
-                  </code>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Created</span>
-                  </label>
-                  <div class="text-sm">
-                    {format_datetime_to_local(@api_token.inserted_at, "%Y-%m-%d %H:%M:%S")}
-                  </div>
-                </div>
-
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Expires</span>
-                  </label>
-                  <div class="text-sm">
-                    {if @api_token.expires_at,
-                      do: format_datetime_to_local(@api_token.expires_at, "%Y-%m-%d %H:%M:%S"),
-                      else: "Never expires"}
-                  </div>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Last Used</span>
-                  </label>
-                  <div class="text-sm">
-                    {if @api_token.last_used_at,
-                      do: format_datetime_to_local(@api_token.last_used_at, "%Y-%m-%d %H:%M:%S"),
-                      else: "Never used"}
-                  </div>
-                </div>
-
-                <div>
-                  <label class="label">
-                    <span class="label-text font-semibold">Usage Count</span>
-                  </label>
-                  <div class="text-sm">{@api_token.usage_count || 0}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-    <!-- Usage statistics -->
-          <div class="bg-base-100 rounded-box shadow p-6">
-            <h3 class="text-lg font-semibold mb-4">Usage Statistics</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="stat">
-                <div class="stat-title">Today</div>
-                <div class="stat-value text-primary">0</div>
-              </div>
-
-              <div class="stat">
-                <div class="stat-title">This Week</div>
-                <div class="stat-value text-info">0</div>
-              </div>
-
-              <div class="stat">
-                <div class="stat-title">This Month</div>
-                <div class="stat-value text-success">0</div>
-              </div>
-
-              <div class="stat">
-                <div class="stat-title">Total Usage</div>
-                <div class="stat-value text-warning">0</div>
-              </div>
-            </div>
-          </div>
-          
-    <!-- Action buttons -->
-          <div class="flex flex-wrap gap-2 justify-center">
-            <.button
-              variant="outline"
-              phx-click="toggle-token-status"
-              class={if @api_token.is_active, do: "text-warning", else: "text-success"}
-            >
-              <.icon
-                name={if @api_token.is_active, do: "hero-pause", else: "hero-play"}
-                class="h-4 w-4"
-              />
-              {if @api_token.is_active, do: "Disable", else: "Enable"}
-            </.button>
-
-            <.button variant="danger" phx-click="delete-token">
-              <.icon name="hero-trash" class="h-4 w-4" /> Delete Token
-            </.button>
-          </div>
-        </div>
-      </div>
-      
     <!-- Delete confirmation Modal -->
-      <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
-        <:header>
-          <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
-        </:header>
+        <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
+          <:header>
+            <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
+          </:header>
 
-        <div class="space-y-2">
-          <p>
-            Are you sure you want to delete the token "<span class="font-medium">{@api_token.name}</span>"?
-          </p>
-          <p class="text-sm text-base-content/70">
-            This action cannot be undone. Applications using this token will no longer be able to access the API.
-          </p>
-        </div>
+          <div class="space-y-2">
+            <p>
+              Are you sure you want to delete the token "<span class="font-medium">{@api_token.name}</span>"?
+            </p>
+            <p class="text-sm text-base-content/70">
+              This action cannot be undone. Applications using this token will no longer be able to access the API.
+            </p>
+          </div>
 
-        <:footer>
-          <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
-          <.button variant="danger" phx-click="confirm-delete">Delete</.button>
-        </:footer>
-      </.modal>
+          <:footer>
+            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
+            <.button variant="danger" phx-click="confirm-delete">Delete</.button>
+          </:footer>
+        </.modal>
+      </div>
     </div>
     """
   end

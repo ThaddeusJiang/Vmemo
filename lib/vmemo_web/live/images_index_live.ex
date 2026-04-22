@@ -92,19 +92,19 @@ defmodule VmemoWeb.ImagesIndexLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:p-4 lg:p-4 grow">
-      <div class="flex flex-col gap-4 w-full max-w-screen-xl mx-auto">
+    <section class="page-shell grow">
+      <div class="flex flex-col gap-4 w-full">
         <%= if @similar_image_id && @similar_photo do %>
-          <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
-            <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-blue-500 shadow-md">
+          <div class="flex items-center gap-3 p-2">
+            <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">Search:</div>
+            <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/60 shadow-md">
               <img
                 src={@similar_photo.url}
                 alt={@similar_photo.note}
                 class="w-full h-full object-cover"
               />
             </div>
-            <div class="ml-auto text-sm text-gray-600">
+            <div class="ml-auto text-sm text-base-content/70">
               <span class="font-semibold">{@total_count}</span> results
             </div>
             <.button
@@ -118,9 +118,9 @@ defmodule VmemoWeb.ImagesIndexLive do
           </div>
         <% else %>
           <%= if @q != "" do %>
-            <div class="flex items-center gap-3 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div class="text-sm text-gray-500 font-normal whitespace-nowrap">Search:</div>
-              <div class="text-lg text-gray-900 font-semibold">{@q}</div>
+            <div class="flex items-center gap-3 p-2">
+              <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">Search:</div>
+              <div class="text-lg text-base-content font-semibold">{@q}</div>
               <.button
                 phx-click="clear-search"
                 variant="ghost"
@@ -136,8 +136,8 @@ defmodule VmemoWeb.ImagesIndexLive do
         <.live_component id="waterfall-images" module={Waterfall} items={@images}>
           <:empty>
             <div class="flex flex-col items-center justify-center min-h-[400px] gap-4">
-              <h2 class="text-2xl font-semibold text-gray-700">No results</h2>
-              <p class="text-gray-500 text-center">
+              <h2 class="section-title text-2xl text-base-content/80">No results</h2>
+              <p class="text-base-content/65 text-center">
                 Try a different search above or
                 <.link href="/images/upload" class="link link-primary">upload images</.link>
               </p>

@@ -1,64 +1,120 @@
-<main class="flex flex-col min-h-screen">
-  <header class="px-4 lg:px-8 flex-none">
-    <div class="flex items-center justify-between border-b border-base-300 py-3 text-sm gap-4">
-      <div class="flex items-center gap-4">
-        <%= if @current_user do %>
-          <.link href="/home" class="flex gap-4 items-center font-bold">
-            <img src={~p"/images/logo.svg"} class="h-9 dark:invert" /> Vmemo
-          </.link>
-        <% else %>
-          <a href="/" class="flex gap-4 items-center font-bold">
-            <img src={~p"/images/logo.svg"} class="h-9 dark:invert" /> Vmemo
+<main class="relative min-h-screen overflow-hidden bg-base-100 text-base-content">
+  <div class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute -top-40 left-1/2 h-96 w-96 -translate-x-[70%] rounded-full bg-[color-mix(in_oklch,var(--color-primary)_18%,transparent)] blur-3xl">
+    </div>
+    <div class="absolute top-52 right-0 h-80 w-80 translate-x-1/4 rounded-full bg-[color-mix(in_oklch,var(--color-info)_15%,transparent)] blur-3xl">
+    </div>
+  </div>
+
+  <VmemoWeb.Layouts.guest_header logo_href={if @current_user, do: "/home", else: "/"} />
+
+  <.flash_group
+    flash={@flash}
+    class="fixed left-1/2 top-8 z-20 -translate-x-1/2"
+  />
+
+  <section class="px-4 pb-12 pt-8 sm:px-6 md:pt-12 lg:px-10 lg:pb-20">
+    <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+      <div class="space-y-7">
+        <p class="landing-label inline-flex items-center rounded-full bg-base-content/6 px-4 py-2 text-xs uppercase tracking-[0.22em]">
+          Visual-first memory workspace
+        </p>
+
+        <h1 class="landing-display max-w-[16ch] text-balance text-4xl font-semibold leading-[0.92] text-base-content sm:text-5xl md:text-6xl">
+          See less text.
+          Remember more life.
+        </h1>
+
+        <p class="landing-body max-w-[62ch] text-pretty text-base leading-7 text-base-content/78 sm:text-lg sm:leading-8">
+          Vmemo turns snapshots, receipts, whiteboards, and random moments into searchable memory.
+          Capture quickly, ask in natural language, and retrieve what mattered without writing long notes.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+          <a class="btn btn-primary rounded-xl px-7" href="/register">
+            Start capturing
           </a>
-        <% end %>
+          <a
+            class="btn btn-outline rounded-xl px-7"
+            href="https://github.com/ThaddeusJiang/vmemo"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Explore on GitHub
+          </a>
+        </div>
       </div>
 
-      <ul class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-        <li>
-          <a data-headlessui-state="" href="/login" class="btn btn-primary rounded-full">
-            Get started
-          </a>
-        </li>
-      </ul>
-    </div>
-  </header>
-
-  <div class=" grow flex flex-col">
-    <.flash_group
-      flash={@flash}
-      class="fixed top-8 left-1/2 -translate-x-1/2"
-    />
-
-    <div class="relative">
-      <div class="relative px-6 lg:px-8">
-        <div class="mx-auto max-w-2xl lg:max-w-7xl">
-          <div class="pb-24 pt-16 sm:pb-32 sm:pt-24 md:pb-48 md:pt-32">
-            <h1 class="font-display text-balance text-3xl/[0.9] font-medium tracking-tight text-gray-950 sm:text-4xl/[0.8] md:text-5xl/[0.8]">
-              See, Capture, Remember
-            </h1>
-            <p class="mt-8 text-xl/7 font-medium text-gray-950/75 sm:text-2xl/8">
-              Our brain love visual content, capture the moment and remember it.
+      <div class="relative">
+        <div class="rounded-[2rem] border border-base-300/70 bg-base-100/85 p-5 shadow-[0_20px_80px_-40px_color-mix(in_oklch,var(--color-base-content)_24%,transparent)] backdrop-blur sm:p-7">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <article class="rounded-2xl bg-[color-mix(in_oklch,var(--color-primary)_8%,var(--color-base-100))] p-4 sm:p-5">
+              <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/70">
+                Capture
+              </p>
+              <p class="landing-display mt-3 text-2xl font-semibold leading-none sm:text-3xl">
+                Paste or drag
+              </p>
+              <p class="landing-body mt-3 text-sm leading-6 text-base-content/75">
+                Instant image intake from clipboard, upload, or mobile camera.
+              </p>
+            </article>
+            <article class="rounded-2xl bg-[color-mix(in_oklch,var(--color-info)_8%,var(--color-base-100))] p-4 sm:p-5">
+              <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/70">
+                Understand
+              </p>
+              <p class="landing-display mt-3 text-2xl font-semibold leading-none sm:text-3xl">
+                AI indexing
+              </p>
+              <p class="landing-body mt-3 text-sm leading-6 text-base-content/75">
+                OCR and semantic extraction make visual memories query-ready.
+              </p>
+            </article>
+          </div>
+          <div class="mt-4 rounded-2xl bg-base-200/75 p-4 sm:p-5">
+            <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/70">
+              Recall
             </p>
-            <div class="mt-12 flex flex-row gap-x-6 gap-y-4 ">
-              <a
-                class="btn btn-primary rounded-3xl"
-                data-headlessui-state=""
-                href="/register"
-              >
-                Get started
-              </a>
-              <%!-- <a class="btn btn-outline rounded-full" data-headlessui-state="" href="#">
-                Open source
-              </a> --%>
-            </div>
+            <p class="landing-display mt-3 text-xl font-semibold leading-tight sm:text-2xl">
+              Ask naturally, find instantly.
+            </p>
+            <p class="landing-body mt-2 max-w-[58ch] text-sm leading-6 text-base-content/78">
+              "Show me that coffee shop sketch from last winter" works even when filenames and folders do not.
+            </p>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <footer class="border-t border-base-300 bg-base-100 px-4 py-4">
-    <div class="flex flex-wrap items-center justify-center gap-4 text-sm text-base-content">
+  <section class="px-4 py-10 sm:px-6 lg:px-10">
+    <div class="mx-auto grid max-w-7xl gap-4 md:grid-cols-3">
+      <article class="rounded-2xl border border-base-300/80 bg-base-100/70 p-5">
+        <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/68">01</p>
+        <h2 class="landing-display mt-3 text-xl font-semibold">Capture without friction</h2>
+        <p class="landing-body mt-2 text-sm leading-6 text-base-content/75">
+          Multi-upload, drag-drop, and clipboard paste are tuned for fast daily use.
+        </p>
+      </article>
+      <article class="rounded-2xl border border-base-300/80 bg-base-100/70 p-5">
+        <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/68">02</p>
+        <h2 class="landing-display mt-3 text-xl font-semibold">Search by meaning</h2>
+        <p class="landing-body mt-2 text-sm leading-6 text-base-content/75">
+          Find images with language, not file names. Text and visual similarity both work.
+        </p>
+      </article>
+      <article class="rounded-2xl border border-base-300/80 bg-base-100/70 p-5">
+        <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/68">03</p>
+        <h2 class="landing-display mt-3 text-xl font-semibold">Review in seconds</h2>
+        <p class="landing-body mt-2 text-sm leading-6 text-base-content/75">
+          Revisit moments quickly and keep your memory timeline clean and predictable.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="border-t border-base-300 bg-base-100/90 px-4 py-5 sm:px-6 lg:px-10">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-4 text-sm text-base-content/90">
       <span class="font-medium">
         © 2026 <a href="https://thaddeusjiang.com" class="link link-hover">ThaddeusJiang</a>
       </span>

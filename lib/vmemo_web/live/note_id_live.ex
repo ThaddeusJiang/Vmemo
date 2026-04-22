@@ -33,8 +33,8 @@ defmodule VmemoWeb.NoteIdLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="p-4 sm:p-4 lg:p-4 grow">
-      <div class="w-full max-w-screen-xl mx-auto">
+    <section class="page-shell grow">
+      <div class="content-shell w-full">
         <%= if @note do %>
           <.live_component
             id="note_update_form"

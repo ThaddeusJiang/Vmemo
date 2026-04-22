@@ -5,24 +5,26 @@ defmodule VmemoWeb.UserConfirmationInstructionsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header>
-        No confirmation instructions received?
-        <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
-      </.header>
+    <div class="auth-shell">
+      <div class="auth-card">
+        <.header>
+          No confirmation instructions received?
+          <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
+        </.header>
 
-      <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send-instructions">
-        <.input field={@form[:email]} type="email" placeholder="Email" required />
-        <:actions>
-          <.button phx-disable-with="Sending..." class="w-full">
-            Resend confirmation instructions
-          </.button>
-        </:actions>
-      </.simple_form>
+        <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send-instructions">
+          <.input field={@form[:email]} type="email" placeholder="Email" required />
+          <:actions>
+            <.button phx-disable-with="Sending..." class="w-full">
+              Resend confirmation instructions
+            </.button>
+          </:actions>
+        </.simple_form>
 
-      <p class="text-center mt-4">
-        <.link href={~p"/register"}>Register</.link> | <.link href={~p"/login"}>Login</.link>
-      </p>
+        <p class="text-center mt-4">
+          <.link href={~p"/register"}>Register</.link> | <.link href={~p"/login"}>Login</.link>
+        </p>
+      </div>
     </div>
     """
   end
