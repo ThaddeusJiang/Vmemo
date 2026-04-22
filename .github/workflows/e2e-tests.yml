@@ -48,6 +48,7 @@ jobs:
         uses: docker/setup-buildx-action@v4.0.0
 
       - name: Build app image (amd64, local only)
+        working-directory: .
         run: docker buildx build --platform linux/amd64 --file ./Dockerfile --tag thaddeusjiang/vmemo:e2e --load .
 
       - name: Set up Erlang/Elixir for mix warmup task
