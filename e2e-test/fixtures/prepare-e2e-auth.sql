@@ -109,7 +109,7 @@ DO UPDATE SET
 
 INSERT INTO memo_images_notes (
   id,
-  photo_id,
+  image_id,
   note_id,
   inserted_at
 )
