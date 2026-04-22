@@ -8,8 +8,8 @@ import {
 test("photo upload page visual snapshot", async ({ page }) => {
   await gotoAndAssert(
     page,
-    "/photos/upload",
-    page.getByText("Drag and drop images here or click to upload"),
+    "/images/upload",
+    page.locator("form#upload-form"),
   );
   await expectVisual(page, "photo-upload-page");
 });

@@ -42,10 +42,10 @@ export async function expectVisual(
   await settlePage(page);
   await page.screenshot({
     path: `/tmp/${name}.png`,
-    fullPage: true,
+    fullPage: false,
   });
   await expect(page).toHaveScreenshot(`${name}.png`, {
-    fullPage: true,
+    fullPage: false,
     mask,
   });
 }
@@ -59,9 +59,9 @@ export async function createUploadedPhoto(page: Page, noteText = visualNote) {
   await expect
     .poll(
       async () => {
-        await page.goto("/photos", { waitUntil: "domcontentloaded" });
+        await page.goto("/images", { waitUntil: "domcontentloaded" });
         return page
-          .locator('a[href^="/photos/"]', {
+          .locator('a[href^="/images/"]', {
             has: page.locator(`img[alt="${noteText}"]`),
           })
           .count();
@@ -84,9 +84,9 @@ export async function uploadPhotoAndAssertSuccess(page: Page) {
   await expect
     .poll(
       async () => {
-        await page.goto("/photos", { waitUntil: "domcontentloaded" });
+        await page.goto("/images", { waitUntil: "domcontentloaded" });
         return page
-          .locator('a[href^="/photos/"]', {
+          .locator('a[href^="/images/"]', {
             has: page.locator(`img[alt="${uploadSmokeNote}"]`),
           })
           .count();
@@ -104,15 +104,15 @@ export async function uploadPhotoAndAssertSuccess(page: Page) {
 }
 
 export async function openUploadedPhotoDetail(page: Page, noteText: string) {
-  await page.goto("/photos", { waitUntil: "domcontentloaded" });
+  await page.goto("/images", { waitUntil: "domcontentloaded" });
   const photoLink = page
-    .locator('a[href^="/photos/"]', {
+    .locator('a[href^="/images/"]', {
       has: page.locator(`img[alt="${noteText}"]`),
     })
     .first();
   await expect(photoLink).toBeVisible({ timeout: 20_000 });
   await photoLink.click();
-  await expect(page).toHaveURL(/\/photos\/.+/);
+  await expect(page).toHaveURL(/\/images\/.+/);
   await expect(page.locator('textarea[name="note"]')).toBeVisible({ timeout: 20_000 });
 }
 
@@ -135,7 +135,7 @@ export async function createTokenAndOpenDetail(page: Page) {
   await page.getByLabel("Expiration").selectOption("30");
   await page.getByRole("button", { name: "Save" }).click();
 
-  await expect(page.getByText("Token Created Successfully")).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Token Created Successfully" })).toBeVisible({
     timeout: 20_000,
   });
 
@@ -174,8 +174,8 @@ async function prepareUploadForm(page: Page, noteText: string) {
 
   for (const _attempt of [1, 2]) {
     try {
-      await page.goto("/photos/upload", { waitUntil: "domcontentloaded" });
-      await expect(page.getByText("Drag and drop images here or click to upload")).toBeVisible();
+      await page.goto("/images/upload", { waitUntil: "domcontentloaded" });
+      await expect(page.locator("form#upload-form")).toBeVisible({ timeout: 20_000 });
 
       const uploadForm = page.locator("form#upload-form");
       await uploadForm.locator('input[type="file"]').setInputFiles(uploadFile);
