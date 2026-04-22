@@ -19,45 +19,16 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-e2e-testing') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: vmemo
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d vmemo"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      typesense:
-        image: typesense/typesense:30.1
-        volumes:
-          - /tmp/typesense-data:/data
-        env:
-          TYPESENSE_API_KEY: xyz
-          TYPESENSE_DATA_DIR: /data
-        ports:
-          - 8108:8108
-        options: >-
-          --health-cmd "curl -fsS http://localhost:8108/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
     defaults:
       run:
         working-directory: e2e-test
     env:
-      DEV_DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
-      DEV_TYPESENSE_URL: http://host.docker.internal:8108
-      DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
-      TYPESENSE_URL: http://host.docker.internal:8108
-      TYPESENSE_API_KEY: xyz
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
+      TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
       OPENROUTER_API_KEY: test-openrouter-key
-      MOONDREAM_API_KEY: test-moondream-key
+      MOONDREAM_URL: ${{ secrets.MOONDREAM_URL }}
+      MOONDREAM_API_KEY: ${{ secrets.MOONDREAM_API_KEY }}
       RESEND_API_KEY: test-resend-key
       PHX_SERVER: "true"
       ECTO_IPV6: "false"
@@ -101,19 +72,35 @@ jobs:
         run: mix deps.get
         working-directory: .
 
-      - name: Confirm Typesense is ready
-        run: curl -fsS http://localhost:8108/health >/dev/null
-
-      - name: Warm up Typesense embedding model
-        run: mix ts.warmup_embedding
+      - name: Setup Typesense schema
+        run: MIX_ENV=prod mix ts.setup
         working-directory: .
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo
-          TYPESENSE_URL: http://localhost:8108
 
       - name: Start app with compose
         run: |
           docker compose -f docker-compose.e2e.yml up -d
+
+      - name: Seed e2e auth data
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="${DATABASE_URL}" \
+            -v "$PWD/fixtures/prepare-e2e-auth.sql:/e2e/prepare-e2e-auth.sql:ro" \
+            postgres:18 \
+            sh -lc '
+              for i in $(seq 1 120); do
+                if psql "$DATABASE_URL" -tAc "SELECT to_regclass('\''public.auth_users'\'')" 2>/dev/null | grep -q auth_users; then
+                  break
+                fi
+                sleep 1
+              done
+
+              psql "$DATABASE_URL" -tAc "SELECT to_regclass('\''public.auth_users'\'')" 2>/dev/null | grep -q auth_users || {
+                echo "auth_users table was not ready after waiting"
+                exit 3
+              }
+
+              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql
+            '
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
