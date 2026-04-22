@@ -5,7 +5,7 @@ description: "Create a Git worktree for Vmemo with environment copy, Docker comp
 
 # worktree Skill
 
-当用户要求“创建 worktree”时使用此技能。
+当用户主动要求“创建/初始化/验证 worktree”时使用此技能。
 
 ## Goal
 
@@ -17,12 +17,29 @@ description: "Create a Git worktree for Vmemo with environment copy, Docker comp
 
 ## Required workflow
 
-1. 确认当前目录存在 `.env`；不存在则停止并告知用户。
-2. 创建 worktree（按用户给定分支名/路径；未给定时做最小合理假设）。
-3. 使用 `cp` 复制 `.env` 到新 worktree。
-4. 在新 worktree 中按需调整 `docker-compose.yml`，确保 dev/test 都可独立启动并避免与现有环境冲突。
-5. 启动并验证所需容器（只做最小必要验证）。
-6. 验证完成后，必须执行 `docker compose down` 清理容器。
+### Path A: 需要创建新 worktree
+
+1. 在当前目录先执行 `mise trust && mise install`。
+2. 确认当前目录存在 `.env`；不存在则停止并告知用户。
+3. 创建 worktree（按用户给定分支名/路径；未给定时做最小合理假设）。
+4. 使用 `cp` 复制 `.env` 到新 worktree。
+5. 在新 worktree 中按需调整 `docker-compose.yml`，确保 dev/test 都可独立启动并避免与现有环境冲突。
+6. 在启动容器前检查目标端口是否被占用；若被占用，先修改新 worktree 的 `.env` 中 `DEV_DATABASE_URL` / `DEV_TYPESENSE_URL`（必要时包含 `TEST_DATABASE_URL` / `TEST_TYPESENSE_URL`）到可用端口，再继续。
+7. 启动所需容器（`docker compose up -d`，必要时再启 test profile）。
+8. 在新 worktree 中执行 `mix deps.get`。
+9. 在新 worktree 中执行 `mix setup`。
+10. 验证完成后，必须执行 `docker compose down` 清理容器。
+
+### Path B: 用户已触发且当前目录已是 worktree
+
+1. 识别当前目录为 Git worktree 后，执行 `mise trust && mise install`。
+2. 确认当前 worktree 下存在 `.env`；若缺失则从对应源目录使用 `cp` 补齐，无法确定源目录时停止并告知用户。
+3. 在当前 worktree 中按需调整 `docker-compose.yml`，确保 dev/test 都可独立启动并避免与其他 worktree 冲突。
+4. 在启动容器前检查目标端口是否被占用；若被占用，先修改当前 worktree 的 `.env` 中 `DEV_DATABASE_URL` / `DEV_TYPESENSE_URL`（必要时包含 `TEST_DATABASE_URL` / `TEST_TYPESENSE_URL`）到可用端口，再继续。
+5. 启动所需容器（`docker compose up -d`，必要时再启 test profile）。
+6. 在当前 worktree 中执行 `mix deps.get`。
+7. 在当前 worktree 中执行 `mix setup`。
+8. 验证完成后，必须执行 `docker compose down` 清理容器。
 
 ## Commands (reference)
 
@@ -80,8 +97,18 @@ services:
 
 ```bash
 cd ../<worktree-dir>
+mise trust && mise install
+# Check required ports before compose up.
+# If occupied, update .env URLs first, then continue.
+# Example URL fields:
+# - DEV_DATABASE_URL
+# - DEV_TYPESENSE_URL
+# - TEST_DATABASE_URL
+# - TEST_TYPESENSE_URL
 docker compose up -d
 docker compose --profile test up -d
+mix deps.get
+mix setup
 ```
 
 可选检查：
