@@ -235,9 +235,9 @@ defmodule VmemoWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="space-y-2">
+      <div class="space-y-3">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} class="py-2 flex items-center justify-end gap-2">
+        <div :for={action <- @actions} class="pt-2 flex items-center justify-end gap-2">
           {render_slot(action, f)}
         </div>
       </div>
@@ -842,9 +842,10 @@ defmodule VmemoWeb.CoreComponents do
   attr :src, :string, required: true
   attr :alt, :string, required: true
   attr :class, :string, default: nil
+  attr :wrapper_class, :string, default: nil
   attr :id, :string, default: nil
   # arbitrary HTML attributes
-  attr :rest, :global
+  attr :rest, :global, include: ~w(loading decoding fetchpriority referrerpolicy)
 
   @doc """
   Renders an image tag.
@@ -855,17 +856,22 @@ defmodule VmemoWeb.CoreComponents do
   """
   def img(assigns) do
     ~H"""
-    <img
-      src={@src}
-      alt={@alt}
-      class={[
-        "w-full h-auto object-cover rounded-lg shadow hover:shadow-lg hover:transition-transform",
-        @class
-      ]}
-      id={@id || generate_id()}
-      phx-hook="ImageLoader"
-      {@rest}
-    />
+    <span class={["img-fallback-wrap block relative rounded-lg overflow-hidden", @wrapper_class]}>
+      <img
+        src={@src}
+        alt={@alt}
+        class={[
+          "w-full h-auto object-cover rounded-lg shadow hover:shadow-lg hover:transition-transform",
+          @class
+        ]}
+        id={@id || generate_id()}
+        phx-hook="ImageLoader"
+        {@rest}
+      />
+      <span class="img-fallback-overlay" aria-hidden="true">
+        <.icon name="hero-photo" class="size-8" />
+      </span>
+    </span>
     """
   end
 

@@ -17,13 +17,13 @@ defmodule VmemoWeb.AdminLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="grow flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-md w-full space-y-6">
+    <div class="auth-shell">
+      <div class="auth-card space-y-6">
         <div>
-          <h2 class="mt-4 text-center text-3xl font-extrabold text-gray-900">
+          <h2 class="section-title mt-2 text-center text-3xl text-base-content">
             Admin Login
           </h2>
-          <p class="mt-2 text-center text-sm text-gray-600">
+          <p class="mt-2 text-center text-sm text-base-content/70">
             Please enter your admin token to access the admin panel
           </p>
         </div>

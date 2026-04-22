@@ -15,180 +15,185 @@ defmodule VmemoWeb.UserSettingsLive do
       |> assign(:import_upload_complete, import_upload_complete?(import_entries))
 
     ~H"""
-    <div class="mx-auto w-full max-w-md p-4 sm:p-4 lg:p-4">
-      <.header>
-        Account Settings
-        <:subtitle>Manage your account email and password settings</:subtitle>
-      </.header>
+    <div class="page-shell">
+      <div class="content-shell content-shell-tight">
+        <.header>
+          Account Settings
+          <:subtitle>Manage your account email and password settings</:subtitle>
+        </.header>
 
-      <div class="space-y-6 mx-auto w-full max-w-md ">
-        <div>
-          <.simple_form
-            for={@email_form}
-            id="email_form"
-            phx-submit="update-email"
-            phx-change="validate-email"
-          >
-            <.input field={@email_form[:email]} type="email" label="Email" required />
-            <.input
-              field={@email_form[:current_password]}
-              name="current_password"
-              id="current_password_for_email"
-              type="password"
-              label="Current password"
-              value={@email_form_current_password}
-              required
-            />
-            <:actions>
-              <.button phx-disable-with="Changing...">Change Email</.button>
-            </:actions>
-          </.simple_form>
-        </div>
-        <div>
-          <.simple_form
-            for={@password_form}
-            id="password_form"
-            action={~p"/users/update-password"}
-            method="post"
-            phx-change="validate-password"
-            phx-submit="update-password"
-            phx-trigger-action={@trigger_submit}
-          >
-            <input name="action" type="hidden" value="update_password" />
-            <input
-              name={@password_form[:email].name}
-              type="hidden"
-              id="hidden_user_email"
-              value={@current_email}
-            />
-            <.input field={@password_form[:password]} type="password" label="New password" required />
-            <.input
-              field={@password_form[:password_confirmation]}
-              type="password"
-              label="Confirm new password"
-            />
-            <.input
-              field={@password_form[:current_password]}
-              name="current_password"
-              type="password"
-              label="Current password"
-              id="current_password_for_password"
-              value={@current_password}
-              required
-            />
-            <:actions>
-              <.button phx-disable-with="Changing...">Change Password</.button>
-            </:actions>
-          </.simple_form>
-        </div>
-
-        <div class="space-y-2">
-          <div class="border border-base-300 rounded-md p-4 space-y-2">
-            <h2 class="text-base font-medium">Data Export</h2>
-            <p class="text-sm text-base-content/70">
-              Download your images, notes, and linked files as a ZIP file.
-            </p>
-            <div class="py-2">
-              <.link href={~p"/settings/export"} class="btn btn-outline">
-                Export Data
-              </.link>
-            </div>
+        <div class="space-y-6 mx-auto w-full max-w-md ">
+          <div>
+            <.simple_form
+              for={@email_form}
+              id="email_form"
+              phx-submit="update-email"
+              phx-change="validate-email"
+            >
+              <.input field={@email_form[:email]} type="email" label="Email" required />
+              <.input
+                field={@email_form[:current_password]}
+                name="current_password"
+                id="current_password_for_email"
+                type="password"
+                label="Current password"
+                value={@email_form_current_password}
+                required
+              />
+              <:actions>
+                <.button phx-disable-with="Changing...">Change Email</.button>
+              </:actions>
+            </.simple_form>
+          </div>
+          <div>
+            <.simple_form
+              for={@password_form}
+              id="password_form"
+              action={~p"/users/update-password"}
+              method="post"
+              phx-change="validate-password"
+              phx-submit="update-password"
+              phx-trigger-action={@trigger_submit}
+            >
+              <input name="action" type="hidden" value="update_password" />
+              <input
+                name={@password_form[:email].name}
+                type="hidden"
+                id="hidden_user_email"
+                value={@current_email}
+              />
+              <.input field={@password_form[:password]} type="password" label="New password" required />
+              <.input
+                field={@password_form[:password_confirmation]}
+                type="password"
+                label="Confirm new password"
+              />
+              <.input
+                field={@password_form[:current_password]}
+                name="current_password"
+                type="password"
+                label="Current password"
+                id="current_password_for_password"
+                value={@current_password}
+                required
+              />
+              <:actions>
+                <.button phx-disable-with="Changing...">Change Password</.button>
+              </:actions>
+            </.simple_form>
           </div>
 
-          <div class="border border-base-300 rounded-md p-4 space-y-2">
-            <h2 class="text-base font-medium">Data Import</h2>
-            <p class="text-sm text-base-content/70">
-              Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.
-            </p>
+          <div class="space-y-2">
+            <div class="border border-base-300 rounded-md p-4 space-y-2">
+              <h2 class="text-base font-medium">Data Export</h2>
+              <p class="text-sm text-base-content/70">
+                Download your images, notes, and linked files as a ZIP file.
+              </p>
+              <div class="py-2">
+                <.link href={~p"/settings/export"} class="btn btn-outline">
+                  Export Data
+                </.link>
+              </div>
+            </div>
 
-            <.form
-              for={@import_form}
-              phx-submit="import-data"
-              phx-change="validate-import"
-              class="space-y-2"
-            >
-              <div class="space-y-2">
-                <.live_file_input
-                  upload={@uploads.import_zip}
-                  class="file-input file-input-bordered w-full"
-                />
+            <div class="border border-base-300 rounded-md p-4 space-y-2">
+              <h2 class="text-base font-medium">Data Import</h2>
+              <p class="text-sm text-base-content/70">
+                Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.
+              </p>
 
-                <ul class="space-y-1">
-                  <li
-                    :for={entry <- @uploads.import_zip.entries}
-                    class="flex items-center justify-between text-sm"
-                  >
-                    <span class="truncate">{entry.client_name}</span>
-                    <button
-                      type="button"
-                      class="btn btn-xs btn-ghost"
-                      phx-click="cancel-import-upload"
-                      phx-value-ref={entry.ref}
+              <.form
+                for={@import_form}
+                phx-submit="import-data"
+                phx-change="validate-import"
+                class="space-y-2"
+              >
+                <div class="space-y-2">
+                  <.live_file_input
+                    upload={@uploads.import_zip}
+                    class="file-input file-input-bordered w-full"
+                  />
+
+                  <ul class="space-y-1">
+                    <li
+                      :for={entry <- @uploads.import_zip.entries}
+                      class="flex items-center justify-between text-sm"
                     >
-                      Remove
-                    </button>
-                  </li>
-                </ul>
+                      <span class="truncate">{entry.client_name}</span>
+                      <button
+                        type="button"
+                        class="btn btn-xs btn-ghost"
+                        phx-click="cancel-import-upload"
+                        phx-value-ref={entry.ref}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  </ul>
 
-                <p :for={err <- upload_errors(@uploads.import_zip)} class="text-error text-sm">
-                  {error_to_string(err)}
-                </p>
+                  <p :for={err <- upload_errors(@uploads.import_zip)} class="text-error text-sm">
+                    {error_to_string(err)}
+                  </p>
 
-                <p :if={@import_error} class="text-error text-sm">{@import_error}</p>
+                  <p :if={@import_error} class="text-error text-sm">{@import_error}</p>
 
-                <div :if={@has_import_file} class="space-y-1">
-                  <div class="flex items-center justify-between text-xs text-base-content/70">
-                    <span>Upload progress</span>
-                    <span>{@import_upload_progress}%</span>
+                  <div :if={@has_import_file} class="space-y-1">
+                    <div class="flex items-center justify-between text-xs text-base-content/70">
+                      <span>Upload progress</span>
+                      <span>{@import_upload_progress}%</span>
+                    </div>
+                    <progress
+                      class="progress progress-accent w-full"
+                      value={@import_upload_progress}
+                      max="100"
+                    >
+                    </progress>
                   </div>
-                  <progress
-                    class="progress progress-accent w-full"
-                    value={@import_upload_progress}
-                    max="100"
-                  >
-                  </progress>
                 </div>
-              </div>
 
-              <div class="py-2 flex items-center gap-2">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                  disabled={@is_importing || not @has_import_file || not @import_upload_complete}
-                >
-                  Import Data
-                </button>
-              </div>
-            </.form>
+                <div class="py-2 flex items-center gap-2">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    disabled={@is_importing || not @has_import_file || not @import_upload_complete}
+                  >
+                    Import Data
+                  </button>
+                </div>
+              </.form>
 
-            <div :if={@import_result} class="border border-base-300 rounded-md p-2 text-sm space-y-1">
-              <p class="font-medium">Import Result</p>
-              <% files = result_value(@import_result, [:files, "files"], %{}) %>
-              <% images = result_value(@import_result, [:images, "images"], %{}) %>
-              <% notes = result_value(@import_result, [:notes, "notes"], %{}) %>
-              <% image_notes = result_value(@import_result, [:image_notes, "image_notes"], %{}) %>
-              <% typesense = result_value(@import_result, [:typesense, "typesense"], %{}) %>
-              <% typesense_images = result_value(typesense, [:images, "images"], %{}) %>
-              <% typesense_notes = result_value(typesense, [:notes, "notes"], %{}) %>
-              <% errors = result_value(@import_result, [:errors, "errors"], []) %>
-              <% error_count = result_value(@import_result, [:error_count, "error_count"], 0) %>
-              <p>Files copied: {result_value(files, [:copied, "copied"], 0)}</p>
-              <p>Files skipped: {result_value(files, [:skipped, "skipped"], 0)}</p>
-              <p>Images created: {result_value(images, [:created, "created"], 0)}</p>
-              <p>Images skipped: {result_value(images, [:skipped, "skipped"], 0)}</p>
-              <p>Notes created: {result_value(notes, [:created, "created"], 0)}</p>
-              <p>Notes skipped: {result_value(notes, [:skipped, "skipped"], 0)}</p>
-              <p>Links created: {result_value(image_notes, [:created, "created"], 0)}</p>
-              <p>Links skipped: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
-              <p>
-                Typesense images upserted: {result_value(typesense_images, [:success, "success"], 0)}
-              </p>
-              <p>
-                Typesense notes upserted: {result_value(typesense_notes, [:success, "success"], 0)}
-              </p>
-              <p :if={errors != []} class="text-error">
-                Errors: {error_count}
-              </p>
+              <div
+                :if={@import_result}
+                class="border border-base-300 rounded-md p-2 text-sm space-y-1"
+              >
+                <p class="font-medium">Import Result</p>
+                <% files = result_value(@import_result, [:files, "files"], %{}) %>
+                <% images = result_value(@import_result, [:images, "images"], %{}) %>
+                <% notes = result_value(@import_result, [:notes, "notes"], %{}) %>
+                <% image_notes = result_value(@import_result, [:image_notes, "image_notes"], %{}) %>
+                <% typesense = result_value(@import_result, [:typesense, "typesense"], %{}) %>
+                <% typesense_images = result_value(typesense, [:images, "images"], %{}) %>
+                <% typesense_notes = result_value(typesense, [:notes, "notes"], %{}) %>
+                <% errors = result_value(@import_result, [:errors, "errors"], []) %>
+                <% error_count = result_value(@import_result, [:error_count, "error_count"], 0) %>
+                <p>Files copied: {result_value(files, [:copied, "copied"], 0)}</p>
+                <p>Files skipped: {result_value(files, [:skipped, "skipped"], 0)}</p>
+                <p>Images created: {result_value(images, [:created, "created"], 0)}</p>
+                <p>Images skipped: {result_value(images, [:skipped, "skipped"], 0)}</p>
+                <p>Notes created: {result_value(notes, [:created, "created"], 0)}</p>
+                <p>Notes skipped: {result_value(notes, [:skipped, "skipped"], 0)}</p>
+                <p>Links created: {result_value(image_notes, [:created, "created"], 0)}</p>
+                <p>Links skipped: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
+                <p>
+                  Typesense images upserted: {result_value(typesense_images, [:success, "success"], 0)}
+                </p>
+                <p>
+                  Typesense notes upserted: {result_value(typesense_notes, [:success, "success"], 0)}
+                </p>
+                <p :if={errors != []} class="text-error">
+                  Errors: {error_count}
+                </p>
+              </div>
             </div>
           </div>
         </div>

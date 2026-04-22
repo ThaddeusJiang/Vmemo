@@ -26,6 +26,30 @@ defmodule VmemoWeb.Layouts do
     end
   end
 
+  attr :logo_href, :string, default: "/"
+  attr :cta_href, :string, default: "/login"
+  attr :cta_label, :string, default: "Get started"
+
+  def guest_header(assigns) do
+    ~H"""
+    <header class="px-4 py-3 sm:px-6 lg:px-10 flex-none relative z-50">
+      <div class="mx-auto flex h-14 w-full max-w-7xl items-center justify-between border-b border-base-content/12 px-1 text-sm sm:px-2">
+        <a
+          href={@logo_href}
+          class="landing-display flex gap-2 sm:gap-4 items-center font-semibold tracking-tight"
+        >
+          <img src={~p"/images/logo.svg"} class="h-9 w-9 block dark:invert" />
+          <span>Vmemo</span>
+        </a>
+
+        <a href={@cta_href} class="btn btn-primary btn-sm rounded-xl px-4" data-headlessui-state="">
+          {@cta_label}
+        </a>
+      </div>
+    </header>
+    """
+  end
+
   attr :current_user, :map, required: true
   attr :profile, :map, required: true
 
@@ -37,7 +61,7 @@ defmodule VmemoWeb.Layouts do
         role="button"
         class="avatar avatar-placeholder avatar-online hover:cursor-pointer"
       >
-        <div class="bg-neutral text-neutral-content w-8 rounded-full overflow-hidden">
+        <div class="bg-neutral text-neutral-content ring ring-base-content/15 ring-offset-2 ring-offset-base-100 w-8 rounded-full overflow-hidden">
           <img
             :if={@profile.avatar_file_id}
             src={~p"/storage/v1/#{@current_user.id}/avatars/#{@profile.avatar_file_id}"}
@@ -50,7 +74,7 @@ defmodule VmemoWeb.Layouts do
 
       <ul
         tabindex="0"
-        class="dropdown-content menu bg-base-100 rounded-box mt-1 z-[1] w-60 p-2 border border-base-300 shadow-lg"
+        class="dropdown-content elevated-popover menu bg-base-100 rounded-box mt-2 z-[90] w-60 p-2"
       >
         <li>
           <.link

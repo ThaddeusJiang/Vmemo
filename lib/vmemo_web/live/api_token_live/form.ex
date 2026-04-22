@@ -5,106 +5,108 @@ defmodule VmemoWeb.ApiTokenLive.Form do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto w-full max-w-2xl p-4 sm:p-6 lg:p-8">
-      <.header>
-        Create API Token
-        <:subtitle>Set up your API access token</:subtitle>
-      </.header>
+    <div class="page-shell">
+      <div class="content-shell max-w-2xl mx-auto">
+        <.header>
+          Create API Token
+          <:subtitle>Set up your API access token</:subtitle>
+        </.header>
 
-      <div class="mt-8">
-        <!-- Loading state -->
-        <div :if={@loading} class="flex justify-center items-center py-8">
-          <div class="loading loading-spinner loading-lg text-primary"></div>
-          <span class="ml-2 text-lg">Processing...</span>
-        </div>
-
-        <div :if={!@loading} class="space-y-6">
-          <!-- Form -->
-          <div class="bg-base-100 rounded-box shadow p-6">
-            <.simple_form for={@form} phx-submit="save-token" phx-change="validate-token">
-              <.input field={@form[:name]} label="Token Name" placeholder="e.g., Mobile App" />
-
-              <.input
-                field={@form[:expires_at]}
-                type="select"
-                label="Expiration"
-                options={[
-                  {"30 days", "30"},
-                  {"90 days", "90"},
-                  {"180 days", "180"},
-                  {"Never expires", "never"}
-                ]}
-              />
-
-              <:actions>
-                <.link navigate={~p"/tokens"} class="btn btn-outline">Cancel</.link>
-                <.button>Save</.button>
-              </:actions>
-            </.simple_form>
+        <div class="mt-8">
+          <!-- Loading state -->
+          <div :if={@loading} class="flex justify-center items-center py-8">
+            <div class="loading loading-spinner loading-lg text-primary"></div>
+            <span class="ml-2 text-lg">Processing...</span>
           </div>
-          
+
+          <div :if={!@loading} class="space-y-6">
+            <!-- Form -->
+            <div class="surface-card p-6">
+              <.simple_form for={@form} phx-submit="save-token" phx-change="validate-token">
+                <.input field={@form[:name]} label="Token Name" placeholder="e.g., Mobile App" />
+
+                <.input
+                  field={@form[:expires_at]}
+                  type="select"
+                  label="Expiration"
+                  options={[
+                    {"30 days", "30"},
+                    {"90 days", "90"},
+                    {"180 days", "180"},
+                    {"Never expires", "never"}
+                  ]}
+                />
+
+                <:actions>
+                  <.link navigate={~p"/tokens"} class="btn btn-outline">Cancel</.link>
+                  <.button>Save</.button>
+                </:actions>
+              </.simple_form>
+            </div>
+            
     <!-- Help information -->
-          <div class="bg-info/10 rounded-box p-4">
-            <h4 class="font-semibold mb-2">Usage Instructions</h4>
-            <ul class="text-sm space-y-1">
-              <li>• Token name is used to identify different applications or purposes</li>
-              <li>• It's recommended to set a reasonable expiration time for better security</li>
-              <li>
-                • Please save the token immediately after creation, as you won't be able to view the full content again
-              </li>
-              <li>• Usage format: <code>Authorization: Bearer your_token</code></li>
-            </ul>
+            <div class="surface-card bg-info/10 p-4">
+              <h4 class="font-semibold mb-2">Usage Instructions</h4>
+              <ul class="text-sm space-y-1">
+                <li>• Token name is used to identify different applications or purposes</li>
+                <li>• It's recommended to set a reasonable expiration time for better security</li>
+                <li>
+                  • Please save the token immediately after creation, as you won't be able to view the full content again
+                </li>
+                <li>• Usage format: <code>Authorization: Bearer your_token</code></li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
-      
+        
     <!-- Token Created Successfully Modal -->
-      <.modal
-        id="token-created-modal"
-        show={@show_token_created}
-        on_cancel={JS.hide(to: "#token-created-modal")}
-      >
-        <:header>
-          <h3 class="text-lg font-semibold text-success">Token Created Successfully</h3>
-        </:header>
+        <.modal
+          id="token-created-modal"
+          show={@show_token_created}
+          on_cancel={JS.hide(to: "#token-created-modal")}
+        >
+          <:header>
+            <h3 class="text-lg font-semibold text-success">Token Created Successfully</h3>
+          </:header>
 
-        <div class="space-y-2">
-          <div class="form-control space-y-2">
-            <label class="label">
-              <span class="label-text">Your API Token</span>
-            </label>
-            <div class="flex items-center gap-2">
-              <input
-                type="text"
-                value={@new_token}
-                readonly
-                class="input input-bordered flex-1 font-mono text-sm"
-                id="token-input"
-              />
-              <.button
-                variant="outline"
-                phx-click="copy-token"
-                phx-value-token={@new_token}
-              >
-                <.icon name="hero-clipboard" class="h-4 w-4" />
-              </.button>
+          <div class="space-y-2">
+            <div class="form-control space-y-2">
+              <label class="label">
+                <span class="label-text">Your API Token</span>
+              </label>
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={@new_token}
+                  readonly
+                  class="input input-bordered flex-1 font-mono text-sm"
+                  id="token-input"
+                />
+                <.button
+                  variant="outline"
+                  phx-click="copy-token"
+                  phx-value-token={@new_token}
+                >
+                  <.icon name="hero-clipboard" class="h-4 w-4" />
+                </.button>
+              </div>
+            </div>
+
+            <div class="text-sm">
+              <div class="font-semibold mb-2">Usage Example:</div>
+              <pre class="bg-base-200 p-3 rounded text-xs overflow-x-auto"><code>{usage_example_code(@new_token)}</code></pre>
             </div>
           </div>
 
-          <div class="text-sm">
-            <div class="font-semibold mb-2">Usage Example:</div>
-            <pre class="bg-base-200 p-3 rounded text-xs overflow-x-auto"><code>{usage_example_code(@new_token)}</code></pre>
-          </div>
-        </div>
-
-        <:footer>
-          <.button phx-click={
-            JS.hide(to: "#token-created-modal") |> JS.push("navigate", to: ~p"/tokens")
-          }>
-            I've Saved It
-          </.button>
-        </:footer>
-      </.modal>
+          <:footer>
+            <.button phx-click={
+              JS.hide(to: "#token-created-modal") |> JS.push("navigate", to: ~p"/tokens")
+            }>
+              I've Saved It
+            </.button>
+          </:footer>
+        </.modal>
+      </div>
     </div>
     """
   end

@@ -7,7 +7,7 @@ test("landing page visual snapshot", async ({ page }) => {
   await gotoAndAssert(
     page,
     "/",
-    page.getByRole("heading", { name: "See, Capture, Remember" }),
+    page.getByRole("heading", { name: /See less text\./i }),
   );
   await expectVisual(page, "landing-page", [page.getByAltText("Deployed on Zeabur")]);
 });

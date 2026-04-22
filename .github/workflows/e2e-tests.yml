@@ -19,51 +19,22 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-e2e-testing') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: vmemo
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d vmemo"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      typesense:
-        image: typesense/typesense:30.1
-        volumes:
-          - /tmp/typesense-data:/data
-        env:
-          TYPESENSE_API_KEY: xyz
-          TYPESENSE_DATA_DIR: /data
-        ports:
-          - 8108:8108
-        options: >-
-          --health-cmd "curl -fsS http://localhost:8108/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
     defaults:
       run:
         working-directory: e2e-test
     env:
-      DEV_DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
-      DEV_TYPESENSE_URL: http://host.docker.internal:8108
-      DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/vmemo
-      TYPESENSE_URL: http://host.docker.internal:8108
-      TYPESENSE_API_KEY: xyz
+      MIX_ENV: prod
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
+      TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
       OPENROUTER_API_KEY: test-openrouter-key
-      MOONDREAM_API_KEY: test-moondream-key
+      MOONDREAM_URL: ${{ secrets.MOONDREAM_URL }}
+      MOONDREAM_API_KEY: ${{ secrets.MOONDREAM_API_KEY }}
       RESEND_API_KEY: test-resend-key
       PHX_SERVER: "true"
       ECTO_IPV6: "false"
       POOL_SIZE: "10"
       ADMIN_TOKEN: test-admin-password
-      E2E_PGDATABASE: vmemo
       SENTRY_DSN: https://public@example.com/1
       SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
       PHX_HOST: localhost
@@ -77,39 +48,8 @@ jobs:
         uses: docker/setup-buildx-action@v4.0.0
 
       - name: Build app image (amd64, local only)
+        working-directory: .
         run: docker buildx build --platform linux/amd64 --file ./Dockerfile --tag thaddeusjiang/vmemo:e2e --load .
-
-      - name: Set up Erlang/Elixir for mix warmup task
-        uses: erlef/setup-beam@v1.23.0
-        id: beam
-        with:
-          otp-version: "28"
-          elixir-version: "1.19.5"
-
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-
-          retention-days: 3
-
-      - name: Install Elixir dependencies
-        run: mix deps.get
-        working-directory: .
-
-      - name: Confirm Typesense is ready
-        run: curl -fsS http://localhost:8108/health >/dev/null
-
-      - name: Warm up Typesense embedding model
-        run: mix ts.warmup_embedding
-        working-directory: .
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo
-          TYPESENSE_URL: http://localhost:8108
 
       - name: Start app with compose
         run: |
@@ -125,7 +65,15 @@ jobs:
         run: bunx playwright install --with-deps
 
       - name: Confirm app is ready
-        run: curl -fsS http://localhost:4000/login >/dev/null
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:4000/login >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time"
+          exit 1
 
       - name: Update e2e snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}

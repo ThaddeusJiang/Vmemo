@@ -2,6 +2,7 @@
    https://tailwindcss.com/docs/configuration */
 
 @import "tailwindcss" source(none);
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Work+Sans:wght@400;500;600&display=swap");
 @source "../css";
 @source "../js";
 @source "../../lib/vmemo_web";
@@ -34,7 +35,7 @@
     --color-base-200: oklch(96% 0.001 286.375);
     --color-base-300: oklch(87% 0.004 286.32);
     --color-base-content: oklch(21% 0.006 285.885);
-    --btn-color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+    --btn-color: color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-100));
     --color-primary: #FD4F00;
     --color-primary-content: #FDF7F0;
     --color-secondary: #8B5CF6;
@@ -51,9 +52,9 @@
     --color-warning-content: #FFFBEB;
     --color-error: #EF4444;
     --color-error-content: #FEF2F2;
-    --radius-selector: 0.25rem;
-    --radius-field: 0.25rem;
-    --radius-box: 0.5rem;
+    --radius-selector: 0.75rem;
+    --radius-field: 0.75rem;
+    --radius-box: 1rem;
     --size-selector: 0.21875rem;
     --size-field: 0.21875rem;
     --border: 1.5px;
@@ -70,7 +71,7 @@
     --color-base-200: #242631;
     --color-base-300: #1f212b;
     --color-base-content: #F8F8F2;
-    --btn-color: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+    --btn-color: color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-100));
     --color-primary: #FD4F00;
     --color-primary-content: #FDF7F0;
     --color-secondary: oklch(74% 0.06 82);
@@ -87,9 +88,9 @@
     --color-warning-content: #3A2A04;
     --color-error: #F87171;
     --color-error-content: #3C0A0A;
-    --radius-selector: 0.25rem;
-    --radius-field: 0.25rem;
-    --radius-box: 0.5rem;
+    --radius-selector: 0.75rem;
+    --radius-field: 0.75rem;
+    --radius-box: 1rem;
     --size-selector: 0.21875rem;
     --size-field: 0.21875rem;
     --border: 1.5px;
@@ -115,6 +116,17 @@
 /* This file is for your main application CSS */
 
 @layer base {
+    :root {
+        --font-landing-display: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+        --font-landing-body: "Work Sans", "Avenir Next", "Segoe UI", sans-serif;
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+    }
+
     textarea {
         field-sizing: content;
         min-height: 3lh;
@@ -127,15 +139,139 @@
         outline-offset: 0 !important;
     }
 
+    body {
+        font-family: var(--font-landing-body);
+        opacity: 1;
+        transition: opacity 140ms ease;
+    }
+
+    html.is-page-leaving body {
+        opacity: 0.6;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body {
+            transition: none;
+        }
+
+        html.is-page-leaving body {
+            opacity: 1;
+        }
+    }
+
     .phx-click-loading.btn-icon {
         @apply animate-pulse text-primary;
     }
 }
 
+.page-shell {
+    width: 100%;
+    max-width: 84rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+    padding-block: clamp(1rem, 2.5vw, 2rem);
+}
+
+.content-shell {
+    border-radius: 1rem;
+    background: transparent;
+    padding: clamp(1rem, 2vw, 1.5rem);
+    border: none;
+    box-shadow: none;
+}
+
+.content-shell-tight {
+    width: 100%;
+    max-width: 36rem;
+    margin-inline: auto;
+}
+
+.auth-shell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 3vw, 2rem);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 30rem;
+    border-radius: 1.25rem;
+    border: 1px solid color-mix(in oklch, var(--color-base-content) 8%, transparent);
+    background: color-mix(in oklch, var(--color-base-100) 99%, var(--color-base-content) 1%);
+    box-shadow: none;
+    padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.auth-card .btn.btn-neutral {
+    border: 1px solid color-mix(in oklch, var(--color-primary) 18%, transparent) !important;
+    background: color-mix(in oklch, var(--color-primary) 12%, var(--color-base-100)) !important;
+    color: color-mix(in oklch, var(--color-base-content) 88%, var(--color-primary) 12%) !important;
+}
+
+.auth-card .btn.btn-neutral:hover:not(:disabled) {
+    background: color-mix(in oklch, var(--color-primary) 16%, var(--color-base-100)) !important;
+}
+
+.auth-card .divider {
+    color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+.auth-card .divider::before,
+.auth-card .divider::after {
+    background: color-mix(in oklch, var(--color-base-content) 12%, transparent);
+}
+
+.surface-card {
+    border-radius: 0.9rem;
+    border: none;
+    background: color-mix(in oklch, var(--color-base-content) 4%, var(--color-base-100));
+    box-shadow: none;
+}
+
+.section-title {
+    font-family: var(--font-landing-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.landing-display {
+    font-family: var(--font-landing-display);
+    letter-spacing: -0.02em;
+}
+
+.landing-body {
+    font-family: var(--font-landing-body);
+}
+
+.landing-label {
+    font-family: var(--font-landing-body);
+    font-weight: 600;
+}
+
 @layer components {
+    .card {
+        border-radius: 1rem;
+        border: none;
+        background: color-mix(in oklch, var(--color-base-content) 4.5%, var(--color-base-100));
+        box-shadow: none;
+    }
+
     .btn {
         @apply btn-sm;
         @apply transition-transform duration-200;
+        border-radius: 0.75rem;
+        border: none;
+        box-shadow: none;
+    }
+
+    .btn-ghost {
+        background: transparent !important;
+    }
+
+    .btn-ghost:hover {
+        background: color-mix(in oklch, var(--color-base-content) 6%, transparent) !important;
     }
 
     .btn:hover:not(:disabled):not(.btn-ghost) {
@@ -143,12 +279,17 @@
     }
 
     .btn-outline {
-        --btn-fg: var(--color-base-content) !important;
-        color: var(--color-base-content) !important;
+        --btn-fg: color-mix(in oklch, var(--color-base-content) 86%, transparent) !important;
+        color: var(--btn-fg) !important;
+        background: color-mix(in oklch, var(--color-base-content) 5%, transparent) !important;
     }
 
     .btn-circle:not(.btn-ghost) {
-        @apply ring-1 ring-base-100;
+        background: color-mix(in oklch, var(--color-base-content) 7%, transparent);
+    }
+
+    .btn-circle {
+        border-radius: 9999px !important;
     }
 
     .btn-circle:where(.btn-xs) {
@@ -159,6 +300,13 @@
 
     .input {
         height: auto;
+        border: 1px solid color-mix(in oklch, var(--color-base-content) 12%, transparent) !important;
+        background: color-mix(in oklch, var(--color-base-content) 1.2%, var(--color-base-100)) !important;
+        box-shadow: none !important;
+    }
+
+    .search-shell-input {
+        background: color-mix(in oklch, var(--color-base-100) 99%, var(--color-base-content) 1%) !important;
     }
 
     .input input,
@@ -172,18 +320,20 @@
     .input:focus,
     .input:focus-within {
         box-shadow: none;
-        outline: none;
+        outline: 2px solid color-mix(in oklch, var(--color-primary) 48%, transparent) !important;
+        outline-offset: 0 !important;
     }
 
     .textarea {
         font-size: 1rem;
         min-height: 3lh;
-
+        border: 1px solid color-mix(in oklch, var(--color-base-content) 16%, transparent) !important;
         @apply px-3 py-2 w-full rounded-lg;
     }
 
     .textarea:focus {
-        outline: none;
+        outline: 2px solid color-mix(in oklch, var(--color-primary) 48%, transparent) !important;
+        outline-offset: 0 !important;
     }
 
     /* Disable hover and focus effects on inputs when form is submitting */
@@ -213,6 +363,77 @@
         max-width: 420px;
         width: auto;
         height: auto;
+    }
+
+    .table :where(th) {
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: color-mix(in oklch, var(--color-base-content) 68%, transparent);
+    }
+
+    .alert {
+        border-radius: 0.9rem;
+        border: none;
+        box-shadow: none;
+        background: color-mix(in oklch, var(--color-base-content) 6%, var(--color-base-100));
+    }
+
+    .dropdown-content {
+        border: none !important;
+        box-shadow: none !important;
+        background: var(--color-base-100);
+    }
+
+    .elevated-popover {
+        border: 1px solid color-mix(in oklch, var(--color-base-content) 10%, transparent) !important;
+        background: color-mix(in oklch, var(--color-base-100) 98%, transparent) !important;
+        box-shadow:
+            0 10px 30px color-mix(in oklch, var(--color-base-content) 12%, transparent),
+            0 2px 8px color-mix(in oklch, var(--color-base-content) 8%, transparent) !important;
+    }
+
+    .notifications-item {
+        border-bottom: 1px solid color-mix(in oklch, var(--color-base-content) 8%, transparent);
+    }
+
+    .notifications-list .notifications-item:last-child {
+        border-bottom: none;
+    }
+
+    .img-fallback-wrap .img-fallback-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        color: color-mix(in oklch, var(--color-base-content) 42%, transparent);
+        pointer-events: none;
+        background: color-mix(in oklch, var(--color-base-content) 2%, var(--color-base-100));
+    }
+
+    .img-fallback-wrap.is-fallback .img-fallback-overlay {
+        display: flex;
+    }
+
+    .img-fallback-wrap.is-fallback img.image-fallback {
+        opacity: 0;
+    }
+
+    .img-fallback-wrap.is-fallback.is-block-fallback {
+        min-height: 10rem;
+    }
+
+    .badge {
+        border: none;
+        box-shadow: none;
+    }
+
+    .badge-soft-attention {
+        background: color-mix(in oklch, var(--color-error) 18%, var(--color-base-100)) !important;
+        color: color-mix(in oklch, var(--color-base-content) 72%, var(--color-error) 28%) !important;
+        font-weight: 600;
     }
 
 }

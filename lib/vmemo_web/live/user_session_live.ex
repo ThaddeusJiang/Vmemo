@@ -9,10 +9,10 @@ defmodule VmemoWeb.UserSessionLive do
 
   def render(assigns) do
     ~H"""
-    <div class="grow flex items-center justify-center bg-base-200 px-4 sm:px-6 lg:px-8">
-      <div class="card w-full max-w-md bg-base-100 shadow-xl">
-        <div class="card-body">
-          <h2 class="card-title text-center text-3xl font-bold text-base-content mb-6">
+    <div class="auth-shell">
+      <div class="auth-card">
+        <div class="space-y-2">
+          <h2 class="section-title text-center text-3xl text-base-content mb-6">
             Login
           </h2>
 

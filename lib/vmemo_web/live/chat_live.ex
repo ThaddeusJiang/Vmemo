@@ -3,10 +3,10 @@ defmodule VmemoWeb.ChatLive do
   # on_mount {VmemoWeb.LiveUserAuth, :live_user_required}
   def render(assigns) do
     ~H"""
-    <div class="drawer md:drawer-open bg-base-200 min-h-dvh max-h-dvh">
+    <div class="drawer md:drawer-open min-h-dvh max-h-dvh bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklch,var(--color-primary)_9%,transparent)_0%,transparent_35%)]">
       <input id="ash-ai-drawer" type="checkbox" class="drawer-toggle" />
       <div class="drawer-content flex flex-col">
-        <div class="navbar bg-base-300 w-full">
+        <div class="navbar bg-base-100/80 border-b border-base-300/80 backdrop-blur w-full">
           <div class="flex-none md:hidden">
             <label for="ash-ai-drawer" aria-label="open sidebar" class="btn btn-square btn-ghost">
               <.icon name="hero-bars-3" class="inline-block h-6 w-6 stroke-current" />
@@ -33,7 +33,7 @@ defmodule VmemoWeb.ChatLive do
             </div>
             <ul
               tabindex="0"
-              class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow border border-base-300"
+              class="dropdown-content elevated-popover menu bg-base-100 rounded-box z-[90] w-52 p-2"
             >
               <li>
                 <button
@@ -58,7 +58,7 @@ defmodule VmemoWeb.ChatLive do
             </ul>
           </div>
         </div>
-        <div class="flex-1 flex flex-col overflow-y-scroll bg-base-200 max-h-[calc(100dvh-8rem)]">
+        <div class="flex-1 flex flex-col overflow-y-scroll bg-base-100/55 max-h-[calc(100dvh-8rem)]">
           <div
             id="message-container"
             phx-update="stream"
@@ -120,14 +120,14 @@ defmodule VmemoWeb.ChatLive do
                 autocomplete="off"
               />
             </div>
-            <button type="submit" class="btn btn-primary rounded-full">
+            <button type="submit" class="btn btn-primary rounded-xl">
               <.icon name="hero-paper-airplane" /> Send
             </button>
           </.form>
         </div>
       </div>
 
-      <div class="drawer-side border-r bg-base-300 min-w-72">
+      <div class="drawer-side border-r border-base-300/80 bg-base-100/90 min-w-72">
         <div class="py-4 px-6">
           <div class="text-lg mb-4">
             Conversations

@@ -18,9 +18,7 @@ export default async function globalSetup(config: FullConfig) {
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await loginButton.click();
-    await page.waitForURL(/\/home/, { timeout: 20_000 });
-
-    await expect(page).toHaveURL(/\/home/);
+    await expect(page).toHaveURL(/\/home/, { timeout: 20_000 });
     await page.screenshot({
       path: "/tmp/vmemo-e2e-home-after-login.png",
       fullPage: true,

@@ -37,9 +37,9 @@ defmodule VmemoWeb.AdminImportLive do
       |> assign(:upload_complete, upload_complete?(entries))
 
     ~H"""
-    <section class="pt-10 px-4 pb-6 sm:pt-12 sm:px-6 lg:px-10 max-w-3xl mx-auto">
-      <div class="card bg-base-100 border border-base-300 shadow">
-        <div class="card-body space-y-2">
+    <section class="page-shell max-w-3xl">
+      <div class="content-shell">
+        <div class="space-y-2">
           <header class="space-y-1">
             <h1 class="text-xl font-semibold">Admin Import</h1>
             <p class="text-sm text-base-content/70">
@@ -103,7 +103,7 @@ defmodule VmemoWeb.AdminImportLive do
             </div>
           </.form>
 
-          <section :if={@request} class="pt-2 border-t border-base-300 space-y-2">
+          <section :if={@request} class="pt-3 border-t border-base-300/80 space-y-2">
             <div class="flex flex-wrap items-center gap-2">
               <span class={status_badge_class(@request.status)}>{@request.status}</span>
               <span class="text-sm text-base-content/70">Request ID: {@request.id}</span>

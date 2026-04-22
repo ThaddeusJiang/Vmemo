@@ -148,10 +148,10 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="grow container dropdown dropdown-open place-self-start">
-      <form :if={!@show_expanded} action="/images" method="get" class="form-control container">
-        <label class="input input-bordered flex items-center rounded-3xl w-full">
-          <.icon name="hero-magnifying-glass" class="size-6 text-gray-400" />
+    <div class="w-full max-w-2xl dropdown dropdown-open">
+      <form :if={!@show_expanded} action="/images" method="get" class="form-control w-full">
+        <label class="input input-bordered search-shell-input flex items-center rounded-xl w-full h-12">
+          <.icon name="hero-magnifying-glass" class="size-6 text-base-content/45" />
           <input type="search" name="q" class="grow" placeholder="Search" value={@q} />
 
           <div class="flex items-center">
@@ -169,10 +169,10 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       <div
         :if={@show_expanded}
-        class=" dropdown-content bg-base-100 z-10 shadow flex flex-col gap-2 relative border border-base-300 rounded-lg p-4 sm:p-4  container aspect-3/2 "
+        class="dropdown-content bg-base-100 z-[90] mt-2 shadow flex flex-col gap-2 relative border border-base-300 rounded-xl p-4 w-full min-h-[18rem]"
       >
-        <header class="container flex items-center justify-center ">
-          <p class="text-gray-500 text-sm">Search by image</p>
+        <header class="w-full flex items-center justify-center">
+          <p class="text-base-content/60 text-sm">Search by image</p>
           <.button
             variant="ghost"
             phx-click="hide-expanded"
@@ -254,7 +254,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
               <div class=" w-full h-full flex flex-col justify-center items-center">
                 <img src="/images/undraw_images.svg" alt="Upload images" class="h-20 w-auto" />
               </div>
-              <div class="text-xs text-gray-500 mt-4">
+              <div class="text-xs text-base-content/60 mt-4">
                 Drop an image or <span class="link">click here</span>
               </div>
             </label>

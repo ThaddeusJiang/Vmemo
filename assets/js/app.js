@@ -17,7 +17,7 @@
 
 import { Resizer } from "./hooks/resizer"
 import { InfiniteScroll } from "./hooks/infinite_scroll"
-import { ImageLoader } from "./hooks/image_loader"
+import { ImageLoader, applyImageFallback } from "./hooks/image_loader"
 import { ClipboardMediaFetcher } from "./hooks/clipboard_media_fetcher"
 import { Toast } from "./hooks/toast"
 import { Focus } from "./hooks/focus"
@@ -73,6 +73,24 @@ let liveSocket = new LiveSocket("/live", Socket, {
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
+
+document.addEventListener(
+  "error",
+  (event) => {
+    const target = event.target
+    if (!(target instanceof HTMLImageElement)) return
+    applyImageFallback(target)
+  },
+  true
+)
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("img").forEach((img) => {
+    if (img.complete && (img.naturalWidth === 0 || img.naturalHeight === 0)) {
+      applyImageFallback(img)
+    }
+  })
+})
 
 // Handle form reset events from LiveView
 window.addEventListener("phx:reset_form", (event) => {
@@ -141,6 +159,37 @@ window.updateAppearancePreference = async (isDark) => {
     console.error("Failed to persist appearance preference:", error)
   }
 }
+
+// Smooth full-page navigation to reduce perceived flicker
+const shouldHandleFullPageNav = (event, link) => {
+  if (!link) return false
+  if (event.defaultPrevented) return false
+  if (event.button !== 0) return false
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false
+  if (link.target && link.target !== "_self") return false
+  if (link.hasAttribute("download")) return false
+  if (link.dataset.phxLink) return false
+  if (link.dataset.method) return false
+  if (link.dataset.to) return false
+
+  const url = new URL(link.href, window.location.origin)
+  if (url.origin !== window.location.origin) return false
+  if (url.pathname === window.location.pathname && url.search === window.location.search) return false
+  if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return false
+
+  return true
+}
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("a[href]")
+  if (!shouldHandleFullPageNav(event, link)) return
+
+  event.preventDefault()
+  document.documentElement.classList.add("is-page-leaving")
+  window.setTimeout(() => {
+    window.location.assign(link.href)
+  }, 110)
+})
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
