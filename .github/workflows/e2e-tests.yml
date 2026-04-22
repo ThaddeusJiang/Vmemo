@@ -23,6 +23,7 @@ jobs:
       run:
         working-directory: e2e-test
     env:
+      MIX_ENV: prod
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
       TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
