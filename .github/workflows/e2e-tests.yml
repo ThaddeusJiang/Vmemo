@@ -35,7 +35,6 @@ jobs:
       ECTO_IPV6: "false"
       POOL_SIZE: "10"
       ADMIN_TOKEN: test-admin-password
-      E2E_PGDATABASE: vmemo
       SENTRY_DSN: https://public@example.com/1
       SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
       PHX_HOST: localhost
@@ -52,57 +51,9 @@ jobs:
         working-directory: .
         run: docker buildx build --platform linux/amd64 --file ./Dockerfile --tag thaddeusjiang/vmemo:e2e --load .
 
-      - name: Set up Erlang/Elixir for mix warmup task
-        uses: erlef/setup-beam@v1.23.0
-        id: beam
-        with:
-          otp-version: "28"
-          elixir-version: "1.19.5"
-
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-
-          retention-days: 3
-
-      - name: Install Elixir dependencies
-        run: mix deps.get
-        working-directory: .
-
-      - name: Setup Typesense schema
-        run: MIX_ENV=prod mix ts.setup
-        working-directory: .
-
       - name: Start app with compose
         run: |
           docker compose -f docker-compose.e2e.yml up -d
-
-      - name: Seed e2e auth data
-        run: |
-          docker run --rm \
-            -e DATABASE_URL="${DATABASE_URL}" \
-            -v "$PWD/fixtures/prepare-e2e-auth.sql:/e2e/prepare-e2e-auth.sql:ro" \
-            postgres:18 \
-            sh -lc '
-              for i in $(seq 1 120); do
-                if psql "$DATABASE_URL" -tAc "SELECT to_regclass('\''public.auth_users'\'')" 2>/dev/null | grep -q auth_users; then
-                  break
-                fi
-                sleep 1
-              done
-
-              psql "$DATABASE_URL" -tAc "SELECT to_regclass('\''public.auth_users'\'')" 2>/dev/null | grep -q auth_users || {
-                echo "auth_users table was not ready after waiting"
-                exit 3
-              }
-
-              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /e2e/prepare-e2e-auth.sql
-            '
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -114,7 +65,15 @@ jobs:
         run: bunx playwright install --with-deps
 
       - name: Confirm app is ready
-        run: curl -fsS http://localhost:4000/login >/dev/null
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:4000/login >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time"
+          exit 1
 
       - name: Update e2e snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
