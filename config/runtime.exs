@@ -3,21 +3,14 @@ import Config
 # OpenRouter API Key for chat functionality
 config :vmemo, openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
 
-if url = System.get_env("TYPESENSE_URL") do
-  config :vmemo, typesense_url: url
-end
+if config_env() in [:dev, :test] do
+  config :vmemo, Vmemo.Repo, url: System.fetch_env!("DATABASE_URL")
 
-if api_key = System.get_env("TYPESENSE_API_KEY") do
-  config :vmemo, typesense_api_key: api_key
-end
-
-# Moondream URL from env (overrides dev.exs / test.exs when set)
-if url = System.get_env("MOONDREAM_URL") do
-  config :vmemo, moondream_url: url
-end
-
-if api_key = System.get_env("MOONDREAM_API_KEY") do
-  config :vmemo, moondream_api_key: api_key
+  config :vmemo,
+    typesense_url: System.fetch_env!("TYPESENSE_URL"),
+    typesense_api_key: System.get_env("TYPESENSE_API_KEY") || "xyz",
+    moondream_url: System.fetch_env!("MOONDREAM_URL"),
+    moondream_api_key: System.get_env("MOONDREAM_API_KEY") || "xyz"
 end
 
 if chunk_size = System.get_env("USER_DATA_IMPORT_TYPESENSE_CHUNK_SIZE") do
