@@ -176,9 +176,9 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
           </label>
 
           <%= if @has_files or @show_full_form do %>
-            <div :for={err <- upload_errors(@uploads.images)} class="alert alert-danger mt-3">
+            <.alert :for={err <- upload_errors(@uploads.images)} variant={:error} class="mt-3">
               {error_to_string(err)}
-            </div>
+            </.alert>
 
             <div :if={@has_files} class="mt-4 space-y-1 flex-none">
               <.textarea_field

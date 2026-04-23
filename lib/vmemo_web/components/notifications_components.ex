@@ -8,7 +8,7 @@ defmodule VmemoWeb.NotificationsComponents do
     router: VmemoWeb.Router,
     statics: VmemoWeb.static_paths()
 
-  import VmemoWeb.CoreComponents, only: [icon: 1, img: 1]
+  import VmemoWeb.CoreComponents, only: [icon: 1, img: 1, status_badge: 1]
 
   attr :notifications, :list, default: []
   attr :unresolved_count, :integer, default: 0
@@ -25,12 +25,14 @@ defmodule VmemoWeb.NotificationsComponents do
         title="Notifications"
       >
         <.icon name="hero-bell" class="h-5 w-5" />
-        <span
+        <.status_badge
           :if={@unresolved_count > 0}
-          class="absolute -top-1 -right-1 badge badge-sm min-w-5 h-5 text-[10px] px-1 badge-soft-attention"
+          variant={:error}
+          size="sm"
+          class="absolute -top-1 -right-1 min-w-5 h-5 text-[10px] px-1 badge-soft-attention"
         >
           {@unresolved_count}
-        </span>
+        </.status_badge>
       </div>
       <div
         tabindex="0"
@@ -82,9 +84,9 @@ defmodule VmemoWeb.NotificationsComponents do
       <div class="min-w-0 flex-1">
         <div class="flex items-center justify-between gap-2">
           <span class="text-xs text-base-content/70">{@title}</span>
-          <span class={["badge badge-xs", notification_status_badge_class(@notification.status)]}>
+          <.status_badge variant={notification_status_badge_variant(@notification.status)} size="xs">
             {notification_status_label(@notification.status)}
-          </span>
+          </.status_badge>
         </div>
         <div class="mt-1 text-xs text-base-content/90 line-clamp-2">{@notification.description}</div>
         <div class="mt-1 text-[11px] text-base-content/50">
@@ -95,10 +97,10 @@ defmodule VmemoWeb.NotificationsComponents do
     """
   end
 
-  defp notification_status_badge_class("success"), do: "badge-success"
-  defp notification_status_badge_class("failed"), do: "badge-error"
-  defp notification_status_badge_class("partial_failed"), do: "badge-warning"
-  defp notification_status_badge_class(_), do: "badge-info"
+  defp notification_status_badge_variant("success"), do: :success
+  defp notification_status_badge_variant("failed"), do: :error
+  defp notification_status_badge_variant("partial_failed"), do: :warning
+  defp notification_status_badge_variant(_), do: :info
 
   defp notification_status_label("partial_failed"), do: "Partial Failed"
   defp notification_status_label("failed"), do: "Failed"

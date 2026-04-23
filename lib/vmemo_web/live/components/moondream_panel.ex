@@ -482,17 +482,17 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
             <div :for={request <- @requests} class="bg-base-100 rounded-lg p-3 space-y-2">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-outline">
+                  <.status_badge variant={:neutral}>
                     {String.capitalize(request.function_type)}
-                  </span>
+                  </.status_badge>
                   <span class="text-sm text-base-content/70">
                     {format_request_datetime(request.inserted_at)}
                   </span>
                 </div>
                 <%= if request.status == "failed" do %>
-                  <span class="badge badge-error">
+                  <.status_badge variant={:error}>
                     {request.status}
-                  </span>
+                  </.status_badge>
                 <% end %>
               </div>
 
