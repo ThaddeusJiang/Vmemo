@@ -35,11 +35,23 @@ defmodule Vmemo.Account.UserProfile do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:user_id, :name, :language, :appearance, :avatar_file_id]
+      accept [
+        :user_id,
+        :name,
+        :language,
+        :appearance,
+        :avatar_file_id
+      ]
     end
 
     update :update do
-      accept [:name, :language, :appearance, :avatar_file_id]
+      accept [
+        :name,
+        :language,
+        :appearance,
+        :avatar_file_id
+      ]
+
       require_atomic? false
     end
 

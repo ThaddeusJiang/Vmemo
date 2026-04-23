@@ -8,6 +8,8 @@ defmodule Vmemo.Ai.VisionRequest do
   require Ash.Query
   require Logger
   alias SmallSdk.Moondream
+  alias Vmemo.Ai.AshAiVision
+  alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
 
   postgres do
@@ -198,8 +200,8 @@ defmodule Vmemo.Ai.VisionRequest do
         case Ash.get(Image, request.image_id, actor: nil) do
           {:ok, image} ->
             case read_image_as_base64(image.url) do
-              {:ok, image_base64} ->
-                call_moondream_api(request, image_base64)
+              {:ok, {image_base64, mime_type}} ->
+                call_vision_api(request, image_base64, mime_type)
 
               {:error, reason} ->
                 Logger.error("Failed to read image for image #{image.id}: #{inspect(reason)}")
@@ -221,7 +223,7 @@ defmodule Vmemo.Ai.VisionRequest do
     end
   end
 
-  defp call_moondream_api(request, image_base64) do
+  defp call_vision_api(request, image_base64, mime_type) do
     function_type =
       case request.function_type do
         "query" -> :query
@@ -238,13 +240,26 @@ defmodule Vmemo.Ai.VisionRequest do
           error
 
         :caption ->
-          Moondream.caption(image_base64)
+          config = VisionConfig.resolve()
+
+          AshAiVision.caption(
+            image_base64,
+            model: config.model,
+            mime_type: mime_type
+          )
 
         :query ->
           if is_nil(request.prompt) or request.prompt == "" do
             {:error, "Prompt is required for query"}
           else
-            Moondream.query(image_base64, request.prompt)
+            config = VisionConfig.resolve()
+
+            AshAiVision.query(
+              image_base64,
+              request.prompt,
+              model: config.model,
+              mime_type: mime_type
+            )
           end
 
         :point ->
@@ -372,7 +387,8 @@ defmodule Vmemo.Ai.VisionRequest do
 
     case File.read(file_path) do
       {:ok, binary} ->
-        {:ok, Base.encode64(binary)}
+        mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
+        {:ok, {Base.encode64(binary), mime_type}}
 
       {:error, :enoent} ->
         {:error, :file_not_found}
@@ -381,4 +397,19 @@ defmodule Vmemo.Ai.VisionRequest do
         {:error, reason}
     end
   end
+
+  defp detect_mime_type_from_binary(<<0xFF, 0xD8, 0xFF, _::binary>>), do: "image/jpeg"
+
+  defp detect_mime_type_from_binary(
+         <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>
+       ),
+       do: "image/png"
+
+  defp detect_mime_type_from_binary(<<"GIF87a", _::binary>>), do: "image/gif"
+  defp detect_mime_type_from_binary(<<"GIF89a", _::binary>>), do: "image/gif"
+
+  defp detect_mime_type_from_binary(<<"RIFF", _::binary-size(4), "WEBP", _::binary>>),
+    do: "image/webp"
+
+  defp detect_mime_type_from_binary(_), do: nil
 end

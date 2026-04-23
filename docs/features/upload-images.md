@@ -1,7 +1,7 @@
 # Upload Images
 
 ## 概要
-用户通过 `UploadForm` 组件上传图片。每次提交生成一个 `upload_batch_id`，同批上传的图片共享该 ID。上传后图片进入 search embedding（Typesense）和 vision embedding（Moondream caption）异步处理流程。
+用户通过 `UploadForm` 组件上传图片。每次提交生成一个 `upload_batch_id`，同批上传的图片共享该 ID。上传后图片进入 search embedding（Typesense）和 vision embedding（OpenRouter caption）异步处理流程。
 
 ## 架构
 

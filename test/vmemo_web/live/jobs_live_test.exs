@@ -117,7 +117,7 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Failure reason"
       assert html =~ "Caption generation failed."
       refute html =~ "Timeout"
-      assert html =~ "Retry vision embedding"
+      assert html =~ "Retry Vision AI caption"
       assert html =~ ~s(href="/images/#{failed_image.id}")
     end
 

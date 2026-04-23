@@ -202,7 +202,7 @@ defmodule VmemoWeb.LiveDashboard.ExternalServicesPage do
 
     image_base64 = moondream_sample_image_base64()
 
-    result = Moondream.caption(image_base64, length: "short", mime_type: "image/png")
+    result = Moondream.point(image_base64, "Find the center", mime_type: "image/png")
     duration_ms = System.monotonic_time(:millisecond) - start_ms
 
     case result do

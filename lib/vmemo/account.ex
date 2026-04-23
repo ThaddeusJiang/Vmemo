@@ -161,10 +161,22 @@ defmodule Vmemo.Account do
   defp normalize_profile_attrs(attrs) when is_map(attrs) do
     attrs
     |> Enum.reduce(%{}, fn
-      {key, value}, acc when key in [:name, :language, :appearance, :avatar_file_id] ->
+      {key, value}, acc
+      when key in [
+             :name,
+             :language,
+             :appearance,
+             :avatar_file_id
+           ] ->
         Map.put(acc, key, value)
 
-      {key, value}, acc when key in ["name", "language", "appearance", "avatar_file_id"] ->
+      {key, value}, acc
+      when key in [
+             "name",
+             "language",
+             "appearance",
+             "avatar_file_id"
+           ] ->
         Map.put(acc, String.to_existing_atom(key), value)
 
       _entry, acc ->

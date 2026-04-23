@@ -9,13 +9,23 @@ defmodule Vmemo.Ai.Caption do
     :enetunreach,
     :nxdomain,
     :eai_nodata,
-    :eai_noname
+    :eai_noname,
+    :timeout
   ]
 
-  alias SmallSdk.Moondream
+  alias Vmemo.Ai.AshAiVision
+  alias Vmemo.Ai.VisionConfig
 
-  def generate_caption(image_base64) do
-    with {:ok, caption} <- Moondream.caption(image_base64) do
+  def generate_caption(image_base64, opts \\ []) do
+    config = VisionConfig.resolve()
+    mime_type = Keyword.get(opts, :mime_type)
+
+    with {:ok, caption} <-
+           AshAiVision.caption(
+             image_base64,
+             model: config.model,
+             mime_type: mime_type
+           ) do
       {:ok, caption}
     else
       {:error, reason} ->
@@ -35,6 +45,8 @@ defmodule Vmemo.Ai.Caption do
 
   defp handle_caption_error("Request failed with status 404"),
     do: {:discard, "Request failed with status 404"}
+
+  defp handle_caption_error(:missing_api_key), do: {:discard, :missing_api_key}
 
   defp handle_caption_error(:connection_refused), do: {:error, :vision_service_unreachable}
 

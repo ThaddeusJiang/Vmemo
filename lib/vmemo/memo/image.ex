@@ -953,8 +953,9 @@ defmodule Vmemo.Memo.Image do
   end
 
   defp do_generate_caption(image) do
-    with {:ok, {image_base64, _mime_type}} <- read_image_as_base64(image.url),
-         {:ok, caption} <- Caption.generate_caption(image_base64),
+    with {:ok, {image_base64, mime_type}} <- read_image_as_base64(image.url),
+         {:ok, caption} <-
+           Caption.generate_caption(image_base64, user_id: image.user_id, mime_type: mime_type),
          {:ok, _updated_photo} <-
            __MODULE__.update(image, %{caption: caption}, actor: nil, authorize?: false) do
       :ok

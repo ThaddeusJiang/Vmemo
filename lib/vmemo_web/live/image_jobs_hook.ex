@@ -124,6 +124,9 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   end
 
   defp to_job(image, caption_error_by_image_id) do
+    caption_status = caption_status(image)
+    caption_failure_reason = caption_failure_reason(image, caption_error_by_image_id)
+
     %{
       id: image.id,
       image_id: image.id,
@@ -136,9 +139,11 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       failure_stage: failure_stage(image),
       failure_reason: failure_reason(image, caption_error_by_image_id),
       typesense_failure_reason: typesense_failure_reason(image),
-      moondream_failure_reason: moondream_failure_reason(image, caption_error_by_image_id),
+      moondream_failure_reason: caption_failure_reason,
+      caption_failure_reason: caption_failure_reason,
       typesense_status: image.typesense_status,
-      moondream_status: image.moondream_status,
+      moondream_status: caption_status,
+      caption_status: caption_status,
       inserted_at: image.inserted_at,
       updated_at: image.updated_at
     }
@@ -225,7 +230,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   defp failure_reason(image, caption_error_by_image_id) do
     cond do
       image.moondream_status == "failed" ->
-        moondream_failure_reason(image, caption_error_by_image_id) || "Caption generation failed."
+        caption_failure_reason(image, caption_error_by_image_id) || "Caption generation failed."
 
       image.typesense_status == "failed" ->
         "Indexing error"
@@ -246,6 +251,11 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       nil
     end
   end
+
+  defp caption_status(image), do: image.moondream_status
+
+  defp caption_failure_reason(image, caption_error_by_image_id),
+    do: moondream_failure_reason(image, caption_error_by_image_id)
 
   defp caption_error_by_image_id(images) do
     failed_image_ids =

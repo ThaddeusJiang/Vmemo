@@ -21,6 +21,7 @@ defmodule SmallSdk.Moondream do
       iex> SmallSdk.Moondream.caption("iVBORw0KGgo...", length: "short")
       {:ok, "A brief description."}
   """
+  @deprecated "Use Vmemo.Ai.AshAiVision.caption/2 for caption generation."
   def caption(image_base64, opts \\ []) do
     length = Keyword.get(opts, :length, "normal")
 
@@ -77,6 +78,7 @@ defmodule SmallSdk.Moondream do
       iex> SmallSdk.Moondream.query("iVBORw0KGgo...", "What is in this image?")
       {:ok, "The image shows..."}
   """
+  @deprecated "Use Vmemo.Ai.AshAiVision.query/3 for image query."
   def query(image_base64, prompt, opts \\ []) do
     mime_type =
       Keyword.get(opts, :mime_type) ||

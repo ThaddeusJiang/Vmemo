@@ -1,5 +1,6 @@
 defmodule SmallSdk.MoondreamTest do
   use ExUnit.Case, async: false
+  @compile {:no_warn_deprecated, SmallSdk.Moondream}
 
   alias SmallSdk.FileSystem
   alias SmallSdk.Moondream

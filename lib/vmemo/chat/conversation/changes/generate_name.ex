@@ -3,8 +3,7 @@ defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
   use Ash.Resource.Change
   require Ash.Query
 
-  alias LangChain.Chains.LLMChain
-  alias LangChain.ChatModels.ChatOpenAI
+  import ReqLLM.Context
 
   @impl true
   def change(changeset, _opts, context) do
@@ -17,47 +16,37 @@ defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
         |> Ash.Query.limit(10)
         |> Ash.Query.select([:text, :source])
         |> Ash.Query.sort(inserted_at: :asc)
-        |> Ash.read!()
+        |> Ash.read!(scope: context)
 
-      system_prompt =
-        LangChain.Message.new_system!("""
-        Provide a short name for the current conversation.
-        2-8 words, preferring more succinct names.
-        RESPOND WITH ONLY THE NEW CONVERSATION NAME.
-        """)
+      prompt_messages =
+        [
+          system("""
+          Provide a short name for the current conversation.
+          2-8 words, preferring more succinct names.
+          RESPOND WITH ONLY THE NEW CONVERSATION NAME.
+          """)
+        ] ++
+          Enum.map(messages, fn message ->
+            if message.source == :agent do
+              assistant(message.text || "")
+            else
+              user(message.text || "")
+            end
+          end)
 
-      message_chain =
-        Enum.map(messages, fn message ->
-          if message.source == :agent do
-            LangChain.Message.new_assistant!(message.text)
-          else
-            LangChain.Message.new_user!(message.text)
-          end
-        end)
-
-      %{
-        llm: ChatOpenAI.new!(%{model: "gpt-4o"}),
-        custom_context: Map.new(Ash.Context.to_opts(context)),
-        verbose?: true
-      }
-      |> LLMChain.new!()
-      |> LLMChain.add_message(system_prompt)
-      |> LLMChain.add_messages(message_chain)
-      |> LLMChain.run(mode: :while_needs_response)
+      ReqLLM.generate_text(resolve_model(), prompt_messages)
       |> case do
-        {:ok,
-         %LangChain.Chains.LLMChain{
-           last_message: %{content: content}
-         }} ->
-          Ash.Changeset.force_change_attribute(
-            changeset,
-            :title,
-            LangChain.Message.ContentPart.content_to_string(content)
-          )
+        {:ok, response} ->
+          title = ReqLLM.Response.text(response) |> to_string() |> String.trim()
+          Ash.Changeset.force_change_attribute(changeset, :title, title)
 
-        {:error, _, error} ->
+        {:error, error} ->
           {:error, error}
       end
     end)
+  end
+
+  defp resolve_model do
+    Application.fetch_env!(:vmemo, :openrouter_chat_model)
   end
 end

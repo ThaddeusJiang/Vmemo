@@ -39,7 +39,7 @@ defmodule Vmemo.MixProject do
   defp deps do
     [
       {:mdex, "~> 0.7"},
-      {:ash_ai, "~> 0.5"},
+      {:ash_ai, "~> 0.6.1"},
       {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8"},
       {:phoenix_live_view, "~> 1.1", override: true},
