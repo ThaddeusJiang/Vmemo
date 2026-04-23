@@ -9,8 +9,14 @@ concurrency:
 
 env:
   MIX_ENV: test
-  TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_test
-  TEST_TYPESENSE_URL: http://localhost:8108
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
+  TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
+  MOONDREAM_URL: ${{ secrets.MOONDREAM_URL }}
+  MOONDREAM_API_KEY: ${{ secrets.MOONDREAM_API_KEY }}
+  TEST_POOL_SIZE: "10"
+  TEST_DB_QUEUE_TARGET_MS: "3000"
+  TEST_DB_QUEUE_INTERVAL_MS: "5000"
 
 jobs:
   mix-check:
@@ -59,26 +65,6 @@ jobs:
   mix-test:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    env:
-      TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
-      TYPESENSE_API_KEY: ${{ secrets.TYPESENSE_API_KEY }}
-      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_test
-      TEST_TYPESENSE_URL: ${{ secrets.TYPESENSE_URL }}
-
-    services:
-      postgres:
-        image: postgres:18
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: vmemo_test
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -105,15 +91,8 @@ jobs:
       - name: Compile
         run: mix compile
 
-      - name: Wait for Postgres
-        run: |
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for postgres..."
-            sleep 1
-          done
-
-      - name: Reset Typesense
-        run: mix ts.reset
+      - name: Reset
+        run: mix reset
 
       - name: Run tests
         run: mix test
