@@ -1,24 +1,36 @@
 import Config
 
-# OpenRouter API Key for chat functionality
-config :vmemo, openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
+database_url =
+  System.get_env("DATABASE_URL") ||
+    raise """
+    environment variable DATABASE_URL is missing.
+    For example: postgres://USER:PASS@HOST/DATABASE
+    """
+
+typesense_url =
+  System.get_env("TYPESENSE_URL") ||
+    raise """
+    environment variable TYPESENSE_URL is missing.
+    """
 
 config :vmemo,
   openrouter_chat_model: System.get_env("OPENROUTER_CHAT_MODEL", "openrouter:openai/gpt-4o-mini"),
   openrouter_vision_model:
-    System.get_env("OPENROUTER_VISION_MODEL", "openrouter:google/gemma-4-26b-a4b-it")
+    System.get_env("OPENROUTER_VISION_MODEL", "openrouter:google/gemma-4-26b-a4b-it"),
+  typesense_url: typesense_url
 
-config :req_llm,
-  openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
+config :vmemo, Vmemo.Repo, url: database_url
 
 if config_env() in [:dev, :test] do
-  config :vmemo, Vmemo.Repo, url: System.fetch_env!("DATABASE_URL")
+  openrouter_api_key = System.get_env("OPENROUTER_API_KEY")
 
   config :vmemo,
-    typesense_url: System.fetch_env!("TYPESENSE_URL"),
     typesense_api_key: System.get_env("TYPESENSE_API_KEY") || "xyz",
-    moondream_url: System.fetch_env!("MOONDREAM_URL"),
-    moondream_api_key: System.get_env("MOONDREAM_API_KEY") || "xyz"
+    moondream_api_key: System.get_env("MOONDREAM_API_KEY") || "xyz",
+    openrouter_api_key: openrouter_api_key,
+    moondream_url: System.get_env("MOONDREAM_URL")
+
+  config :req_llm, openrouter_api_key: openrouter_api_key
 end
 
 if chunk_size = System.get_env("USER_DATA_IMPORT_TYPESENSE_CHUNK_SIZE") do
@@ -60,11 +72,22 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  database_url =
-    System.get_env("DATABASE_URL") ||
+  typesense_api_key =
+    System.get_env("TYPESENSE_API_KEY") ||
       raise """
-      environment variable DATABASE_URL is missing.
-      For example: postgres://USER:PASS@HOST/DATABASE
+      environment variable TYPESENSE_API_KEY is missing.
+      """
+
+  moondream_api_key =
+    System.get_env("MOONDREAM_API_KEY") ||
+      raise """
+      environment variable MOONDREAM_API_KEY is missing.
+      """
+
+  openrouter_api_key =
+    System.get_env("OPENROUTER_API_KEY") ||
+      raise """
+      environment variable OPENROUTER_API_KEY is missing.
       """
 
   admin_token =
@@ -87,58 +110,28 @@ if config_env() == :prod do
       environment variable RESEND_API_KEY is missing.
       """
 
-  typesense_url =
-    System.get_env("TYPESENSE_URL") ||
-      raise """
-      environment variable TYPESENSE_URL is missing.
-      """
-
-  typesense_api_key =
-    System.get_env("TYPESENSE_API_KEY") ||
-      raise """
-      environment variable TYPESENSE_API_KEY is missing.
-      """
-
-  moondream_url =
-    System.get_env("MOONDREAM_URL") ||
-      raise """
-      environment variable MOONDREAM_URL is missing.
-      """
-
-  moondream_api_key =
-    System.get_env("MOONDREAM_API_KEY") ||
-      raise """
-      environment variable MOONDREAM_API_KEY is missing.
-      """
-
-  openrouter_api_key =
-    System.get_env("OPENROUTER_API_KEY") ||
-      raise """
-      environment variable OPENROUTER_API_KEY is missing.
-      """
-
   sentry_dsn =
     System.get_env("SENTRY_DSN") ||
       raise """
       environment variable SENTRY_DSN is missing.
       """
 
-  config :vmemo,
-    typesense_url: typesense_url,
-    typesense_api_key: typesense_api_key,
-    moondream_url: moondream_url,
-    moondream_api_key: moondream_api_key,
-    openrouter_api_key: openrouter_api_key
-
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :vmemo, Vmemo.Repo,
     # ssl: true,
-    url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
 
-  config :vmemo, admin_token: admin_token
+  config :vmemo,
+    typesense_api_key: typesense_api_key,
+    moondream_api_key: moondream_api_key,
+    openrouter_api_key: openrouter_api_key,
+    admin_token: admin_token,
+    dns_cluster_query: System.get_env("DNS_CLUSTER_QUERY"),
+    secret_key_base: secret_key_base
+
+  config :req_llm, openrouter_api_key: openrouter_api_key
 
   config :vmemo, Oban,
     repo: Vmemo.Repo,
@@ -160,12 +153,6 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "vmemo.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
-
-  config :vmemo, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
-
-  # Store secret_key_base in application config for JWT signing
-  # JWT_SIGNING_SECRET is now merged with SECRET_KEY_BASE
-  config :vmemo, :secret_key_base, secret_key_base
 
   config :vmemo, VmemoWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
