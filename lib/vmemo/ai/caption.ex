@@ -13,7 +13,7 @@ defmodule Vmemo.Ai.Caption do
     :timeout
   ]
 
-  alias SmallSdk.OpenRouter
+  alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.VisionConfig
 
   def generate_caption(image_base64, opts \\ []) do
@@ -21,9 +21,8 @@ defmodule Vmemo.Ai.Caption do
     mime_type = Keyword.get(opts, :mime_type)
 
     with {:ok, caption} <-
-           OpenRouter.caption(
+           AshAiVision.caption(
              image_base64,
-             api_key: config.api_key,
              model: config.model,
              mime_type: mime_type
            ) do

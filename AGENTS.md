@@ -95,6 +95,7 @@
 - UI time display must follow user timezone.
 - Keep formatting logic in top-level utils (for example `VmemoWeb.Utils.Datetime`).
 - Encapsulate external REST calls in SDK modules.
+- OpenRouter API key is global-only: configure via environment variable; never store or override per-user keys in app data/UI.
 - Set env defaults in environment config files, not Docker Compose defaults.
 - Fail fast on invalid or missing env values.
 

@@ -8,7 +8,7 @@ defmodule Vmemo.Ai.VisionRequest do
   require Ash.Query
   require Logger
   alias SmallSdk.Moondream
-  alias SmallSdk.OpenRouter
+  alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
 
@@ -242,9 +242,8 @@ defmodule Vmemo.Ai.VisionRequest do
         :caption ->
           config = VisionConfig.resolve()
 
-          OpenRouter.caption(
+          AshAiVision.caption(
             image_base64,
-            api_key: config.api_key,
             model: config.model,
             mime_type: mime_type
           )
@@ -255,10 +254,9 @@ defmodule Vmemo.Ai.VisionRequest do
           else
             config = VisionConfig.resolve()
 
-            OpenRouter.query(
+            AshAiVision.query(
               image_base64,
               request.prompt,
-              api_key: config.api_key,
               model: config.model,
               mime_type: mime_type
             )

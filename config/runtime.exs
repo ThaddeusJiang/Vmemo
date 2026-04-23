@@ -4,7 +4,12 @@ import Config
 config :vmemo, openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
 
 config :vmemo,
-  openrouter_vision_model: System.get_env("OPENROUTER_VISION_MODEL", "google/gemma-4-31b-it:free")
+  openrouter_chat_model: System.get_env("OPENROUTER_CHAT_MODEL", "openrouter:openai/gpt-4o-mini"),
+  openrouter_vision_model:
+    System.get_env("OPENROUTER_VISION_MODEL", "openrouter:google/gemma-4-26b-a4b-it")
+
+config :req_llm,
+  openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
 
 if url = System.get_env("TYPESENSE_URL") do
   config :vmemo, typesense_url: url
