@@ -106,7 +106,7 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 8. `OPENROUTER_API_KEY`
 9. `SENTRY_DSN`
 
-Optional: `MOONDREAM_URL`, `SENTRY_ENV`
+Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
 
 ### Troubleshooting
 

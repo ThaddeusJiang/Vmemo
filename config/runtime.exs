@@ -3,6 +3,9 @@ import Config
 # OpenRouter API Key for chat functionality
 config :vmemo, openrouter_api_key: System.get_env("OPENROUTER_API_KEY")
 
+config :vmemo,
+  openrouter_vision_model: System.get_env("OPENROUTER_VISION_MODEL", "google/gemma-4-31b-it:free")
+
 if url = System.get_env("TYPESENSE_URL") do
   config :vmemo, typesense_url: url
 end

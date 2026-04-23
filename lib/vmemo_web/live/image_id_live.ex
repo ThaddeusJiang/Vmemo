@@ -7,7 +7,6 @@ defmodule VmemoWeb.ImageIdLive do
   alias Vmemo.Ai.VisionRequest
   alias Vmemo.Memo.Image
 
-  alias VmemoWeb.LiveComponents.MoondreamPanel
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -205,10 +204,9 @@ defmodule VmemoWeb.ImageIdLive do
     vision_requests =
       case VisionRequest.list_by_image(socket.assigns.image.id, actor: user) do
         {:ok, requests} -> requests
-        _ -> socket.assigns.moondream_requests
+        _ -> socket.assigns.caption_requests
       end
 
-    moondream_requests = vision_requests
     caption_requests = caption_requests_from(vision_requests)
 
     latest_caption_request =
@@ -219,16 +217,6 @@ defmodule VmemoWeb.ImageIdLive do
     loading_requests =
       socket.assigns.caption_loading_requests
       |> MapSet.delete(payload.request_id)
-
-    moondream_loading_requests =
-      socket.assigns.moondream_loading_requests
-      |> MapSet.delete(payload.request_id)
-
-    send_update(MoondreamPanel,
-      id: "moondream-panel",
-      requests: moondream_requests,
-      loading_requests: moondream_loading_requests
-    )
 
     # Update image if caption was generated
     socket =
@@ -257,29 +245,9 @@ defmodule VmemoWeb.ImageIdLive do
 
     {:noreply,
      socket
-     |> assign(:moondream_requests, moondream_requests)
-     |> assign(:moondream_loading_requests, moondream_loading_requests)
      |> assign(:caption_requests, caption_requests)
      |> assign(:caption_loading_requests, loading_requests)
      |> assign(:latest_caption_request, latest_caption_request)}
-  end
-
-  @impl true
-  def handle_info({:moondream_request_submitted, request}, socket) do
-    user = socket.assigns.current_user
-
-    moondream_requests =
-      case VisionRequest.list_by_image(socket.assigns.image.id, actor: user) do
-        {:ok, requests} -> requests
-        _ -> socket.assigns.moondream_requests
-      end
-
-    loading_requests = MapSet.put(socket.assigns.moondream_loading_requests, request.id)
-
-    {:noreply,
-     socket
-     |> assign(moondream_requests: moondream_requests)
-     |> assign(moondream_loading_requests: loading_requests)}
   end
 
   @impl true
@@ -382,13 +350,13 @@ defmodule VmemoWeb.ImageIdLive do
                       type="button"
                       phx-click="generate-caption"
                       disabled={
-                        @image.moondream_status == "pending" or
-                          @image.moondream_status == "processing"
+                        vision_caption_status(@image) == "pending" or
+                          vision_caption_status(@image) == "processing"
                       }
                     >
                       <.icon name="hero-arrow-path" class="h-4 w-4" />
                       <span>
-                        {gettext("Retry Moondream caption")} ({@image.moondream_status})
+                        {gettext("Retry Vision AI caption")} ({vision_caption_status(@image)})
                       </span>
                     </button>
                   </li>
@@ -489,15 +457,6 @@ defmodule VmemoWeb.ImageIdLive do
             </div>
           </div>
 
-          <.live_component
-            id="moondream-panel"
-            module={MoondreamPanel}
-            image={@image}
-            current_user={@current_user}
-            requests={@moondream_requests}
-            loading_requests={@moondream_loading_requests}
-          />
-
           <div :if={length(@images) > 0 || length(@notes) > 0} class="grid gap-4 grid-cols-4">
             <div :if={length(@images) > 0} class="space-y-2 col-span-4 sm:col-span-3 lg:col-span-2">
               <h2 class="text-lg font-semibold">
@@ -590,6 +549,8 @@ defmodule VmemoWeb.ImageIdLive do
 
   defp format_error_message(_), do: "Unknown error"
 
+  defp vision_caption_status(image), do: Map.get(image, :moondream_status)
+
   defp assign_loaded_photo(socket, user, image, images) do
     vision_requests = list_vision_requests(image.id, user)
     caption_requests = caption_requests_from(vision_requests)
@@ -601,8 +562,6 @@ defmodule VmemoWeb.ImageIdLive do
     |> assign(notes: image.notes || [])
     |> assign(show_expanded: false)
     |> assign(images: images)
-    |> assign(moondream_requests: vision_requests)
-    |> assign(moondream_loading_requests: MapSet.new())
     |> assign(caption_requests: caption_requests)
     |> assign(caption_loading_requests: MapSet.new())
     |> assign(latest_caption_request: latest_caption_request)

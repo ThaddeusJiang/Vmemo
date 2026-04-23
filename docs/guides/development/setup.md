@@ -159,6 +159,7 @@ If needed, set local overrides in `mise.local.toml`:
 ```toml
 [env]
 OPENROUTER_API_KEY = "your-openrouter-api-key"
+OPENROUTER_VISION_MODEL = "openai/gpt-4o-mini"
 ```
 
 Local defaults are URL-based:

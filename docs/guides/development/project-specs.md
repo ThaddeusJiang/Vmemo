@@ -130,6 +130,8 @@
 - Generic Moondream requests are recorded in `photo_moondream_requests`
 - Worker states: `pending -> processing -> completed|failed`
 - Results are pushed to pages via PubSub topic
+- `caption` and `query` are routed to OpenRouter vision model
+- Moondream implementation is retained as deprecated fallback for `point/detect/segment`
 
 ### 4.5 Chat
 - `Conversation` and `Message` are driven by Ash Resource + AshOban triggers
@@ -154,14 +156,14 @@
 ### 5.1 External Services
 - PostgreSQL: primary business data + Oban jobs
 - Typesense: `photos` / `notes` / `ts_schema_migrations` collections
-- Moondream: image caption/query/point/detect/segment
-- OpenRouter: chat model
+- OpenRouter: chat model + vision caption/query
+- Moondream: deprecated for caption/query, still used for point/detect/segment
 - Resend: email delivery
 - Sentry: error reporting
 
 ### 5.2 Config and Environment Variables (Production-Critical)
 - Required: `DATABASE_URL`, `SECRET_KEY_BASE`, `ADMIN_TOKEN`, `RESEND_API_KEY`, `TYPESENSE_URL`, `TYPESENSE_API_KEY`, `MOONDREAM_API_KEY`, `OPENROUTER_API_KEY`, `SENTRY_DSN`
-- Common optional: `MOONDREAM_URL`, `SENTRY_ENV`
+- Common optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
 - Production default: `MOONDREAM_URL` defaults to `https://api.moondream.ai/v1/`
 - Strict validation: invalid numeric env values (for example import chunk size) raise at runtime
 

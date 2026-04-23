@@ -182,14 +182,14 @@ defmodule VmemoWeb.JobsLive do
                       <span class={
                         service_status_badge_class(
                           display_status(
-                            job.moondream_status,
+                            job.caption_status,
                             retrying_caption?(@retrying_caption_ids, job.image_id)
                           )
                         )
                       }>
                         {service_status_label(
                           display_status(
-                            job.moondream_status,
+                            job.caption_status,
                             retrying_caption?(@retrying_caption_ids, job.image_id)
                           )
                         )}
@@ -201,16 +201,16 @@ defmodule VmemoWeb.JobsLive do
                       />
                       <span
                         :if={
-                          present?(job.moondream_failure_reason) &&
+                          present?(job.caption_failure_reason) &&
                             not retrying_caption?(@retrying_caption_ids, job.image_id)
                         }
                         class="text-error"
                       >
-                        {job.moondream_failure_reason}
+                        {job.caption_failure_reason}
                       </span>
                       <.button
                         :if={
-                          job.moondream_status == "failed" and
+                          job.caption_status == "failed" and
                             not retrying_caption?(@retrying_caption_ids, job.image_id)
                         }
                         type="button"
@@ -316,7 +316,7 @@ defmodule VmemoWeb.JobsLive do
                         <span class="text-xs text-base-content/60">Caption</span>
                         <.button
                           :if={
-                            @job.moondream_status == "failed" and
+                            @job.caption_status == "failed" and
                               not retrying_caption?(@retrying_caption_ids, @job.image_id)
                           }
                           type="button"
@@ -326,17 +326,17 @@ defmodule VmemoWeb.JobsLive do
                           phx-click="retry-vision-embedding"
                           phx-value-image_id={@job.image_id}
                         >
-                          {service_status_label(@job.moondream_status)}
+                          {service_status_label(@job.caption_status)}
                         </.button>
                         <span
                           :if={
-                            @job.moondream_status != "failed" or
+                            @job.caption_status != "failed" or
                               retrying_caption?(@retrying_caption_ids, @job.image_id)
                           }
                           class={
                             service_status_badge_class(
                               display_status(
-                                @job.moondream_status,
+                                @job.caption_status,
                                 retrying_caption?(@retrying_caption_ids, @job.image_id)
                               )
                             )
@@ -344,7 +344,7 @@ defmodule VmemoWeb.JobsLive do
                         >
                           {service_status_label(
                             display_status(
-                              @job.moondream_status,
+                              @job.caption_status,
                               retrying_caption?(@retrying_caption_ids, @job.image_id)
                             )
                           )}
@@ -357,15 +357,15 @@ defmodule VmemoWeb.JobsLive do
                       </div>
                       <button
                         :if={
-                          @job.moondream_status == "failed" and
+                          @job.caption_status == "failed" and
                             not retrying_caption?(@retrying_caption_ids, @job.image_id)
                         }
                         type="button"
                         class="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content"
                         phx-click="retry-vision-embedding"
                         phx-value-image_id={@job.image_id}
-                        title="Retry vision embedding"
-                        aria-label="Retry vision embedding"
+                        title="Retry Vision AI caption"
+                        aria-label="Retry Vision AI caption"
                       >
                         <.icon name="hero-arrow-path" class="h-3.5 w-3.5" />
                       </button>
@@ -415,7 +415,7 @@ defmodule VmemoWeb.JobsLive do
   defp caption_section_label(job, retrying) do
     cond do
       retrying -> "Caption status"
-      job.moondream_status == "failed" -> "Failure reason"
+      job.caption_status == "failed" -> "Failure reason"
       true -> "Caption result"
     end
   end
@@ -425,11 +425,11 @@ defmodule VmemoWeb.JobsLive do
       retrying ->
         "Retry requested. Caption is being generated."
 
-      job.moondream_status == "completed" and present?(job.caption) ->
+      job.caption_status == "completed" and present?(job.caption) ->
         job.caption
 
-      job.moondream_status == "failed" ->
-        job.moondream_failure_reason || job.failure_reason || "Caption generation failed."
+      job.caption_status == "failed" ->
+        job.caption_failure_reason || job.failure_reason || "Caption generation failed."
 
       true ->
         "Caption is being generated."
@@ -490,7 +490,7 @@ defmodule VmemoWeb.JobsLive do
       keep_retrying_ids(
         socket.assigns.retrying_caption_ids,
         jobs,
-        &(&1.moondream_status == "failed")
+        &(&1.caption_status == "failed")
       )
     )
     |> assign(:global_image_jobs, Enum.filter(jobs, &(&1.status != "success")))
