@@ -14,11 +14,11 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
         <div class="mt-8">
           <!-- Error message -->
-          <div :if={@error_message} class="alert alert-error mb-4">
-            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <.alert :if={@error_message} variant={:error} class="mb-4">
+            <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <span>{@error_message}</span>
             <.button variant="ghost" phx-click="clear-error">Close</.button>
-          </div>
+          </.alert>
           
     <!-- Loading state -->
           <div :if={@loading} class="flex justify-center items-center py-8">
@@ -35,14 +35,16 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                 </div>
                 <div class="stat-title">Token Status</div>
                 <div class="stat-value text-sm">
-                  <span
+                  <.status_badge
                     :if={@api_token.is_active && !expired?(@api_token)}
-                    class="badge badge-success"
+                    variant={:success}
                   >
                     Active
-                  </span>
-                  <span :if={!@api_token.is_active} class="badge badge-warning">Disabled</span>
-                  <span :if={expired?(@api_token)} class="badge badge-error">Expired</span>
+                  </.status_badge>
+                  <.status_badge :if={!@api_token.is_active} variant={:warning}>
+                    Disabled
+                  </.status_badge>
+                  <.status_badge :if={expired?(@api_token)} variant={:error}>Expired</.status_badge>
                 </div>
               </div>
 

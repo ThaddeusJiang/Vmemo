@@ -2,8 +2,20 @@ import Config
 
 config :ash, policies: [show_policy_breakdowns?: true]
 
-test_database_url = System.fetch_env!("TEST_DATABASE_URL")
-test_typesense_url = System.fetch_env!("TEST_TYPESENSE_URL")
+test_pool_size =
+  "TEST_POOL_SIZE"
+  |> System.get_env("#{System.schedulers_online() * 2}")
+  |> String.to_integer()
+
+test_db_queue_target_ms =
+  "TEST_DB_QUEUE_TARGET_MS"
+  |> System.get_env("1000")
+  |> String.to_integer()
+
+test_db_queue_interval_ms =
+  "TEST_DB_QUEUE_INTERVAL_MS"
+  |> System.get_env("2000")
+  |> String.to_integer()
 
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
@@ -14,15 +26,10 @@ config :bcrypt_elixir, :log_rounds, 1
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :vmemo, Vmemo.Repo,
-  url: test_database_url,
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
-
-config :vmemo, typesense_url: test_typesense_url
-config :vmemo, typesense_api_key: System.get_env("TYPESENSE_API_KEY", "xyz")
-
-config :vmemo, moondream_url: System.get_env("MOONDREAM_URL", "http://localhost:2020/v1/")
-config :vmemo, moondream_api_key: System.get_env("MOONDREAM_API_KEY", "xyz")
+  pool_size: test_pool_size,
+  queue_target: test_db_queue_target_ms,
+  queue_interval: test_db_queue_interval_ms
 
 # Admin token for test
 config :vmemo, admin_token: "admin"

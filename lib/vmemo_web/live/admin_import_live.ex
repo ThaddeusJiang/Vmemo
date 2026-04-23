@@ -105,7 +105,9 @@ defmodule VmemoWeb.AdminImportLive do
 
           <section :if={@request} class="pt-3 border-t border-base-300/80 space-y-2">
             <div class="flex flex-wrap items-center gap-2">
-              <span class={status_badge_class(@request.status)}>{@request.status}</span>
+              <.status_badge variant={status_badge_variant(@request.status)}>
+                {@request.status}
+              </.status_badge>
               <span class="text-sm text-base-content/70">Request ID: {@request.id}</span>
             </div>
 
@@ -186,17 +188,11 @@ defmodule VmemoWeb.AdminImportLive do
     """
   end
 
-  defp status_badge_class(status) do
-    base = "badge badge-outline"
-
-    case status do
-      "pending" -> base <> " badge-ghost"
-      "processing" -> base <> " badge-info"
-      "completed" -> base <> " badge-success"
-      "failed" -> base <> " badge-error"
-      _ -> base
-    end
-  end
+  defp status_badge_variant("pending"), do: :neutral
+  defp status_badge_variant("processing"), do: :info
+  defp status_badge_variant("completed"), do: :success
+  defp status_badge_variant("failed"), do: :error
+  defp status_badge_variant(_), do: :neutral
 
   @impl true
   def handle_event("validate", _params, socket) do

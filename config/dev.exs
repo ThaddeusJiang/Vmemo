@@ -2,23 +2,11 @@ import Config
 
 config :ash, policies: [show_policy_breakdowns?: true]
 
-dev_database_url =
-  System.fetch_env!("DEV_DATABASE_URL")
-
-dev_typesense_url = System.fetch_env!("DEV_TYPESENSE_URL")
-
 # Configure your database
 config :vmemo, Vmemo.Repo,
-  url: dev_database_url,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
-
-config :vmemo, typesense_url: dev_typesense_url
-config :vmemo, typesense_api_key: "xyz"
-
-config :vmemo, moondream_url: "http://localhost:2020/v1/"
-config :vmemo, moondream_api_key: "xyz"
 
 # Admin token for development
 config :vmemo, admin_token: "admin"

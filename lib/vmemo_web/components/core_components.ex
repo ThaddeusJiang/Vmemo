@@ -123,25 +123,28 @@ defmodule VmemoWeb.CoreComponents do
 
   def flash(assigns) do
     assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
+    variant = if assigns.kind == :info, do: :success, else: :error
+    assigns = assign(assigns, :variant, variant)
 
     ~H"""
-    <div
+    <.alert
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
-      role="alert"
+      variant={@variant}
       class={[
-        "alert w-80 sm:w-96 z-50",
-        @class,
-        @kind == :info && "alert-success",
-        @kind == :error && "alert-error"
+        "w-80 sm:w-96 z-50",
+        @class
       ]}
       phx-hook="Toast"
       {@rest}
     >
-      <div :if={@title} class="flex items-center gap-2">
+      <:icon>
         <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
         <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
+      </:icon>
+
+      <div :if={@title} class="flex items-center gap-2">
         <span class="font-semibold">{@title}</span>
       </div>
       <div class="text-sm">{msg}</div>
@@ -152,7 +155,7 @@ defmodule VmemoWeb.CoreComponents do
       >
         <.icon name="hero-x-mark-solid" class="h-4 w-4" />
       </button>
-    </div>
+    </.alert>
     """
   end
 
@@ -169,18 +172,15 @@ defmodule VmemoWeb.CoreComponents do
 
   def flash_group(assigns) do
     ~H"""
-    <div id={@id}>
+    <.toast_stack id={@id} class={@class}>
       <.flash
         kind={:info}
         title={gettext("Success!")}
         flash={@flash}
-        class={@class}
       />
       <.flash
         kind={:error}
-        title={gettext("Error!")}
         flash={@flash}
-        class={@class}
       />
       <%!-- <.flash
         id="client-error"
@@ -205,8 +205,129 @@ defmodule VmemoWeb.CoreComponents do
         {gettext("Hang in there while we get back on track")}
         <.icon name="hero-arrow-path" class="ml-2 h-3 w-3 animate-spin" />
       </.flash> --%>
+    </.toast_stack>
+    """
+  end
+
+  @doc """
+  Renders a soft status badge with DaisyUI semantics.
+  """
+  attr :variant, :atom,
+    default: :neutral,
+    values: [:neutral, :info, :success, :warning, :error]
+
+  attr :tone, :atom, default: nil
+  attr :size, :string, default: "md", values: ~w(xs sm md lg)
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+  slot :icon
+
+  def status_badge(assigns) do
+    assigns = assign(assigns, :variant, normalize_status_variant(assigns))
+
+    ~H"""
+    <span
+      class={[
+        "badge badge-soft vmemo-badge",
+        status_tone_badge_class(@variant),
+        status_badge_size_class(@size),
+        @class
+      ]}
+      {@rest}
+    >
+      <span :if={@icon != []} class="inline-flex shrink-0">{render_slot(@icon)}</span>
+      {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  @doc """
+  Renders an alert with optional icon slot.
+  """
+  attr :variant, :atom,
+    default: :neutral,
+    values: [:neutral, :info, :success, :warning, :error]
+
+  attr :tone, :atom, default: nil
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+  slot :icon
+
+  def alert(assigns) do
+    assigns = assign(assigns, :variant, normalize_status_variant(assigns))
+
+    ~H"""
+    <div
+      role="alert"
+      class={[
+        "alert vmemo-alert",
+        status_tone_alert_class(@variant),
+        @class
+      ]}
+      {@rest}
+    >
+      <span :if={@icon != []} class="inline-flex shrink-0">{render_slot(@icon)}</span>
+      {render_slot(@inner_block)}
     </div>
     """
+  end
+
+  @doc """
+  Compatibility alias for `alert/1`.
+  """
+  attr :variant, :atom,
+    default: :neutral,
+    values: [:neutral, :info, :success, :warning, :error]
+
+  attr :tone, :atom, default: nil
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+  slot :icon
+
+  def soft_alert(assigns), do: alert(assigns)
+
+  @doc """
+  Renders a toast stack container.
+  """
+  attr :id, :string, default: nil
+  attr :class, :any, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def toast_stack(assigns) do
+    ~H"""
+    <div id={@id} class={["toast toast-top toast-center vmemo-toast", @class]} {@rest}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  defp status_tone_badge_class(:info), do: "badge-info"
+  defp status_tone_badge_class(:success), do: "badge-success"
+  defp status_tone_badge_class(:warning), do: "badge-warning"
+  defp status_tone_badge_class(:error), do: "badge-error"
+  defp status_tone_badge_class(_), do: "badge-neutral"
+
+  defp status_tone_alert_class(:info), do: "alert-info"
+  defp status_tone_alert_class(:success), do: "alert-success"
+  defp status_tone_alert_class(:warning), do: "alert-warning"
+  defp status_tone_alert_class(:error), do: "alert-error"
+  defp status_tone_alert_class(_), do: nil
+
+  defp status_badge_size_class("xs"), do: "badge-xs"
+  defp status_badge_size_class("sm"), do: "badge-sm"
+  defp status_badge_size_class("lg"), do: "badge-lg"
+  defp status_badge_size_class(_), do: "badge-md"
+
+  defp normalize_status_variant(assigns) do
+    cond do
+      is_atom(assigns[:variant]) -> assigns.variant
+      is_atom(assigns[:tone]) -> assigns.tone
+      true -> :neutral
+    end
   end
 
   @doc """

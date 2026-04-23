@@ -1,6 +1,6 @@
 ---
 name: "worktree"
-description: "Create a Git worktree for Vmemo with environment copy, Docker compose dev/test adjustments, and mandatory container cleanup after verification."
+description: "Create a Git worktree for Vmemo with .env copy, env-only runtime URL setup, optional Docker port conflict handling, and mandatory container cleanup after verification."
 ---
 
 # worktree Skill
@@ -12,7 +12,7 @@ description: "Create a Git worktree for Vmemo with environment copy, Docker comp
 创建一个可独立开发与验证的 worktree，并确保：
 
 - 从当前目录复制 `.env` 到新 worktree（必须用 `cp`）
-- 新 worktree 的 `docker-compose.yml` 同时支持 dev/test 容器使用
+- 新 worktree 的运行环境变量与当前 runtime 配置一致（`DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL`）
 - 验证结束后及时执行 `docker compose down` 关闭容器
 
 ## Required workflow
@@ -23,8 +23,8 @@ description: "Create a Git worktree for Vmemo with environment copy, Docker comp
 2. 确认当前目录存在 `.env`；不存在则停止并告知用户。
 3. 创建 worktree（按用户给定分支名/路径；未给定时做最小合理假设）。
 4. 使用 `cp` 复制 `.env` 到新 worktree。
-5. 在新 worktree 中按需调整 `docker-compose.yml`，确保 dev/test 都可独立启动并避免与现有环境冲突。
-6. 在启动容器前检查目标端口是否被占用；若被占用，先修改新 worktree 的 `.env` 中 `DEV_DATABASE_URL` / `DEV_TYPESENSE_URL`（必要时包含 `TEST_DATABASE_URL` / `TEST_TYPESENSE_URL`）到可用端口，再继续。
+5. 在新 worktree 中确认 `.env` 提供 `DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL`。
+6. 在启动容器前检查目标端口是否被占用；若被占用，再按需调整新 worktree 的 `docker-compose.yml` 端口映射，并同步更新 `.env` 对应 URL。
 7. 启动所需容器（`docker compose up -d`，必要时再启 test profile）。
 8. 在新 worktree 中执行 `mix deps.get`。
 9. 在新 worktree 中执行 `mix setup`。
@@ -34,8 +34,8 @@ description: "Create a Git worktree for Vmemo with environment copy, Docker comp
 
 1. 识别当前目录为 Git worktree 后，执行 `mise trust && mise install`。
 2. 确认当前 worktree 下存在 `.env`；若缺失则从对应源目录使用 `cp` 补齐，无法确定源目录时停止并告知用户。
-3. 在当前 worktree 中按需调整 `docker-compose.yml`，确保 dev/test 都可独立启动并避免与其他 worktree 冲突。
-4. 在启动容器前检查目标端口是否被占用；若被占用，先修改当前 worktree 的 `.env` 中 `DEV_DATABASE_URL` / `DEV_TYPESENSE_URL`（必要时包含 `TEST_DATABASE_URL` / `TEST_TYPESENSE_URL`）到可用端口，再继续。
+3. 在当前 worktree 中确认 `.env` 提供 `DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL`。
+4. 在启动容器前检查目标端口是否被占用；若被占用，再按需调整当前 worktree 的 `docker-compose.yml` 端口映射，并同步更新 `.env` 对应 URL。
 5. 启动所需容器（`docker compose up -d`，必要时再启 test profile）。
 6. 在当前 worktree 中执行 `mix deps.get`。
 7. 在当前 worktree 中执行 `mix setup`。
@@ -63,35 +63,12 @@ cp .env ../<worktree-dir>/.env
 
 禁止使用符号链接替代此步骤；必须是复制。
 
-### 3) Adjust `docker-compose.yml` for dev/test usage
+### 3) Handle port conflicts only when needed
 
-在新 worktree 中检查并按需修改 `docker-compose.yml`，至少覆盖以下两点：
+默认优先复用仓库现有 `docker-compose.yml`。仅在端口冲突时，才修改当前 worktree 的端口映射，并同步更新 `.env`：
 
 - dev services: `postgres`, `typesense`
 - test services/profile: `postgres-test`, `typesense-test`
-
-建议将端口改为环境变量可配置形式（示例）：
-
-```yaml
-services:
-  postgres:
-    ports:
-      - "${DEV_POSTGRES_PORT:-15432}:5432"
-
-  typesense:
-    ports:
-      - "${DEV_TYPESENSE_PORT:-18108}:8108"
-
-  postgres-test:
-    ports:
-      - "${TEST_POSTGRES_PORT:-25432}:5432"
-
-  typesense-test:
-    ports:
-      - "${TEST_TYPESENSE_PORT:-28108}:8108"
-```
-
-必要时同步更新新 worktree 的 `.env` 端口变量，避免多 worktree 并行时端口冲突。
 
 ### 4) Verify (minimal)
 
@@ -101,10 +78,9 @@ mise trust && mise install
 # Check required ports before compose up.
 # If occupied, update .env URLs first, then continue.
 # Example URL fields:
-# - DEV_DATABASE_URL
-# - DEV_TYPESENSE_URL
-# - TEST_DATABASE_URL
-# - TEST_TYPESENSE_URL
+# - DATABASE_URL
+# - TYPESENSE_URL
+# - MOONDREAM_URL
 docker compose up -d
 docker compose --profile test up -d
 mix deps.get

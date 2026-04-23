@@ -94,7 +94,7 @@ defmodule VmemoWeb.UserSessionControllerTest do
           "user" => %{"email" => "invalid@email.com", "password" => "invalid_password"}
         })
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid credentials"
       assert redirected_to(conn) == ~p"/login"
     end
 
@@ -106,7 +106,7 @@ defmodule VmemoWeb.UserSessionControllerTest do
           "user" => %{"email" => user.email, "password" => valid_user_password()}
         })
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid credentials"
       assert redirected_to(conn) == ~p"/login"
       refute get_session(conn, :user_token)
     end
