@@ -14,30 +14,30 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
         <div class="mt-8">
           <!-- Expiration alerts -->
-          <div :if={length(@expired_tokens) > 0} class="alert alert-error mb-4">
-            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <.alert :if={length(@expired_tokens) > 0} variant={:error} class="mb-4">
+            <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <div>
               <div class="font-semibold">{length(@expired_tokens)} tokens have expired</div>
               <div class="text-sm">Please update or delete expired tokens promptly</div>
             </div>
-          </div>
+          </.alert>
 
-          <div :if={length(@expiring_tokens) > 0} class="alert alert-warning mb-4">
-            <.icon name="hero-clock" class="h-5 w-5" />
+          <.alert :if={length(@expiring_tokens) > 0} variant={:warning} class="mb-4">
+            <:icon><.icon name="hero-clock" class="h-5 w-5" /></:icon>
             <div>
               <div class="font-semibold">
                 {length(@expiring_tokens)} tokens will expire within 7 days
               </div>
               <div class="text-sm">It's recommended to update these tokens in advance</div>
             </div>
-          </div>
+          </.alert>
           
     <!-- Error message -->
-          <div :if={@error_message} class="alert alert-error mb-4">
-            <.icon name="hero-exclamation-triangle" class="h-5 w-5" />
+          <.alert :if={@error_message} variant={:error} class="mb-4">
+            <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <span>{@error_message}</span>
             <.button variant="ghost" phx-click="clear-error">Close</.button>
-          </div>
+          </.alert>
           
     <!-- Loading state -->
           <div :if={@loading} class="flex justify-center items-center py-8">
@@ -94,8 +94,12 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <:col :let={token} label="Name">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-sm sm:text-base">{token.name}</span>
-                    <span :if={!token.is_active} class="badge badge-warning badge-sm">Disabled</span>
-                    <span :if={expired?(token)} class="badge badge-error badge-sm">Expired</span>
+                    <.status_badge :if={!token.is_active} variant={:warning} size="sm">
+                      Disabled
+                    </.status_badge>
+                    <.status_badge :if={expired?(token)} variant={:error} size="sm">
+                      Expired
+                    </.status_badge>
                   </div>
                 </:col>
                 <:col :let={token} label="Token">
@@ -113,7 +117,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                   </span>
                 </:col>
                 <:col :let={token} label="Usage Count">
-                  <span class="badge badge-info badge-ghost">{token.usage_count || 0}</span>
+                  <.status_badge variant={:info} class="badge-ghost">
+                    {token.usage_count || 0}
+                  </.status_badge>
                 </:col>
                 <:action :let={token}>
                   <div class="flex gap-1">

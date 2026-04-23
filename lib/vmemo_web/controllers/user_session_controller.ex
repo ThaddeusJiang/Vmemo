@@ -20,13 +20,13 @@ defmodule VmemoWeb.UserSessionController do
 
       {:ok, _user} ->
         conn
-        |> put_flash(:error, "Invalid email or password")
+        |> put_flash(:error, "Invalid credentials")
         |> redirect(to: ~p"/login")
 
       {:error, _reason} ->
         # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
         conn
-        |> put_flash(:error, "Invalid email or password")
+        |> put_flash(:error, "Invalid credentials")
         |> redirect(to: ~p"/login")
     end
   end
