@@ -8,18 +8,30 @@ defmodule Vmemo.Chat.AiRouter do
 
   @supported_tools ~w(query caption point detect segment)
 
-  def route_image_tool(conversation, text, actor)
+  def route_image_tool(conversation, text, actor, scoped_image_id)
       when is_map(conversation) and is_binary(text) do
-    if conversation.kind == "image_scoped" && is_binary(conversation.image_id) do
+    image_id =
+      cond do
+        is_binary(conversation.image_id) ->
+          conversation.image_id
+
+        is_binary(scoped_image_id) ->
+          scoped_image_id
+
+        true ->
+          nil
+      end
+
+    if is_binary(image_id) do
       case parse_tool_command(text) do
         {:ok, tool, prompt} ->
-          run_tool(conversation.image_id, tool, prompt, actor)
+          run_tool(image_id, tool, prompt, actor)
 
         :skip ->
           if should_fallback_to_general_chat?(text) do
             :skip
           else
-            run_tool(conversation.image_id, "query", String.trim(text), actor)
+            run_tool(image_id, "query", String.trim(text), actor)
           end
       end
     else
@@ -27,7 +39,7 @@ defmodule Vmemo.Chat.AiRouter do
     end
   end
 
-  def route_image_tool(_, _, _), do: :skip
+  def route_image_tool(_, _, _, _), do: :skip
 
   def tool_hint do
     """

@@ -19,15 +19,23 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
           load: [:kind, :image_id, :context_reset_at, :context_summary]
         )
 
-      case AiRouter.route_image_tool(conversation, message.text || "", context.actor) do
+      messages = conversation_messages(conversation, message, context)
+      scoped_image_id = resolve_scoped_image_id(conversation, messages)
+
+      case AiRouter.route_image_tool(
+             conversation,
+             message.text || "",
+             context.actor,
+             scoped_image_id
+           ) do
         {:ok, result} ->
           upsert_final_response!(message, result.text, [], [], result.provider, result.tool_name)
 
           changeset
 
         :skip ->
-          messages = conversation_messages(conversation, message, context)
-          prompt_messages = build_prompt_messages(conversation, context.actor, messages)
+          prompt_messages =
+            build_prompt_messages(conversation, context.actor, messages, scoped_image_id)
 
           new_message_id = Ash.UUIDv7.generate()
 
@@ -137,7 +145,15 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
       Vmemo.Chat.Message
       |> Ash.Query.filter(conversation_id == ^message.conversation_id)
       |> Ash.Query.filter(id != ^message.id)
-      |> Ash.Query.select([:text, :source, :tool_calls, :tool_results, :inserted_at])
+      |> Ash.Query.select([
+        :text,
+        :source,
+        :tool_calls,
+        :tool_results,
+        :tool_name,
+        :attachments,
+        :inserted_at
+      ])
       |> Ash.Query.sort(inserted_at: :asc)
 
     query =
@@ -152,26 +168,57 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
     |> Enum.concat([%{source: :user, text: message.text}])
   end
 
-  defp build_prompt_messages(conversation, actor, messages) do
+  defp build_prompt_messages(conversation, actor, messages, scoped_image_id) do
     language = actor_language(actor)
     convo_type = conversation.kind || "global"
     image_id = conversation.image_id
+    effective_image_id = scoped_image_id || image_id
     context_summary = conversation.context_summary
 
     [
       system("""
-      You are a helpful chat bot.
-      Your job is to use the tools at your disposal to assist the user.
+      You are Vmemo's in-app assistant focused on this user's Vmemo content.
+      Your job is to use the tools at your disposal to assist the user with Vmemo images and notes.
+      Questions about the currently loaded image are in-scope, even if the user doesn't explicitly mention Vmemo.
       When you provide image URLs, always render them using Markdown image syntax: ![alt](url).
       Do not use normal Markdown links for images.
+      If a user asks clearly unrelated general-purpose questions, do not answer the off-topic request.
+      Instead, briefly explain this assistant is limited to Vmemo content and recommend using ChatGPT, Grok, or similar general-purpose assistants for those questions.
       Default response language: #{language}.
       Conversation type: #{convo_type}.
       Initial image id: #{image_id || "none"}.
+      Effective image id: #{effective_image_id || "none"}.
       #{if is_binary(context_summary) and String.trim(context_summary) != "", do: "Context summary: " <> context_summary, else: ""}
-      #{if convo_type == "image_scoped", do: AiRouter.tool_hint(), else: ""}
+      #{if is_binary(effective_image_id), do: AiRouter.tool_hint(), else: ""}
       """)
     ] ++ message_chain(messages)
   end
+
+  defp resolve_scoped_image_id(conversation, _messages) when is_binary(conversation.image_id) do
+    conversation.image_id
+  end
+
+  defp resolve_scoped_image_id(_conversation, messages) when is_list(messages) do
+    messages
+    |> Enum.reverse()
+    |> Enum.find_value(fn message ->
+      if Map.get(message, :tool_name) == "image_context" do
+        message
+        |> Map.get(:attachments, [])
+        |> List.wrap()
+        |> Enum.find_value(fn attachment ->
+          Map.get(attachment, :id) || Map.get(attachment, "id")
+        end)
+      end
+    end)
+    |> case do
+      id when is_binary(id) -> id
+      id when is_nil(id) -> nil
+      id -> to_string(id)
+    end
+  end
+
+  defp resolve_scoped_image_id(_, _), do: nil
 
   defp actor_language(nil), do: "en"
 

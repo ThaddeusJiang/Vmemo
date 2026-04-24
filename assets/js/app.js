@@ -24,7 +24,6 @@ import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
 import { DirectoryUpload } from "./hooks/directory_upload"
 import { DrawerResize } from "./hooks/drawer_resize"
-import { AskAiUrlSync } from "./hooks/ask_ai_url_sync"
 
 const FormatDatetime = {
   format() {
@@ -69,7 +68,6 @@ let liveSocket = new LiveSocket("/live", Socket, {
     DirectoryUpload,
     FormatDatetime,
     DrawerResize,
-    AskAiUrlSync,
   },
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },

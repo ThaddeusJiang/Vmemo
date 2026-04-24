@@ -11,9 +11,9 @@ defmodule VmemoWeb.GlobalAskAiLive do
   @impl true
   def mount(_params, session, socket) do
     user = Account.get_user!(session["user_id"])
-    filter_image_id = session["image_id"]
-    conversation = initial_conversation(user, filter_image_id)
-    conversations = Chat.my_conversations!(actor: user)
+    seed_image_id = session["image_id"]
+    conversation = initial_conversation(user)
+    conversations = list_global_conversations(user)
 
     if connected?(socket) do
       VmemoWeb.Endpoint.subscribe("chat:conversations:#{user.id}")
@@ -27,7 +27,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
       socket
       |> assign(:current_user, user)
       |> assign(:hide_global_ask_ai, true)
-      |> assign(:filter_image_id, filter_image_id)
+      |> assign(:seed_image_id, seed_image_id)
       |> assign(:drawer_toggle_id, "global-ask-ai-toggle-#{socket.id}")
       |> assign(:drawer_form_id, "global-ask-ai-form-#{socket.id}")
       |> assign(:drawer_message_container_id, "global-ask-ai-messages-#{socket.id}")
@@ -43,16 +43,13 @@ defmodule VmemoWeb.GlobalAskAiLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div
-      id="global-ask-ai-root"
-      phx-hook="AskAiUrlSync"
-      class="fixed inset-0 z-[100] pointer-events-none"
-    >
+    <div id="global-ask-ai-root" class="fixed inset-0 z-[100] pointer-events-none">
       <input id={@drawer_toggle_id} type="checkbox" class="peer hidden" phx-update="ignore" />
 
       <label
         for={@drawer_toggle_id}
         id="global-ask-ai-launch"
+        phx-click="drawer-opened"
         class="pointer-events-auto fixed bottom-6 right-4 btn btn-primary rounded-full shadow-lg transition-opacity peer-checked:pointer-events-none peer-checked:opacity-0"
       >
         <.icon name="hero-chat-bubble-left-right" class="size-5" />
@@ -207,7 +204,6 @@ defmodule VmemoWeb.GlobalAskAiLive do
              socket
              |> maybe_subscribe_to_conversation(conversation)
              |> assign(:conversation, conversation)
-             |> sync_url_with_conversation(conversation)
              |> assign_message_form()
              |> stream_insert(:messages, message, at: 0)
              |> push_event("reset_form", %{form_id: socket.assigns.drawer_form_id})}
@@ -221,15 +217,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
   def handle_event("new-chat", _, socket) do
     user = socket.assigns.current_user
 
-    conversation_result =
-      if socket.assigns.filter_image_id do
-        Chat.create_image_scoped_conversation(
-          %{title: nil, image_id: socket.assigns.filter_image_id},
-          actor: user
-        )
-      else
-        Chat.create_conversation(%{title: nil}, actor: user)
-      end
+    conversation_result = Chat.create_conversation(%{title: nil}, actor: user)
 
     case conversation_result do
       {:ok, conversation} ->
@@ -252,16 +240,9 @@ defmodule VmemoWeb.GlobalAskAiLive do
     end
   end
 
-  def handle_event("init-conversation-from-url", %{"conversation_id" => conversation_id}, socket) do
+  def handle_event("drawer-opened", _, socket) do
     user = socket.assigns.current_user
-
-    case Chat.get_conversation(conversation_id, actor: user) do
-      {:ok, conversation} ->
-        {:noreply, switch_conversation(socket, conversation, actor: user)}
-
-      {:error, _} ->
-        {:noreply, sync_url_with_conversation(socket, socket.assigns.conversation)}
-    end
+    {:noreply, ensure_image_seeded(socket, user)}
   end
 
   @impl true
@@ -287,7 +268,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
         },
         socket
       ) do
-    conversations = Chat.my_conversations!(actor: socket.assigns.current_user)
+    conversations = list_global_conversations(socket.assigns.current_user)
 
     socket =
       socket
@@ -305,7 +286,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
   def handle_info({:conversation_updated, updated_conversation}, socket) do
     user = socket.assigns.current_user
-    conversations = Chat.my_conversations!(actor: user)
+    conversations = list_global_conversations(user)
 
     socket =
       socket
@@ -317,15 +298,10 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
   defp assign_message_form(socket) do
     private_arguments =
-      cond do
-        socket.assigns.conversation ->
-          %{conversation_id: socket.assigns.conversation.id}
-
-        is_binary(socket.assigns.filter_image_id) ->
-          %{image_id: socket.assigns.filter_image_id}
-
-        true ->
-          %{}
+      if socket.assigns.conversation do
+        %{conversation_id: socket.assigns.conversation.id}
+      else
+        %{}
       end
 
     form =
@@ -338,29 +314,12 @@ defmodule VmemoWeb.GlobalAskAiLive do
     assign(socket, :message_form, form)
   end
 
-  defp initial_conversation(user, nil) do
-    Chat.my_conversations!(actor: user)
+  defp initial_conversation(user) do
+    list_global_conversations(user)
     |> Enum.find(&(&1.kind == "global"))
     |> case do
       nil ->
         case Chat.create_conversation(%{title: nil}, actor: user) do
-          {:ok, conversation} -> conversation
-          _ -> nil
-        end
-
-      conversation ->
-        conversation
-    end
-  end
-
-  defp initial_conversation(user, image_id) do
-    Chat.list_conversations_by_initial_image(user, image_id)
-    |> List.first()
-    |> case do
-      nil ->
-        case Chat.create_image_scoped_conversation(%{title: nil, image_id: image_id},
-               actor: user
-             ) do
           {:ok, conversation} -> conversation
           _ -> nil
         end
@@ -415,10 +374,9 @@ defmodule VmemoWeb.GlobalAskAiLive do
     |> maybe_unsubscribe_from_conversation()
     |> maybe_subscribe_to_conversation(conversation)
     |> assign(:conversation, conversation)
-    |> assign_conversation_catalog(Chat.my_conversations!(actor: actor), actor)
+    |> assign_conversation_catalog(list_global_conversations(actor), actor)
     |> stream(:messages, load_messages(conversation, actor), reset: true)
     |> assign_message_form()
-    |> sync_url_with_conversation(conversation)
   end
 
   defp assign_conversation_catalog(socket, conversations, user) do
@@ -447,13 +405,61 @@ defmodule VmemoWeb.GlobalAskAiLive do
     end
   end
 
-  defp sync_url_with_conversation(socket, nil) do
-    push_event(socket, "ask_ai_sync_url", %{conversation_id: nil})
+  defp list_global_conversations(user) do
+    Chat.my_conversations!(actor: user)
+    |> Enum.filter(&(&1.kind == "global"))
   end
 
-  defp sync_url_with_conversation(socket, conversation) do
-    push_event(socket, "ask_ai_sync_url", %{conversation_id: conversation.id})
+  defp ensure_image_seeded(socket, user) do
+    conversation = socket.assigns.conversation
+    image_id = socket.assigns.seed_image_id
+
+    with true <- is_binary(image_id),
+         %{} = conversation <- conversation,
+         false <- conversation_has_image_context?(conversation, image_id, user),
+         {:ok, image} <- Ash.get(Image, image_id, actor: user),
+         {:ok, seeded} <-
+           Chat.create_system_message(
+             %{
+               conversation_id: conversation.id,
+               text:
+                 "Image context loaded.\nImage id: #{image.id}\nUploaded at (UTC): #{format_utc_datetime(image.inserted_at)}",
+               attachments: [
+                 %{
+                   id: image.id,
+                   url: image.url,
+                   note: image.note || ""
+                 }
+               ],
+               provider: "system",
+               tool_name: "image_context"
+             },
+             actor: user
+           ) do
+      stream_insert(socket, :messages, seeded, at: 0)
+    else
+      _ -> socket
+    end
   end
+
+  defp conversation_has_image_context?(conversation, image_id, user) do
+    Vmemo.Chat.Message
+    |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
+    |> Ash.Query.select([:tool_name, :attachments])
+    |> Ash.read!(actor: user)
+    |> Enum.any?(fn message ->
+      tool_name = Map.get(message, :tool_name)
+      attachments = Map.get(message, :attachments) || []
+
+      tool_name == "image_context" &&
+        Enum.any?(attachments, fn attachment ->
+          to_string(Map.get(attachment, :id) || Map.get(attachment, "id")) == image_id
+        end)
+    end)
+  end
+
+  defp format_utc_datetime(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
+  defp format_utc_datetime(_), do: "unknown"
 
   defp merge_message(existing_messages, message) do
     existing_message =
