@@ -17,12 +17,12 @@ defmodule Vmemo.Chat.Message.Changes.CreateConversationIfNotProvided do
         conversation =
           if image_id do
             Vmemo.Chat.create_image_scoped_conversation!(
-              %{title: "untitled", image_id: image_id},
+              %{title: nil, image_id: image_id},
               Ash.Context.to_opts(context)
             )
           else
             Vmemo.Chat.create_conversation!(
-              %{title: "untitled"},
+              %{title: nil},
               Ash.Context.to_opts(context)
             )
           end

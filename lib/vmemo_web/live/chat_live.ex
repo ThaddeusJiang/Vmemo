@@ -98,9 +98,7 @@ defmodule VmemoWeb.ChatLive do
                   phx-value-id={conversation.id}
                   class={"block py-2 px-3 transition border-l-4 pl-2 mb-2 #{if @conversation && @conversation.id == conversation.id, do: "border-primary font-medium", else: "border-transparent"}"}
                 >
-                  {VmemoWeb.LiveComponents.ConversationTitleEditor.build_title_string(
-                    conversation.title
-                  )}
+                  {VmemoWeb.LiveComponents.ConversationTitleEditor.chat_title(conversation.title)}
                 </.link>
               </li>
             <% end %>
@@ -235,11 +233,11 @@ defmodule VmemoWeb.ChatLive do
     conversation_result =
       if socket.assigns.filter_image_id do
         Vmemo.Chat.create_image_scoped_conversation(
-          %{title: "untitled", image_id: socket.assigns.filter_image_id},
+          %{title: nil, image_id: socket.assigns.filter_image_id},
           actor: user
         )
       else
-        Vmemo.Chat.create_conversation(%{title: "untitled"}, actor: user)
+        Vmemo.Chat.create_conversation(%{title: nil}, actor: user)
       end
 
     case conversation_result do

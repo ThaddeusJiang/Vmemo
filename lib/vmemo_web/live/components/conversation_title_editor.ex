@@ -29,7 +29,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
             phx-keydown="handle-keydown"
             phx-target={@myself}
             name="title"
-            class="input input-bordered flex-1"
+            class="input input-bordered flex-1 h-11 min-h-11 px-4 text-base"
           />
           <button
             type="submit"
@@ -58,7 +58,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
           assigns[:display_class] || ""
         ]}
       >
-        {build_title_string(@conversation.title, assigns[:max_display_length] || 25)}
+        {chat_title(@conversation.title)}
       </div>
     </div>
     """
@@ -112,36 +112,9 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
     end
   end
 
-  def build_title_string(title) do
-    build_title_string(title, 25)
-  end
+  def chat_title(nil), do: "Ash AI"
 
-  def build_title_string(title, max_display_length) do
-    max_display_length = max(1, max_display_length)
-    graphemes = if is_binary(title), do: String.graphemes(title), else: []
-    grapheme_count = length(graphemes)
+  def chat_title(title) when is_binary(title), do: title
 
-    cond do
-      default_title?(title) ->
-        "Ash AI"
-
-      is_binary(title) && grapheme_count > max_display_length ->
-        graphemes
-        |> Enum.take(max_display_length)
-        |> Enum.join()
-        |> Kernel.<>("...")
-
-      is_binary(title) && grapheme_count <= max_display_length ->
-        title
-    end
-  end
-
-  defp default_title?(nil), do: true
-
-  defp default_title?(title) when is_binary(title) do
-    normalized = title |> String.trim() |> String.downcase()
-    normalized in ["", "untitled", "untitled conversation"]
-  end
-
-  defp default_title?(_), do: false
+  def chat_title(_), do: "Ash AI"
 end

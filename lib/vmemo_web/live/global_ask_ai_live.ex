@@ -84,7 +84,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
         </div>
 
         <div class="flex h-16 items-center justify-between border-b border-base-300 px-4">
-          <div class="w-2/3 min-w-0 flex items-center gap-2">
+          <div class="w-3/4 min-w-0 flex items-center gap-2">
             <img
               :if={
                 @conversation && @conversation.image_id &&
@@ -94,14 +94,13 @@ defmodule VmemoWeb.GlobalAskAiLive do
               alt="Conversation image"
               class="size-8 rounded-md object-cover border border-base-300/70"
             />
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1 max-w-sm">
               <.live_component
                 :if={@conversation}
                 id="global-conversation-title-editor"
                 module={ConversationTitleEditor}
                 conversation={@conversation}
                 current_user={@current_user}
-                max_display_length={60}
                 display_class="w-full"
               />
               <div :if={!@conversation} class="text-base font-semibold text-base-content">
@@ -153,7 +152,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
                         class="size-6 rounded object-cover border border-base-300/70 shrink-0"
                       />
                       <span class="truncate">
-                        {conversation_title(conversation, 10)}
+                        {conversation_title(conversation)}
                       </span>
                     </button>
                   </li>
@@ -225,11 +224,11 @@ defmodule VmemoWeb.GlobalAskAiLive do
     conversation_result =
       if socket.assigns.filter_image_id do
         Chat.create_image_scoped_conversation(
-          %{title: "untitled", image_id: socket.assigns.filter_image_id},
+          %{title: nil, image_id: socket.assigns.filter_image_id},
           actor: user
         )
       else
-        Chat.create_conversation(%{title: "untitled"}, actor: user)
+        Chat.create_conversation(%{title: nil}, actor: user)
       end
 
     case conversation_result do
@@ -344,7 +343,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
     |> Enum.find(&(&1.kind == "global"))
     |> case do
       nil ->
-        case Chat.create_conversation(%{title: "untitled"}, actor: user) do
+        case Chat.create_conversation(%{title: nil}, actor: user) do
           {:ok, conversation} -> conversation
           _ -> nil
         end
@@ -359,7 +358,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
     |> List.first()
     |> case do
       nil ->
-        case Chat.create_image_scoped_conversation(%{title: "untitled", image_id: image_id},
+        case Chat.create_image_scoped_conversation(%{title: nil, image_id: image_id},
                actor: user
              ) do
           {:ok, conversation} -> conversation
@@ -542,9 +541,9 @@ defmodule VmemoWeb.GlobalAskAiLive do
     end
   end
 
-  defp conversation_title(nil, _max_display_length), do: "Ash AI"
+  defp conversation_title(nil), do: "Ash AI"
 
-  defp conversation_title(conversation, max_display_length) do
-    ConversationTitleEditor.build_title_string(conversation.title, max_display_length)
+  defp conversation_title(conversation) do
+    ConversationTitleEditor.chat_title(conversation.title)
   end
 end
