@@ -6,6 +6,7 @@ export const DrawerResize = {
     this.minWidth = Number.parseInt(this.el.dataset.minWidth || "420", 10)
     this.maxWidth = Number.parseInt(this.el.dataset.maxWidth || "960", 10)
     this.defaultWidth = Number.parseInt(this.el.dataset.defaultWidth || "640", 10)
+    this.cssVarName = "--global-ask-ai-drawer-width"
     this.handle = this.el.querySelector("[data-role='drawer-resize-handle']")
 
     this.applyWidth(this.loadWidth())
@@ -65,7 +66,7 @@ export const DrawerResize = {
     const viewportWidth = window.innerWidth
     const maxAllowed = Math.min(this.maxWidth, viewportWidth)
     this.currentWidth = clamp(width, this.minWidth, maxAllowed)
-    this.el.style.width = `${this.currentWidth}px`
+    document.documentElement.style.setProperty(this.cssVarName, `${this.currentWidth}px`)
   },
 
   loadWidth() {

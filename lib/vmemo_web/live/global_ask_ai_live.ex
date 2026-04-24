@@ -73,8 +73,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
         data-max-width="960"
         data-default-width="640"
         data-storage-key="global-ask-ai-drawer-width"
-        class="pointer-events-auto fixed right-0 top-0 z-[101] flex h-full translate-x-full flex-col border-l border-base-300 bg-base-100 shadow-2xl transition-transform duration-200 ease-out peer-checked:translate-x-0"
-        style="width: min(100vw, 40rem);"
+        class="global-ask-ai-drawer pointer-events-auto fixed right-0 top-0 z-[101] flex h-full translate-x-full flex-col border-l border-base-300 bg-base-100 shadow-2xl transition-transform duration-200 ease-out peer-checked:translate-x-0"
       >
         <div
           data-role="drawer-resize-handle"
