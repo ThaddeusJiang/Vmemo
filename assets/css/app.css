@@ -162,6 +162,11 @@
     .phx-click-loading.btn-icon {
         @apply animate-pulse text-primary;
     }
+
+    body.global-ask-ai-resizing {
+        cursor: col-resize;
+        user-select: none;
+    }
 }
 
 .page-shell {

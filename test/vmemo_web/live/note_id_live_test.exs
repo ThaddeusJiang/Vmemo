@@ -30,13 +30,13 @@ defmodule VmemoWeb.NoteIdLiveTest do
       refute has_element?(lv, "button", "Save")
 
       lv
-      |> element("form")
+      |> element("form[data-phx-component='1']")
       |> render_change(%{"note" => %{"note" => "Updated note text"}})
 
       assert has_element?(lv, "button", "Save")
 
       lv
-      |> element("form")
+      |> element("form[data-phx-component='1']")
       |> render_submit(%{"note" => %{"note" => "Updated note text"}})
 
       {:ok, updated_note} = Ash.get(Note, note.id, actor: user)

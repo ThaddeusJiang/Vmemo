@@ -41,3 +41,16 @@
     {@inner_content}
   </section>
 </main>
+
+<%= if assigns[:current_user] && !assigns[:hide_global_ask_ai] do %>
+  {live_render(
+    assigns[:socket] || @conn,
+    VmemoWeb.GlobalAskAiLive,
+    id: "global-ask-ai-#{assigns[:ask_ai_image_id] || "global"}",
+    sticky: true,
+    session: %{
+      "user_id" => assigns.current_user.id,
+      "image_id" => assigns[:ask_ai_image_id]
+    }
+  )}
+<% end %>

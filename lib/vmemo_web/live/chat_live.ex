@@ -1,5 +1,7 @@
 defmodule VmemoWeb.ChatLive do
   use VmemoWeb, :live_view
+  alias Vmemo.Chat.Commands
+  alias VmemoWeb.LiveComponents.ChatPanel
   # on_mount {VmemoWeb.LiveUserAuth, :live_user_required}
   def render(assigns) do
     ~H"""
@@ -58,73 +60,17 @@ defmodule VmemoWeb.ChatLive do
             </ul>
           </div>
         </div>
-        <div class="flex-1 flex flex-col overflow-y-scroll bg-base-100/55 max-h-[calc(100dvh-8rem)]">
-          <div
-            id="message-container"
-            phx-update="stream"
-            class="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse"
-          >
-            <%= for {id, message} <- @streams.messages do %>
-              <% images = extract_photos_from_message(message) %>
-              <% is_thinking = thinking?(message) %>
-              <div
-                id={id}
-                class={[
-                  "chat",
-                  message.source == :user && "chat-end",
-                  message.source == :agent && "chat-start"
-                ]}
-              >
-                <div :if={message.source == :agent} class="chat-image avatar">
-                  <div class="w-10 rounded-full bg-base-300 p-1">
-                    <img
-                      src={~p"/images/logo.svg"}
-                      alt="Vmemo logo"
-                      class="w-8 h-8 dark:invert"
-                    />
-                  </div>
-                </div>
-                <div :if={message.source == :user} class="chat-image avatar avatar-placeholder">
-                  <div class="w-10 rounded-full bg-base-300">
-                    <.icon name="hero-user-solid" class="block" />
-                  </div>
-                </div>
-                <div class="chat-bubble">
-                  <.live_component
-                    id={"markdown-#{id}"}
-                    module={VmemoWeb.LiveComponents.MarkdownContent}
-                    text={message.text}
-                    current_user={@current_user}
-                  />
-                  {render_thinking(assigns, is_thinking)}
-                  {render_photos(assigns, images)}
-                </div>
-              </div>
-            <% end %>
-          </div>
-        </div>
-        <div class="p-4 border-t h-16">
-          <.form
-            for={@message_form}
-            id="message-form"
-            phx-submit="send-message"
-            class="flex items-center gap-4"
-          >
-            <div class="flex-1 flex items-center [&_.form-control]:flex [&_.form-control]:items-center [&_.form-control>div]:flex [&_.form-control>div]:items-center [&_.form-control>div]:w-full">
-              <.input
-                field={@message_form[:text]}
-                type="text"
-                phx-mounted={JS.focus()}
-                placeholder="Type your message..."
-                class="input input-primary w-full mb-0"
-                autocomplete="off"
-              />
-            </div>
-            <button type="submit" class="btn btn-primary rounded-xl">
-              <.icon name="hero-paper-airplane" /> Send
-            </button>
-          </.form>
-        </div>
+        <ChatPanel.chat_panel
+          messages={@streams.messages}
+          message_form={@message_form}
+          current_user={@current_user}
+          form_id="message-form"
+          container_id="message-container"
+          placeholder="Type your message..."
+          empty_title="How can I help you?"
+          empty_subtitle="Ask questions about your notes and images."
+          panel_class="flex-1 min-h-0"
+        />
       </div>
 
       <div class="drawer-side border-r border-base-300/80 bg-base-100/90 min-w-72">
@@ -133,12 +79,15 @@ defmodule VmemoWeb.ChatLive do
             Conversations
           </div>
           <div class="mb-4">
-            <.link navigate={~p"/chat"} class="btn btn-primary mb-2">
+            <button type="button" phx-click="new-chat" class="btn btn-primary mb-2">
               <div class="rounded-full bg-primary-content text-primary w-6 h-6 flex items-center justify-center">
                 <.icon name="hero-plus" />
               </div>
               <span>New Chat</span>
-            </.link>
+            </button>
+            <div :if={@filter_image_id} class="text-xs text-base-content/70">
+              Filtered by image: {@filter_image_id}
+            </div>
           </div>
           <ul class="flex flex-col-reverse" phx-update="stream" id="conversations-list">
             <%= for {id, conversation} <- @streams.conversations do %>
@@ -172,7 +121,9 @@ defmodule VmemoWeb.ChatLive do
     socket =
       socket
       |> assign(:page_title, "Chat")
+      |> assign(:hide_global_ask_ai, true)
       |> assign(:conversation, nil)
+      |> assign(:filter_image_id, nil)
       |> stream_configure(:conversations, dom_id: &"conversation-#{&1.id}")
       |> stream(
         :conversations,
@@ -184,8 +135,9 @@ defmodule VmemoWeb.ChatLive do
     {:ok, socket}
   end
 
-  def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
+  def handle_params(%{"conversation_id" => conversation_id} = params, _, socket) do
     user = socket.assigns.current_user
+    filter_image_id = Map.get(params, "image_id", socket.assigns[:filter_image_id])
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
       {:ok, conversation} ->
@@ -208,6 +160,9 @@ defmodule VmemoWeb.ChatLive do
             :id,
             :text,
             :source,
+            :attachments,
+            :provider,
+            :tool_name,
             :tool_calls,
             :tool_results,
             :complete,
@@ -216,7 +171,9 @@ defmodule VmemoWeb.ChatLive do
           |> Ash.read!()
 
         socket
+        |> assign(:filter_image_id, filter_image_id)
         |> assign(:conversation, conversation)
+        |> stream(:conversations, list_conversations(user, filter_image_id), reset: true)
         |> stream(:messages, messages)
         |> assign_message_form()
         |> then(&{:noreply, &1})
@@ -227,35 +184,70 @@ defmodule VmemoWeb.ChatLive do
     end
   end
 
-  def handle_params(_, _, socket) do
+  def handle_params(params, _, socket) do
+    user = socket.assigns.current_user
+    filter_image_id = Map.get(params, "image_id")
+
     if socket.assigns[:conversation] do
       VmemoWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
     end
 
     socket
+    |> assign(:filter_image_id, filter_image_id)
     |> assign(:conversation, nil)
+    |> stream(:conversations, list_conversations(user, filter_image_id), reset: true)
     |> stream(:messages, [])
     |> assign_message_form()
     |> then(&{:noreply, &1})
   end
 
   def handle_event("send-message", %{"form" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.message_form.source, params: params) do
-      {:ok, message} ->
-        if socket.assigns.conversation do
-          socket
-          |> assign_message_form()
-          |> stream_insert(:messages, message, at: 0)
-          |> push_event("reset_form", %{form_id: "message-form"})
-          |> then(&{:noreply, &1})
-        else
-          {:noreply,
-           socket
-           |> push_navigate(to: ~p"/chat/#{message.conversation_id}")}
-        end
+    text = Map.get(params, "text", "")
 
-      {:error, form} ->
-        {:noreply, assign(socket, :message_form, form)}
+    case Commands.parse(text) do
+      {:ok, command} ->
+        handle_chat_command(command, socket)
+
+      :no_command ->
+        case AshPhoenix.Form.submit(socket.assigns.message_form.source, params: params) do
+          {:ok, message} ->
+            if socket.assigns.conversation do
+              socket
+              |> assign_message_form()
+              |> stream_insert(:messages, message, at: 0)
+              |> push_event("reset_form", %{form_id: "message-form"})
+              |> then(&{:noreply, &1})
+            else
+              {:noreply,
+               socket
+               |> push_navigate(to: ~p"/chat/#{message.conversation_id}")}
+            end
+
+          {:error, form} ->
+            {:noreply, assign(socket, :message_form, form)}
+        end
+    end
+  end
+
+  def handle_event("new-chat", _, socket) do
+    user = socket.assigns.current_user
+
+    conversation_result =
+      if socket.assigns.filter_image_id do
+        Vmemo.Chat.create_image_scoped_conversation(
+          %{title: "untitled", image_id: socket.assigns.filter_image_id},
+          actor: user
+        )
+      else
+        Vmemo.Chat.create_conversation(%{title: "untitled"}, actor: user)
+      end
+
+    case conversation_result do
+      {:ok, conversation} ->
+        {:noreply, push_navigate(socket, to: ~p"/chat/#{conversation.id}")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to create conversation")}
     end
   end
 
@@ -432,14 +424,26 @@ defmodule VmemoWeb.ChatLive do
         },
         socket
       ) do
+    matches_filter? =
+      is_nil(socket.assigns.filter_image_id) ||
+        socket.assigns.filter_image_id == conversation.image_id
+
     socket =
-      if socket.assigns.conversation && socket.assigns.conversation.id == conversation.id do
+      if socket.assigns.conversation && socket.assigns.conversation.id == conversation.id &&
+           matches_filter? do
         assign(socket, :conversation, conversation)
       else
         socket
       end
 
-    {:noreply, stream_insert(socket, :conversations, conversation)}
+    socket =
+      if matches_filter? do
+        stream_insert(socket, :conversations, conversation)
+      else
+        stream_delete(socket, :conversations, conversation)
+      end
+
+    {:noreply, socket}
   end
 
   def handle_info({:conversation_updated, updated_conversation}, socket) do
@@ -465,10 +469,16 @@ defmodule VmemoWeb.ChatLive do
         )
         |> to_form()
       else
-        AshPhoenix.Form.for_create(
-          Vmemo.Chat.Message,
-          :create,
-          actor: socket.assigns.current_user
+        private_arguments =
+          if is_binary(socket.assigns.filter_image_id) do
+            %{image_id: socket.assigns.filter_image_id}
+          else
+            %{}
+          end
+
+        AshPhoenix.Form.for_create(Vmemo.Chat.Message, :create,
+          actor: socket.assigns.current_user,
+          private_arguments: private_arguments
         )
         |> to_form()
       end
@@ -480,164 +490,71 @@ defmodule VmemoWeb.ChatLive do
     )
   end
 
-  defp render_thinking(assigns, true) do
-    ~H"""
-    <div class="mt-2 flex items-center gap-2 text-sm text-base-content/70">
-      <span class="loading loading-spinner loading-sm"></span>
-      <span>Thinking...</span>
-    </div>
-    """
+  defp list_conversations(user, nil), do: Vmemo.Chat.my_conversations!(actor: user)
+
+  defp list_conversations(user, image_id) when is_binary(image_id) do
+    Vmemo.Chat.list_conversations_by_initial_image(user, image_id)
   end
 
-  defp render_thinking(assigns, false) do
-    ~H"""
-    """
+  defp handle_chat_command(_command, %{assigns: %{conversation: nil}} = socket) do
+    {:noreply, put_flash(socket, :error, "Create or select a conversation first")}
   end
 
-  defp render_photos(assigns, images) do
-    if Enum.empty?(images) do
-      Phoenix.HTML.raw("")
+  defp handle_chat_command(:clear, socket) do
+    user = socket.assigns.current_user
+    conversation = socket.assigns.conversation
+    now = DateTime.utc_now()
+
+    with {:ok, updated} <- Vmemo.Chat.clear_context(conversation, now, actor: user),
+         {:ok, feedback} <-
+           Vmemo.Chat.create_system_message(
+             %{
+               conversation_id: conversation.id,
+               text: "Context cleared. History is preserved."
+             },
+             actor: user
+           ) do
+      {:noreply,
+       socket
+       |> assign(:conversation, updated)
+       |> stream_insert(:messages, feedback, at: 0)
+       |> push_event("reset_form", %{form_id: "message-form"})}
     else
-      assigns = assign(assigns, :images, images)
-
-      ~H"""
-      <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
-        <%= for {image, index} <- Enum.with_index(@images) do %>
-          <VmemoWeb.LiveComponents.ImageCard.image_card image={image} />
-        <% end %>
-      </div>
-      """
+      _ -> {:noreply, put_flash(socket, :error, "Failed to clear context")}
     end
   end
 
-  defp normalize_photo_url(url) when is_binary(url) do
-    url_lower = String.downcase(url)
+  defp handle_chat_command(:compact, socket) do
+    user = socket.assigns.current_user
+    conversation = socket.assigns.conversation
+    now = DateTime.utc_now()
 
-    cond do
-      # If URL is absolute with wrong domain (example.com), convert to relative path
-      # Handle case-insensitive matching
-      String.starts_with?(url_lower, "https://example.com") ->
-        # Extract path after domain (case-insensitive)
-        prefix_length = String.length("https://example.com")
-        String.slice(url, prefix_length..-1//1)
+    messages =
+      Vmemo.Chat.Message
+      |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
+      |> Ash.Query.select([:source, :text])
+      |> Ash.read!(actor: user)
+      |> Enum.reverse()
 
-      String.starts_with?(url_lower, "http://example.com") ->
-        prefix_length = String.length("http://example.com")
-        String.slice(url, prefix_length..-1//1)
+    summary = Commands.compact_summary(messages)
 
-      # If URL is absolute with correct domain, keep as is
-      String.starts_with?(url, "http://") or String.starts_with?(url, "https://") ->
-        url
-
-      # Relative path, keep as is (browser will use current domain)
-      true ->
-        url
-    end
-  end
-
-  defp normalize_photo_url(url), do: url
-
-  defp extract_photos_from_message(message) do
-    # If message is not complete (still thinking), don't show images
-    if thinking?(message) do
-      []
+    with {:ok, updated} <-
+           Vmemo.Chat.compact_context(conversation, now, summary, actor: user),
+         {:ok, feedback} <-
+           Vmemo.Chat.create_system_message(
+             %{
+               conversation_id: conversation.id,
+               text: "Context compacted. History is preserved."
+             },
+             actor: user
+           ) do
+      {:noreply,
+       socket
+       |> assign(:conversation, updated)
+       |> stream_insert(:messages, feedback, at: 0)
+       |> push_event("reset_form", %{form_id: "message-form"})}
     else
-      case Map.get(message, :tool_results) do
-        nil ->
-          []
-
-        tool_results when is_list(tool_results) ->
-          tool_results
-          |> Enum.filter(fn result ->
-            result_name = get_result_name(result)
-            result_name == "search_images" || result_name == :search_images
-          end)
-          |> Enum.flat_map(fn result ->
-            extract_photos_from_tool_result(result)
-          end)
-
-        _ ->
-          []
-      end
+      _ -> {:noreply, put_flash(socket, :error, "Failed to compact context")}
     end
-  end
-
-  defp get_result_name(result) when is_map(result) do
-    Map.get(result, "name") || Map.get(result, :name)
-  end
-
-  defp get_result_name(_), do: nil
-
-  defp extract_photos_from_tool_result(result) do
-    content = Map.get(result, "content") || Map.get(result, :content)
-
-    if is_binary(content) and content != "" do
-      case Jason.decode(content) do
-        {:ok, decoded} when is_list(decoded) ->
-          decoded
-          |> Enum.map(&normalize_photo/1)
-          |> Enum.reject(&is_nil/1)
-
-        {:ok, decoded} when is_map(decoded) ->
-          # Handle case where content is a single object or wrapped in a structure
-          case Map.get(decoded, "data") || Map.get(decoded, :data) do
-            nil ->
-              case normalize_photo(decoded) do
-                nil -> []
-                image -> [image]
-              end
-
-            data when is_list(data) ->
-              data
-              |> Enum.map(&normalize_photo/1)
-              |> Enum.reject(&is_nil/1)
-
-            data when is_map(data) ->
-              case normalize_photo(data) do
-                nil -> []
-                image -> [image]
-              end
-
-            _ ->
-              []
-          end
-
-        _ ->
-          []
-      end
-    else
-      []
-    end
-  end
-
-  defp normalize_photo(data) when is_map(data) do
-    url = Map.get(data, "url") || Map.get(data, :url)
-    id = Map.get(data, "id") || Map.get(data, :id)
-
-    if url do
-      %{
-        id: id,
-        url: normalize_photo_url(url),
-        note: Map.get(data, "note") || Map.get(data, :note) || ""
-      }
-    else
-      nil
-    end
-  end
-
-  defp normalize_photo(data) when is_binary(data) and data != "" do
-    %{
-      id: nil,
-      url: normalize_photo_url(data),
-      note: ""
-    }
-  end
-
-  defp normalize_photo(_), do: nil
-
-  defp thinking?(message) do
-    # Message is thinking if it's not complete yet
-    complete = Map.get(message, :complete)
-    complete == false || is_nil(complete)
   end
 end

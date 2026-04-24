@@ -274,7 +274,7 @@ defmodule VmemoWeb.ImageIdLive do
 
                 <.link
                   href={@image.url}
-                  class="absolute bottom-2 right-2 btn btn-circle hidden group-hover:flex sm:group-hover:hidden items-center justify-center group-hover:bg-base-100"
+                  class="absolute bottom-2 right-14 btn btn-circle hidden group-hover:flex sm:group-hover:hidden items-center justify-center group-hover:bg-base-100"
                   aria-label={gettext("expand")}
                 >
                   <.icon name="hero-arrows-pointing-out" class="size-4" />
@@ -558,6 +558,7 @@ defmodule VmemoWeb.ImageIdLive do
     original_form_values = %{"note" => image.note, "caption" => image.caption}
 
     socket
+    |> assign(:ask_ai_image_id, image.id)
     |> assign(image: image)
     |> assign(notes: image.notes || [])
     |> assign(show_expanded: false)
@@ -575,6 +576,7 @@ defmodule VmemoWeb.ImageIdLive do
 
   defp assign_photo_not_found(socket) do
     socket
+    |> assign(:ask_ai_image_id, nil)
     |> assign(image: nil)
     |> assign(notes: [])
   end

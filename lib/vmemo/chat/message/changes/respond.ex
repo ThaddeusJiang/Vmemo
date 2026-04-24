@@ -5,120 +5,116 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
 
   import ReqLLM.Context
 
+  alias Vmemo.Account
+  alias Vmemo.Chat.AiRouter
+
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.before_transaction(changeset, fn changeset ->
       message = changeset.data
 
-      messages =
-        Vmemo.Chat.Message
-        |> Ash.Query.filter(conversation_id == ^message.conversation_id)
-        |> Ash.Query.filter(id != ^message.id)
-        |> Ash.Query.select([:text, :source, :tool_calls, :tool_results])
-        |> Ash.Query.sort(inserted_at: :asc)
-        |> Ash.read!(scope: context)
-        |> Enum.concat([%{source: :user, text: message.text}])
-
-      prompt_messages =
-        [
-          system("""
-          You are a helpful chat bot.
-          Your job is to use the tools at your disposal to assist the user.
-          When you provide image URLs, always render them using Markdown image syntax: ![alt](url).
-          Do not use normal Markdown links for images.
-          """)
-        ] ++ message_chain(messages)
-
-      new_message_id = Ash.UUIDv7.generate()
-
-      final_state =
-        prompt_messages
-        |> AshAi.ToolLoop.stream(
-          otp_app: :vmemo,
-          tools: [:image_search],
-          model: resolve_model(),
-          actor: context.actor,
-          tenant: context.tenant,
-          context: Map.new(Ash.Context.to_opts(context))
+      conversation =
+        Ash.get!(Vmemo.Chat.Conversation, message.conversation_id,
+          scope: context,
+          load: [:kind, :image_id, :context_reset_at, :context_summary]
         )
-        |> Enum.reduce(%{text: "", tool_calls: [], tool_results: [], stream_error: nil}, fn
-          {:content, content}, acc ->
-            if content not in [nil, ""] do
-              Vmemo.Chat.Message
-              |> Ash.Changeset.for_create(
-                :upsert_response,
+
+      case AiRouter.route_image_tool(conversation, message.text || "", context.actor) do
+        {:ok, result} ->
+          upsert_final_response!(message, result.text, [], [], result.provider, result.tool_name)
+
+          changeset
+
+        :skip ->
+          messages = conversation_messages(conversation, message, context)
+          prompt_messages = build_prompt_messages(conversation, context.actor, messages)
+
+          new_message_id = Ash.UUIDv7.generate()
+
+          final_state =
+            prompt_messages
+            |> AshAi.ToolLoop.stream(
+              otp_app: :vmemo,
+              tools: [:image_search],
+              model: resolve_model(),
+              actor: context.actor,
+              tenant: context.tenant,
+              context: Map.new(Ash.Context.to_opts(context))
+            )
+            |> Enum.reduce(%{text: "", tool_calls: [], tool_results: [], stream_error: nil}, fn
+              {:content, content}, acc ->
+                if content not in [nil, ""] do
+                  Vmemo.Chat.Message
+                  |> Ash.Changeset.for_create(
+                    :upsert_response,
+                    %{
+                      id: new_message_id,
+                      response_to_id: message.id,
+                      conversation_id: message.conversation_id,
+                      text: content
+                    },
+                    actor: %AshAi{}
+                  )
+                  |> Ash.create!()
+                end
+
+                %{acc | text: acc.text <> (content || "")}
+
+              {:tool_call, tool_call}, acc ->
+                %{acc | tool_calls: append_event(acc.tool_calls, normalize_tool_call(tool_call))}
+
+              {:tool_result, %{id: id, result: result}}, acc ->
                 %{
-                  id: new_message_id,
-                  response_to_id: message.id,
-                  conversation_id: message.conversation_id,
-                  text: content
-                },
-                actor: %AshAi{}
-              )
-              |> Ash.create!()
+                  acc
+                  | tool_results:
+                      append_event(acc.tool_results, normalize_tool_result(id, result))
+                }
+
+              {:error, reason}, acc ->
+                %{acc | stream_error: reason}
+
+              {:done, _}, acc ->
+                acc
+
+              _, acc ->
+                acc
+            end)
+
+          stream_error_text = stream_error_text(final_state.stream_error)
+
+          final_text =
+            cond do
+              stream_error_text && String.trim(final_state.text || "") != "" ->
+                final_state.text <> "\n\n" <> stream_error_text
+
+              stream_error_text ->
+                stream_error_text
+
+              String.trim(final_state.text || "") == "" &&
+                  (final_state.tool_calls != [] || final_state.tool_results != []) ->
+                "Completed tool call."
+
+              true ->
+                final_state.text
             end
 
-            %{acc | text: acc.text <> (content || "")}
+          if final_state.stream_error ||
+               final_state.tool_calls != [] ||
+               final_state.tool_results != [] ||
+               final_text != "" do
+            upsert_final_response!(
+              message,
+              final_text,
+              final_state.tool_calls,
+              final_state.tool_results,
+              "openrouter",
+              nil,
+              new_message_id
+            )
+          end
 
-          {:tool_call, tool_call}, acc ->
-            %{acc | tool_calls: append_event(acc.tool_calls, normalize_tool_call(tool_call))}
-
-          {:tool_result, %{id: id, result: result}}, acc ->
-            %{
-              acc
-              | tool_results: append_event(acc.tool_results, normalize_tool_result(id, result))
-            }
-
-          {:error, reason}, acc ->
-            %{acc | stream_error: reason}
-
-          {:done, _}, acc ->
-            acc
-
-          _, acc ->
-            acc
-        end)
-
-      stream_error_text = stream_error_text(final_state.stream_error)
-
-      final_text =
-        cond do
-          stream_error_text && String.trim(final_state.text || "") != "" ->
-            final_state.text <> "\n\n" <> stream_error_text
-
-          stream_error_text ->
-            stream_error_text
-
-          String.trim(final_state.text || "") == "" &&
-              (final_state.tool_calls != [] || final_state.tool_results != []) ->
-            "Completed tool call."
-
-          true ->
-            final_state.text
-        end
-
-      if final_state.stream_error ||
-           final_state.tool_calls != [] ||
-           final_state.tool_results != [] ||
-           final_text != "" do
-        Vmemo.Chat.Message
-        |> Ash.Changeset.for_create(
-          :upsert_response,
-          %{
-            id: new_message_id,
-            response_to_id: message.id,
-            conversation_id: message.conversation_id,
-            complete: true,
-            tool_calls: final_state.tool_calls,
-            tool_results: final_state.tool_results,
-            text: final_text
-          },
-          actor: %AshAi{}
-        )
-        |> Ash.create!()
+          changeset
       end
-
-      changeset
     end)
   end
 
@@ -134,6 +130,56 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
       %{source: :user, text: text} ->
         user(text || "")
     end)
+  end
+
+  defp conversation_messages(conversation, message, context) do
+    query =
+      Vmemo.Chat.Message
+      |> Ash.Query.filter(conversation_id == ^message.conversation_id)
+      |> Ash.Query.filter(id != ^message.id)
+      |> Ash.Query.select([:text, :source, :tool_calls, :tool_results, :inserted_at])
+      |> Ash.Query.sort(inserted_at: :asc)
+
+    query =
+      if is_struct(conversation.context_reset_at, DateTime) do
+        Ash.Query.filter(query, inserted_at > ^conversation.context_reset_at)
+      else
+        query
+      end
+
+    query
+    |> Ash.read!(scope: context)
+    |> Enum.concat([%{source: :user, text: message.text}])
+  end
+
+  defp build_prompt_messages(conversation, actor, messages) do
+    language = actor_language(actor)
+    convo_type = conversation.kind || "global"
+    image_id = conversation.image_id
+    context_summary = conversation.context_summary
+
+    [
+      system("""
+      You are a helpful chat bot.
+      Your job is to use the tools at your disposal to assist the user.
+      When you provide image URLs, always render them using Markdown image syntax: ![alt](url).
+      Do not use normal Markdown links for images.
+      Default response language: #{language}.
+      Conversation type: #{convo_type}.
+      Initial image id: #{image_id || "none"}.
+      #{if is_binary(context_summary) and String.trim(context_summary) != "", do: "Context summary: " <> context_summary, else: ""}
+      #{if convo_type == "image_scoped", do: AiRouter.tool_hint(), else: ""}
+      """)
+    ] ++ message_chain(messages)
+  end
+
+  defp actor_language(nil), do: "en"
+
+  defp actor_language(actor) do
+    case Account.get_user_profile_by_user_id(actor.id) do
+      %{language: language} when is_binary(language) and language != "" -> language
+      _ -> "en"
+    end
   end
 
   defp append_event(items, value) when is_list(items), do: items ++ [value]
@@ -181,5 +227,33 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
 
   defp stream_error_text(_reason) do
     "I hit an error while generating this response. Please try again."
+  end
+
+  defp upsert_final_response!(
+         message,
+         final_text,
+         tool_calls,
+         tool_results,
+         provider,
+         tool_name,
+         message_id \\ nil
+       ) do
+    Vmemo.Chat.Message
+    |> Ash.Changeset.for_create(
+      :upsert_response,
+      %{
+        id: message_id || Ash.UUIDv7.generate(),
+        response_to_id: message.id,
+        conversation_id: message.conversation_id,
+        complete: true,
+        tool_calls: tool_calls,
+        tool_results: tool_results,
+        provider: provider,
+        tool_name: tool_name,
+        text: final_text
+      },
+      actor: %AshAi{}
+    )
+    |> Ash.create!()
   end
 end
