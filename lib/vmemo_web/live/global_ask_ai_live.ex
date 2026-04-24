@@ -416,14 +416,13 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
     with true <- is_binary(image_id),
          %{} = conversation <- conversation,
-         false <- conversation_has_image_context?(conversation, image_id, user),
+         false <- latest_context_matches_image?(conversation, image_id, user),
          {:ok, image} <- Ash.get(Image, image_id, actor: user),
          {:ok, seeded} <-
            Chat.create_system_message(
              %{
                conversation_id: conversation.id,
-               text:
-                 "Image context loaded.\nImage id: #{image.id}\nUploaded at (UTC): #{format_utc_datetime(image.inserted_at)}",
+               text: image_context_message(user),
                attachments: [
                  %{
                    id: image.id,
@@ -442,24 +441,43 @@ defmodule VmemoWeb.GlobalAskAiLive do
     end
   end
 
-  defp conversation_has_image_context?(conversation, image_id, user) do
+  defp latest_context_matches_image?(conversation, image_id, user) do
+    latest_context_image_id(conversation, user) == image_id
+  end
+
+  defp latest_context_image_id(conversation, user) do
     Vmemo.Chat.Message
     |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
-    |> Ash.Query.select([:tool_name, :attachments])
+    |> Ash.Query.select([:tool_name, :attachments, :inserted_at])
+    |> Ash.Query.sort(inserted_at: :desc)
     |> Ash.read!(actor: user)
-    |> Enum.any?(fn message ->
-      tool_name = Map.get(message, :tool_name)
-      attachments = Map.get(message, :attachments) || []
-
-      tool_name == "image_context" &&
-        Enum.any?(attachments, fn attachment ->
-          to_string(Map.get(attachment, :id) || Map.get(attachment, "id")) == image_id
+    |> Enum.find_value(fn message ->
+      if Map.get(message, :tool_name) == "image_context" do
+        message
+        |> Map.get(:attachments, [])
+        |> List.wrap()
+        |> Enum.find_value(fn attachment ->
+          case Map.get(attachment, :id) || Map.get(attachment, "id") do
+            id when is_binary(id) -> id
+            id when is_nil(id) -> nil
+            id -> to_string(id)
+          end
         end)
+      else
+        nil
+      end
     end)
   end
 
-  defp format_utc_datetime(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
-  defp format_utc_datetime(_), do: "unknown"
+  defp image_context_message(user) do
+    Gettext.with_locale(VmemoWeb.Gettext, locale_from_user(user), fn ->
+      Gettext.gettext(VmemoWeb.Gettext, "You can ask me questions about this image.")
+    end)
+  end
+
+  defp locale_from_user(%{language: "zh"}), do: "zh"
+  defp locale_from_user(%{language: "ja"}), do: "ja"
+  defp locale_from_user(_), do: "en"
 
   defp merge_message(existing_messages, message) do
     existing_message =

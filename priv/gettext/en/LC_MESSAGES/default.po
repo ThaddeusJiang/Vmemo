@@ -1,0 +1,6 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+
+msgid "You can ask me questions about this image."
+msgstr "You can ask me questions about this image."
