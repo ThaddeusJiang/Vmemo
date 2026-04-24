@@ -5,7 +5,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
   alias Vmemo.Chat
   alias Vmemo.Chat.Commands
   alias Vmemo.Memo.Image
-  alias VmemoWeb.LiveComponents.ChatPanel
+  alias VmemoWeb.Components.ChatPanel
   alias VmemoWeb.LiveComponents.ConversationTitleEditor
 
   @impl true

@@ -1,7 +1,7 @@
 defmodule VmemoWeb.ChatLive do
   use VmemoWeb, :live_view
   alias Vmemo.Chat.Commands
-  alias VmemoWeb.LiveComponents.ChatPanel
+  alias VmemoWeb.Components.ChatPanel
   # on_mount {VmemoWeb.LiveUserAuth, :live_user_required}
   def render(assigns) do
     ~H"""

@@ -1,4 +1,4 @@
-defmodule VmemoWeb.LiveComponents.ChatPanel do
+defmodule VmemoWeb.Components.ChatPanel do
   use VmemoWeb, :html
 
   attr :messages, :list, required: true
