@@ -15,20 +15,12 @@ defmodule VmemoWeb.Components.ChatPanel do
     ~H"""
     <div class={["flex h-full min-h-0 flex-col", @panel_class]}>
       <div class="flex-1 min-h-0 overflow-hidden bg-base-100/55">
-        <div
-          id={@container_id}
-          phx-update="stream"
-          class="flex h-full flex-col-reverse overflow-y-auto px-4 py-4"
-        >
-          <%= if @messages == [] do %>
-            <div class="m-auto flex max-w-sm flex-col items-center justify-center text-center text-base-content/75">
-              <div class="mb-6 rounded-full border border-base-300 p-4 text-base-content/45">
-                <.icon name="hero-chat-bubble-left-right" class="size-7" />
-              </div>
-              <h2 class="text-3xl font-semibold tracking-tight text-base-content">{@empty_title}</h2>
-              <p class="mt-3 text-sm leading-7">{@empty_subtitle}</p>
-            </div>
-          <% else %>
+        <div class="relative h-full">
+          <div
+            id={@container_id}
+            phx-update="stream"
+            class="flex h-full flex-col-reverse overflow-y-auto px-4 py-4"
+          >
             <%= for {id, message} <- @messages do %>
               <% images = extract_photos_from_message(message) %>
               <% is_thinking = thinking?(message) %>
@@ -66,7 +58,20 @@ defmodule VmemoWeb.Components.ChatPanel do
                 </div>
               </div>
             <% end %>
-          <% end %>
+          </div>
+
+          <div
+            :if={stream_empty?(@messages)}
+            class="pointer-events-none absolute inset-0 flex items-center justify-center px-4 py-4"
+          >
+            <div class="m-auto flex max-w-sm flex-col items-center justify-center text-center text-base-content/75">
+              <div class="mb-6 rounded-full border border-base-300 p-4 text-base-content/45">
+                <.icon name="hero-chat-bubble-left-right" class="size-7" />
+              </div>
+              <h2 class="text-3xl font-semibold tracking-tight text-base-content">{@empty_title}</h2>
+              <p class="mt-3 text-sm leading-7">{@empty_subtitle}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -94,6 +99,10 @@ defmodule VmemoWeb.Components.ChatPanel do
     </div>
     """
   end
+
+  defp stream_empty?(%Phoenix.LiveView.LiveStream{inserts: inserts}), do: inserts == []
+  defp stream_empty?(messages) when is_list(messages), do: messages == []
+  defp stream_empty?(_), do: false
 
   defp render_thinking(assigns, true) do
     ~H"""

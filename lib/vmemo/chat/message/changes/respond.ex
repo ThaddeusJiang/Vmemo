@@ -7,6 +7,9 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
 
   alias Vmemo.Account
   alias Vmemo.Chat.AiRouter
+  alias Vmemo.Chat.Message
+
+  @initial_stream_state %{text: "", tool_calls: [], tool_results: [], stream_error: nil}
 
   @impl true
   def change(changeset, _opts, context) do
@@ -29,7 +32,13 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
              scoped_image_id
            ) do
         {:ok, result} ->
-          upsert_final_response!(message, result.text, [], [], result.provider, result.tool_name)
+          upsert_final_response!(message, %{
+            text: result.text,
+            tool_calls: [],
+            tool_results: [],
+            provider: result.provider,
+            tool_name: result.tool_name
+          })
 
           changeset
 
@@ -40,86 +49,9 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
           new_message_id = Ash.UUIDv7.generate()
 
           final_state =
-            prompt_messages
-            |> AshAi.ToolLoop.stream(
-              otp_app: :vmemo,
-              tools: [:image_search],
-              model: resolve_model(),
-              actor: context.actor,
-              tenant: context.tenant,
-              context: Map.new(Ash.Context.to_opts(context))
-            )
-            |> Enum.reduce(%{text: "", tool_calls: [], tool_results: [], stream_error: nil}, fn
-              {:content, content}, acc ->
-                if content not in [nil, ""] do
-                  Vmemo.Chat.Message
-                  |> Ash.Changeset.for_create(
-                    :upsert_response,
-                    %{
-                      id: new_message_id,
-                      response_to_id: message.id,
-                      conversation_id: message.conversation_id,
-                      text: content
-                    },
-                    actor: %AshAi{}
-                  )
-                  |> Ash.create!()
-                end
+            stream_openrouter_response(prompt_messages, message, context, new_message_id)
 
-                %{acc | text: acc.text <> (content || "")}
-
-              {:tool_call, tool_call}, acc ->
-                %{acc | tool_calls: append_event(acc.tool_calls, normalize_tool_call(tool_call))}
-
-              {:tool_result, %{id: id, result: result}}, acc ->
-                %{
-                  acc
-                  | tool_results:
-                      append_event(acc.tool_results, normalize_tool_result(id, result))
-                }
-
-              {:error, reason}, acc ->
-                %{acc | stream_error: reason}
-
-              {:done, _}, acc ->
-                acc
-
-              _, acc ->
-                acc
-            end)
-
-          stream_error_text = stream_error_text(final_state.stream_error)
-
-          final_text =
-            cond do
-              stream_error_text && String.trim(final_state.text || "") != "" ->
-                final_state.text <> "\n\n" <> stream_error_text
-
-              stream_error_text ->
-                stream_error_text
-
-              String.trim(final_state.text || "") == "" &&
-                  (final_state.tool_calls != [] || final_state.tool_results != []) ->
-                "Completed tool call."
-
-              true ->
-                final_state.text
-            end
-
-          if final_state.stream_error ||
-               final_state.tool_calls != [] ||
-               final_state.tool_results != [] ||
-               final_text != "" do
-            upsert_final_response!(
-              message,
-              final_text,
-              final_state.tool_calls,
-              final_state.tool_results,
-              "openrouter",
-              nil,
-              new_message_id
-            )
-          end
+          maybe_persist_final_state(message, final_state, new_message_id)
 
           changeset
       end
@@ -232,6 +164,97 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
   defp append_event(items, value) when is_list(items), do: items ++ [value]
   defp append_event(_items, value), do: [value]
 
+  defp stream_openrouter_response(prompt_messages, message, context, stream_message_id) do
+    prompt_messages
+    |> AshAi.ToolLoop.stream(
+      otp_app: :vmemo,
+      tools: [:image_search],
+      model: resolve_model(),
+      actor: context.actor,
+      tenant: context.tenant,
+      context: Map.new(Ash.Context.to_opts(context))
+    )
+    |> Enum.reduce(@initial_stream_state, fn event, acc ->
+      reduce_stream_event(event, acc, message, stream_message_id)
+    end)
+  end
+
+  defp reduce_stream_event({:content, content}, acc, message, stream_message_id) do
+    if content not in [nil, ""] do
+      Message
+      |> Ash.Changeset.for_create(
+        :upsert_response,
+        %{
+          id: stream_message_id,
+          response_to_id: message.id,
+          conversation_id: message.conversation_id,
+          text: content
+        },
+        actor: %AshAi{}
+      )
+      |> Ash.create!()
+    end
+
+    %{acc | text: acc.text <> (content || "")}
+  end
+
+  defp reduce_stream_event({:tool_call, tool_call}, acc, _message, _stream_message_id) do
+    %{acc | tool_calls: append_event(acc.tool_calls, normalize_tool_call(tool_call))}
+  end
+
+  defp reduce_stream_event(
+         {:tool_result, %{id: id, result: result}},
+         acc,
+         _message,
+         _stream_message_id
+       ) do
+    %{acc | tool_results: append_event(acc.tool_results, normalize_tool_result(id, result))}
+  end
+
+  defp reduce_stream_event({:error, reason}, acc, _message, _stream_message_id) do
+    %{acc | stream_error: reason}
+  end
+
+  defp reduce_stream_event({:done, _}, acc, _message, _stream_message_id), do: acc
+  defp reduce_stream_event(_, acc, _message, _stream_message_id), do: acc
+
+  defp maybe_persist_final_state(message, final_state, message_id) do
+    final_text = final_text_for_state(final_state)
+
+    if final_state.stream_error ||
+         final_state.tool_calls != [] ||
+         final_state.tool_results != [] ||
+         final_text != "" do
+      upsert_final_response!(message, %{
+        id: message_id,
+        text: final_text,
+        tool_calls: final_state.tool_calls,
+        tool_results: final_state.tool_results,
+        provider: "openrouter",
+        tool_name: nil
+      })
+    end
+  end
+
+  defp final_text_for_state(final_state) do
+    stream_error_text = stream_error_text(final_state.stream_error)
+
+    cond do
+      stream_error_text && String.trim(final_state.text || "") != "" ->
+        final_state.text <> "\n\n" <> stream_error_text
+
+      stream_error_text ->
+        stream_error_text
+
+      String.trim(final_state.text || "") == "" &&
+          (final_state.tool_calls != [] || final_state.tool_results != []) ->
+        "Completed tool call."
+
+      true ->
+        final_state.text
+    end
+  end
+
   defp normalize_tool_call(%{} = tool_call) do
     tool_call
     |> Map.new()
@@ -276,29 +299,23 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
     "I hit an error while generating this response. Please try again."
   end
 
-  defp upsert_final_response!(
-         message,
-         final_text,
-         tool_calls,
-         tool_results,
-         provider,
-         tool_name,
-         message_id \\ nil
-       ) do
-    Vmemo.Chat.Message
+  defp upsert_final_response!(message, attrs) when is_map(attrs) do
+    payload = %{
+      id: Map.get(attrs, :id, Ash.UUIDv7.generate()),
+      response_to_id: message.id,
+      conversation_id: message.conversation_id,
+      complete: true,
+      tool_calls: Map.get(attrs, :tool_calls, []),
+      tool_results: Map.get(attrs, :tool_results, []),
+      provider: Map.get(attrs, :provider),
+      tool_name: Map.get(attrs, :tool_name),
+      text: Map.get(attrs, :text, "")
+    }
+
+    Message
     |> Ash.Changeset.for_create(
       :upsert_response,
-      %{
-        id: message_id || Ash.UUIDv7.generate(),
-        response_to_id: message.id,
-        conversation_id: message.conversation_id,
-        complete: true,
-        tool_calls: tool_calls,
-        tool_results: tool_results,
-        provider: provider,
-        tool_name: tool_name,
-        text: final_text
-      },
+      payload,
       actor: %AshAi{}
     )
     |> Ash.create!()

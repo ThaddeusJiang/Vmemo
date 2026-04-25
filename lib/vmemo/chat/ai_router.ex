@@ -3,10 +3,16 @@ defmodule Vmemo.Chat.AiRouter do
 
   alias SmallSdk.Moondream
   alias Vmemo.Ai.AshAiVision
+  alias Vmemo.Ai.ImageData
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
 
   @supported_tools ~w(query caption point detect segment)
+
+  def route_image_tool(conversation, text, actor)
+      when is_map(conversation) and is_binary(text) do
+    route_image_tool(conversation, text, actor, nil)
+  end
 
   def route_image_tool(conversation, text, actor, scoped_image_id)
       when is_map(conversation) and is_binary(text) do
@@ -78,8 +84,8 @@ defmodule Vmemo.Chat.AiRouter do
     end
   end
 
-  # In image-scoped conversations, regular text should default to image query,
-  # unless the user is explicitly asking to search for other images.
+  # Regular text in a chat with active image context defaults to /query.
+  # We only fall back to general chat when the user intent is clearly image search across library.
   defp should_fallback_to_general_chat?(text) when is_binary(text) do
     normalized = text |> String.trim() |> String.downcase()
 
@@ -97,7 +103,7 @@ defmodule Vmemo.Chat.AiRouter do
 
   defp run_tool(image_id, tool, prompt, actor) do
     with {:ok, image} <- Ash.get(Image, image_id, actor: actor),
-         {:ok, {image_base64, mime_type}} <- read_image_as_base64(image.url),
+         {:ok, {image_base64, mime_type}} <- ImageData.fetch_base64_from_url(image.url),
          {:ok, result} <- call_tool(tool, image_base64, mime_type, prompt) do
       {:ok, %{provider: provider_for(tool), tool_name: tool, text: normalize_result(result)}}
     else
@@ -154,47 +160,6 @@ defmodule Vmemo.Chat.AiRouter do
   end
 
   defp normalize_result(result), do: to_string(result)
-
-  defp read_image_as_base64(url) when is_binary(url) do
-    with {:ok, image_url} <- normalize_image_url(url),
-         {:ok, response} <- Req.get(image_url),
-         true <- response.status in 200..299,
-         binary when is_binary(binary) <- response.body do
-      mime_type = detect_mime_type(binary)
-      {:ok, {Base.encode64(binary), mime_type}}
-    else
-      false ->
-        {:error, "Failed to read image: unexpected response status"}
-
-      {:error, reason} ->
-        {:error, reason}
-
-      _ ->
-        {:error, "Failed to read image"}
-    end
-  end
-
-  defp normalize_image_url(url) when is_binary(url) do
-    parsed = URI.parse(url)
-
-    if is_binary(parsed.scheme) do
-      {:ok, url}
-    else
-      base_url = VmemoWeb.Endpoint.url()
-      {:ok, base_url |> Kernel.<>("/") |> URI.merge(url) |> to_string()}
-    end
-  end
-
-  defp detect_mime_type(binary) when is_binary(binary) do
-    case binary do
-      <<0xFF, 0xD8, _::binary>> -> "image/jpeg"
-      <<0x89, 0x50, 0x4E, 0x47, _::binary>> -> "image/png"
-      <<"GIF87a", _::binary>> -> "image/gif"
-      <<"GIF89a", _::binary>> -> "image/gif"
-      <<"RIFF", _::binary-size(4), "WEBP", _::binary>> -> "image/webp"
-      _ -> "image/jpeg"
-    end
-  end
 
   defp format_reason(reason) when is_binary(reason), do: reason
   defp format_reason(reason), do: inspect(reason)

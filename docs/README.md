@@ -6,7 +6,6 @@ Top-level modules:
 - `guides/docker`
 - `decisions`
 - `features`
-- `plan`
 - `guides`
 - `guides/test-manual`
 
@@ -30,11 +29,6 @@ Top-level modules:
 - [REST API](features/public-rest-api.md)
 - [API Token](features/api-tokens.md)
 - [MCP Server](features/mcp-server.md)
-
-## plan
-
-- [Plan Index](plan/README.md)
-- [Image Chat with Ash AI Plan (2026-04-23)](plan/2026-04-23-image-chat-with-ash-ai.md)
 
 ## guides
 

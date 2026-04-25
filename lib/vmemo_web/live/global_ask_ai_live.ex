@@ -1,5 +1,6 @@
 defmodule VmemoWeb.GlobalAskAiLive do
   use VmemoWeb, :live_view
+  require Ash.Query
 
   alias Vmemo.Account
   alias Vmemo.Chat
@@ -17,16 +18,13 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
     if connected?(socket) do
       VmemoWeb.Endpoint.subscribe("chat:conversations:#{user.id}")
-
-      if conversation do
-        VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
-      end
     end
 
     socket =
       socket
       |> assign(:current_user, user)
       |> assign(:hide_global_ask_ai, true)
+      |> assign(:subscribed_conversation_id, nil)
       |> assign(:seed_image_id, seed_image_id)
       |> assign(:drawer_toggle_id, "global-ask-ai-toggle-#{socket.id}")
       |> assign(:drawer_form_id, "global-ask-ai-form-#{socket.id}")
@@ -36,6 +34,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
       |> stream_configure(:messages, dom_id: &"drawer-message-#{&1.id}")
       |> stream(:messages, load_messages(conversation, user))
       |> assign_message_form()
+      |> maybe_subscribe_to_conversation(conversation)
 
     {:ok, socket, layout: false}
   end
@@ -352,19 +351,35 @@ defmodule VmemoWeb.GlobalAskAiLive do
   defp maybe_subscribe_to_conversation(socket, nil), do: socket
 
   defp maybe_subscribe_to_conversation(socket, conversation) do
-    if connected?(socket) do
-      VmemoWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
-    end
+    current_topic_id = socket.assigns[:subscribed_conversation_id]
+    next_topic_id = conversation.id
 
-    socket
+    cond do
+      !connected?(socket) ->
+        socket
+
+      current_topic_id == next_topic_id ->
+        socket
+
+      is_binary(current_topic_id) ->
+        VmemoWeb.Endpoint.unsubscribe("chat:messages:#{current_topic_id}")
+        VmemoWeb.Endpoint.subscribe("chat:messages:#{next_topic_id}")
+        assign(socket, :subscribed_conversation_id, next_topic_id)
+
+      true ->
+        VmemoWeb.Endpoint.subscribe("chat:messages:#{next_topic_id}")
+        assign(socket, :subscribed_conversation_id, next_topic_id)
+    end
   end
 
   defp maybe_unsubscribe_from_conversation(socket) do
-    if connected?(socket) && socket.assigns.conversation do
-      VmemoWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
+    topic_id = socket.assigns[:subscribed_conversation_id]
+
+    if connected?(socket) && is_binary(topic_id) do
+      VmemoWeb.Endpoint.unsubscribe("chat:messages:#{topic_id}")
     end
 
-    socket
+    assign(socket, :subscribed_conversation_id, nil)
   end
 
   defp switch_conversation(socket, conversation, opts) do
@@ -537,12 +552,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
     conversation = socket.assigns.conversation
     now = DateTime.utc_now()
 
-    messages =
-      Vmemo.Chat.Message
-      |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
-      |> Ash.Query.select([:source, :text])
-      |> Ash.read!(actor: user)
-      |> Enum.reverse()
+    messages = compactable_messages(conversation, user)
 
     summary = Commands.compact_summary(messages)
 
@@ -569,5 +579,24 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
   defp conversation_title(conversation) do
     ConversationTitleEditor.chat_title(conversation.title)
+  end
+
+  defp compactable_messages(conversation, user) do
+    query =
+      Vmemo.Chat.Message
+      |> Ash.Query.for_read(:for_conversation, %{conversation_id: conversation.id})
+      |> Ash.Query.select([:source, :text, :inserted_at])
+
+    query =
+      if is_struct(conversation.context_reset_at, DateTime) do
+        reset_at = conversation.context_reset_at
+        Ash.Query.filter(query, inserted_at > ^reset_at)
+      else
+        query
+      end
+
+    query
+    |> Ash.read!(actor: user)
+    |> Enum.reverse()
   end
 end
