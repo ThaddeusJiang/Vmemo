@@ -54,8 +54,30 @@ defmodule Vmemo.Chat.Message do
         public? false
       end
 
+      argument :image_id, :uuid do
+        public? false
+      end
+
       change Vmemo.Chat.Message.Changes.CreateConversationIfNotProvided
+      change Vmemo.Chat.Message.Changes.TouchConversation
       change run_oban_trigger(:respond)
+    end
+
+    create :create_system do
+      accept [:text, :attachments, :provider, :tool_name]
+      argument :conversation_id, :uuid, allow_nil?: false
+
+      change fn changeset, _context ->
+        Ash.Changeset.force_change_attribute(
+          changeset,
+          :conversation_id,
+          changeset.arguments.conversation_id
+        )
+      end
+
+      change set_attribute(:source, :agent)
+      change set_attribute(:complete, true)
+      change Vmemo.Chat.Message.Changes.TouchConversation
     end
 
     update :respond do
@@ -67,7 +89,7 @@ defmodule Vmemo.Chat.Message do
 
     create :upsert_response do
       upsert? true
-      accept [:id, :response_to_id, :conversation_id]
+      accept [:id, :response_to_id, :conversation_id, :provider, :tool_name]
       argument :complete, :boolean, default: false
       argument :text, :string, allow_nil?: false, constraints: [trim?: false, allow_empty?: true]
       argument :tool_calls, {:array, :map}
@@ -132,9 +154,11 @@ defmodule Vmemo.Chat.Message do
       change set_attribute(:source, :agent)
       change set_attribute(:tool_results, arg(:tool_results))
       change set_attribute(:tool_calls, arg(:tool_calls))
+      change set_attribute(:provider, arg(:provider))
+      change set_attribute(:tool_name, arg(:tool_name))
 
       # on update, only set complete to its new value
-      upsert_fields [:complete]
+      upsert_fields [:complete, :provider, :tool_name]
     end
   end
 
@@ -149,6 +173,9 @@ defmodule Vmemo.Chat.Message do
           id: message.id,
           source: message.source,
           complete: message.complete,
+          attachments: message.attachments,
+          provider: message.provider,
+          tool_name: message.tool_name,
           tool_calls: message.tool_calls,
           tool_results: message.tool_results
         }
@@ -162,6 +189,9 @@ defmodule Vmemo.Chat.Message do
           id: message.id,
           source: message.source,
           complete: message.complete,
+          attachments: message.attachments,
+          provider: message.provider,
+          tool_name: message.tool_name,
           tool_calls: message.tool_calls,
           tool_results: message.tool_results
         }
@@ -178,6 +208,10 @@ defmodule Vmemo.Chat.Message do
       public? true
       allow_nil? false
     end
+
+    attribute :attachments, {:array, :map}
+    attribute :provider, :string
+    attribute :tool_name, :string
 
     attribute :tool_calls, {:array, :map}
     attribute :tool_results, {:array, :map}

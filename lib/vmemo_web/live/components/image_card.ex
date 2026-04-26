@@ -18,7 +18,7 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
     ~H"""
     <div class="relative">
       <%= if @resolved_navigate do %>
-        <.link navigate={@resolved_navigate} class="link link-hover block">
+        <.link href={@resolved_navigate} class="link link-hover block">
           <%= if @has_media_slot do %>
             {render_slot(@media)}
           <% else %>

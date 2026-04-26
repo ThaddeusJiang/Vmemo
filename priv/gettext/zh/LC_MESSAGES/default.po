@@ -1,0 +1,6 @@
+msgid ""
+msgstr ""
+"Language: zh\n"
+
+msgid "You can ask me questions about this image."
+msgstr "你可以问我关于这张图片的问题。"

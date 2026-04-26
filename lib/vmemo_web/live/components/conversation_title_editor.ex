@@ -29,7 +29,7 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
             phx-keydown="handle-keydown"
             phx-target={@myself}
             name="title"
-            class="input input-bordered flex-1"
+            class="input input-bordered flex-1 h-11 min-h-11 px-4 text-base"
           />
           <button
             type="submit"
@@ -53,9 +53,12 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
         :if={!@editing}
         phx-click="start-edit"
         phx-target={@myself}
-        class="cursor-pointer hover:opacity-70 flex-1 text-base"
+        class={[
+          "cursor-pointer hover:opacity-70 flex-1 text-base truncate",
+          assigns[:display_class] || ""
+        ]}
       >
-        {build_title_string(@conversation.title)}
+        {chat_title(@conversation.title)}
       </div>
     </div>
     """
@@ -109,11 +112,9 @@ defmodule VmemoWeb.LiveComponents.ConversationTitleEditor do
     end
   end
 
-  def build_title_string(title) do
-    cond do
-      title == nil -> "Untitled conversation"
-      is_binary(title) && String.length(title) > 25 -> String.slice(title, 0, 25) <> "..."
-      is_binary(title) && String.length(title) <= 25 -> title
-    end
-  end
+  def chat_title(nil), do: "Ash AI"
+
+  def chat_title(title) when is_binary(title), do: title
+
+  def chat_title(_), do: "Ash AI"
 end

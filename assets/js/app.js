@@ -23,6 +23,7 @@ import { Toast } from "./hooks/toast"
 import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
 import { DirectoryUpload } from "./hooks/directory_upload"
+import { DrawerResize } from "./hooks/drawer_resize"
 
 const FormatDatetime = {
   format() {
@@ -66,6 +67,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     MoondreamOverlay,
     DirectoryUpload,
     FormatDatetime,
+    DrawerResize,
   },
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },

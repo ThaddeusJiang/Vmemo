@@ -36,6 +36,43 @@ defmodule Vmemo.Chat.Conversation do
     create :create do
       accept [:title]
       change relate_actor(:user)
+      change set_attribute(:kind, "global")
+    end
+
+    create :create_image_scoped do
+      accept [:title, :image_id]
+      change relate_actor(:user)
+      change set_attribute(:kind, "image_scoped")
+
+      change fn changeset, context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, conversation ->
+          case Ash.get(Vmemo.Memo.Image, conversation.image_id, scope: context) do
+            {:ok, image} ->
+              _ =
+                Vmemo.Chat.create_system_message(
+                  %{
+                    conversation_id: conversation.id,
+                    text: "Image context loaded.",
+                    attachments: [
+                      %{
+                        id: image.id,
+                        url: image.url,
+                        note: image.note || ""
+                      }
+                    ],
+                    provider: "system",
+                    tool_name: "image_context"
+                  },
+                  scope: context
+                )
+
+              {:ok, conversation}
+
+            _ ->
+              {:ok, conversation}
+          end
+        end)
+      end
     end
 
     update :update do
@@ -58,8 +95,47 @@ defmodule Vmemo.Chat.Conversation do
       end
     end
 
+    update :touch_last_message_at do
+      accept []
+      argument :at, :utc_datetime_usec, allow_nil?: false
+      require_atomic? false
+      change set_attribute(:last_message_at, arg(:at))
+    end
+
+    update :clear_context do
+      accept []
+      argument :at, :utc_datetime_usec, allow_nil?: false
+      require_atomic? false
+
+      change set_attribute(:context_reset_at, arg(:at))
+      change set_attribute(:context_summary, nil)
+    end
+
+    update :compact_context do
+      accept []
+      argument :at, :utc_datetime_usec, allow_nil?: false
+      argument :summary, :string, allow_nil?: false
+      require_atomic? false
+
+      change set_attribute(:context_reset_at, arg(:at))
+      change set_attribute(:context_summary, arg(:summary))
+    end
+
     read :my_conversations do
       filter expr(user_id == ^actor(:id) and is_nil(archived_at))
+
+      prepare build(default_sort: [inserted_at: :desc])
+    end
+
+    read :for_image do
+      argument :image_id, :uuid, allow_nil?: false
+
+      filter expr(
+               user_id == ^actor(:id) and
+                 kind == "image_scoped" and
+                 image_id == ^arg(:image_id) and
+                 is_nil(archived_at)
+             )
 
       prepare build(default_sort: [inserted_at: :desc])
     end
@@ -78,6 +154,11 @@ defmodule Vmemo.Chat.Conversation do
     end
   end
 
+  validations do
+    validate one_of(:kind, ["image_scoped", "global"]),
+      message: "kind must be one of: image_scoped, global"
+  end
+
   attributes do
     uuid_v7_primary_key :id
 
@@ -86,6 +167,28 @@ defmodule Vmemo.Chat.Conversation do
     end
 
     attribute :archived_at, :utc_datetime do
+      public? true
+    end
+
+    attribute :kind, :string do
+      public? true
+      allow_nil? false
+      default "global"
+    end
+
+    attribute :image_id, :uuid do
+      public? true
+    end
+
+    attribute :last_message_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :context_reset_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :context_summary, :string do
       public? true
     end
 

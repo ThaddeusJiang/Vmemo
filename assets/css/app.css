@@ -162,6 +162,11 @@
     .phx-click-loading.btn-icon {
         @apply animate-pulse text-primary;
     }
+
+    body.global-ask-ai-resizing {
+        cursor: col-resize;
+        user-select: none;
+    }
 }
 
 .page-shell {
@@ -170,6 +175,18 @@
     margin-inline: auto;
     padding-inline: clamp(1rem, 2vw, 2rem);
     padding-block: clamp(1rem, 2.5vw, 2rem);
+}
+
+.global-ask-ai-drawer {
+    width: 100%;
+    max-width: 40rem;
+}
+
+@media (min-width: 1024px) {
+    .global-ask-ai-drawer {
+        width: var(--global-ask-ai-drawer-width, 40rem);
+        max-width: 100vw;
+    }
 }
 
 .content-shell {
