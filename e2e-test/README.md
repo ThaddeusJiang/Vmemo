@@ -122,6 +122,17 @@ Update Playwright visual baselines:
 bun run e2e:update-snapshots
 ```
 
+## FAQ
+
+### Why do local e2e tests fail unexpectedly?
+
+The most likely cause is stale Docker volume data from previous runs.
+Before running local e2e tests, clear e2e volumes first:
+
+```bash
+cd e2e-test && docker compose down -v
+```
+
 ## Test Files
 
 - `tests/*-page.spec.ts`: page-level e2e tests with built-in visual assertions

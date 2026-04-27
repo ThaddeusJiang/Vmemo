@@ -1,41 +1,36 @@
 services:
-  postgres-test:
-    profiles:
-      - test
+  postgres-e2e:
     image: postgres:18
-    hostname: postgres-test
+    hostname: postgres-e2e
     restart: on-failure
     ports:
-      - "10003:5432"
+      - "10001:5432"
     volumes:
-      - pg-test-data:/var/lib/postgresql
+      - pg-e2e-data:/var/lib/postgresql
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: vmemo_test
+      POSTGRES_DB: vmemo
 
-  typesense-test:
-    profiles:
-      - test
+  typesense-e2e:
     image: typesense/typesense:30.1
-    hostname: typesense-test
+    hostname: typesense-e2e
     restart: on-failure
-    ports:
-      - "10004:8108"
     volumes:
-      - ts-test-data:/data
+      - ts-e2e-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
 
-  vmemo:
+  vmemo-e2e:
     image: thaddeusjiang/vmemo:e2e
+    hostname: vmemo-e2e
     command: ["start"]
     restart: on-failure
     ports:
       - "4000:4000"
     environment:
-      DATABASE_URL: ${DATABASE_URL:-ecto://postgres:postgres@host.docker.internal:10003/vmemo_test}
-      TYPESENSE_URL: ${TYPESENSE_URL:-http://host.docker.internal:10004}
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz}
+      DATABASE_URL: ecto://postgres:postgres@postgres-e2e:5432/vmemo
+      TYPESENSE_URL: http://typesense-e2e:8108
+      TYPESENSE_API_KEY: xyz
       OPENROUTER_API_KEY: "fake-key"
       MOONDREAM_URL: ""
       MOONDREAM_API_KEY: "fake-key"
@@ -49,5 +44,5 @@ services:
       E2E_AUTO_SEED: "true"
 
 volumes:
-  pg-test-data:
-  ts-test-data:
+  pg-e2e-data:
+  ts-e2e-data:
