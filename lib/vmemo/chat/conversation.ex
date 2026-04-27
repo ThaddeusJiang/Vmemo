@@ -49,7 +49,9 @@ defmodule Vmemo.Chat.Conversation do
           case Ash.get(Vmemo.Memo.Image, conversation.image_id, scope: context) do
             {:ok, image} ->
               _ =
-                Vmemo.Chat.create_system_message(
+                Vmemo.Chat.Message
+                |> Ash.Changeset.for_create(
+                  :create_system,
                   %{
                     conversation_id: conversation.id,
                     text: "Image context loaded.",
@@ -65,6 +67,7 @@ defmodule Vmemo.Chat.Conversation do
                   },
                   scope: context
                 )
+                |> Ash.create(scope: context)
 
               {:ok, conversation}
 
