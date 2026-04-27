@@ -2,11 +2,11 @@ name: E2E Tests
 
 on:
   pull_request:
-    types: [labeled]
+    types: [ready_for_review]
   workflow_dispatch:
     inputs:
       update_snapshots:
-        description: Update Playwright visual snapshots
+        description: Update visual snapshots
         required: true
         type: boolean
         default: false
@@ -81,16 +81,23 @@ jobs:
 
       - name: Commit updated snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
-        uses: EndBug/add-and-commit@v9
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          add: "e2e-test/tests/**-snapshots"
-          default_author: github_actions
-          message: "chore(e2e): update Playwright snapshots"
-          push: true
+          commit_message: "chore(e2e): update visual snapshots"
+          file_pattern: "e2e-test/tests"
 
       - name: Run e2e tests
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.update_snapshots }}
         run: bun run e2e
+
+      - name: Upload Playwright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-playwright-report-${{ github.run_id }}
+          path: e2e-test/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Print app logs
         if: failure()

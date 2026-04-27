@@ -95,7 +95,7 @@ Run all e2e tests against the current target:
 bun run e2e
 ```
 
-Local default runs with visible browser UI (headed, recommended for human verification):
+Local default runs in headless mode:
 
 ```bash
 bun run e2e
@@ -189,7 +189,17 @@ CI runs the same specs against a prod-like target:
 - start the app with `docker compose -f e2e-test/docker-compose.yml up -d`
 - startup runs release migrations, and `e2e-seed` inserts e2e fixture data
 - run Playwright tests against `http://localhost:4000`
-- upload `test-results` and snapshot artifacts
+- upload Playwright HTML report artifact: `e2e-playwright-report-<run_id>`
+
+When a CI run fails, open **Actions > failed run > Artifacts**, download the report zip,
+extract it, then serve it locally:
+
+```bash
+bunx playwright show-report playwright-report
+```
+
+Do not rely on directly opening `index.html` from Finder, as Playwright report features
+require a local web server.
 
 ### Typesense Stability In CI
 
