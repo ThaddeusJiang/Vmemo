@@ -16,7 +16,7 @@ defmodule Vmemo.SearchEngine.TsNote do
     %__MODULE__{
       id: note["id"],
       text: note["text"],
-      image_ids: note["image_ids"] || note["image_ids"],
+      image_ids: note["image_ids"],
       inserted_at: note["inserted_at"],
       updated_at: note["updated_at"],
       belongs_to: note["belongs_to"]
