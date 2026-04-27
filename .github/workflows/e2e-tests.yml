@@ -53,7 +53,7 @@ jobs:
 
       - name: Start app with compose
         run: |
-          docker compose -f docker-compose.e2e.yml up -d
+          docker compose -f docker-compose.yml up -d
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -94,8 +94,8 @@ jobs:
 
       - name: Print app logs
         if: failure()
-        run: docker compose -f docker-compose.e2e.yml logs vmemo || true
+        run: docker compose -f docker-compose.yml logs vmemo-e2e e2e-seed || true
 
       - name: Stop app container
         if: always()
-        run: docker compose -f docker-compose.e2e.yml down || true
+        run: docker compose -f docker-compose.yml down || true
