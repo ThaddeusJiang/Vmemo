@@ -81,22 +81,14 @@ defmodule Vmemo.Account.Emails do
   end
 
   def confirm_user(token) do
-    case Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86_400) do
-      {:ok, %{user_id: user_id}} ->
-        case Ash.get(User, user_id) do
-          {:ok, user} ->
-            if user.confirmed_at do
-              {:error, :already_confirmed}
-            else
-              Vmemo.Account.update_user(user, %{confirmed_at: DateTime.utc_now()})
-            end
-
-          _ ->
-            {:error, :invalid_token}
-        end
-
-      _ ->
-        {:error, :invalid_token}
+    with {:ok, %{user_id: user_id}} <-
+           Phoenix.Token.verify(VmemoWeb.Endpoint, "user_confirmation", token, max_age: 86_400),
+         {:ok, user} <- Ash.get(User, user_id),
+         :ok <- ensure_user_not_confirmed(user) do
+      Vmemo.Account.update_user(user, %{confirmed_at: DateTime.utc_now()})
+    else
+      {:error, :already_confirmed} -> {:error, :already_confirmed}
+      _ -> {:error, :invalid_token}
     end
   end
 
@@ -106,6 +98,9 @@ defmodule Vmemo.Account.Emails do
       _ -> {:error, :invalid_token}
     end
   end
+
+  defp ensure_user_not_confirmed(%{confirmed_at: nil}), do: :ok
+  defp ensure_user_not_confirmed(_user), do: {:error, :already_confirmed}
 
   def deliver_user_update_email_instructions(
         %User{} = user,

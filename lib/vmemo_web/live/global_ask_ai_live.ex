@@ -408,15 +408,21 @@ defmodule VmemoWeb.GlobalAskAiLive do
       |> Enum.filter(&is_binary/1)
       |> Enum.uniq()
 
-    if image_ids == [] do
-      %{}
-    else
-      Enum.reduce(image_ids, %{}, fn image_id, acc ->
-        case Ash.get(Image, image_id, actor: user) do
-          {:ok, image} -> Map.put(acc, image.id, image.url)
-          _ -> acc
-        end
-      end)
+    case image_ids do
+      [] ->
+        %{}
+
+      _ ->
+        Enum.reduce(image_ids, %{}, fn image_id, acc ->
+          add_image_thumbnail(acc, image_id, user)
+        end)
+    end
+  end
+
+  defp add_image_thumbnail(acc, image_id, user) do
+    case Ash.get(Image, image_id, actor: user) do
+      {:ok, image} -> Map.put(acc, image.id, image.url)
+      _ -> acc
     end
   end
 
@@ -466,22 +472,24 @@ defmodule VmemoWeb.GlobalAskAiLive do
     |> Ash.Query.select([:tool_name, :attachments, :inserted_at])
     |> Ash.Query.sort(inserted_at: :desc)
     |> Ash.read!(actor: user)
-    |> Enum.find_value(fn message ->
-      if Map.get(message, :tool_name) == "image_context" do
-        message
-        |> Map.get(:attachments, [])
-        |> List.wrap()
-        |> Enum.find_value(fn attachment ->
-          case Map.get(attachment, :id) || Map.get(attachment, "id") do
-            id when is_binary(id) -> id
-            id when is_nil(id) -> nil
-            id -> to_string(id)
-          end
-        end)
-      else
-        nil
-      end
-    end)
+    |> Enum.find_value(&extract_image_context_attachment_id/1)
+  end
+
+  defp extract_image_context_attachment_id(message) do
+    if Map.get(message, :tool_name) == "image_context" do
+      message
+      |> Map.get(:attachments, [])
+      |> List.wrap()
+      |> Enum.find_value(&normalize_attachment_id/1)
+    end
+  end
+
+  defp normalize_attachment_id(attachment) do
+    case Map.get(attachment, :id) || Map.get(attachment, "id") do
+      id when is_binary(id) -> id
+      nil -> nil
+      id -> to_string(id)
+    end
   end
 
   defp image_context_message(user) do
@@ -500,31 +508,22 @@ defmodule VmemoWeb.GlobalAskAiLive do
       |> Enum.find_value(fn {_id, msg} -> if msg.id == message.id, do: msg end)
 
     case existing_message do
-      nil ->
-        message
-
-      existing_message ->
-        Map.merge(existing_message, message, fn
-          :tool_results, existing_tool_results, new_tool_results ->
-            if is_nil(new_tool_results) ||
-                 (is_list(new_tool_results) && Enum.empty?(new_tool_results)) do
-              existing_tool_results
-            else
-              new_tool_results
-            end
-
-          :tool_calls, existing_tool_calls, new_tool_calls ->
-            if is_nil(new_tool_calls) || (is_list(new_tool_calls) && Enum.empty?(new_tool_calls)) do
-              existing_tool_calls
-            else
-              new_tool_calls
-            end
-
-          _key, existing_value, new_value ->
-            if is_nil(new_value), do: existing_value, else: new_value
-        end)
+      nil -> message
+      existing_message -> Map.merge(existing_message, message, &merge_message_field/3)
     end
   end
+
+  defp merge_message_field(key, existing_value, new_value)
+       when key in [:tool_results, :tool_calls] do
+    if is_nil(new_value) or (is_list(new_value) and Enum.empty?(new_value)) do
+      existing_value
+    else
+      new_value
+    end
+  end
+
+  defp merge_message_field(_key, existing_value, nil), do: existing_value
+  defp merge_message_field(_key, _existing_value, new_value), do: new_value
 
   defp handle_chat_command(:clear, socket) do
     user = socket.assigns.current_user

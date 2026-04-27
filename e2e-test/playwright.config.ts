@@ -3,6 +3,12 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
   globalSetup: "./global-setup.ts",
+  reporter: process.env.CI
+    ? [
+        ["github"],
+        ["html", { open: "never", outputFolder: "playwright-report" }],
+      ]
+    : [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   timeout: 120_000,
   expect: {
     toHaveScreenshot: {

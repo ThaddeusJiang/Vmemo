@@ -113,7 +113,7 @@ export async function openUploadedPhotoDetail(page: Page, noteText: string) {
   await expect(photoLink).toBeVisible({ timeout: 20_000 });
   await photoLink.click();
   await expect(page).toHaveURL(/\/images\/.+/);
-  await expect(page.locator('textarea[name="note"]')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByLabel("Note")).toBeVisible({ timeout: 20_000 });
 }
 
 export async function createConversation(page: Page) {
@@ -178,12 +178,15 @@ async function prepareUploadForm(page: Page, noteText: string) {
       await expect(page.locator("form#upload-form")).toBeVisible({ timeout: 20_000 });
 
       const uploadForm = page.locator("form#upload-form");
-      await uploadForm.locator('input[type="file"]').setInputFiles(uploadFile);
+      const fileChooserPromise = page.waitForEvent("filechooser");
+      await uploadForm.getByText("Drag and drop images here or click to upload").click();
+      const fileChooser = await fileChooserPromise;
+      await fileChooser.setFiles(uploadFile);
 
-      const note = page.locator('textarea[name="note"]');
+      const note = uploadForm.locator('textarea[name$="[note]"], textarea[name="note"]').first();
       await expect(note).toBeVisible({ timeout: 20_000 });
       await note.fill(noteText);
-      await page.getByLabel("Is whole").setChecked(true);
+      await uploadForm.getByLabel("Is whole").setChecked(true);
 
       const submitUpload = uploadForm.getByRole("button", { name: /Upload/i });
       await expect(submitUpload).toBeVisible({ timeout: 20_000 });
@@ -198,10 +201,7 @@ async function prepareUploadForm(page: Page, noteText: string) {
 }
 
 async function waitForUploadToFinish(page: Page, uploadForm: Locator) {
-  await expect(uploadForm.locator("article.upload-entry")).toHaveCount(0, {
-    timeout: 30_000,
-  });
-  await expect(page.locator('textarea[name="note"]')).toBeHidden({
+  await expect(uploadForm.getByLabel("Note")).toBeHidden({
     timeout: 30_000,
   });
 }

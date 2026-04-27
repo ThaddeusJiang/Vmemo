@@ -271,26 +271,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
         case uploaded do
           [%{path: zip_path}] ->
-            case UserSettings.import_user_zip(socket.assigns.current_user.id, zip_path) do
-              {:ok, result} ->
-                {:noreply,
-                 socket
-                 |> assign(:is_importing, false)
-                 |> assign(:import_result, result)}
-
-              {:error, %{} = result} ->
-                {:noreply,
-                 socket
-                 |> assign(:is_importing, false)
-                 |> assign(:import_result, result)
-                 |> assign(:import_error, "Import completed with errors.")}
-
-              {:error, reason} ->
-                {:noreply,
-                 socket
-                 |> assign(:is_importing, false)
-                 |> assign(:import_error, "Import failed: #{format_error(reason)}")}
-            end
+            {:noreply, import_zip_data(socket, zip_path)}
 
           _ ->
             {:noreply,
@@ -401,6 +382,26 @@ defmodule VmemoWeb.UserSettingsLive do
   defp error_to_string(:too_large), do: "Too large"
   defp error_to_string(:too_many_files), do: "You have selected too many files"
   defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+
+  defp import_zip_data(socket, zip_path) do
+    case UserSettings.import_user_zip(socket.assigns.current_user.id, zip_path) do
+      {:ok, result} ->
+        socket
+        |> assign(:is_importing, false)
+        |> assign(:import_result, result)
+
+      {:error, %{} = result} ->
+        socket
+        |> assign(:is_importing, false)
+        |> assign(:import_result, result)
+        |> assign(:import_error, "Import completed with errors.")
+
+      {:error, reason} ->
+        socket
+        |> assign(:is_importing, false)
+        |> assign(:import_error, "Import failed: #{format_error(reason)}")
+    end
+  end
 
   defp format_error(error), do: inspect(error)
 end

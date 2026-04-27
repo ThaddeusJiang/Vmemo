@@ -13,22 +13,20 @@ defmodule Vmemo.Chat.Message.Changes.CreateConversationIfNotProvided do
     else
       Ash.Changeset.before_action(changeset, fn changeset ->
         image_id = changeset.arguments[:image_id]
-
-        conversation =
-          if image_id do
-            Vmemo.Chat.create_image_scoped_conversation!(
-              %{title: nil, image_id: image_id},
-              Ash.Context.to_opts(context)
-            )
-          else
-            Vmemo.Chat.create_conversation!(
-              %{title: nil},
-              Ash.Context.to_opts(context)
-            )
-          end
+        conversation = create_missing_conversation(image_id, context)
 
         Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation.id)
       end)
+    end
+  end
+
+  defp create_missing_conversation(image_id, context) do
+    opts = Ash.Context.to_opts(context)
+
+    if image_id do
+      Vmemo.Chat.create_image_scoped_conversation!(%{title: nil, image_id: image_id}, opts)
+    else
+      Vmemo.Chat.create_conversation!(%{title: nil}, opts)
     end
   end
 end

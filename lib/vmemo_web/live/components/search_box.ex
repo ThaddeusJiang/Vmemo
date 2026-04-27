@@ -78,34 +78,38 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   @impl true
   def handle_event("search-by-image", _, socket) do
-    current_user = Map.get(socket.assigns, :current_user)
-
-    if is_nil(current_user) do
-      {:noreply, socket}
-    else
-      case uploaded_entries(socket, :image) do
-        {completed, []} ->
-          case completed do
-            [entry] ->
-              consume_one_photo_for_search(entry, socket, current_user)
-
-            [] ->
-              {:noreply, socket |> put_flash(:error, "Please wait for upload to complete")}
-
-            _ ->
-              {:noreply,
-               socket
-               |> put_flash(
-                 :error,
-                 "Search by image uses exactly one image. Remove extra files and try again."
-               )}
-          end
-
-        {_completed, errors} ->
-          error_msg = "Upload failed: #{inspect(errors)}"
-          {:noreply, socket |> put_flash(:error, error_msg)}
-      end
+    case Map.get(socket.assigns, :current_user) do
+      nil -> {:noreply, socket}
+      current_user -> handle_search_by_image(socket, current_user)
     end
+  end
+
+  defp handle_search_by_image(socket, current_user) do
+    case uploaded_entries(socket, :image) do
+      {completed, []} ->
+        handle_completed_upload_entries(socket, current_user, completed)
+
+      {_completed, errors} ->
+        error_msg = "Upload failed: #{inspect(errors)}"
+        {:noreply, socket |> put_flash(:error, error_msg)}
+    end
+  end
+
+  defp handle_completed_upload_entries(socket, current_user, [entry]) do
+    consume_one_photo_for_search(entry, socket, current_user)
+  end
+
+  defp handle_completed_upload_entries(socket, _current_user, []) do
+    {:noreply, socket |> put_flash(:error, "Please wait for upload to complete")}
+  end
+
+  defp handle_completed_upload_entries(socket, _current_user, _entries) do
+    {:noreply,
+     socket
+     |> put_flash(
+       :error,
+       "Search by image uses exactly one image. Remove extra files and try again."
+     )}
   end
 
   defp consume_one_photo_for_search(entry, socket, current_user) do

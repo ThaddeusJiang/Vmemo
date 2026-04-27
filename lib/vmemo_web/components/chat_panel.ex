@@ -1,4 +1,8 @@
 defmodule VmemoWeb.Components.ChatPanel do
+  @moduledoc """
+  Reusable chat panel component for rendering messages and the input form.
+  """
+
   use VmemoWeb, :html
 
   attr :messages, :list, required: true
@@ -198,43 +202,36 @@ defmodule VmemoWeb.Components.ChatPanel do
   defp get_result_name(_), do: nil
 
   defp extract_photos_from_tool_result(result) do
-    content = Map.get(result, "content") || Map.get(result, :content)
-
-    if is_binary(content) and content != "" do
-      case Jason.decode(content) do
-        {:ok, decoded} when is_list(decoded) ->
-          decoded
-          |> Enum.map(&normalize_photo/1)
-          |> Enum.reject(&is_nil/1)
-
-        {:ok, decoded} when is_map(decoded) ->
-          case Map.get(decoded, "data") || Map.get(decoded, :data) do
-            nil ->
-              case normalize_photo(decoded) do
-                nil -> []
-                image -> [image]
-              end
-
-            data when is_list(data) ->
-              data
-              |> Enum.map(&normalize_photo/1)
-              |> Enum.reject(&is_nil/1)
-
-            data when is_map(data) ->
-              case normalize_photo(data) do
-                nil -> []
-                image -> [image]
-              end
-
-            _ ->
-              []
-          end
-
-        _ ->
-          []
-      end
+    with content when is_binary(content) and content != "" <-
+           Map.get(result, "content") || Map.get(result, :content),
+         {:ok, decoded} <- Jason.decode(content) do
+      extract_photos_from_tool_content(decoded)
     else
-      []
+      _ -> []
+    end
+  end
+
+  defp extract_photos_from_tool_content(decoded) when is_list(decoded) do
+    decoded
+    |> Enum.map(&normalize_photo/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp extract_photos_from_tool_content(decoded) when is_map(decoded) do
+    case Map.get(decoded, "data") || Map.get(decoded, :data) do
+      nil -> maybe_wrap_photo(decoded)
+      data when is_list(data) -> extract_photos_from_tool_content(data)
+      data when is_map(data) -> maybe_wrap_photo(data)
+      _ -> []
+    end
+  end
+
+  defp extract_photos_from_tool_content(_), do: []
+
+  defp maybe_wrap_photo(data) do
+    case normalize_photo(data) do
+      nil -> []
+      image -> [image]
     end
   end
 

@@ -946,10 +946,7 @@ defmodule Vmemo.Memo.Image do
   defp maybe_put_purpose(payload, _), do: payload
 
   defp generate_caption_for_photo(image) do
-    cond do
-      has_caption?(image.caption) -> :ok
-      true -> do_generate_caption(image)
-    end
+    if has_caption?(image.caption), do: :ok, else: do_generate_caption(image)
   end
 
   defp do_generate_caption(image) do

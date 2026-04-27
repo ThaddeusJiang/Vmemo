@@ -64,7 +64,6 @@ debug.log
 .env
 node_modules
 test-results
-*-darwin.png
 _local_docs/
 
 # Dialyzer PLT cache

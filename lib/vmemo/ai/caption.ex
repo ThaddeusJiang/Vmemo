@@ -20,14 +20,14 @@ defmodule Vmemo.Ai.Caption do
     config = VisionConfig.resolve()
     mime_type = Keyword.get(opts, :mime_type)
 
-    with {:ok, caption} <-
-           AshAiVision.caption(
-             image_base64,
-             model: config.model,
-             mime_type: mime_type
-           ) do
-      {:ok, caption}
-    else
+    case AshAiVision.caption(
+           image_base64,
+           model: config.model,
+           mime_type: mime_type
+         ) do
+      {:ok, caption} ->
+        {:ok, caption}
+
       {:error, reason} ->
         handle_caption_error(reason)
     end

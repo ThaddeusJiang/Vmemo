@@ -277,68 +277,12 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         %{"note" => note_text, "is_whole" => is_whole},
         socket
       ) do
-    current_user = Map.get(socket.assigns, :current_user)
+    case Map.get(socket.assigns, :current_user) do
+      nil ->
+        {:noreply, socket |> put_flash(:error, "User not found")}
 
-    if is_nil(current_user) do
-      {:noreply, socket |> put_flash(:error, "User not found")}
-    else
-      user_id = current_user.id
-
-      note =
-        case is_whole do
-          "true" ->
-            case Note.create_with_sync(
-                   %{
-                     text: note_text,
-                     user_id: user_id
-                   },
-                   actor: current_user
-                 ) do
-              {:ok, note} -> note
-              {:error, _} -> nil
-            end
-
-          _ ->
-            nil
-        end
-
-      case uploaded_entries(socket, :images) do
-        {[_ | _] = entries, []} ->
-          upload_batch_id = Ecto.UUID.generate()
-
-          results =
-            process_upload_entries(socket, entries, note_text, current_user, upload_batch_id)
-
-          images =
-            results
-            |> Enum.filter(&match?({:ok, _}, &1))
-            |> Enum.map(fn {:ok, image} -> image end)
-
-          %{linked: linked_count, failed: link_failed_count} =
-            maybe_link_note_to_photos(note, images, current_user)
-
-          if images != [] do
-            send(self(), {:upload_success, images})
-          end
-
-          socket =
-            socket
-            |> update(:uploaded_photos, &append_uploaded_photos(&1, images))
-            |> put_upload_result_flash(results, link_failed_count)
-
-          if link_failed_count > 0 do
-            Logger.warning("Failed to link note to #{link_failed_count} uploaded image(s)")
-          end
-
-          Logger.info(
-            "Batch upload completed: total=#{length(entries)} success=#{length(images)} linked=#{linked_count} failed=#{length(results) - length(images)}"
-          )
-
-          {:noreply, socket}
-
-        _ ->
-          {:noreply, socket}
-      end
+      current_user ->
+        handle_save_upload(socket, note_text, is_whole, current_user)
     end
   end
 
@@ -347,6 +291,62 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   end
 
   defp maybe_focus_note_field(socket, false), do: socket
+
+  defp handle_save_upload(socket, note_text, is_whole, current_user) do
+    note = maybe_create_note(is_whole, note_text, current_user)
+
+    case uploaded_entries(socket, :images) do
+      {[_ | _] = entries, []} ->
+        {:noreply, process_uploaded_images(socket, entries, note_text, note, current_user)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  defp maybe_create_note("true", note_text, current_user) do
+    case Note.create_with_sync(%{text: note_text, user_id: current_user.id}, actor: current_user) do
+      {:ok, note} -> note
+      {:error, _} -> nil
+    end
+  end
+
+  defp maybe_create_note(_is_whole, _note_text, _current_user), do: nil
+
+  defp process_uploaded_images(socket, entries, note_text, note, current_user) do
+    upload_batch_id = Ecto.UUID.generate()
+    results = process_upload_entries(socket, entries, note_text, current_user, upload_batch_id)
+    images = extract_successful_images(results)
+
+    %{linked: linked_count, failed: link_failed_count} =
+      maybe_link_note_to_photos(note, images, current_user)
+
+    maybe_notify_upload_success(images)
+    maybe_log_link_failure(link_failed_count)
+
+    Logger.info(
+      "Batch upload completed: total=#{length(entries)} success=#{length(images)} linked=#{linked_count} failed=#{length(results) - length(images)}"
+    )
+
+    socket
+    |> update(:uploaded_photos, &append_uploaded_photos(&1, images))
+    |> put_upload_result_flash(results, link_failed_count)
+  end
+
+  defp extract_successful_images(results) do
+    results
+    |> Enum.filter(&match?({:ok, _}, &1))
+    |> Enum.map(fn {:ok, image} -> image end)
+  end
+
+  defp maybe_notify_upload_success([]), do: :ok
+  defp maybe_notify_upload_success(images), do: send(self(), {:upload_success, images})
+
+  defp maybe_log_link_failure(link_failed_count) when link_failed_count > 0 do
+    Logger.warning("Failed to link note to #{link_failed_count} uploaded image(s)")
+  end
+
+  defp maybe_log_link_failure(_), do: :ok
 
   defp process_upload_entries(socket, entries, note_text, current_user, upload_batch_id) do
     entries
@@ -460,12 +460,10 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   defp maybe_put_info_flash(socket, success_count, failure_count, link_failed_count) do
     message =
-      cond do
-        failure_count == 0 and link_failed_count == 0 ->
-          "#{success_count} image(s) uploaded successfully and enqueued for processing."
-
-        true ->
-          "#{success_count} image(s) uploaded successfully. #{failure_count + link_failed_count} job(s) did not complete."
+      if failure_count == 0 and link_failed_count == 0 do
+        "#{success_count} image(s) uploaded successfully and enqueued for processing."
+      else
+        "#{success_count} image(s) uploaded successfully. #{failure_count + link_failed_count} job(s) did not complete."
       end
 
     put_flash(socket, :info, message)

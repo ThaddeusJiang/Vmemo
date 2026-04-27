@@ -223,31 +223,7 @@ defmodule VmemoWeb.AdminImportLive do
             {:ok, %{path: path, filename: entry.client_name}}
           end)
 
-        case uploaded do
-          [%{path: zip_path, filename: filename}] ->
-            case ImportRequest.create_with_zip(
-                   %{source_filename: filename, zip_path: zip_path},
-                   actor: nil
-                 ) do
-              {:ok, request} ->
-                Phoenix.PubSub.subscribe(Vmemo.PubSub, "admin_import_request:#{request.id}")
-                {:noreply, socket |> assign(is_submitting: false) |> assign(request: request)}
-
-              {:error, error} ->
-                {:noreply,
-                 socket
-                 |> assign(is_submitting: false)
-                 |> assign(
-                   submit_error: "Failed to create import request: #{format_error(error)}"
-                 )}
-            end
-
-          _ ->
-            {:noreply,
-             socket
-             |> assign(is_submitting: false)
-             |> assign(form_error: "Failed to read ZIP file.")}
-        end
+        {:noreply, submit_import_request(socket, uploaded)}
     end
   end
 
@@ -312,6 +288,27 @@ defmodule VmemoWeb.AdminImportLive do
   defp import_zip_writer(_name, entry, _socket) do
     dest_dir = Path.join(System.tmp_dir!(), "vmemo-import-upload")
     {ImportZipWriter, dest_dir: dest_dir, filename: entry.client_name}
+  end
+
+  defp submit_import_request(socket, [%{path: zip_path, filename: filename}]) do
+    case ImportRequest.create_with_zip(%{source_filename: filename, zip_path: zip_path},
+           actor: nil
+         ) do
+      {:ok, request} ->
+        Phoenix.PubSub.subscribe(Vmemo.PubSub, "admin_import_request:#{request.id}")
+        socket |> assign(is_submitting: false) |> assign(request: request)
+
+      {:error, error} ->
+        socket
+        |> assign(is_submitting: false)
+        |> assign(submit_error: "Failed to create import request: #{format_error(error)}")
+    end
+  end
+
+  defp submit_import_request(socket, _uploaded) do
+    socket
+    |> assign(is_submitting: false)
+    |> assign(form_error: "Failed to read ZIP file.")
   end
 
   defp format_error(error), do: inspect(error)

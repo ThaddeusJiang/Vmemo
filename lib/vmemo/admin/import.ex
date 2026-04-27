@@ -411,19 +411,23 @@ defmodule Vmemo.Admin.Import do
         |> Enum.filter(&File.regular?/1)
 
       Enum.reduce(files, %{copied: 0, skipped: 0}, fn source, acc ->
-        rel_path = Path.relative_to(source, tmp_dir)
-        dest = Path.expand(rel_path, File.cwd!())
-        File.mkdir_p!(Path.dirname(dest))
-
-        if File.exists?(dest) do
-          %{acc | skipped: acc.skipped + 1}
-        else
-          File.cp!(source, dest)
-          %{acc | copied: acc.copied + 1}
-        end
+        copy_import_storage_file(source, tmp_dir, acc)
       end)
     else
       %{copied: 0, skipped: 0}
+    end
+  end
+
+  defp copy_import_storage_file(source, tmp_dir, acc) do
+    rel_path = Path.relative_to(source, tmp_dir)
+    dest = Path.expand(rel_path, File.cwd!())
+    File.mkdir_p!(Path.dirname(dest))
+
+    if File.exists?(dest) do
+      %{acc | skipped: acc.skipped + 1}
+    else
+      File.cp!(source, dest)
+      %{acc | copied: acc.copied + 1}
     end
   end
 

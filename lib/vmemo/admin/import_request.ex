@@ -167,24 +167,30 @@ defmodule Vmemo.Admin.ImportRequest do
         {:ok, filename, dest_path}
 
       {:error, _reason} ->
-        filename = file_source_filename(file)
-        dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
-
-        case Ash.Type.File.open(file, [:read, :binary]) do
-          {:ok, source} ->
-            result = copy_stream(source, dest_path)
-            File.close(source)
-
-            case result do
-              {:ok, _bytes} -> {:ok, filename, dest_path}
-              {:error, reason} -> {:error, reason}
-            end
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        copy_import_zip_from_stream(file, dest_dir)
     end
   end
+
+  defp copy_import_zip_from_stream(file, dest_dir) do
+    filename = file_source_filename(file)
+    dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
+
+    case Ash.Type.File.open(file, [:read, :binary]) do
+      {:ok, source} ->
+        result = copy_stream(source, dest_path)
+        File.close(source)
+        normalize_copy_stream_result(result, filename, dest_path)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp normalize_copy_stream_result({:ok, _bytes}, filename, dest_path),
+    do: {:ok, filename, dest_path}
+
+  defp normalize_copy_stream_result({:error, reason}, _filename, _dest_path),
+    do: {:error, reason}
 
   defp copy_stream(source, dest_path) do
     File.open(dest_path, [:write, :binary], fn dest ->

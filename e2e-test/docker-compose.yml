@@ -1,0 +1,68 @@
+services:
+  postgres-e2e:
+    image: postgres:18
+    hostname: postgres-e2e
+    restart: on-failure
+    ports:
+      - "10001:5432"
+    volumes:
+      - pg-e2e-data:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vmemo
+
+  typesense-e2e:
+    image: typesense/typesense:30.1
+    hostname: typesense-e2e
+    restart: on-failure
+    volumes:
+      - ts-e2e-data:/data
+    command: "--data-dir /data --api-key=xyz --enable-cors"
+
+  vmemo-e2e:
+    image: thaddeusjiang/vmemo:e2e
+    hostname: vmemo-e2e
+    command: ["start"]
+    restart: on-failure
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@postgres-e2e:5432/vmemo
+      TYPESENSE_URL: http://typesense-e2e:8108
+      TYPESENSE_API_KEY: xyz
+      OPENROUTER_API_KEY: "fake-key"
+      MOONDREAM_URL: ""
+      MOONDREAM_API_KEY: "fake-key"
+      RESEND_API_KEY: "fake-key"
+      SENTRY_DSN: https://public@example.com/1
+      ADMIN_TOKEN: test-admin-password
+      SECRET_KEY_BASE: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
+      PHX_SERVER: "true"
+      PHX_HOST: localhost
+      PORT: "4000"
+
+  e2e-seed:
+    image: postgres:18
+    hostname: e2e-seed
+    restart: "no"
+    depends_on:
+      - postgres-e2e
+      - vmemo-e2e
+    volumes:
+      - ./sql/seed_e2e.sql:/seed/seed_e2e.sql:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        while true; do
+          if env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='memo_notes'" | grep -q 1; then
+            break
+          fi
+          echo "Waiting for app migrations to complete..."
+          sleep 1
+        done
+        env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -f /seed/seed_e2e.sql
+
+volumes:
+  pg-e2e-data:
+  ts-e2e-data:

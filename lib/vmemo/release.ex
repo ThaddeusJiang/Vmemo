@@ -18,15 +18,6 @@ defmodule Vmemo.Release do
   end
 
   @doc """
-  Run e2e seed script for prod-like e2e environments.
-  """
-  def seed_e2e do
-    load_app()
-    _ = Application.ensure_all_started(@app)
-    run_repo_script("seeds/e2e.exs")
-  end
-
-  @doc """
   Run all AshPostgres release migrations for configured repos.
   """
   def ash_migrate do
@@ -85,12 +76,6 @@ defmodule Vmemo.Release do
     path = Application.app_dir(@app, "priv/#{repo_migrations_path(repo)}/migrations")
 
     if File.dir?(path), do: [path], else: []
-  end
-
-  defp run_repo_script(path) do
-    repo_script_path = Application.app_dir(@app, "priv/repo/#{path}")
-    Code.eval_file(repo_script_path)
-    :ok
   end
 
   defp repo_migrations_path(repo) do
