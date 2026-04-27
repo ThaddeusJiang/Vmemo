@@ -133,21 +133,8 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
   defp resolve_scoped_image_id(_conversation, messages) when is_list(messages) do
     messages
     |> Enum.reverse()
-    |> Enum.find_value(fn message ->
-      if Map.get(message, :tool_name) == "image_context" do
-        message
-        |> Map.get(:attachments, [])
-        |> List.wrap()
-        |> Enum.find_value(fn attachment ->
-          Map.get(attachment, :id) || Map.get(attachment, "id")
-        end)
-      end
-    end)
-    |> case do
-      id when is_binary(id) -> id
-      id when is_nil(id) -> nil
-      id -> to_string(id)
-    end
+    |> Enum.find_value(&extract_context_image_id_from_message/1)
+    |> normalize_scoped_image_id()
   end
 
   defp resolve_scoped_image_id(_, _), do: nil
@@ -238,22 +225,34 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
 
   defp final_text_for_state(final_state) do
     stream_error_text = stream_error_text(final_state.stream_error)
+    text = final_state.text || ""
+    text_blank? = String.trim(text) == ""
+    has_tool_events? = final_state.tool_calls != [] || final_state.tool_results != []
 
     cond do
-      stream_error_text && String.trim(final_state.text || "") != "" ->
-        final_state.text <> "\n\n" <> stream_error_text
-
-      stream_error_text ->
-        stream_error_text
-
-      String.trim(final_state.text || "") == "" &&
-          (final_state.tool_calls != [] || final_state.tool_results != []) ->
-        "Completed tool call."
-
-      true ->
-        final_state.text
+      stream_error_text && not text_blank? -> text <> "\n\n" <> stream_error_text
+      stream_error_text -> stream_error_text
+      text_blank? and has_tool_events? -> "Completed tool call."
+      true -> text
     end
   end
+
+  defp extract_context_image_id_from_message(message) do
+    if Map.get(message, :tool_name) == "image_context" do
+      message
+      |> Map.get(:attachments, [])
+      |> List.wrap()
+      |> Enum.find_value(&extract_attachment_image_id/1)
+    end
+  end
+
+  defp extract_attachment_image_id(attachment) do
+    Map.get(attachment, :id) || Map.get(attachment, "id")
+  end
+
+  defp normalize_scoped_image_id(id) when is_binary(id), do: id
+  defp normalize_scoped_image_id(nil), do: nil
+  defp normalize_scoped_image_id(id), do: to_string(id)
 
   defp normalize_tool_call(%{} = tool_call) do
     tool_call

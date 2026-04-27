@@ -85,25 +85,12 @@ defmodule Vmemo.UserSettings do
   defp list_note_links(notes) do
     note_ids = Enum.map(notes, & &1.id)
 
-    if note_ids == [] do
-      {:ok, %{}}
-    else
-      query =
-        ImageNote
-        |> Ash.Query.filter(note_id in ^note_ids)
+    case note_ids do
+      [] ->
+        {:ok, %{}}
 
-      case Ash.read(query, actor: nil, authorize?: false) do
-        {:ok, links} ->
-          mapped =
-            Enum.reduce(links, %{}, fn link, acc ->
-              Map.update(acc, link.note_id, [link.image_id], fn ids -> [link.image_id | ids] end)
-            end)
-
-          {:ok, mapped}
-
-        {:error, error} ->
-          {:error, format_error(error)}
-      end
+      _ ->
+        read_note_links(note_ids)
     end
   end
 
@@ -183,16 +170,7 @@ defmodule Vmemo.UserSettings do
         |> Enum.filter(&File.regular?/1)
 
       Enum.reduce(files, %{copied: 0, skipped: 0}, fn source, acc ->
-        rel_path = Path.relative_to(source, source_root)
-        dest = Path.join(dest_root, rel_path)
-        File.mkdir_p!(Path.dirname(dest))
-
-        if File.exists?(dest) do
-          %{acc | skipped: acc.skipped + 1}
-        else
-          File.cp!(source, dest)
-          %{acc | copied: acc.copied + 1}
-        end
+        copy_storage_file_for_export(source, source_root, dest_root, acc)
       end)
     else
       %{copied: 0, skipped: 0}
@@ -391,29 +369,7 @@ defmodule Vmemo.UserSettings do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
     {prepared, errors} =
-      Enum.reduce(notes, {[], []}, fn note, {rows, errs} ->
-        legacy_id = pick_value(note, ["id", :id])
-        text = pick_value(note, ["text", :text]) || ""
-
-        image_ids =
-          note |> pick_value(["image_ids", :image_ids]) |> normalize_list() |> Enum.uniq()
-
-        if is_nil(legacy_id) do
-          {rows, add_error(errs, "Note missing id")}
-        else
-          row = %{
-            legacy_id: legacy_id,
-            raw_id: legacy_id,
-            text: text,
-            user_id: target_user_id,
-            image_ids: image_ids,
-            inserted_at: parse_iso_datetime(pick_value(note, ["inserted_at", :inserted_at]), now),
-            updated_at: parse_iso_datetime(pick_value(note, ["updated_at", :updated_at]), now)
-          }
-
-          {[row | rows], errs}
-        end
-      end)
+      prepare_import_notes(notes, target_user_id, now)
 
     prepared = Enum.reverse(prepared)
 
@@ -424,86 +380,15 @@ defmodule Vmemo.UserSettings do
 
     generated_ids =
       prepared
-      |> Enum.count(fn row ->
-        case extract_valid_uuid_id(row.raw_id) do
-          nil ->
-            true
-
-          valid_id ->
-            case Map.get(existing_owner_map, valid_id) do
-              nil -> false
-              owner_id -> owner_id != row.user_id
-            end
-        end
-      end)
+      |> Enum.count(&note_row_needs_generated_id?(&1, existing_owner_map))
       |> generate_uuid_v7_list()
 
     {rows_to_insert, id_map, note_photo_map, ids, skipped_from_existing, _generated_tail} =
-      Enum.reduce(prepared, {[], %{}, %{}, MapSet.new(), 0, generated_ids}, fn row,
-                                                                               {insert_rows, map,
-                                                                                note_map, id_set,
-                                                                                skipped, gen_ids} ->
-        case extract_valid_uuid_id(row.raw_id) do
-          valid_id when is_binary(valid_id) ->
-            case Map.get(existing_owner_map, valid_id) do
-              nil ->
-                db_row =
-                  row
-                  |> Map.drop([:legacy_id, :raw_id, :image_ids])
-                  |> Map.put(:id, uuid_to_db(valid_id))
-                  |> Map.update!(:user_id, &uuid_to_db/1)
-
-                {[db_row | insert_rows], Map.put(map, row.legacy_id, valid_id),
-                 Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, valid_id),
-                 skipped, gen_ids}
-
-              owner_id when owner_id == row.user_id ->
-                {insert_rows, Map.put(map, row.legacy_id, valid_id),
-                 Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, valid_id),
-                 skipped + 1, gen_ids}
-
-              _other_owner ->
-                [new_id | tail] = gen_ids
-
-                db_row =
-                  row
-                  |> Map.drop([:legacy_id, :raw_id, :image_ids])
-                  |> Map.put(:id, uuid_to_db(new_id))
-                  |> Map.update!(:user_id, &uuid_to_db/1)
-
-                {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
-                 Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, new_id),
-                 skipped, tail}
-            end
-
-          _ ->
-            [new_id | tail] = gen_ids
-
-            db_row =
-              row
-              |> Map.drop([:legacy_id, :raw_id, :image_ids])
-              |> Map.put(:id, uuid_to_db(new_id))
-              |> Map.update!(:user_id, &uuid_to_db/1)
-
-            {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
-             Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, new_id), skipped,
-             tail}
-        end
-      end)
+      build_note_insert_rows(prepared, existing_owner_map, generated_ids)
 
     rows_to_insert = Enum.reverse(rows_to_insert)
 
-    {inserted_count, insert_errors} =
-      case rows_to_insert do
-        [] ->
-          {0, []}
-
-        rows ->
-          {count, _} =
-            Repo.insert_all("memo_notes", rows, on_conflict: :nothing, conflict_target: [:id])
-
-          {count, []}
-      end
+    {inserted_count, insert_errors} = insert_rows("memo_notes", rows_to_insert)
 
     created = inserted_count
     skipped = skipped_from_existing + max(length(rows_to_insert) - inserted_count, 0)
@@ -511,6 +396,118 @@ defmodule Vmemo.UserSettings do
     errors = append_errors(errors, insert_errors)
 
     {%{created: created, skipped: skipped, failed: failed}, id_map, note_photo_map, ids, errors}
+  end
+
+  defp read_note_links(note_ids) do
+    query =
+      ImageNote
+      |> Ash.Query.filter(note_id in ^note_ids)
+
+    case Ash.read(query, actor: nil, authorize?: false) do
+      {:ok, links} ->
+        {:ok, Enum.reduce(links, %{}, &append_note_link/2)}
+
+      {:error, error} ->
+        {:error, format_error(error)}
+    end
+  end
+
+  defp append_note_link(link, acc) do
+    Map.update(acc, link.note_id, [link.image_id], fn ids -> [link.image_id | ids] end)
+  end
+
+  defp copy_storage_file_for_export(source, source_root, dest_root, acc) do
+    rel_path = Path.relative_to(source, source_root)
+    dest = Path.join(dest_root, rel_path)
+    File.mkdir_p!(Path.dirname(dest))
+
+    if File.exists?(dest) do
+      %{acc | skipped: acc.skipped + 1}
+    else
+      File.cp!(source, dest)
+      %{acc | copied: acc.copied + 1}
+    end
+  end
+
+  defp prepare_import_notes(notes, target_user_id, now) do
+    Enum.reduce(notes, {[], []}, fn note, {rows, errs} ->
+      case build_prepared_note_row(note, target_user_id, now) do
+        {:ok, row} -> {[row | rows], errs}
+        {:error, message} -> {rows, add_error(errs, message)}
+      end
+    end)
+  end
+
+  defp build_prepared_note_row(note, target_user_id, now) do
+    legacy_id = pick_value(note, ["id", :id])
+    text = pick_value(note, ["text", :text]) || ""
+    image_ids = note |> pick_value(["image_ids", :image_ids]) |> normalize_list() |> Enum.uniq()
+
+    if is_nil(legacy_id) do
+      {:error, "Note missing id"}
+    else
+      {:ok,
+       %{
+         legacy_id: legacy_id,
+         raw_id: legacy_id,
+         text: text,
+         user_id: target_user_id,
+         image_ids: image_ids,
+         inserted_at: parse_iso_datetime(pick_value(note, ["inserted_at", :inserted_at]), now),
+         updated_at: parse_iso_datetime(pick_value(note, ["updated_at", :updated_at]), now)
+       }}
+    end
+  end
+
+  defp note_row_needs_generated_id?(row, existing_owner_map) do
+    case extract_valid_uuid_id(row.raw_id) do
+      nil -> true
+      valid_id -> Map.get(existing_owner_map, valid_id) not in [nil, row.user_id]
+    end
+  end
+
+  defp build_note_insert_rows(prepared, existing_owner_map, generated_ids) do
+    Enum.reduce(prepared, {[], %{}, %{}, MapSet.new(), 0, generated_ids}, fn row, acc ->
+      assign_note_row_id(row, acc, existing_owner_map)
+    end)
+  end
+
+  defp assign_note_row_id(
+         row,
+         {insert_rows, map, note_map, id_set, skipped, gen_ids},
+         existing_owner_map
+       ) do
+    case resolve_note_id_for_row(row, existing_owner_map, gen_ids) do
+      {:insert, assigned_id, next_gen_ids} ->
+        db_row =
+          row
+          |> Map.drop([:legacy_id, :raw_id, :image_ids])
+          |> Map.put(:id, uuid_to_db(assigned_id))
+          |> Map.update!(:user_id, &uuid_to_db/1)
+
+        {[db_row | insert_rows], Map.put(map, row.legacy_id, assigned_id),
+         Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, assigned_id),
+         skipped, next_gen_ids}
+
+      {:skip, assigned_id, next_gen_ids} ->
+        {insert_rows, Map.put(map, row.legacy_id, assigned_id),
+         Map.put(note_map, row.legacy_id, row.image_ids), MapSet.put(id_set, assigned_id),
+         skipped + 1, next_gen_ids}
+    end
+  end
+
+  defp resolve_note_id_for_row(row, existing_owner_map, gen_ids) do
+    case extract_valid_uuid_id(row.raw_id) do
+      valid_id when is_binary(valid_id) ->
+        case Map.get(existing_owner_map, valid_id) do
+          nil -> {:insert, valid_id, gen_ids}
+          owner_id when owner_id == row.user_id -> {:skip, valid_id, gen_ids}
+          _other_owner -> assign_new_image_id(gen_ids)
+        end
+
+      _ ->
+        assign_new_image_id(gen_ids)
+    end
   end
 
   defp import_photo_links(note_photo_map, image_id_map, note_id_map, image_ids, note_ids) do
@@ -621,40 +618,9 @@ defmodule Vmemo.UserSettings do
     |> Enum.reduce(
       {%{requested: 0, success: 0, failed: 0}, []},
       fn {chunk, idx}, {stats, errors} ->
-        if idx > 0 and chunk_pause_ms > 0 do
-          Process.sleep(chunk_pause_ms)
-        end
+        maybe_pause_typesense_chunks(idx, chunk_pause_ms)
 
-        {chunk_stats, chunk_errors} =
-          Enum.reduce(chunk, {%{requested: 0, success: 0, failed: 0}, []}, fn id,
-                                                                              {chunk_stats_acc,
-                                                                               chunk_errors_acc} ->
-            requested = chunk_stats_acc.requested + 1
-
-            case safe_sync_call(sync_fun, id) do
-              {:ok, true} ->
-                {%{chunk_stats_acc | requested: requested, success: chunk_stats_acc.success + 1},
-                 chunk_errors_acc}
-
-              {:ok, false} ->
-                {%{chunk_stats_acc | requested: requested, failed: chunk_stats_acc.failed + 1},
-                 add_error(chunk_errors_acc, "Typesense #{entity_name} sync failed for #{id}")}
-
-              {:error, reason} ->
-                {%{chunk_stats_acc | requested: requested, failed: chunk_stats_acc.failed + 1},
-                 add_error(
-                   chunk_errors_acc,
-                   "Typesense #{entity_name} sync failed for #{id}: #{format_error(reason)}"
-                 )}
-
-              other ->
-                {%{chunk_stats_acc | requested: requested, failed: chunk_stats_acc.failed + 1},
-                 add_error(
-                   chunk_errors_acc,
-                   "Typesense #{entity_name} sync returned unexpected result for #{id}: #{inspect(other)}"
-                 )}
-            end
-          end)
+        {chunk_stats, chunk_errors} = process_typesense_chunk(chunk, sync_fun, entity_name)
 
         merged_stats = %{
           requested: stats.requested + chunk_stats.requested,
@@ -665,6 +631,50 @@ defmodule Vmemo.UserSettings do
         {merged_stats, errors ++ chunk_errors}
       end
     )
+  end
+
+  defp maybe_pause_typesense_chunks(idx, chunk_pause_ms) do
+    if idx > 0 and chunk_pause_ms > 0 do
+      Process.sleep(chunk_pause_ms)
+    end
+  end
+
+  defp process_typesense_chunk(chunk, sync_fun, entity_name) do
+    Enum.reduce(chunk, {%{requested: 0, success: 0, failed: 0}, []}, fn id, chunk_acc ->
+      apply_typesense_sync_result(chunk_acc, safe_sync_call(sync_fun, id), id, entity_name)
+    end)
+  end
+
+  defp apply_typesense_sync_result(
+         {chunk_stats, chunk_errors},
+         sync_result,
+         id,
+         entity_name
+       ) do
+    requested = chunk_stats.requested + 1
+
+    case sync_result do
+      {:ok, true} ->
+        {%{chunk_stats | requested: requested, success: chunk_stats.success + 1}, chunk_errors}
+
+      {:ok, false} ->
+        {%{chunk_stats | requested: requested, failed: chunk_stats.failed + 1},
+         add_error(chunk_errors, "Typesense #{entity_name} sync failed for #{id}")}
+
+      {:error, reason} ->
+        {%{chunk_stats | requested: requested, failed: chunk_stats.failed + 1},
+         add_error(
+           chunk_errors,
+           "Typesense #{entity_name} sync failed for #{id}: #{format_error(reason)}"
+         )}
+
+      other ->
+        {%{chunk_stats | requested: requested, failed: chunk_stats.failed + 1},
+         add_error(
+           chunk_errors,
+           "Typesense #{entity_name} sync returned unexpected result for #{id}: #{inspect(other)}"
+         )}
+    end
   end
 
   defp safe_sync_call(sync_fun, id) do
@@ -729,19 +739,23 @@ defmodule Vmemo.UserSettings do
         |> Enum.filter(&File.regular?/1)
 
       Enum.reduce(files, %{copied: 0, skipped: 0}, fn source, acc ->
-        rel_path = Path.relative_to(source, source_root)
-        dest = Path.join(target_root, rel_path)
-        File.mkdir_p!(Path.dirname(dest))
-
-        if File.exists?(dest) do
-          %{acc | skipped: acc.skipped + 1}
-        else
-          File.cp!(source, dest)
-          %{acc | copied: acc.copied + 1}
-        end
+        copy_storage_file_for_import(source, source_root, target_root, acc)
       end)
     else
       %{copied: 0, skipped: 0}
+    end
+  end
+
+  defp copy_storage_file_for_import(source, source_root, target_root, acc) do
+    rel_path = Path.relative_to(source, source_root)
+    dest = Path.join(target_root, rel_path)
+    File.mkdir_p!(Path.dirname(dest))
+
+    if File.exists?(dest) do
+      %{acc | skipped: acc.skipped + 1}
+    else
+      File.cp!(source, dest)
+      %{acc | copied: acc.copied + 1}
     end
   end
 

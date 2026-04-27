@@ -26,13 +26,7 @@ defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
           RESPOND WITH ONLY THE NEW CONVERSATION NAME.
           """)
         ] ++
-          Enum.map(messages, fn message ->
-            if message.source == :agent do
-              assistant(message.text || "")
-            else
-              user(message.text || "")
-            end
-          end)
+          Enum.map(messages, &message_to_prompt_item/1)
 
       ReqLLM.generate_text(resolve_model(), prompt_messages)
       |> case do
@@ -49,4 +43,7 @@ defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
   defp resolve_model do
     Application.fetch_env!(:vmemo, :openrouter_chat_model)
   end
+
+  defp message_to_prompt_item(%{source: :agent, text: text}), do: assistant(text || "")
+  defp message_to_prompt_item(%{text: text}), do: user(text || "")
 end

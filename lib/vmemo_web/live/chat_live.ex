@@ -270,56 +270,13 @@ defmodule VmemoWeb.ChatLive do
         },
         socket
       ) do
-    if socket.assigns.conversation && socket.assigns.conversation.id == conversation_id do
-      # Merge with existing message data to preserve tool_results and other fields
-      # when updating an existing message in the stream
-      existing_message =
-        socket.assigns.streams.messages.inserts
-        |> Enum.find_value(fn {_id, msg} ->
-          if msg.id == message.id, do: msg
-        end)
+    case socket.assigns.conversation do
+      %{id: ^conversation_id} ->
+        updated_message = merge_stream_message(socket.assigns.streams.messages.inserts, message)
+        {:noreply, stream_insert(socket, :messages, updated_message, at: 0)}
 
-      updated_message =
-        case existing_message do
-          nil ->
-            # New message, use as is
-            message
-
-          existing_message ->
-            # Existing message, merge to preserve tool_results and other fields
-            # Prefer new values for text and source, but preserve tool_results if new value is nil/empty
-            Map.merge(existing_message, message, fn
-              :tool_results, existing_tool_results, new_tool_results ->
-                # Preserve tool_results if new value is nil or empty
-                if is_nil(new_tool_results) ||
-                     (is_list(new_tool_results) && Enum.empty?(new_tool_results)) do
-                  existing_tool_results
-                else
-                  new_tool_results
-                end
-
-              :tool_calls, existing_tool_calls, new_tool_calls ->
-                # Preserve tool_calls if new value is nil or empty
-                if is_nil(new_tool_calls) ||
-                     (is_list(new_tool_calls) && Enum.empty?(new_tool_calls)) do
-                  existing_tool_calls
-                else
-                  new_tool_calls
-                end
-
-              _key, existing_value, new_value ->
-                # For other fields, use new value (or existing if new is nil)
-                if is_nil(new_value) do
-                  existing_value
-                else
-                  new_value
-                end
-            end)
-        end
-
-      {:noreply, stream_insert(socket, :messages, updated_message, at: 0)}
-    else
-      {:noreply, socket}
+      _ ->
+        {:noreply, socket}
     end
   end
 
@@ -456,6 +413,30 @@ defmodule VmemoWeb.ChatLive do
       nil -> socket
     end
   end
+
+  defp merge_stream_message(existing_messages, message) do
+    case Enum.find_value(existing_messages, fn {_id, msg} ->
+           find_matching_stream_message(msg, message.id)
+         end) do
+      nil -> message
+      existing_message -> Map.merge(existing_message, message, &merge_message_field/3)
+    end
+  end
+
+  defp find_matching_stream_message(%{id: id} = message, id), do: message
+  defp find_matching_stream_message(_message, _id), do: nil
+
+  defp merge_message_field(key, existing_value, new_value)
+       when key in [:tool_results, :tool_calls] do
+    if is_nil(new_value) or (is_list(new_value) and Enum.empty?(new_value)) do
+      existing_value
+    else
+      new_value
+    end
+  end
+
+  defp merge_message_field(_key, existing_value, nil), do: existing_value
+  defp merge_message_field(_key, _existing_value, new_value), do: new_value
 
   defp handle_submitted_message(%{assigns: %{conversation: nil}} = socket, message) do
     {:noreply, push_navigate(socket, to: ~p"/chat/#{message.conversation_id}")}

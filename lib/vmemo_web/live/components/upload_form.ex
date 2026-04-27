@@ -460,12 +460,10 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
 
   defp maybe_put_info_flash(socket, success_count, failure_count, link_failed_count) do
     message =
-      cond do
-        failure_count == 0 and link_failed_count == 0 ->
-          "#{success_count} image(s) uploaded successfully and enqueued for processing."
-
-        true ->
-          "#{success_count} image(s) uploaded successfully. #{failure_count + link_failed_count} job(s) did not complete."
+      if failure_count == 0 and link_failed_count == 0 do
+        "#{success_count} image(s) uploaded successfully and enqueued for processing."
+      else
+        "#{success_count} image(s) uploaded successfully. #{failure_count + link_failed_count} job(s) did not complete."
       end
 
     put_flash(socket, :info, message)

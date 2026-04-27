@@ -135,18 +135,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   defp format_changeset_errors(changeset) do
     case changeset do
       %Ash.Error.Invalid{errors: errors} ->
-        Enum.map_join(errors, "; ", fn error ->
-          case error do
-            %Ash.Error.Changes.Required{field: field} ->
-              "#{field} is required"
-
-            %Ash.Error.Changes.InvalidAttribute{field: field, message: message} ->
-              "#{field}: #{message}"
-
-            _ ->
-              "Validation failed"
-          end
-        end)
+        Enum.map_join(errors, "; ", &format_changeset_error/1)
 
       _ ->
         "Failed to create request"
@@ -154,54 +143,64 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   end
 
   defp format_error_message(error_message) when is_binary(error_message) do
-    # Try to parse common error patterns from inspect output
+    error_message_lower = String.downcase(error_message)
+    is_transport_error = String.contains?(error_message, "Req.TransportError")
+
     cond do
-      # Handle Req.TransportError with timeout
-      String.contains?(error_message, "Req.TransportError") and
-          String.contains?(error_message, "timeout") ->
+      is_transport_error and String.contains?(error_message_lower, "timeout") ->
         "Request timeout. Please try again."
 
-      # Handle Req.TransportError with other reasons
-      String.contains?(error_message, "Req.TransportError") ->
-        # Extract reason from pattern like %Req.TransportError{reason: :connection_refused}
-        case Regex.run(~r/reason:\s*:(\w+)/, error_message) do
-          [_, reason] ->
-            reason_formatted = reason |> String.replace("_", " ") |> String.capitalize()
-            "Connection error: #{reason_formatted}"
+      is_transport_error ->
+        format_transport_error_reason(error_message)
 
-          _ ->
-            "Network error occurred"
-        end
-
-      # Handle Req.Error
       String.contains?(error_message, "Req.Error") ->
         "Request failed. Please try again."
 
-      # Handle generic timeout messages
-      String.contains?(String.downcase(error_message), "timeout") ->
+      String.contains?(error_message_lower, "timeout") ->
         "Request timeout. Please try again."
 
-      # Handle generic connection errors
-      String.contains?(String.downcase(error_message), "connection") ->
+      String.contains?(error_message_lower, "connection") ->
         "Connection error. Please check your network and try again."
 
-      # Handle generic network errors
-      String.contains?(String.downcase(error_message), "network") ->
+      String.contains?(error_message_lower, "network") ->
         "Network error. Please check your connection and try again."
 
       true ->
-        # If it's a simple string without error struct patterns, return as is
-        # Otherwise try to clean up inspect output
-        if String.contains?(error_message, "%") or String.contains?(error_message, "{") do
-          # It looks like inspect output, provide generic message
-          "An error occurred. Please try again."
-        else
-          error_message
-        end
+        format_unknown_error_message(error_message)
     end
   end
 
   defp format_error_message(_), do: "An error occurred. Please try again."
+
+  defp format_changeset_error(%Ash.Error.Changes.Required{field: field}),
+    do: "#{field} is required"
+
+  defp format_changeset_error(%Ash.Error.Changes.InvalidAttribute{
+         field: field,
+         message: message
+       }),
+       do: "#{field}: #{message}"
+
+  defp format_changeset_error(_), do: "Validation failed"
+
+  defp format_transport_error_reason(error_message) do
+    case Regex.run(~r/reason:\s*:(\w+)/, error_message) do
+      [_, reason] ->
+        reason_formatted = reason |> String.replace("_", " ") |> String.capitalize()
+        "Connection error: #{reason_formatted}"
+
+      _ ->
+        "Network error occurred"
+    end
+  end
+
+  defp format_unknown_error_message(error_message) do
+    if String.contains?(error_message, "%") or String.contains?(error_message, "{") do
+      "An error occurred. Please try again."
+    else
+      error_message
+    end
+  end
 
   defp has_detection_results?(requests) do
     Enum.any?(requests, fn req ->
@@ -269,49 +268,62 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   defp format_point_result(result), do: Jason.encode!(result, pretty: true)
 
   defp extract_point_coordinates(result) when is_map(result) do
-    cond do
-      # Handle multiple points
-      Map.has_key?(result, "points") and is_list(result["points"]) ->
-        points =
-          result["points"]
-          |> Enum.filter(fn point ->
-            is_map(point) and Map.has_key?(point, "x") and Map.has_key?(point, "y")
-          end)
-          |> Enum.map(fn point ->
-            x = normalize_coordinate(Map.get(point, "x"))
-            y = normalize_coordinate(Map.get(point, "y"))
-            if x != nil and y != nil, do: {x, y}, else: nil
-          end)
-          |> Enum.filter(&(&1 != nil))
+    case extract_multiple_points(result) do
+      {:multiple, _points} = multiple ->
+        multiple
 
-        if points != [], do: {:multiple, points}, else: nil
-
-      # Handle single point with x and y
-      Map.has_key?(result, "x") and Map.has_key?(result, "y") ->
-        x = normalize_coordinate(Map.get(result, "x"))
-        y = normalize_coordinate(Map.get(result, "y"))
-        if x != nil and y != nil, do: {:single, {x, y}}, else: nil
-
-      # Handle single point in "point" key
-      Map.has_key?(result, "point") and is_map(result["point"]) ->
-        point = result["point"]
-        x = normalize_coordinate(Map.get(point, "x"))
-        y = normalize_coordinate(Map.get(point, "y"))
-        if x != nil and y != nil, do: {:single, {x, y}}, else: nil
-
-      # Handle coordinates
-      Map.has_key?(result, "coordinates") and is_map(result["coordinates"]) ->
-        coords = result["coordinates"]
-        x = normalize_coordinate(Map.get(coords, "x"))
-        y = normalize_coordinate(Map.get(coords, "y"))
-        if x != nil and y != nil, do: {:single, {x, y}}, else: nil
-
-      true ->
-        nil
+      nil ->
+        extract_single_point_coordinates(result)
     end
   end
 
   defp extract_point_coordinates(_), do: nil
+
+  defp extract_multiple_points(%{"points" => points}) when is_list(points) do
+    normalized_points =
+      points
+      |> Enum.filter(&has_xy_coordinates?/1)
+      |> Enum.map(&point_tuple_from_map/1)
+      |> Enum.reject(&is_nil/1)
+
+    if normalized_points == [], do: nil, else: {:multiple, normalized_points}
+  end
+
+  defp extract_multiple_points(_result), do: nil
+
+  defp extract_single_point_coordinates(result) do
+    [
+      point_tuple_from_map(result),
+      point_tuple_from_nested_map(result, "point"),
+      point_tuple_from_nested_map(result, "coordinates")
+    ]
+    |> Enum.find_value(&wrap_single_point/1)
+  end
+
+  defp point_tuple_from_nested_map(result, key) do
+    case Map.get(result, key) do
+      nested when is_map(nested) -> point_tuple_from_map(nested)
+      _ -> nil
+    end
+  end
+
+  defp point_tuple_from_map(map) when is_map(map) do
+    with true <- has_xy_coordinates?(map),
+         x when not is_nil(x) <- normalize_coordinate(Map.get(map, "x")),
+         y when not is_nil(y) <- normalize_coordinate(Map.get(map, "y")) do
+      {x, y}
+    else
+      _ -> nil
+    end
+  end
+
+  defp point_tuple_from_map(_), do: nil
+
+  defp has_xy_coordinates?(map),
+    do: is_map(map) and Map.has_key?(map, "x") and Map.has_key?(map, "y")
+
+  defp wrap_single_point(nil), do: nil
+  defp wrap_single_point(point), do: {:single, point}
 
   defp normalize_coordinate(value) when is_number(value), do: value
 
@@ -325,91 +337,73 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   defp normalize_coordinate(_), do: nil
 
   defp extract_detection_boxes(result) when is_map(result) do
-    objects =
-      cond do
-        Map.has_key?(result, "data") and is_list(result["data"]) ->
-          result["data"]
-
-        Map.has_key?(result, "objects") and is_list(result["objects"]) ->
-          result["objects"]
-
-        Map.has_key?(result, "detections") and is_list(result["detections"]) ->
-          result["detections"]
-
-        Map.has_key?(result, "results") and is_list(result["results"]) ->
-          result["results"]
-
-        true ->
-          []
-      end
-
-    objects
+    result
+    |> extract_detection_objects()
     |> Enum.filter(&is_map/1)
-    |> Enum.map(fn obj ->
-      label = Map.get(obj, "label") || Map.get(obj, "name") || ""
-
-      # Support x_min, x_max, y_min, y_max format (normalized coordinates 0-1)
-      cond do
-        Map.has_key?(obj, "x_min") and Map.has_key?(obj, "x_max") and
-          Map.has_key?(obj, "y_min") and Map.has_key?(obj, "y_max") ->
-          x_min = normalize_coordinate(Map.get(obj, "x_min"))
-          x_max = normalize_coordinate(Map.get(obj, "x_max"))
-          y_min = normalize_coordinate(Map.get(obj, "y_min"))
-          y_max = normalize_coordinate(Map.get(obj, "y_max"))
-
-          if x_min != nil and x_max != nil and y_min != nil and y_max != nil do
-            %{x1: x_min, y1: y_min, x2: x_max, y2: y_max, label: label}
-          else
-            nil
-          end
-
-        # Support bbox array format [x1, y1, x2, y2]
-        Map.has_key?(obj, "bbox") ->
-          bbox = Map.get(obj, "bbox")
-
-          if is_list(bbox) and length(bbox) >= 4 do
-            [x1, y1, x2, y2] = Enum.take(bbox, 4)
-            x1 = normalize_coordinate(x1)
-            y1 = normalize_coordinate(y1)
-            x2 = normalize_coordinate(x2)
-            y2 = normalize_coordinate(y2)
-
-            if x1 != nil and y1 != nil and x2 != nil and y2 != nil do
-              %{x1: x1, y1: y1, x2: x2, y2: y2, label: label}
-            else
-              nil
-            end
-          else
-            nil
-          end
-
-        Map.has_key?(obj, "bounding_box") ->
-          bbox = Map.get(obj, "bounding_box")
-
-          if is_list(bbox) and length(bbox) >= 4 do
-            [x1, y1, x2, y2] = Enum.take(bbox, 4)
-            x1 = normalize_coordinate(x1)
-            y1 = normalize_coordinate(y1)
-            x2 = normalize_coordinate(x2)
-            y2 = normalize_coordinate(y2)
-
-            if x1 != nil and y1 != nil and x2 != nil and y2 != nil do
-              %{x1: x1, y1: y1, x2: x2, y2: y2, label: label}
-            else
-              nil
-            end
-          else
-            nil
-          end
-
-        true ->
-          nil
-      end
-    end)
-    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.map(&extract_single_detection_box/1)
+    |> Enum.reject(&is_nil/1)
   end
 
   defp extract_detection_boxes(_), do: []
+
+  defp extract_detection_objects(result) do
+    ["data", "objects", "detections", "results"]
+    |> Enum.find_value([], fn key ->
+      case Map.get(result, key) do
+        values when is_list(values) -> values
+        _ -> nil
+      end
+    end)
+  end
+
+  defp extract_single_detection_box(obj) do
+    label = Map.get(obj, "label") || Map.get(obj, "name") || ""
+
+    extract_minmax_detection_box(obj, label) ||
+      extract_array_detection_box(obj, "bbox", label) ||
+      extract_array_detection_box(obj, "bounding_box", label)
+  end
+
+  defp extract_minmax_detection_box(obj, label) do
+    with true <- Enum.all?(~w(x_min x_max y_min y_max), &Map.has_key?(obj, &1)),
+         x1 when not is_nil(x1) <- normalize_coordinate(Map.get(obj, "x_min")),
+         x2 when not is_nil(x2) <- normalize_coordinate(Map.get(obj, "x_max")),
+         y1 when not is_nil(y1) <- normalize_coordinate(Map.get(obj, "y_min")),
+         y2 when not is_nil(y2) <- normalize_coordinate(Map.get(obj, "y_max")) do
+      %{x1: x1, y1: y1, x2: x2, y2: y2, label: label}
+    else
+      _ -> nil
+    end
+  end
+
+  defp extract_array_detection_box(obj, key, label) do
+    case Map.get(obj, key) do
+      bbox when is_list(bbox) and length(bbox) >= 4 ->
+        bbox
+        |> Enum.take(4)
+        |> normalize_bbox_values()
+        |> build_detection_box(label)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp normalize_bbox_values([x1, y1, x2, y2]) do
+    [
+      normalize_coordinate(x1),
+      normalize_coordinate(y1),
+      normalize_coordinate(x2),
+      normalize_coordinate(y2)
+    ]
+  end
+
+  defp build_detection_box([x1, y1, x2, y2], label)
+       when not is_nil(x1) and not is_nil(y1) and not is_nil(x2) and not is_nil(y2) do
+    %{x1: x1, y1: y1, x2: x2, y2: y2, label: label}
+  end
+
+  defp build_detection_box(_coords, _label), do: nil
 
   @impl true
   def render(assigns) do

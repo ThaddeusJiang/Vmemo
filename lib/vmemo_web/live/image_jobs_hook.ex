@@ -264,28 +264,30 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       |> Enum.map(& &1.id)
       |> Enum.uniq()
 
-    if failed_image_ids == [] do
-      %{}
-    else
-      Job
-      |> where([j], j.worker == ^@generate_caption_worker)
-      |> where([j], fragment("?->'primary_key'->>'id'", j.args) in ^failed_image_ids)
-      |> order_by([j], desc: j.id)
-      |> select([j], %{image_id: fragment("?->'primary_key'->>'id'", j.args), errors: j.errors})
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn %{image_id: image_id, errors: errors}, acc ->
-        if Map.has_key?(acc, image_id) do
-          acc
-        else
-          case normalize_caption_job_error(errors) do
-            nil -> acc
-            message -> Map.put(acc, image_id, message)
-          end
-        end
-      end)
+    case failed_image_ids do
+      [] -> %{}
+      _ -> fetch_caption_errors(failed_image_ids)
     end
   rescue
     _ -> %{}
+  end
+
+  defp fetch_caption_errors(failed_image_ids) do
+    Job
+    |> where([j], j.worker == ^@generate_caption_worker)
+    |> where([j], fragment("?->'primary_key'->>'id'", j.args) in ^failed_image_ids)
+    |> order_by([j], desc: j.id)
+    |> select([j], %{image_id: fragment("?->'primary_key'->>'id'", j.args), errors: j.errors})
+    |> Repo.all()
+    |> Enum.reduce(%{}, &put_caption_error_if_missing/2)
+  end
+
+  defp put_caption_error_if_missing(%{image_id: image_id, errors: errors}, acc) do
+    case {Map.has_key?(acc, image_id), normalize_caption_job_error(errors)} do
+      {true, _} -> acc
+      {false, nil} -> acc
+      {false, message} -> Map.put(acc, image_id, message)
+    end
   end
 
   defp normalize_caption_job_error(errors) when is_list(errors) do
@@ -293,12 +295,10 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     |> List.last()
     |> case do
       %{"error" => error} when is_binary(error) ->
-        cond do
-          String.contains?(error, ":vision_service_unreachable") ->
-            "Vision service is unreachable."
-
-          true ->
-            extract_unknown_error(error) || "Caption generation failed."
+        if String.contains?(error, ":vision_service_unreachable") do
+          "Vision service is unreachable."
+        else
+          extract_unknown_error(error) || "Caption generation failed."
         end
 
       _ ->

@@ -23,24 +23,12 @@ defmodule Vmemo.Account.Sessions do
   end
 
   def get_user_by_session_token(token) do
-    case AshAuthentication.Jwt.verify(token, User) do
-      {:ok, claims, _resource} ->
-        case Map.get(claims, "sub") do
-          nil ->
-            nil
-
-          "user?id=" <> user_id ->
-            case Ash.get(User, user_id) do
-              {:ok, user} -> user
-              _ -> nil
-            end
-
-          _ ->
-            nil
-        end
-
-      _ ->
-        nil
+    with {:ok, claims, _resource} <- AshAuthentication.Jwt.verify(token, User),
+         {:ok, user_id} <- session_user_id(claims),
+         {:ok, user} <- Ash.get(User, user_id) do
+      user
+    else
+      _ -> nil
     end
   end
 
@@ -48,6 +36,13 @@ defmodule Vmemo.Account.Sessions do
     case AshAuthentication.Jwt.verify(token, User) do
       {:ok, _claims, _resource} -> :ok
       _ -> :ok
+    end
+  end
+
+  defp session_user_id(claims) do
+    case Map.get(claims, "sub") do
+      "user?id=" <> user_id -> {:ok, user_id}
+      _ -> :error
     end
   end
 end

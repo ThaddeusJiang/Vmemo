@@ -16,36 +16,42 @@ defmodule Vmemo.Chat.AiRouter do
 
   def route_image_tool(conversation, text, actor, scoped_image_id)
       when is_map(conversation) and is_binary(text) do
-    image_id =
-      cond do
-        is_binary(conversation.image_id) ->
-          conversation.image_id
+    case select_image_id(conversation, scoped_image_id) do
+      image_id when is_binary(image_id) ->
+        route_with_image_id(image_id, text, actor)
 
-        is_binary(scoped_image_id) ->
-          scoped_image_id
-
-        true ->
-          nil
-      end
-
-    if is_binary(image_id) do
-      case parse_tool_command(text) do
-        {:ok, tool, prompt} ->
-          run_tool(image_id, tool, prompt, actor)
-
-        :skip ->
-          if should_fallback_to_general_chat?(text) do
-            :skip
-          else
-            run_tool(image_id, "query", String.trim(text), actor)
-          end
-      end
-    else
-      :skip
+      _ ->
+        :skip
     end
   end
 
   def route_image_tool(_, _, _, _), do: :skip
+
+  defp select_image_id(conversation, scoped_image_id) do
+    cond do
+      is_binary(conversation.image_id) -> conversation.image_id
+      is_binary(scoped_image_id) -> scoped_image_id
+      true -> nil
+    end
+  end
+
+  defp route_with_image_id(image_id, text, actor) do
+    case parse_tool_command(text) do
+      {:ok, tool, prompt} ->
+        run_tool(image_id, tool, prompt, actor)
+
+      :skip ->
+        route_default_query_or_skip(image_id, text, actor)
+    end
+  end
+
+  defp route_default_query_or_skip(image_id, text, actor) do
+    if should_fallback_to_general_chat?(text) do
+      :skip
+    else
+      run_tool(image_id, "query", String.trim(text), actor)
+    end
+  end
 
   def tool_hint do
     """
@@ -89,16 +95,19 @@ defmodule Vmemo.Chat.AiRouter do
   defp should_fallback_to_general_chat?(text) when is_binary(text) do
     normalized = text |> String.trim() |> String.downcase()
 
-    normalized == "" ||
-      String.contains?(normalized, "other image") ||
-      String.contains?(normalized, "other images") ||
-      String.contains?(normalized, "search image") ||
-      String.contains?(normalized, "search for image") ||
-      String.contains?(normalized, "similar image") ||
-      String.contains?(text, "其他图片") ||
-      String.contains?(text, "其他图") ||
-      String.contains?(text, "找图") ||
-      String.contains?(text, "搜图")
+    normalized == "" or
+      contains_any?(normalized, [
+        "other image",
+        "other images",
+        "search image",
+        "search for image",
+        "similar image"
+      ]) or
+      contains_any?(text, ["其他图片", "其他图", "找图", "搜图"])
+  end
+
+  defp contains_any?(text, keywords) do
+    Enum.any?(keywords, &String.contains?(text, &1))
   end
 
   defp run_tool(image_id, tool, prompt, actor) do

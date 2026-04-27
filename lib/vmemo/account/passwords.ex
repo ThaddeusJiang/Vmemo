@@ -25,48 +25,16 @@ defmodule Vmemo.Account.Passwords do
   end
 
   def verify_reset_password_token(token) do
-    case AshAuthentication.Jwt.verify(token, User) do
-      {:ok, claims, _resource} ->
-        jti = Map.get(claims, "jti")
-
-        if is_nil(jti) do
-          {:error, :invalid_token}
-        else
-          case Ash.get(Vmemo.Account.UserToken, jti) do
-            {:ok, _token_record} ->
-              exp = Map.get(claims, "exp")
-
-              if is_nil(exp) do
-                {:error, :invalid_token}
-              else
-                now = DateTime.utc_now() |> DateTime.to_unix()
-
-                if exp < now do
-                  {:error, :expired_token}
-                else
-                  case Map.get(claims, "sub") do
-                    nil ->
-                      {:error, :invalid_token}
-
-                    "user?id=" <> user_id ->
-                      case Ash.get(User, user_id) do
-                        {:ok, user} -> {:ok, user}
-                        _ -> {:error, :user_not_found}
-                      end
-
-                    _ ->
-                      {:error, :invalid_token}
-                  end
-                end
-              end
-
-            _ ->
-              {:error, :token_not_found}
-          end
-        end
-
-      _ ->
-        {:error, :invalid_token}
+    with {:ok, claims, _resource} <- AshAuthentication.Jwt.verify(token, User),
+         {:ok, jti} <- claim_required(claims, "jti"),
+         {:ok, _token_record} <- fetch_reset_token_record(jti),
+         :ok <- validate_expiration(claims),
+         {:ok, user_id} <- extract_reset_token_user_id(claims),
+         {:ok, user} <- fetch_user_by_id(user_id) do
+      {:ok, user}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :invalid_token}
     end
   end
 
@@ -131,6 +99,48 @@ defmodule Vmemo.Account.Passwords do
          {:ok, %{"jti" => jti}} <- AshAuthentication.Jwt.peek(token),
          {:ok, token_record} <- Ash.get(Vmemo.Account.UserToken, jti) do
       Ash.update(token_record, %{user_id: user.id}, action: :update_user_id)
+    end
+  end
+
+  defp claim_required(claims, key) do
+    case Map.get(claims, key) do
+      nil -> {:error, :invalid_token}
+      value -> {:ok, value}
+    end
+  end
+
+  defp fetch_reset_token_record(jti) do
+    case Ash.get(Vmemo.Account.UserToken, jti) do
+      {:ok, token_record} -> {:ok, token_record}
+      _ -> {:error, :token_not_found}
+    end
+  end
+
+  defp validate_expiration(claims) do
+    case claim_required(claims, "exp") do
+      {:ok, exp} when is_integer(exp) ->
+        now = DateTime.utc_now() |> DateTime.to_unix()
+        if exp < now, do: {:error, :expired_token}, else: :ok
+
+      {:ok, _exp} ->
+        {:error, :invalid_token}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp extract_reset_token_user_id(claims) do
+    case Map.get(claims, "sub") do
+      "user?id=" <> user_id -> {:ok, user_id}
+      _ -> {:error, :invalid_token}
+    end
+  end
+
+  defp fetch_user_by_id(user_id) do
+    case Ash.get(User, user_id) do
+      {:ok, user} -> {:ok, user}
+      _ -> {:error, :user_not_found}
     end
   end
 end
