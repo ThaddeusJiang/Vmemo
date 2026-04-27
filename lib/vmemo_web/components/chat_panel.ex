@@ -1,4 +1,8 @@
 defmodule VmemoWeb.Components.ChatPanel do
+  @moduledoc """
+  Reusable chat panel component for rendering messages and the input form.
+  """
+
   use VmemoWeb, :html
 
   attr :messages, :list, required: true
