@@ -197,25 +197,7 @@ defmodule Vmemo.Ai.VisionRequest do
   defp process_request(request) do
     case update_request_status(request, "processing") do
       {:ok, request} ->
-        case Ash.get(Image, request.image_id, actor: nil) do
-          {:ok, image} ->
-            case read_image_as_base64(image.url) do
-              {:ok, {image_base64, mime_type}} ->
-                call_vision_api(request, image_base64, mime_type)
-
-              {:error, reason} ->
-                Logger.error("Failed to read image for image #{image.id}: #{inspect(reason)}")
-                update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
-            end
-
-          {:error, %Ash.Error.Query.NotFound{}} ->
-            Logger.warning("Image #{request.image_id} not found")
-            update_request_with_error(request, "Image not found")
-
-          {:error, error} ->
-            Logger.error("Failed to get image #{request.image_id}: #{inspect(error)}")
-            update_request_with_error(request, "Failed to get image: #{inspect(error)}")
-        end
+        process_request_image(request)
 
       {:error, error} ->
         Logger.error("Failed to update request status to processing: #{inspect(error)}")
@@ -223,66 +205,37 @@ defmodule Vmemo.Ai.VisionRequest do
     end
   end
 
+  defp process_request_image(request) do
+    case Ash.get(Image, request.image_id, actor: nil) do
+      {:ok, image} ->
+        process_image_content(request, image)
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        Logger.warning("Image #{request.image_id} not found")
+        update_request_with_error(request, "Image not found")
+
+      {:error, error} ->
+        Logger.error("Failed to get image #{request.image_id}: #{inspect(error)}")
+        update_request_with_error(request, "Failed to get image: #{inspect(error)}")
+    end
+  end
+
+  defp process_image_content(request, image) do
+    case read_image_as_base64(image.url) do
+      {:ok, {image_base64, mime_type}} ->
+        call_vision_api(request, image_base64, mime_type)
+
+      {:error, reason} ->
+        Logger.error("Failed to read image for image #{image.id}: #{inspect(reason)}")
+        update_request_with_error(request, "Failed to read image: #{inspect(reason)}")
+    end
+  end
+
   defp call_vision_api(request, image_base64, mime_type) do
-    function_type =
-      case request.function_type do
-        "query" -> :query
-        "caption" -> :caption
-        "point" -> :point
-        "detect" -> :detect
-        "segment" -> :segment
-        _ -> {:error, "Invalid function type: #{request.function_type}"}
-      end
-
     result =
-      case function_type do
-        {:error, _} = error ->
-          error
-
-        :caption ->
-          config = VisionConfig.resolve()
-
-          AshAiVision.caption(
-            image_base64,
-            model: config.model,
-            mime_type: mime_type
-          )
-
-        :query ->
-          if is_nil(request.prompt) or request.prompt == "" do
-            {:error, "Prompt is required for query"}
-          else
-            config = VisionConfig.resolve()
-
-            AshAiVision.query(
-              image_base64,
-              request.prompt,
-              model: config.model,
-              mime_type: mime_type
-            )
-          end
-
-        :point ->
-          if is_nil(request.prompt) or request.prompt == "" do
-            {:error, "Prompt is required for point"}
-          else
-            Moondream.point(image_base64, request.prompt)
-          end
-
-        :detect ->
-          if is_nil(request.prompt) or request.prompt == "" do
-            {:error, "Prompt is required for detect"}
-          else
-            Moondream.detect(image_base64, request.prompt)
-          end
-
-        :segment ->
-          if is_nil(request.prompt) or request.prompt == "" do
-            {:error, "Prompt is required for segment"}
-          else
-            Moondream.segment(image_base64, request.prompt)
-          end
-      end
+      request
+      |> resolve_function_type()
+      |> run_vision_request(request, image_base64, mime_type)
 
     case result do
       {:ok, api_result} ->
@@ -292,6 +245,62 @@ defmodule Vmemo.Ai.VisionRequest do
         update_request_with_error(request, format_error_message(reason))
     end
   end
+
+  defp resolve_function_type(%{function_type: "query"}), do: {:ok, :query}
+  defp resolve_function_type(%{function_type: "caption"}), do: {:ok, :caption}
+  defp resolve_function_type(%{function_type: "point"}), do: {:ok, :point}
+  defp resolve_function_type(%{function_type: "detect"}), do: {:ok, :detect}
+  defp resolve_function_type(%{function_type: "segment"}), do: {:ok, :segment}
+
+  defp resolve_function_type(%{function_type: function_type}),
+    do: {:error, "Invalid function type: #{function_type}"}
+
+  defp run_vision_request({:error, _} = error, _request, _image_base64, _mime_type), do: error
+
+  defp run_vision_request({:ok, :caption}, _request, image_base64, mime_type) do
+    config = VisionConfig.resolve()
+
+    AshAiVision.caption(
+      image_base64,
+      model: config.model,
+      mime_type: mime_type
+    )
+  end
+
+  defp run_vision_request({:ok, :query}, request, image_base64, mime_type) do
+    with :ok <- validate_prompt(request.prompt, :query) do
+      config = VisionConfig.resolve()
+
+      AshAiVision.query(
+        image_base64,
+        request.prompt,
+        model: config.model,
+        mime_type: mime_type
+      )
+    end
+  end
+
+  defp run_vision_request({:ok, function_type}, request, image_base64, _mime_type)
+       when function_type in [:point, :detect, :segment] do
+    with :ok <- validate_prompt(request.prompt, function_type) do
+      run_moondream_request(function_type, image_base64, request.prompt)
+    end
+  end
+
+  defp validate_prompt(prompt, function_type) when prompt in [nil, ""] do
+    {:error, "Prompt is required for #{function_type}"}
+  end
+
+  defp validate_prompt(_prompt, _function_type), do: :ok
+
+  defp run_moondream_request(:point, image_base64, prompt),
+    do: Moondream.point(image_base64, prompt)
+
+  defp run_moondream_request(:detect, image_base64, prompt),
+    do: Moondream.detect(image_base64, prompt)
+
+  defp run_moondream_request(:segment, image_base64, prompt),
+    do: Moondream.segment(image_base64, prompt)
 
   defp update_request_status(request, status) do
     __MODULE__.update(request, %{status: status}, actor: nil)
