@@ -49,9 +49,8 @@ defmodule VmemoWeb.UserForgotPasswordLive do
 
           {:error, reason} ->
             Logger.error(
-              "Password reset email delivery failed",
-              user_id: user.id,
-              reason: inspect(reason)
+              "Password reset email delivery failed: #{inspect(reason)}",
+              user_id: user.id
             )
         end
     end
