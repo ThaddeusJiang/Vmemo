@@ -41,7 +41,27 @@ services:
       PHX_SERVER: "true"
       PHX_HOST: localhost
       PORT: "4000"
-      E2E_AUTO_SEED: "true"
+
+  e2e-seed:
+    image: postgres:18
+    hostname: e2e-seed
+    restart: "no"
+    depends_on:
+      - postgres-e2e
+      - vmemo-e2e
+    volumes:
+      - ./sql/seed_e2e.sql:/seed/seed_e2e.sql:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        while true; do
+          if env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='memo_notes'" | grep -q 1; then
+            break
+          fi
+          echo "Waiting for app migrations to complete..."
+          sleep 1
+        done
+        env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -f /seed/seed_e2e.sql
 
 volumes:
   pg-e2e-data:
