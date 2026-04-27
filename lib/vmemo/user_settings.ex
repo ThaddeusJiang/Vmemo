@@ -265,36 +265,7 @@ defmodule Vmemo.UserSettings do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
 
     {prepared, errors} =
-      Enum.reduce(images, {[], []}, fn image, {rows, errs} ->
-        legacy_id = pick_value(image, ["id", :id])
-        raw_url = pick_value(image, ["url", :url])
-        url = remap_image_url(raw_url, source_user_id, target_user_id)
-
-        cond do
-          is_nil(legacy_id) or is_nil(url) ->
-            {rows, add_error(errs, "Image missing id or url")}
-
-          storage_url?(url) and not file_exists_for_storage_url?(url) ->
-            {rows, add_error(errs, "Image file missing for #{inspect(legacy_id)}: #{url}")}
-
-          true ->
-            row = %{
-              legacy_id: legacy_id,
-              raw_id: legacy_id,
-              url: url,
-              note: pick_value(image, ["note", :note]),
-              caption: pick_value(image, ["caption", :caption]),
-              file_id: pick_value(image, ["file_id", :file_id]),
-              user_id: target_user_id,
-              _purpose: normalize_import_purpose(image),
-              inserted_at:
-                parse_iso_datetime(pick_value(image, ["inserted_at", :inserted_at]), now),
-              updated_at: parse_iso_datetime(pick_value(image, ["updated_at", :updated_at]), now)
-            }
-
-            {[row | rows], errs}
-        end
-      end)
+      prepare_import_images(images, source_user_id, target_user_id, now)
 
     prepared = Enum.reverse(prepared)
 
@@ -305,82 +276,15 @@ defmodule Vmemo.UserSettings do
 
     generated_ids =
       prepared
-      |> Enum.count(fn row ->
-        case extract_valid_uuid_id(row.raw_id) do
-          nil ->
-            true
-
-          valid_id ->
-            case Map.get(existing_owner_map, valid_id) do
-              nil -> false
-              owner_id -> owner_id != row.user_id
-            end
-        end
-      end)
+      |> Enum.count(&image_row_needs_generated_id?(&1, existing_owner_map))
       |> generate_uuid_v7_list()
 
     {rows_to_insert, id_map, ids, skipped_from_existing, _generated_tail} =
-      Enum.reduce(prepared, {[], %{}, MapSet.new(), 0, generated_ids}, fn row,
-                                                                          {insert_rows, map,
-                                                                           id_set, skipped,
-                                                                           gen_ids} ->
-        case extract_valid_uuid_id(row.raw_id) do
-          valid_id when is_binary(valid_id) ->
-            case Map.get(existing_owner_map, valid_id) do
-              nil ->
-                db_row =
-                  row
-                  |> Map.drop([:legacy_id, :raw_id])
-                  |> Map.put(:id, uuid_to_db(valid_id))
-                  |> Map.update!(:user_id, &uuid_to_db/1)
-
-                {[db_row | insert_rows], Map.put(map, row.legacy_id, valid_id),
-                 MapSet.put(id_set, valid_id), skipped, gen_ids}
-
-              owner_id when owner_id == row.user_id ->
-                {insert_rows, Map.put(map, row.legacy_id, valid_id), MapSet.put(id_set, valid_id),
-                 skipped + 1, gen_ids}
-
-              _other_owner ->
-                [new_id | tail] = gen_ids
-
-                db_row =
-                  row
-                  |> Map.drop([:legacy_id, :raw_id])
-                  |> Map.put(:id, uuid_to_db(new_id))
-                  |> Map.update!(:user_id, &uuid_to_db/1)
-
-                {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
-                 MapSet.put(id_set, new_id), skipped, tail}
-            end
-
-          _ ->
-            [new_id | tail] = gen_ids
-
-            db_row =
-              row
-              |> Map.drop([:legacy_id, :raw_id])
-              |> Map.put(:id, uuid_to_db(new_id))
-              |> Map.update!(:user_id, &uuid_to_db/1)
-
-            {[db_row | insert_rows], Map.put(map, row.legacy_id, new_id),
-             MapSet.put(id_set, new_id), skipped, tail}
-        end
-      end)
+      build_image_insert_rows(prepared, existing_owner_map, generated_ids)
 
     rows_to_insert = Enum.reverse(rows_to_insert)
 
-    {inserted_count, insert_errors} =
-      case rows_to_insert do
-        [] ->
-          {0, []}
-
-        rows ->
-          {count, _} =
-            Repo.insert_all("memo_images", rows, on_conflict: :nothing, conflict_target: [:id])
-
-          {count, []}
-      end
+    {inserted_count, insert_errors} = insert_rows("memo_images", rows_to_insert)
 
     created = inserted_count
     skipped = skipped_from_existing + max(length(rows_to_insert) - inserted_count, 0)
@@ -388,6 +292,99 @@ defmodule Vmemo.UserSettings do
     errors = append_errors(errors, insert_errors)
 
     {%{created: created, skipped: skipped, failed: failed}, id_map, ids, errors}
+  end
+
+  defp prepare_import_images(images, source_user_id, target_user_id, now) do
+    Enum.reduce(images, {[], []}, fn image, {rows, errs} ->
+      case build_prepared_image_row(image, source_user_id, target_user_id, now) do
+        {:ok, row} -> {[row | rows], errs}
+        {:error, message} -> {rows, add_error(errs, message)}
+      end
+    end)
+  end
+
+  defp build_prepared_image_row(image, source_user_id, target_user_id, now) do
+    legacy_id = pick_value(image, ["id", :id])
+    raw_url = pick_value(image, ["url", :url])
+    url = remap_image_url(raw_url, source_user_id, target_user_id)
+
+    cond do
+      is_nil(legacy_id) or is_nil(url) ->
+        {:error, "Image missing id or url"}
+
+      storage_url?(url) and not file_exists_for_storage_url?(url) ->
+        {:error, "Image file missing for #{inspect(legacy_id)}: #{url}"}
+
+      true ->
+        {:ok,
+         %{
+           legacy_id: legacy_id,
+           raw_id: legacy_id,
+           url: url,
+           note: pick_value(image, ["note", :note]),
+           caption: pick_value(image, ["caption", :caption]),
+           file_id: pick_value(image, ["file_id", :file_id]),
+           user_id: target_user_id,
+           _purpose: normalize_import_purpose(image),
+           inserted_at: parse_iso_datetime(pick_value(image, ["inserted_at", :inserted_at]), now),
+           updated_at: parse_iso_datetime(pick_value(image, ["updated_at", :updated_at]), now)
+         }}
+    end
+  end
+
+  defp image_row_needs_generated_id?(row, existing_owner_map) do
+    case extract_valid_uuid_id(row.raw_id) do
+      nil -> true
+      valid_id -> Map.get(existing_owner_map, valid_id) not in [nil, row.user_id]
+    end
+  end
+
+  defp build_image_insert_rows(prepared, existing_owner_map, generated_ids) do
+    Enum.reduce(prepared, {[], %{}, MapSet.new(), 0, generated_ids}, fn row, acc ->
+      assign_image_row_id(row, acc, existing_owner_map)
+    end)
+  end
+
+  defp assign_image_row_id(row, {insert_rows, map, id_set, skipped, gen_ids}, existing_owner_map) do
+    case resolve_image_id_for_row(row, existing_owner_map, gen_ids) do
+      {:insert, assigned_id, next_gen_ids} ->
+        db_row =
+          row
+          |> Map.drop([:legacy_id, :raw_id])
+          |> Map.put(:id, uuid_to_db(assigned_id))
+          |> Map.update!(:user_id, &uuid_to_db/1)
+
+        {[db_row | insert_rows], Map.put(map, row.legacy_id, assigned_id),
+         MapSet.put(id_set, assigned_id), skipped, next_gen_ids}
+
+      {:skip, assigned_id, next_gen_ids} ->
+        {insert_rows, Map.put(map, row.legacy_id, assigned_id), MapSet.put(id_set, assigned_id),
+         skipped + 1, next_gen_ids}
+    end
+  end
+
+  defp resolve_image_id_for_row(row, existing_owner_map, gen_ids) do
+    case extract_valid_uuid_id(row.raw_id) do
+      valid_id when is_binary(valid_id) ->
+        case Map.get(existing_owner_map, valid_id) do
+          nil -> {:insert, valid_id, gen_ids}
+          owner_id when owner_id == row.user_id -> {:skip, valid_id, gen_ids}
+          _other_owner -> assign_new_image_id(gen_ids)
+        end
+
+      _ ->
+        assign_new_image_id(gen_ids)
+    end
+  end
+
+  defp assign_new_image_id([new_id | tail]), do: {:insert, new_id, tail}
+  defp assign_new_image_id([]), do: {:insert, Ecto.UUID.generate(), []}
+
+  defp insert_rows(_table, []), do: {0, []}
+
+  defp insert_rows(table, rows) do
+    {count, _} = Repo.insert_all(table, rows, on_conflict: :nothing, conflict_target: [:id])
+    {count, []}
   end
 
   defp import_notes(notes, target_user_id) do
