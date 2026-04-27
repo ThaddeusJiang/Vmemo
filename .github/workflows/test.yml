@@ -2,6 +2,7 @@ name: Test
 
 on:
   pull_request:
+    types: [ready_for_review]
 
 concurrency:
   group: test-pr-${{ github.event.pull_request.number }}
@@ -37,10 +38,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-
-          retention-days: 3
+          key: ${{ hashFiles('mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get
@@ -80,10 +78,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-otp-${{ steps.beam.outputs.otp-version }}-elixir-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.MIX_ENV || 'dev' }}-
-          retention-days: 3
+          key: ${{ hashFiles('mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get
