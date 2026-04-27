@@ -89,31 +89,11 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
     user = socket.assigns.current_user
 
     case Ash.get(VisionRequest, request_id, actor: user) do
-      {:ok, request} ->
-        if request.status == "failed" do
-          case VisionRequest.retry(request, %{}, actor: user) do
-            {:ok, updated_request} ->
-              loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)
+      {:ok, %{status: "failed"} = request} ->
+        retry_failed_request(socket, user, request)
 
-              updated_requests =
-                Enum.map(socket.assigns.requests, fn req ->
-                  if req.id == updated_request.id do
-                    Map.merge(req, %{status: "pending", error_message: nil})
-                  else
-                    req
-                  end
-                end)
-
-              send(self(), {:moondream_request_submitted, updated_request})
-
-              {:noreply,
-               socket
-               |> assign(:loading_requests, loading_requests)
-               |> assign(:requests, updated_requests)}
-          end
-        else
-          {:noreply, socket}
-        end
+      {:ok, _request} ->
+        {:noreply, socket}
 
       {:error, _} ->
         {:noreply, socket}
@@ -126,6 +106,31 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   end
 
   defp segment_disabled?(function), do: function == "segment"
+
+  defp retry_failed_request(socket, user, request) do
+    case VisionRequest.retry(request, %{}, actor: user) do
+      {:ok, updated_request} ->
+        loading_requests = MapSet.put(socket.assigns.loading_requests, updated_request.id)
+        updated_requests = mark_request_pending(socket.assigns.requests, updated_request.id)
+
+        send(self(), {:moondream_request_submitted, updated_request})
+
+        {:noreply,
+         socket
+         |> assign(:loading_requests, loading_requests)
+         |> assign(:requests, updated_requests)}
+    end
+  end
+
+  defp mark_request_pending(requests, request_id) do
+    Enum.map(requests, fn req ->
+      if req.id == request_id do
+        Map.merge(req, %{status: "pending", error_message: nil})
+      else
+        req
+      end
+    end)
+  end
 
   defp format_changeset_errors(changeset) do
     case changeset do

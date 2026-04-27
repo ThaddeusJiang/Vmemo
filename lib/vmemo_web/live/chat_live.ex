@@ -209,17 +209,7 @@ defmodule VmemoWeb.ChatLive do
       :no_command ->
         case AshPhoenix.Form.submit(socket.assigns.message_form.source, params: params) do
           {:ok, message} ->
-            if socket.assigns.conversation do
-              socket
-              |> assign_message_form()
-              |> stream_insert(:messages, message, at: 0)
-              |> push_event("reset_form", %{form_id: "message-form"})
-              |> then(&{:noreply, &1})
-            else
-              {:noreply,
-               socket
-               |> push_navigate(to: ~p"/chat/#{message.conversation_id}")}
-            end
+            handle_submitted_message(socket, message)
 
           {:error, form} ->
             {:noreply, assign(socket, :message_form, form)}
@@ -254,43 +244,10 @@ defmodule VmemoWeb.ChatLive do
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
       {:ok, conversation} ->
-        case Vmemo.Chat.archive_conversation(conversation, actor: user) do
-          {:ok, _archived_conversation} ->
-            # Remove from stream and navigate away if it's the current conversation
-            socket =
-              socket
-              |> put_flash(:info, "Conversation archived")
-              |> stream_delete(:conversations, conversation)
-              |> then(fn s ->
-                if s.assigns[:conversation] && s.assigns.conversation.id == conversation_id do
-                  push_navigate(s, to: ~p"/chat")
-                else
-                  s
-                end
-              end)
-
-            {:noreply, socket}
-
-          {:error, _error} ->
-            {:noreply, put_flash(socket, :error, "Failed to archive conversation")}
-        end
+        handle_archive_conversation(socket, user, conversation, conversation_id)
 
       {:error, _} ->
-        # Conversation not found, try to find it in stream and remove
-        conversation_in_stream =
-          Enum.find(socket.assigns.streams.conversations.inserts, fn {_id, conv} ->
-            conv.id == conversation_id
-          end)
-
-        socket =
-          if conversation_in_stream do
-            {_id, conv} = conversation_in_stream
-            stream_delete(socket, :conversations, conv)
-          else
-            socket
-          end
-
-        {:noreply, socket}
+        {:noreply, remove_conversation_from_stream(socket, conversation_id)}
     end
   end
 
@@ -299,59 +256,10 @@ defmodule VmemoWeb.ChatLive do
 
     case Vmemo.Chat.get_conversation(conversation_id, actor: user) do
       {:ok, conversation} ->
-        case Vmemo.Chat.delete_conversation(conversation, actor: user) do
-          :ok ->
-            # Remove from stream and navigate away if it's the current conversation
-            socket =
-              socket
-              |> put_flash(:info, "Conversation deleted")
-              |> stream_delete(:conversations, conversation)
-              |> then(fn s ->
-                if s.assigns[:conversation] && s.assigns.conversation.id == conversation_id do
-                  push_navigate(s, to: ~p"/chat")
-                else
-                  s
-                end
-              end)
-
-            {:noreply, socket}
-
-          {:ok, _} ->
-            # Same handling for {:ok, destroyed} case
-            socket =
-              socket
-              |> put_flash(:info, "Conversation deleted")
-              |> stream_delete(:conversations, conversation)
-              |> then(fn s ->
-                if s.assigns[:conversation] && s.assigns.conversation.id == conversation_id do
-                  push_navigate(s, to: ~p"/chat")
-                else
-                  s
-                end
-              end)
-
-            {:noreply, socket}
-
-          {:error, _error} ->
-            {:noreply, put_flash(socket, :error, "Failed to delete conversation")}
-        end
+        handle_delete_conversation(socket, user, conversation, conversation_id)
 
       {:error, _} ->
-        # Conversation not found, try to find it in stream and remove
-        conversation_in_stream =
-          Enum.find(socket.assigns.streams.conversations.inserts, fn {_id, conv} ->
-            conv.id == conversation_id
-          end)
-
-        socket =
-          if conversation_in_stream do
-            {_id, conv} = conversation_in_stream
-            stream_delete(socket, :conversations, conv)
-          else
-            socket
-          end
-
-        {:noreply, socket}
+        {:noreply, remove_conversation_from_stream(socket, conversation_id)}
     end
   end
 
@@ -492,6 +400,73 @@ defmodule VmemoWeb.ChatLive do
 
   defp list_conversations(user, image_id) when is_binary(image_id) do
     Vmemo.Chat.list_conversations_by_initial_image(user, image_id)
+  end
+
+  defp handle_archive_conversation(socket, user, conversation, conversation_id) do
+    case Vmemo.Chat.archive_conversation(conversation, actor: user) do
+      {:ok, _archived_conversation} ->
+        {:noreply,
+         apply_conversation_removal(
+           socket,
+           conversation,
+           conversation_id,
+           "Conversation archived"
+         )}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Failed to archive conversation")}
+    end
+  end
+
+  defp handle_delete_conversation(socket, user, conversation, conversation_id) do
+    case Vmemo.Chat.delete_conversation(conversation, actor: user) do
+      :ok ->
+        {:noreply,
+         apply_conversation_removal(socket, conversation, conversation_id, "Conversation deleted")}
+
+      {:ok, _} ->
+        {:noreply,
+         apply_conversation_removal(socket, conversation, conversation_id, "Conversation deleted")}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete conversation")}
+    end
+  end
+
+  defp apply_conversation_removal(socket, conversation, conversation_id, message) do
+    socket
+    |> put_flash(:info, message)
+    |> stream_delete(:conversations, conversation)
+    |> maybe_navigate_chat_home(conversation_id)
+  end
+
+  defp maybe_navigate_chat_home(socket, conversation_id) do
+    if socket.assigns[:conversation] && socket.assigns.conversation.id == conversation_id do
+      push_navigate(socket, to: ~p"/chat")
+    else
+      socket
+    end
+  end
+
+  defp remove_conversation_from_stream(socket, conversation_id) do
+    case Enum.find(socket.assigns.streams.conversations.inserts, fn {_id, conv} ->
+           conv.id == conversation_id
+         end) do
+      {_id, conversation} -> stream_delete(socket, :conversations, conversation)
+      nil -> socket
+    end
+  end
+
+  defp handle_submitted_message(%{assigns: %{conversation: nil}} = socket, message) do
+    {:noreply, push_navigate(socket, to: ~p"/chat/#{message.conversation_id}")}
+  end
+
+  defp handle_submitted_message(socket, message) do
+    socket
+    |> assign_message_form()
+    |> stream_insert(:messages, message, at: 0)
+    |> push_event("reset_form", %{form_id: "message-form"})
+    |> then(&{:noreply, &1})
   end
 
   defp handle_chat_command(_command, %{assigns: %{conversation: nil}} = socket) do
