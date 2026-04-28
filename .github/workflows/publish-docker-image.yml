@@ -147,6 +147,4 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKERHUB_USERNAME: thaddeusjiang
         run: |
-          bash scripts/ci/delete-dockerhub-temp-tags.sh \
-            "${TARGET_TAG}-amd64" \
-            "${TARGET_TAG}-arm64"
+          bash others/scripts/ci/delete-dockerhub-temp-tags.sh "${TARGET_TAG}-amd64" "${TARGET_TAG}-arm64"

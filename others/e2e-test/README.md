@@ -10,7 +10,7 @@ This directory contains Playwright end-to-end tests written in TypeScript and ex
 
 ## Install
 
-Run from `e2e-test` directory:
+Run from `others/e2e-test` directory:
 
 ```bash
 bun install
@@ -38,7 +38,7 @@ E2E_BASE_URL=http://localhost:4000 bun run e2e
 
 ## Prod-Like Mode
 
-Start the prod-like app stack from `e2e-test/docker-compose.yml`.
+Start the prod-like app stack from `others/e2e-test/docker-compose.yml`.
 This compose file manages:
 
 - `postgres-e2e`
@@ -73,7 +73,7 @@ By default, `vmemo` resolves runtime connections as:
 In prod-like mode, container startup runs:
 
 - release migrations (`Vmemo.Release.migrate/0`)
-- e2e SQL seed via `e2e-seed` service (`e2e-test/sql/seed_e2e.sql`)
+- e2e SQL seed via `e2e-seed` service (`others/e2e-test/sql/seed_e2e.sql`)
 
 ## Auth Setup
 
@@ -121,7 +121,7 @@ The most likely cause is stale Docker volume data from previous runs.
 Before running local e2e tests, clear e2e volumes first:
 
 ```bash
-cd e2e-test && docker compose down -v
+cd others/e2e-test && docker compose down -v
 ```
 
 ## Test Files
@@ -149,8 +149,8 @@ Playwright output is under:
 For visual regression coverage, prefer Playwright screenshot snapshot assertions such as:
 
 ```ts
-await expect(page).toHaveScreenshot()
-await expect(page.getByRole("button", { name: "Save" })).toHaveScreenshot()
+await expect(page).toHaveScreenshot();
+await expect(page.getByRole("button", { name: "Save" })).toHaveScreenshot();
 ```
 
 Commit the generated baseline snapshots so the same visual checks run locally and in CI.
@@ -173,7 +173,7 @@ password = "pass123456"
 
 CI e2e workflow runs when the PR has label:
 
-- `run-e2e-testing`
+- `run-e2e-test`
 
 That single label runs the full e2e suite, including page-render visual assertions.
 
@@ -186,7 +186,7 @@ When `update_snapshots` is enabled, the workflow runs Playwright in snapshot upd
 CI runs the same specs against a prod-like target:
 
 - build image from current branch
-- start the app with `docker compose -f e2e-test/docker-compose.yml up -d`
+- start the app with `docker compose -f others/e2e-test/docker-compose.yml up -d`
 - startup runs release migrations, and `e2e-seed` inserts e2e fixture data
 - run Playwright tests against `http://localhost:4000`
 - upload Playwright HTML report artifact: `e2e-playwright-report-<run_id>`
@@ -215,6 +215,6 @@ tests begin.
 Local development can run the same specs against either:
 
 - an already running dev server
-- the local Docker prod-like app from `e2e-test/docker-compose.yml` with PostgreSQL and Typesense
+- the local Docker prod-like app from `others/e2e-test/docker-compose.yml` with PostgreSQL and Typesense
 
 Use local runs to debug quickly. Use CI results to decide whether visual changes are acceptable for the team.
