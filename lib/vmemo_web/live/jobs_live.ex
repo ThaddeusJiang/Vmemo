@@ -1,5 +1,6 @@
 defmodule VmemoWeb.JobsLive do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Memo.Image
   alias VmemoWeb.Live.ImageJobsHook
@@ -25,7 +26,7 @@ defmodule VmemoWeb.JobsLive do
 
         _ ->
           socket
-          |> put_flash(:error, "Job not found")
+          |> put_flash(:error, gettext("Job not found"))
           |> push_navigate(to: ~p"/jobs")
       end
 
@@ -51,11 +52,11 @@ defmodule VmemoWeb.JobsLive do
             {:noreply,
              socket
              |> clear_retrying_search(image_id)
-             |> put_flash(:error, "Failed to retry search embedding")}
+             |> put_flash(:error, gettext("Failed to retry search embedding"))}
         end
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Image not found")}
+        {:noreply, put_flash(socket, :error, gettext("Image not found"))}
     end
   end
 
@@ -74,11 +75,11 @@ defmodule VmemoWeb.JobsLive do
             {:noreply,
              socket
              |> clear_retrying_caption(image_id)
-             |> put_flash(:error, "Failed to retry vision embedding")}
+             |> put_flash(:error, gettext("Failed to retry vision embedding"))}
         end
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Image not found")}
+        {:noreply, put_flash(socket, :error, gettext("Image not found"))}
     end
   end
 
@@ -98,7 +99,7 @@ defmodule VmemoWeb.JobsLive do
     <section class="page-shell grow">
       <div class="content-shell w-full flex flex-col gap-4">
         <div :if={@live_action == :index}>
-          <h1 class="section-title text-2xl">Jobs</h1>
+          <h1 class="section-title text-2xl">{gettext("Jobs")}</h1>
         </div>
 
         <div
@@ -109,14 +110,14 @@ defmodule VmemoWeb.JobsLive do
             <table class="table table-sm md:table-md">
               <thead>
                 <tr>
-                  <th></th>
-                  <th>Search embedding</th>
-                  <th>Vision embedding</th>
+                  <th class="normal-case"></th>
+                  <th class="normal-case">{gettext("Search embedding")}</th>
+                  <th class="normal-case">{gettext("Vision embedding")}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr :if={Enum.empty?(@jobs)}>
-                  <td colspan="3" class="text-center text-base-content/60 py-8">No jobs yet</td>
+                  <td colspan="3" class="text-center text-base-content/60 py-8">{gettext("No jobs yet")}</td>
                 </tr>
 
                 <tr :for={job <- @jobs}>
@@ -173,7 +174,7 @@ defmodule VmemoWeb.JobsLive do
                         phx-click="retry-search-embedding"
                         phx-value-image_id={job.image_id}
                       >
-                        Retry
+                        {gettext("Retry")}
                       </.button>
                     </div>
                   </td>
@@ -219,7 +220,7 @@ defmodule VmemoWeb.JobsLive do
                         phx-click="retry-vision-embedding"
                         phx-value-image_id={job.image_id}
                       >
-                        Retry
+                        {gettext("Retry")}
                       </.button>
                     </div>
                   </td>
@@ -232,7 +233,7 @@ defmodule VmemoWeb.JobsLive do
         <div :if={@live_action == :show and @job} class="flex flex-col gap-3">
           <div class="breadcrumbs text-sm text-base-content/70">
             <ul>
-              <li><.link href={~p"/jobs"}>Jobs</.link></li>
+              <li><.link href={~p"/jobs"}>{gettext("Jobs")}</.link></li>
               <li class="font-medium text-base-content">{@job.image_id}</li>
             </ul>
           </div>
@@ -257,7 +258,7 @@ defmodule VmemoWeb.JobsLive do
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div class="rounded-md border border-base-300 p-2.5">
                     <div class="flex items-center gap-1.5">
-                      <span class="text-xs text-base-content/60">Search</span>
+                      <span class="text-xs text-base-content/60">{gettext("Search")}</span>
                       <.button
                         :if={
                           @job.typesense_status == "failed" and
@@ -313,7 +314,7 @@ defmodule VmemoWeb.JobsLive do
                   <div class="rounded-md border border-base-300 p-2.5">
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex items-center gap-1.5">
-                        <span class="text-xs text-base-content/60">Caption</span>
+                        <span class="text-xs text-base-content/60">{gettext("Caption")}</span>
                         <.button
                           :if={
                             @job.caption_status == "failed" and
@@ -364,8 +365,8 @@ defmodule VmemoWeb.JobsLive do
                         class="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content"
                         phx-click="retry-vision-embedding"
                         phx-value-image_id={@job.image_id}
-                        title="Retry Vision AI caption"
-                        aria-label="Retry Vision AI caption"
+                        title={gettext("Retry Vision AI caption")}
+                        aria-label={gettext("Retry Vision AI caption")}
                       >
                         <.icon name="hero-arrow-path" class="h-3.5 w-3.5" />
                       </button>
@@ -404,35 +405,35 @@ defmodule VmemoWeb.JobsLive do
 
   defp service_status_label(status) do
     case status do
-      "completed" -> "Completed"
-      "failed" -> "Failed"
-      "processing" -> "Processing"
-      nil -> "Pending"
-      _ -> "Pending"
+      "completed" -> gettext("Completed")
+      "failed" -> gettext("Failed")
+      "processing" -> gettext("Processing")
+      nil -> gettext("Pending")
+      _ -> gettext("Pending")
     end
   end
 
   defp caption_section_label(job, retrying) do
     cond do
-      retrying -> "Caption status"
-      job.caption_status == "failed" -> "Failure reason"
-      true -> "Caption result"
+      retrying -> gettext("Caption status")
+      job.caption_status == "failed" -> gettext("Failure reason")
+      true -> gettext("Caption result")
     end
   end
 
   defp caption_display_text(job, retrying) do
     cond do
       retrying ->
-        "Retry requested. Caption is being generated."
+        gettext("Retry requested. Caption is being generated.")
 
       job.caption_status == "completed" and present?(job.caption) ->
         job.caption
 
       job.caption_status == "failed" ->
-        job.caption_failure_reason || job.failure_reason || "Caption generation failed."
+        job.caption_failure_reason || job.failure_reason || gettext("Caption generation failed.")
 
       true ->
-        "Caption is being generated."
+        gettext("Caption is being generated.")
     end
   end
 

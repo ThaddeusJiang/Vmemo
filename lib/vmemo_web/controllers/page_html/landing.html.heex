@@ -17,22 +17,22 @@
     <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
       <div class="space-y-7">
         <p class="landing-label inline-flex items-center rounded-full bg-base-content/6 px-4 py-2 text-xs uppercase tracking-[0.22em]">
-          Visual-first memory workspace
+          {gettext("Visual-first memory workspace")}
         </p>
 
         <h1 class="landing-display max-w-[16ch] text-balance text-4xl font-semibold leading-[0.92] text-base-content sm:text-5xl md:text-6xl">
-          See less text.
-          Remember more life.
+          {gettext("See less text.")}
+          {gettext("Remember more life.")}
         </h1>
 
         <p class="landing-body max-w-[62ch] text-pretty text-base leading-7 text-base-content/78 sm:text-lg sm:leading-8">
-          Vmemo turns snapshots, receipts, whiteboards, and random moments into searchable memory.
-          Capture quickly, ask in natural language, and retrieve what mattered without writing long notes.
+          {gettext("Vmemo turns snapshots, receipts, whiteboards, and random moments into searchable memory.")}
+          {gettext("Capture quickly, ask in natural language, and retrieve what mattered without writing long notes.")}
         </p>
 
         <div class="flex flex-wrap items-center gap-4 pt-2">
           <a class="btn btn-primary rounded-xl px-7" href="/register">
-            Start capturing
+            {gettext("Start capturing")}
           </a>
           <a
             class="btn btn-outline rounded-xl px-7"
@@ -40,7 +40,7 @@
             target="_blank"
             rel="noreferrer"
           >
-            Explore on GitHub
+            {gettext("Explore on GitHub")}
           </a>
         </div>
       </div>
@@ -50,36 +50,36 @@
           <div class="grid gap-4 sm:grid-cols-2">
             <article class="rounded-2xl bg-[color-mix(in_oklch,var(--color-primary)_8%,var(--color-base-100))] p-4 sm:p-5">
               <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/70">
-                Capture
+                {gettext("Capture")}
               </p>
               <p class="landing-display mt-3 text-2xl font-semibold leading-none sm:text-3xl">
-                Paste or drag
+                {gettext("Paste or drag")}
               </p>
               <p class="landing-body mt-3 text-sm leading-6 text-base-content/75">
-                Instant image intake from clipboard, upload, or mobile camera.
+                {gettext("Instant image intake from clipboard, upload, or mobile camera.")}
               </p>
             </article>
             <article class="rounded-2xl bg-[color-mix(in_oklch,var(--color-info)_8%,var(--color-base-100))] p-4 sm:p-5">
               <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/70">
-                Understand
+                {gettext("Understand")}
               </p>
               <p class="landing-display mt-3 text-2xl font-semibold leading-none sm:text-3xl">
-                AI indexing
+                {gettext("AI indexing")}
               </p>
               <p class="landing-body mt-3 text-sm leading-6 text-base-content/75">
-                OCR and semantic extraction make visual memories query-ready.
+                {gettext("OCR and semantic extraction make visual memories query-ready.")}
               </p>
             </article>
           </div>
           <div class="mt-4 rounded-2xl bg-base-200/75 p-4 sm:p-5">
             <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/70">
-              Recall
+              {gettext("Recall")}
             </p>
             <p class="landing-display mt-3 text-xl font-semibold leading-tight sm:text-2xl">
-              Ask naturally, find instantly.
+              {gettext("Ask naturally, find instantly.")}
             </p>
             <p class="landing-body mt-2 max-w-[58ch] text-sm leading-6 text-base-content/78">
-              "Show me that coffee shop sketch from last winter" works even when filenames and folders do not.
+              {gettext("\"Show me that coffee shop sketch from last winter\" works even when filenames and folders do not.")}
             </p>
           </div>
         </div>
@@ -91,23 +91,23 @@
     <div class="mx-auto grid max-w-7xl gap-4 md:grid-cols-3">
       <article class="rounded-2xl border border-base-300/80 bg-base-100/70 p-5">
         <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/68">01</p>
-        <h2 class="landing-display mt-3 text-xl font-semibold">Capture without friction</h2>
+        <h2 class="landing-display mt-3 text-xl font-semibold">{gettext("Capture without friction")}</h2>
         <p class="landing-body mt-2 text-sm leading-6 text-base-content/75">
-          Multi-upload, drag-drop, and clipboard paste are tuned for fast daily use.
+          {gettext("Multi-upload, drag-drop, and clipboard paste are tuned for fast daily use.")}
         </p>
       </article>
       <article class="rounded-2xl border border-base-300/80 bg-base-100/70 p-5">
         <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/68">02</p>
-        <h2 class="landing-display mt-3 text-xl font-semibold">Search by meaning</h2>
+        <h2 class="landing-display mt-3 text-xl font-semibold">{gettext("Search by meaning")}</h2>
         <p class="landing-body mt-2 text-sm leading-6 text-base-content/75">
-          Find images with language, not file names. Text and visual similarity both work.
+          {gettext("Find images with language, not file names. Text and visual similarity both work.")}
         </p>
       </article>
       <article class="rounded-2xl border border-base-300/80 bg-base-100/70 p-5">
         <p class="landing-label text-xs uppercase tracking-[0.18em] text-base-content/68">03</p>
-        <h2 class="landing-display mt-3 text-xl font-semibold">Review in seconds</h2>
+        <h2 class="landing-display mt-3 text-xl font-semibold">{gettext("Review in seconds")}</h2>
         <p class="landing-body mt-2 text-sm leading-6 text-base-content/75">
-          Revisit moments quickly and keep your memory timeline clean and predictable.
+          {gettext("Revisit moments quickly and keep your memory timeline clean and predictable.")}
         </p>
       </article>
     </div>
@@ -121,7 +121,7 @@
       <a
         href="https://github.com/ThaddeusJiang/vmemo"
         class="link link-hover inline-flex items-center"
-        aria-label="GitHub repository"
+        aria-label={gettext("GitHub repository")}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -141,11 +141,11 @@
       <a
         href="https://zeabur.com/referral?referralCode=ThaddeusJiang"
         class="inline-flex items-center"
-        aria-label="Deployed on Zeabur"
+        aria-label={gettext("Deployed on Zeabur")}
       >
         <img
           src="https://zeabur.com/deployed-on-zeabur-dark.svg"
-          alt="Deployed on Zeabur"
+          alt={gettext("Deployed on Zeabur")}
           class="h-5 w-auto"
         />
       </a>

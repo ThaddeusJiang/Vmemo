@@ -1,5 +1,6 @@
 defmodule VmemoWeb.UserSettingsLive do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Account
   alias Vmemo.UserSettings
@@ -18,8 +19,8 @@ defmodule VmemoWeb.UserSettingsLive do
     <div class="page-shell">
       <div class="content-shell content-shell-tight">
         <.header>
-          Account Settings
-          <:subtitle>Manage your account email and password settings</:subtitle>
+          {gettext("Account Settings")}
+          <:subtitle>{gettext("Manage your account email and password settings")}</:subtitle>
         </.header>
 
         <div class="space-y-6 mx-auto w-full max-w-md ">
@@ -30,18 +31,18 @@ defmodule VmemoWeb.UserSettingsLive do
               phx-submit="update-email"
               phx-change="validate-email"
             >
-              <.input field={@email_form[:email]} type="email" label="Email" required />
+              <.input field={@email_form[:email]} type="email" label={gettext("Email")} required />
               <.input
                 field={@email_form[:current_password]}
                 name="current_password"
                 id="current_password_for_email"
                 type="password"
-                label="Current password"
+                label={gettext("Current password")}
                 value={@email_form_current_password}
                 required
               />
               <:actions>
-                <.button phx-disable-with="Changing...">Change Email</.button>
+                <.button phx-disable-with={gettext("Changing...")}>{gettext("Change Email")}</.button>
               </:actions>
             </.simple_form>
           </div>
@@ -62,44 +63,46 @@ defmodule VmemoWeb.UserSettingsLive do
                 id="hidden_user_email"
                 value={@current_email}
               />
-              <.input field={@password_form[:password]} type="password" label="New password" required />
+              <.input field={@password_form[:password]} type="password" label={gettext("New password")} required />
               <.input
                 field={@password_form[:password_confirmation]}
                 type="password"
-                label="Confirm new password"
+                label={gettext("Confirm new password")}
               />
               <.input
                 field={@password_form[:current_password]}
                 name="current_password"
                 type="password"
-                label="Current password"
+                label={gettext("Current password")}
                 id="current_password_for_password"
                 value={@current_password}
                 required
               />
               <:actions>
-                <.button phx-disable-with="Changing...">Change Password</.button>
+                <.button phx-disable-with={gettext("Changing...")}>
+                  {gettext("Change Password")}
+                </.button>
               </:actions>
             </.simple_form>
           </div>
 
           <div class="space-y-2">
             <div class="border border-base-300 rounded-md p-4 space-y-2">
-              <h2 class="text-base font-medium">Data Export</h2>
+              <h2 class="text-base font-medium">{gettext("Data Export")}</h2>
               <p class="text-sm text-base-content/70">
-                Download your images, notes, and linked files as a ZIP file.
+                {gettext("Download your images, notes, and linked files as a ZIP file.")}
               </p>
               <div class="py-2">
                 <.link href={~p"/settings/export"} class="btn btn-outline">
-                  Export Data
+                  {gettext("Export Data")}
                 </.link>
               </div>
             </div>
 
             <div class="border border-base-300 rounded-md p-4 space-y-2">
-              <h2 class="text-base font-medium">Data Import</h2>
+              <h2 class="text-base font-medium">{gettext("Data Import")}</h2>
               <p class="text-sm text-base-content/70">
-                Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.
+                {gettext("Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.")}
               </p>
 
               <.form
@@ -126,7 +129,7 @@ defmodule VmemoWeb.UserSettingsLive do
                         phx-click="cancel-import-upload"
                         phx-value-ref={entry.ref}
                       >
-                        Remove
+                        {gettext("Remove")}
                       </button>
                     </li>
                   </ul>
@@ -139,7 +142,7 @@ defmodule VmemoWeb.UserSettingsLive do
 
                   <div :if={@has_import_file} class="space-y-1">
                     <div class="flex items-center justify-between text-xs text-base-content/70">
-                      <span>Upload progress</span>
+                      <span>{gettext("Upload progress")}</span>
                       <span>{@import_upload_progress}%</span>
                     </div>
                     <progress
@@ -157,7 +160,7 @@ defmodule VmemoWeb.UserSettingsLive do
                     class="btn btn-primary"
                     disabled={@is_importing || not @has_import_file || not @import_upload_complete}
                   >
-                    Import Data
+                    {gettext("Import Data")}
                   </button>
                 </div>
               </.form>
@@ -166,7 +169,7 @@ defmodule VmemoWeb.UserSettingsLive do
                 :if={@import_result}
                 class="border border-base-300 rounded-md p-2 text-sm space-y-1"
               >
-                <p class="font-medium">Import Result</p>
+                <p class="font-medium">{gettext("Import Result")}</p>
                 <% files = result_value(@import_result, [:files, "files"], %{}) %>
                 <% images = result_value(@import_result, [:images, "images"], %{}) %>
                 <% notes = result_value(@import_result, [:notes, "notes"], %{}) %>
@@ -176,22 +179,24 @@ defmodule VmemoWeb.UserSettingsLive do
                 <% typesense_notes = result_value(typesense, [:notes, "notes"], %{}) %>
                 <% errors = result_value(@import_result, [:errors, "errors"], []) %>
                 <% error_count = result_value(@import_result, [:error_count, "error_count"], 0) %>
-                <p>Files copied: {result_value(files, [:copied, "copied"], 0)}</p>
-                <p>Files skipped: {result_value(files, [:skipped, "skipped"], 0)}</p>
-                <p>Images created: {result_value(images, [:created, "created"], 0)}</p>
-                <p>Images skipped: {result_value(images, [:skipped, "skipped"], 0)}</p>
-                <p>Notes created: {result_value(notes, [:created, "created"], 0)}</p>
-                <p>Notes skipped: {result_value(notes, [:skipped, "skipped"], 0)}</p>
-                <p>Links created: {result_value(image_notes, [:created, "created"], 0)}</p>
-                <p>Links skipped: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
+                <p>{gettext("Files copied")}: {result_value(files, [:copied, "copied"], 0)}</p>
+                <p>{gettext("Files skipped")}: {result_value(files, [:skipped, "skipped"], 0)}</p>
+                <p>{gettext("Images created")}: {result_value(images, [:created, "created"], 0)}</p>
+                <p>{gettext("Images skipped")}: {result_value(images, [:skipped, "skipped"], 0)}</p>
+                <p>{gettext("Notes created")}: {result_value(notes, [:created, "created"], 0)}</p>
+                <p>{gettext("Notes skipped")}: {result_value(notes, [:skipped, "skipped"], 0)}</p>
+                <p>{gettext("Links created")}: {result_value(image_notes, [:created, "created"], 0)}</p>
+                <p>{gettext("Links skipped")}: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
                 <p>
-                  Typesense images upserted: {result_value(typesense_images, [:success, "success"], 0)}
+                  {gettext("Typesense images upserted")}:
+                  {result_value(typesense_images, [:success, "success"], 0)}
                 </p>
                 <p>
-                  Typesense notes upserted: {result_value(typesense_notes, [:success, "success"], 0)}
+                  {gettext("Typesense notes upserted")}:
+                  {result_value(typesense_notes, [:success, "success"], 0)}
                 </p>
                 <p :if={errors != []} class="text-error">
-                  Errors: {error_count}
+                  {gettext("Errors")}: {error_count}
                 </p>
               </div>
             </div>
@@ -206,10 +211,10 @@ defmodule VmemoWeb.UserSettingsLive do
     socket =
       case Account.update_user_email(socket.assigns.current_user, token) do
         {:ok, _user} ->
-          put_flash(socket, :info, "Email changed successfully.")
+          put_flash(socket, :info, gettext("Email changed successfully."))
 
         {:error, _changeset} ->
-          put_flash(socket, :error, "Email change link is invalid or it has expired.")
+          put_flash(socket, :error, gettext("Email change link is invalid or it has expired."))
       end
 
     {:ok, push_navigate(socket, to: ~p"/settings")}
@@ -256,10 +261,10 @@ defmodule VmemoWeb.UserSettingsLive do
 
     cond do
       entries == [] ->
-        {:noreply, assign(socket, import_error: "Please choose a ZIP file to import.")}
+        {:noreply, assign(socket, import_error: gettext("Please choose a ZIP file to import."))}
 
       not import_upload_complete?(entries) ->
-        {:noreply, assign(socket, import_error: "Upload is still in progress.")}
+        {:noreply, assign(socket, import_error: gettext("Upload is still in progress."))}
 
       true ->
         socket = assign(socket, is_importing: true, import_error: nil)
@@ -277,7 +282,7 @@ defmodule VmemoWeb.UserSettingsLive do
             {:noreply,
              socket
              |> assign(:is_importing, false)
-             |> assign(:import_error, "Failed to read ZIP file.")}
+             |> assign(:import_error, gettext("Failed to read ZIP file."))}
         end
     end
   end
@@ -310,7 +315,7 @@ defmodule VmemoWeb.UserSettingsLive do
           &url(~p"/settings/confirm_email/#{&1}")
         )
 
-        info = "A link to confirm your email change has been sent to the new address."
+        info = gettext("A link to confirm your email change has been sent to the new address.")
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
       {:error, error_map} ->
@@ -379,9 +384,9 @@ defmodule VmemoWeb.UserSettingsLive do
 
   defp result_value(_result, _keys, default), do: default
 
-  defp error_to_string(:too_large), do: "Too large"
-  defp error_to_string(:too_many_files), do: "You have selected too many files"
-  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+  defp error_to_string(:too_large), do: gettext("Too large")
+  defp error_to_string(:too_many_files), do: gettext("You have selected too many files")
+  defp error_to_string(:not_accepted), do: gettext("You have selected an unacceptable file type")
 
   defp import_zip_data(socket, zip_path) do
     case UserSettings.import_user_zip(socket.assigns.current_user.id, zip_path) do
@@ -394,12 +399,12 @@ defmodule VmemoWeb.UserSettingsLive do
         socket
         |> assign(:is_importing, false)
         |> assign(:import_result, result)
-        |> assign(:import_error, "Import completed with errors.")
+        |> assign(:import_error, gettext("Import completed with errors."))
 
       {:error, reason} ->
         socket
         |> assign(:is_importing, false)
-        |> assign(:import_error, "Import failed: #{format_error(reason)}")
+        |> assign(:import_error, gettext("Import failed: %{reason}", reason: format_error(reason)))
     end
   end
 

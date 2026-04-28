@@ -1,6 +1,15 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
 msgid ""
 msgstr ""
-"Language: en\n"
 
 #: lib/vmemo_web/controllers/page_html/landing.html.heex:82
 #, elixir-autogen, elixir-format
@@ -601,7 +610,7 @@ msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex:40
 #: lib/vmemo_web/live/api_token_live/show.ex:21
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Close"
 msgstr ""
 
@@ -633,7 +642,7 @@ msgid "Delete API Token"
 msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/show.ex:184
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Delete Token"
 msgstr ""
 
@@ -844,7 +853,7 @@ msgid "Save"
 msgstr ""
 
 #: lib/vmemo_web/live/jobs_live.ex:114
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Search embedding"
 msgstr ""
 
@@ -854,7 +863,7 @@ msgid "Set up your API access token"
 msgstr ""
 
 #: lib/vmemo_web/components/notifications_components.ex:108
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Success"
 msgstr ""
 
@@ -885,7 +894,7 @@ msgid "Today's Usage"
 msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex:106
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Token"
 msgstr ""
 
@@ -932,12 +941,12 @@ msgid "Token name is used to identify different applications or purposes"
 msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex:63
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Total Tokens"
 msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/show.ex:163
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Total Usage"
 msgstr ""
 
@@ -947,7 +956,7 @@ msgid "Try a different search above or"
 msgstr ""
 
 #: lib/vmemo_web/live/images_index_live.ex:143
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Upload images"
 msgstr ""
 

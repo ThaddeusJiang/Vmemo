@@ -117,8 +117,9 @@ Useful commands:
 - `mix format`
 
 ## Communication and language
-- Keep in-code strings as English literals.
-- Do not introduce i18n in this project.
+- UI user-facing copy must support i18n via Gettext with `en`, `zh`, and `ja`.
+- Keep backend logs and internal diagnostic messages in English.
+- When adding or changing UI copy, update corresponding `priv/gettext/*/LC_MESSAGES/*.po` entries.
 
 ## Pre-PR checklist
 Before creating a PR, all must pass:

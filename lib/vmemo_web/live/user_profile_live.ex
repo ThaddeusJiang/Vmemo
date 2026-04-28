@@ -1,8 +1,10 @@
 defmodule VmemoWeb.UserProfileLive do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Account
   alias Vmemo.Account.UserProfileStorage
+  alias VmemoWeb.Locale
 
   @max_avatar_size 5 * 1024 * 1024
 
@@ -11,7 +13,7 @@ defmodule VmemoWeb.UserProfileLive do
     <div class="page-shell">
       <div class="content-shell max-w-2xl mx-auto">
         <.header>
-          User Profile
+          {gettext("User Profile")}
         </.header>
 
         <div class="mt-6 surface-card p-4 sm:p-6">
@@ -31,7 +33,7 @@ defmodule VmemoWeb.UserProfileLive do
                     <img
                       :if={@uploads.avatar.entries == [] && @avatar_preview_url}
                       src={@avatar_preview_url}
-                      alt="Avatar preview"
+                      alt={gettext("Avatar preview")}
                       class="h-full w-full object-cover"
                     />
                     <div
@@ -55,21 +57,23 @@ defmodule VmemoWeb.UserProfileLive do
               </div>
             </div>
 
-            <.input field={@profile_form[:name]} type="text" label="Name" required />
+            <.input field={@profile_form[:name]} type="text" label={gettext("Name")} required />
 
             <.input
               field={@profile_form[:language]}
               type="select"
-              label="Language"
+              label={gettext("Language")}
               options={[
-                {"English", "en"},
-                {"中文", "zh"},
-                {"日本語", "ja"}
+                {gettext("English"), "en"},
+                {gettext("Chinese"), "zh"},
+                {gettext("Japanese"), "ja"}
               ]}
             />
 
             <div :if={@has_changes} class="pt-4 flex justify-center">
-              <.button class="w-64" phx-disable-with="Saving...">Save Profile</.button>
+              <.button class="w-64" phx-disable-with={gettext("Saving...")}>
+                {gettext("Save Profile")}
+              </.button>
             </div>
           </.form>
         </div>
@@ -123,14 +127,16 @@ defmodule VmemoWeb.UserProfileLive do
         |> assign(:initial_profile_values, profile_values(profile))
         |> assign(:has_changes, false)
         |> assign(:current_user_profile, profile)
-        |> put_flash(:info, "Profile updated successfully.")
+        |> Locale.put_locale(profile)
+        |> put_flash(:info, gettext("Profile updated successfully."))
+        |> redirect(to: ~p"/profile")
 
       {:noreply, updated_socket}
     else
       {:error, error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to save profile: #{format_error(error)}")}
+         |> put_flash(:error, gettext("Failed to save profile: %{reason}", reason: format_error(error)))}
     end
   end
 
@@ -143,7 +149,7 @@ defmodule VmemoWeb.UserProfileLive do
     case consumed do
       [] -> {:ok, nil}
       [avatar_file_id] -> {:ok, avatar_file_id}
-      _ -> {:error, "Invalid avatar upload"}
+      _ -> {:error, gettext("Invalid avatar upload")}
     end
   end
 
@@ -197,9 +203,9 @@ defmodule VmemoWeb.UserProfileLive do
     ~p"/storage/v1/#{user_id}/avatars/#{avatar_file_id}"
   end
 
-  defp avatar_upload_error(:too_large), do: "Avatar is too large"
-  defp avatar_upload_error(:too_many_files), do: "Only one avatar file is allowed"
-  defp avatar_upload_error(:not_accepted), do: "Unsupported avatar file type"
+  defp avatar_upload_error(:too_large), do: gettext("Avatar is too large")
+  defp avatar_upload_error(:too_many_files), do: gettext("Only one avatar file is allowed")
+  defp avatar_upload_error(:not_accepted), do: gettext("Unsupported avatar file type")
 
   defp format_error(%Ash.Error.Invalid{errors: errors}) when is_list(errors) do
     errors

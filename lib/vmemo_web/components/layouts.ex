@@ -9,6 +9,7 @@ defmodule VmemoWeb.Layouts do
   `use VmemoWeb, :live_view`.
   """
   use VmemoWeb, :html
+  use Gettext, backend: VmemoWeb.Gettext
 
   def html_lang(assigns) do
     case profile_language(assigns) do
@@ -28,7 +29,7 @@ defmodule VmemoWeb.Layouts do
 
   attr :logo_href, :string, default: "/"
   attr :cta_href, :string, default: "/login"
-  attr :cta_label, :string, default: "Get started"
+  attr :cta_label, :string, default: nil
 
   def guest_header(assigns) do
     ~H"""
@@ -43,7 +44,7 @@ defmodule VmemoWeb.Layouts do
         </a>
 
         <a href={@cta_href} class="btn btn-primary btn-sm rounded-xl px-4" data-headlessui-state="">
-          {@cta_label}
+          {@cta_label || gettext("Get started")}
         </a>
       </div>
     </header>
@@ -81,7 +82,7 @@ defmodule VmemoWeb.Layouts do
             href={~p"/profile"}
             class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
           >
-            <.icon name="hero-user-circle" class="size-6" /> Profile
+            <.icon name="hero-user-circle" class="size-6" /> {gettext("Profile")}
           </.link>
         </li>
         <li>
@@ -89,7 +90,7 @@ defmodule VmemoWeb.Layouts do
             href={~p"/jobs"}
             class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
           >
-            <.icon name="hero-bell" class="size-6" /> Jobs
+            <.icon name="hero-bell" class="size-6" /> {gettext("Jobs")}
           </.link>
         </li>
         <li>
@@ -97,7 +98,7 @@ defmodule VmemoWeb.Layouts do
             href={~p"/settings"}
             class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
           >
-            <.icon name="hero-cog-6-tooth" class="size-6" /> Settings
+            <.icon name="hero-cog-6-tooth" class="size-6" /> {gettext("Settings")}
           </.link>
         </li>
         <li>
@@ -105,7 +106,7 @@ defmodule VmemoWeb.Layouts do
             href={~p"/tokens"}
             class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
           >
-            <.icon name="hero-key" class="size-6" /> Tokens
+            <.icon name="hero-key" class="size-6" /> {gettext("Tokens")}
           </.link>
         </li>
         <li>
@@ -113,7 +114,7 @@ defmodule VmemoWeb.Layouts do
             <div class="flex items-center gap-3 min-w-0">
               <.icon name="hero-paint-brush" class="size-6 shrink-0" />
               <span class="text-[0.8125rem] leading-6 text-base-content font-semibold">
-                Appearance
+                {gettext("Appearance")}
               </span>
             </div>
             <label class="swap swap-rotate text-base-content rounded-full p-1.5 bg-base-200/60 border border-base-300/70 cursor-pointer transition-all duration-150 hover:bg-base-200 hover:border-base-300 hover:scale-[1.03]">
@@ -122,7 +123,7 @@ defmodule VmemoWeb.Layouts do
                 value="dark"
                 checked={@profile.appearance == "dark"}
                 class="theme-controller"
-                aria-label="Toggle light or dark mode"
+                aria-label={gettext("Toggle light or dark mode")}
                 onchange="window.updateAppearancePreference?.(this.checked)"
               />
               <.icon name="hero-sun" class="swap-off size-5 text-primary" />
@@ -137,7 +138,7 @@ defmodule VmemoWeb.Layouts do
             method="delete"
             class="text-[0.8125rem] leading-6 text-base-content font-semibold hover:text-base-content/80"
           >
-            <.icon name="hero-arrow-right-on-rectangle" class="size-6" /> Logout
+            <.icon name="hero-arrow-right-on-rectangle" class="size-6" /> {gettext("Logout")}
           </.link>
         </li>
       </ul>
