@@ -75,6 +75,7 @@ defmodule VmemoWeb.ImageIdLive do
          socket
          |> assign(:image, updated_photo)
          |> assign(:form_dirty, false)
+         |> assign(:save_error, nil)
          |> assign(:original_form_values, original_form_values)
          |> assign(
            :form,
@@ -83,9 +84,13 @@ defmodule VmemoWeb.ImageIdLive do
          |> put_flash(:info, "Saved")}
 
       {:error, _} ->
+        note_value = Map.get(params, "note", socket.assigns.form[:note].value || "")
+        caption_value = Map.get(params, "caption", socket.assigns.form[:caption].value || "")
+
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to save")}
+         |> assign(:form, to_form(%{"note" => note_value, "caption" => caption_value}))
+         |> assign(:save_error, "Failed to save")}
     end
   end
 
@@ -99,6 +104,7 @@ defmodule VmemoWeb.ImageIdLive do
     {:noreply,
      socket
      |> assign(:form_dirty, form_dirty)
+     |> assign(:save_error, nil)
      |> assign(:form, to_form(form_values))}
   end
 
@@ -381,6 +387,10 @@ defmodule VmemoWeb.ImageIdLive do
                 phx-change="validate"
                 class="w-full flex flex-col pt-2"
               >
+                <.error :if={@save_error != nil}>
+                  {@save_error}
+                </.error>
+
                 <.textarea_field
                   id={@form[:note].id}
                   name={@form[:note].name}
@@ -566,6 +576,7 @@ defmodule VmemoWeb.ImageIdLive do
     |> assign(caption_requests: caption_requests)
     |> assign(caption_loading_requests: MapSet.new())
     |> assign(latest_caption_request: latest_caption_request)
+    |> assign(save_error: nil)
     |> assign(form_dirty: false)
     |> assign(original_form_values: original_form_values)
     |> assign_new(:form, fn ->

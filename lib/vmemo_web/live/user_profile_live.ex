@@ -18,6 +18,10 @@ defmodule VmemoWeb.UserProfileLive do
 
         <div class="mt-6 surface-card p-4 sm:p-6">
           <.form for={@profile_form} phx-submit="save" phx-change="validate" class="space-y-5">
+            <.error :if={@profile_error != nil}>
+              {@profile_error}
+            </.error>
+
             <div class="space-y-2">
               <div class="flex flex-col items-center gap-2">
                 <label
@@ -99,6 +103,7 @@ defmodule VmemoWeb.UserProfileLive do
       |> assign(:avatar_preview_url, avatar_url(user.id, profile.avatar_file_id))
       |> assign(:initial_profile_values, profile_values(profile))
       |> assign(:has_changes, false)
+      |> assign(:profile_error, nil)
 
     {:ok, socket}
   end
@@ -110,7 +115,8 @@ defmodule VmemoWeb.UserProfileLive do
     {:noreply,
      socket
      |> assign(:profile_form, to_form(profile_params, as: :profile))
-     |> assign(:has_changes, has_changes)}
+     |> assign(:has_changes, has_changes)
+     |> assign(:profile_error, nil)}
   end
 
   def handle_event("save", %{"profile" => params}, socket) do
@@ -127,6 +133,7 @@ defmodule VmemoWeb.UserProfileLive do
         |> assign(:initial_profile_values, profile_values(profile))
         |> assign(:has_changes, false)
         |> assign(:current_user_profile, profile)
+        |> assign(:profile_error, nil)
         |> Locale.put_locale(profile)
         |> put_flash(:info, gettext("Profile updated successfully."))
         |> redirect(to: ~p"/profile")
@@ -136,8 +143,8 @@ defmodule VmemoWeb.UserProfileLive do
       {:error, error} ->
         {:noreply,
          socket
-         |> put_flash(
-           :error,
+         |> assign(
+           :profile_error,
            gettext("Failed to save profile: %{reason}", reason: format_error(error))
          )}
     end

@@ -100,6 +100,9 @@
 - For long-running work, use Oban + PubSub async flow.
 - On form/action failure, do not navigate away; show nearby errors.
 - Never lose user input on validation failure.
+- For `phx-submit` failures, do not use toast. Show inline errors near submit controls (prefer above submit button).
+- For submit-level failures (for example login credential mismatch), show one form-level error near submit; do not duplicate the same message under multiple fields.
+- For non-submit action failures (for example delete/retry), use toast.
 
 ## Data / SDK / Infra rules
 - Prefer ISO8601 datetime strings for API/JSON/log exchange.
@@ -132,6 +135,10 @@ Useful commands:
 - UI user-facing copy must support i18n via Gettext with `en`, `zh`, and `ja`.
 - Keep backend logs and internal diagnostic messages in English.
 - When adding or changing UI copy, update corresponding `priv/gettext/*/LC_MESSAGES/*.po` entries.
+- User-facing error messages must be specific and actionable. Avoid vague filler (for example "Oops" or generic "Something went wrong").
+- Log error messages should be concise and factual, without conversational filler (for example no "please try again" in logs).
+- Hard gate: any PR that changes user-facing copy is incomplete unless `mix gettext.extract --merge` is run and related `priv/gettext` files are committed.
+- CI enforcement: `scripts/check_gettext_sync.sh` must pass.
 
 ## Pre-PR checklist
 Before creating a PR, all must pass:

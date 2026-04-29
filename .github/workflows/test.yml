@@ -60,6 +60,9 @@ jobs:
         continue-on-error: true
         run: mix sobelow --config
 
+      - name: Gettext sync
+        run: mix gettext.extract --check-up-to-date
+
   mix-test:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
     runs-on: ubuntu-latest

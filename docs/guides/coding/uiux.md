@@ -42,6 +42,12 @@ Do not put framework-specific implementation details here.
 - Keep user input when validation fails.
 - Show validation errors near related fields and keep action buttons visible.
 - Do not navigate away on save failure; keep the user in context and show errors inline.
+- For `phx-submit` failures, show errors inline near the submit area (prefer directly above the submit button).
+- Do not use toast for `phx-submit` failures.
+- Distinguish error levels clearly:
+  - Field-level validation errors: show under the related input.
+  - Submit-level errors (for example invalid login credentials): show once near the submit button, not under individual fields.
+- Error copy must be concrete and actionable. Avoid vague copy like "Oops", "Something went wrong", or generic "Please try again" without context.
 
 ## Toast and global feedback
 
@@ -50,6 +56,7 @@ Do not put framework-specific implementation details here.
 - Do not overuse toast for local actions. Prefer feedback near the action control (status badge, button state, inline helper text).
 - For async retries/queueing actions (for example retry caption/search generation), do not show success toast on request acceptance. Update nearby status to `pending/processing` instead.
 - Use toast for global feedback or failures that are not clearly visible near the action.
+- For non-submit actions (for example `delete`, `retry`, `archive`), toast remains the default failure feedback channel.
 
 ## Images and fallback behavior
 

@@ -237,7 +237,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, gettext("Delete failed, please try again"))}
+         |> assign(:error_message, gettext("Delete failed. Retry."))}
     end
   end
 
