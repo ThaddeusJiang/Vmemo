@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
 
+permissions:
+  contents: read
+
 concurrency:
   group: test-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -92,5 +95,13 @@ jobs:
       - name: Reset
         run: mix reset
 
-      - name: Run tests
-        run: mix test
+      - name: Run tests with ExCoveralls
+        run: mix coveralls.json
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./cover/excoveralls.json
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}

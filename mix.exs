@@ -11,11 +11,24 @@ defmodule Vmemo.MixProject do
       consolidate_protocols: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
       dialyzer: dialyzer(),
       docs: &docs/0,
       compilers: Mix.compilers() ++ [],
       listeners: [Phoenix.CodeReloader],
       usage_rules: usage_rules()
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test,
+        "coveralls.post": :test
+      ]
     ]
   end
 
@@ -91,6 +104,7 @@ defmodule Vmemo.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test},
       {:ex_doc, "~> 0.40", only: :dev, runtime: false, warn_if_outdated: true}
     ]
   end
