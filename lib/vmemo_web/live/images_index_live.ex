@@ -2,6 +2,7 @@ defmodule VmemoWeb.ImagesIndexLive do
   require Logger
 
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Memo.Image
   alias VmemoWeb.LiveComponents.ImageCard
@@ -96,7 +97,9 @@ defmodule VmemoWeb.ImagesIndexLive do
       <div class="flex flex-col gap-4 w-full">
         <%= if @similar_image_id && @similar_photo do %>
           <div class="flex items-center gap-3 p-2">
-            <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">Search:</div>
+            <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">
+              {gettext("Search")}:
+            </div>
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/60 shadow-md">
               <img
                 src={@similar_photo.url}
@@ -105,13 +108,13 @@ defmodule VmemoWeb.ImagesIndexLive do
               />
             </div>
             <div class="ml-auto text-sm text-base-content/70">
-              <span class="font-semibold">{@total_count}</span> results
+              <span class="font-semibold">{@total_count}</span> {gettext("results")}
             </div>
             <.button
               phx-click="clear-search"
               variant="ghost"
               class="btn-circle"
-              aria-label="Clear search"
+              aria-label={gettext("Clear search")}
             >
               <.icon name="hero-x-mark-solid" class="h-4 w-4" />
             </.button>
@@ -119,13 +122,15 @@ defmodule VmemoWeb.ImagesIndexLive do
         <% else %>
           <%= if @q != "" do %>
             <div class="flex items-center gap-3 p-2">
-              <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">Search:</div>
+              <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">
+                {gettext("Search")}:
+              </div>
               <div class="text-lg text-base-content font-semibold">{@q}</div>
               <.button
                 phx-click="clear-search"
                 variant="ghost"
                 class="btn-circle"
-                aria-label="Clear search"
+                aria-label={gettext("Clear search")}
               >
                 <.icon name="hero-x-mark-solid" class="h-4 w-4" />
               </.button>
@@ -136,10 +141,12 @@ defmodule VmemoWeb.ImagesIndexLive do
         <.live_component id="waterfall-images" module={Waterfall} items={@images}>
           <:empty>
             <div class="flex flex-col items-center justify-center min-h-[400px] gap-4">
-              <h2 class="section-title text-2xl text-base-content/80">No results</h2>
+              <h2 class="section-title text-2xl text-base-content/80">{gettext("No results")}</h2>
               <p class="text-base-content/65 text-center">
-                Try a different search above or
-                <.link href="/images/upload" class="link link-primary">upload images</.link>
+                {gettext("Try a different search above or")}
+                <.link href="/images/upload" class="link link-primary">
+                  {gettext("Upload images")}
+                </.link>
               </p>
             </div>
           </:empty>

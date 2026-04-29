@@ -1,5 +1,6 @@
 defmodule VmemoWeb.ApiTokenLive.Form do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Account.ApiTokens
 
@@ -8,52 +9,64 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     <div class="page-shell">
       <div class="content-shell max-w-2xl mx-auto">
         <.header>
-          Create API Token
-          <:subtitle>Set up your API access token</:subtitle>
+          {gettext("Create API Token")}
+          <:subtitle>{gettext("Set up your API access token")}</:subtitle>
         </.header>
 
         <div class="mt-8">
           <!-- Loading state -->
           <div :if={@loading} class="flex justify-center items-center py-8">
             <div class="loading loading-spinner loading-lg text-primary"></div>
-            <span class="ml-2 text-lg">Processing...</span>
+            <span class="ml-2 text-lg">{gettext("Processing...")}</span>
           </div>
 
           <div :if={!@loading} class="space-y-6">
             <!-- Form -->
             <div class="surface-card p-6">
               <.simple_form for={@form} phx-submit="save-token" phx-change="validate-token">
-                <.input field={@form[:name]} label="Token Name" placeholder="e.g., Mobile App" />
+                <.input
+                  field={@form[:name]}
+                  label={gettext("Token Name")}
+                  placeholder={gettext("e.g., Mobile App")}
+                />
 
                 <.input
                   field={@form[:expires_at]}
                   type="select"
-                  label="Expiration"
+                  label={gettext("Expiration")}
                   options={[
-                    {"30 days", "30"},
-                    {"90 days", "90"},
-                    {"180 days", "180"},
-                    {"Never expires", "never"}
+                    {gettext("30 days"), "30"},
+                    {gettext("90 days"), "90"},
+                    {gettext("180 days"), "180"},
+                    {gettext("Never expires"), "never"}
                   ]}
                 />
 
                 <:actions>
-                  <.link navigate={~p"/tokens"} class="btn btn-outline">Cancel</.link>
-                  <.button>Save</.button>
+                  <.link navigate={~p"/tokens"} class="btn btn-outline">{gettext("Cancel")}</.link>
+                  <.button>{gettext("Save")}</.button>
                 </:actions>
               </.simple_form>
             </div>
             
     <!-- Help information -->
             <div class="surface-card bg-info/10 p-4">
-              <h4 class="font-semibold mb-2">Usage Instructions</h4>
+              <h4 class="font-semibold mb-2">{gettext("Usage Instructions")}</h4>
               <ul class="text-sm space-y-1">
-                <li>• Token name is used to identify different applications or purposes</li>
-                <li>• It's recommended to set a reasonable expiration time for better security</li>
                 <li>
-                  • Please save the token immediately after creation, as you won't be able to view the full content again
+                  • {gettext("Token name is used to identify different applications or purposes")}
                 </li>
-                <li>• Usage format: <code>Authorization: Bearer your_token</code></li>
+                <li>
+                  • {gettext(
+                    "It's recommended to set a reasonable expiration time for better security"
+                  )}
+                </li>
+                <li>
+                  • {gettext(
+                    "Please save the token immediately after creation, as you won't be able to view the full content again"
+                  )}
+                </li>
+                <li>• {gettext("Usage format")}: <code>Authorization: Bearer your_token</code></li>
               </ul>
             </div>
           </div>
@@ -66,13 +79,15 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           on_cancel={JS.hide(to: "#token-created-modal")}
         >
           <:header>
-            <h3 class="text-lg font-semibold text-success">Token Created Successfully</h3>
+            <h3 class="text-lg font-semibold text-success">
+              {gettext("Token Created Successfully")}
+            </h3>
           </:header>
 
           <div class="space-y-2">
             <div class="form-control space-y-2">
               <label class="label">
-                <span class="label-text">Your API Token</span>
+                <span class="label-text">{gettext("Your API Token")}</span>
               </label>
               <div class="flex items-center gap-2">
                 <input
@@ -93,7 +108,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
             </div>
 
             <div class="text-sm">
-              <div class="font-semibold mb-2">Usage Example:</div>
+              <div class="font-semibold mb-2">{gettext("Usage Example")}:</div>
               <pre class="bg-base-200 p-3 rounded text-xs overflow-x-auto"><code>{usage_example_code(@new_token)}</code></pre>
             </div>
           </div>
@@ -102,7 +117,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
             <.button phx-click={
               JS.hide(to: "#token-created-modal") |> JS.push("navigate", to: ~p"/tokens")
             }>
-              I've Saved It
+              {gettext("I've Saved It")}
             </.button>
           </:footer>
         </.modal>
@@ -147,7 +162,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
          |> assign(:new_token, raw_token)
          |> assign(:new_token_expires_at, token.expires_at)
          |> assign(:loading, false)
-         |> put_flash(:info, "API Token created successfully")}
+         |> put_flash(:info, gettext("API Token created successfully"))}
 
       {:error, _changeset} ->
         # Use AshPhoenix.Form to validate form and show errors
@@ -183,7 +198,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     {:noreply,
      socket
      |> push_event("copy_to_clipboard", %{text: token})
-     |> put_flash(:info, "Token copied to clipboard")}
+     |> put_flash(:info, gettext("Token copied to clipboard"))}
   end
 
   # Helper functions

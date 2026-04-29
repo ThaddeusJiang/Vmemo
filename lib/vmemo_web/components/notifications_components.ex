@@ -2,6 +2,7 @@ defmodule VmemoWeb.NotificationsComponents do
   @moduledoc false
 
   use Phoenix.Component
+  use Gettext, backend: VmemoWeb.Gettext
 
   use Phoenix.VerifiedRoutes,
     endpoint: VmemoWeb.Endpoint,
@@ -12,7 +13,7 @@ defmodule VmemoWeb.NotificationsComponents do
 
   attr :notifications, :list, default: []
   attr :unresolved_count, :integer, default: 0
-  attr :item_title, :string, default: "Image job"
+  attr :item_title, :string, default: nil
 
   def notifications_dropdown(assigns) do
     ~H"""
@@ -21,8 +22,8 @@ defmodule VmemoWeb.NotificationsComponents do
         tabindex="0"
         role="button"
         class="btn btn-ghost btn-circle relative"
-        aria-label="Notifications"
-        title="Notifications"
+        aria-label={gettext("Notifications")}
+        title={gettext("Notifications")}
       >
         <.icon name="hero-bell" class="h-5 w-5" />
         <.status_badge
@@ -39,10 +40,10 @@ defmodule VmemoWeb.NotificationsComponents do
         class="dropdown-content elevated-popover z-[90] mt-2 w-[22rem] max-w-[90vw] rounded-box bg-base-100 p-2"
       >
         <div class="px-2 py-1.5 text-xs font-semibold text-base-content/70">
-          Notifications
+          {gettext("Notifications")}
         </div>
         <div :if={Enum.empty?(@notifications)} class="px-2 py-4 text-sm text-base-content/60">
-          No notifications yet
+          {gettext("No notifications yet")}
         </div>
         <div
           :if={not Enum.empty?(@notifications)}
@@ -56,7 +57,7 @@ defmodule VmemoWeb.NotificationsComponents do
         </div>
         <div class="mt-2 pt-2">
           <.link href={~p"/jobs"} class="btn btn-ghost btn-sm w-full justify-start text-xs">
-            View all notifications
+            {gettext("View all notifications")}
           </.link>
         </div>
       </div>
@@ -65,7 +66,7 @@ defmodule VmemoWeb.NotificationsComponents do
   end
 
   attr :notification, :map, required: true
-  attr :title, :string, default: "Image job"
+  attr :title, :string, default: nil
 
   def notification_item(assigns) do
     ~H"""
@@ -83,7 +84,7 @@ defmodule VmemoWeb.NotificationsComponents do
       />
       <div class="min-w-0 flex-1">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-xs text-base-content/70">{@title}</span>
+          <span class="text-xs text-base-content/70">{@title || gettext("Image job")}</span>
           <.status_badge variant={notification_status_badge_variant(@notification.status)} size="xs">
             {notification_status_label(@notification.status)}
           </.status_badge>
@@ -102,8 +103,8 @@ defmodule VmemoWeb.NotificationsComponents do
   defp notification_status_badge_variant("partial_failed"), do: :warning
   defp notification_status_badge_variant(_), do: :info
 
-  defp notification_status_label("partial_failed"), do: "Partial Failed"
-  defp notification_status_label("failed"), do: "Failed"
-  defp notification_status_label("success"), do: "Success"
-  defp notification_status_label(_), do: "Processing"
+  defp notification_status_label("partial_failed"), do: gettext("Partial Failed")
+  defp notification_status_label("failed"), do: gettext("Failed")
+  defp notification_status_label("success"), do: gettext("Success")
+  defp notification_status_label(_), do: gettext("Processing")
 end

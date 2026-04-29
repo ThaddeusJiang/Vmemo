@@ -7,6 +7,7 @@ defmodule VmemoWeb.UserAuth do
 
   alias Vmemo.Account
   alias Vmemo.Account.User
+  alias VmemoWeb.Locale
 
   @doc """
   Logs the user in.
@@ -134,6 +135,7 @@ defmodule VmemoWeb.UserAuth do
     conn
     |> assign(:current_user, user)
     |> assign(:current_user_profile, profile)
+    |> Locale.put_locale(profile)
   end
 
   defp ensure_user_token(conn) do
@@ -244,9 +246,12 @@ defmodule VmemoWeb.UserAuth do
         end
       end)
 
-    Phoenix.Component.assign_new(socket, :current_user_profile, fn ->
-      build_profile(socket.assigns.current_user)
-    end)
+    socket =
+      Phoenix.Component.assign_new(socket, :current_user_profile, fn ->
+        build_profile(socket.assigns.current_user)
+      end)
+
+    Locale.put_locale(socket, socket.assigns.current_user_profile)
   end
 
   defp signed_in_path(_conn), do: ~p"/home"

@@ -2,7 +2,7 @@ name: Test
 
 on:
   pull_request:
-    types: [ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
 
 concurrency:
   group: test-pr-${{ github.event.pull_request.number }}
@@ -21,7 +21,7 @@ env:
 
 jobs:
   mix-check:
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -61,7 +61,7 @@ jobs:
         run: mix sobelow --config
 
   mix-test:
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
     runs-on: ubuntu-latest
 
     steps:

@@ -5,6 +5,13 @@
 Use this document for shared UI and interaction conventions.
 Do not put framework-specific implementation details here.
 
+## Localization
+
+- All user-facing UI copy must be internationalized with Gettext.
+- Required locales for product UI are `en`, `zh`, and `ja`.
+- Do not hardcode new user-facing English strings directly in templates/components without adding corresponding translation entries.
+- Keep locale behavior consistent across layouts, LiveViews, and components after profile language changes.
+
 ## Visual baseline
 
 - Design baseline: shadcn/ui style with daisyUI components.

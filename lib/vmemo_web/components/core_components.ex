@@ -697,7 +697,7 @@ defmodule VmemoWeb.CoreComponents do
       <table class="table table-zebra w-full">
         <thead>
           <tr>
-            <th :for={col <- @col}>{col[:label]}</th>
+            <th :for={col <- @col} class="normal-case">{col[:label]}</th>
             <th :if={@action != []}>
               <span class="sr-only">{gettext("Actions")}</span>
             </th>

@@ -239,7 +239,8 @@ Use this pattern for long-running work that must continue after page leave:
   - cancel: ghost
   - destructive: error
 - Keep image sizing in Tailwind classes (`w-*`, `h-*`, `size-*`), not width/height attrs.
-- Do not add i18n for this project; keep in-code strings in English.
+- UI user-facing copy must use Gettext and support `en`, `zh`, and `ja`.
+- Backend logs and internal diagnostics should remain English-only.
 
 ## 13) Anti-pattern Checklist
 

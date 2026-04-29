@@ -54,7 +54,8 @@ defmodule VmemoWeb.UserProfileLiveTest do
         })
         |> render_submit()
 
-      assert result =~ "Profile updated successfully."
+      assert {:error, {:redirect, %{to: "/profile", flash: flash_token}}} = result
+      assert flash_token
 
       profile = Account.get_user_profile_by_user_id(user.id)
       assert profile.name == "Alice"

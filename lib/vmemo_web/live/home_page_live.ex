@@ -1,5 +1,6 @@
 defmodule VmemoWeb.HomePageLive do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Memo.Image
   alias VmemoWeb.LiveComponents.SearchBox
@@ -31,10 +32,11 @@ defmodule VmemoWeb.HomePageLive do
       <section class="page-shell grow relative">
         <div class="mx-auto w-full max-w-5xl min-h-[18rem] flex flex-col items-center justify-center gap-6">
           <div class="flex flex-col items-center space-y-2 w-full max-w-2xl px-2">
-            <h1 class="section-title text-4xl">Search</h1>
+            <h1 class="section-title text-4xl">{gettext("Search")}</h1>
 
             <div class="text-sm text-base-content/70">
-              Total <span class="font-semibold">{@total_photos}</span> images
+              {gettext("Total")}
+              <span class="font-semibold">{@total_photos}</span> {gettext("images")}
             </div>
 
             <.live_component

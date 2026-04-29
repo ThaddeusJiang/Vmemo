@@ -21,3 +21,6 @@ Centralized coding guidelines live in this directory.
   - trigger by business action names
   - return immediate UI feedback with normal success/failure semantics
   - do not leak `job`, `worker`, `queue`, or similar infra terms into UI event names
+- Language policy:
+  - UI copy must use Gettext and support `en`, `zh`, `ja`
+  - backend logs stay English-only

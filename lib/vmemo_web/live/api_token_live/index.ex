@@ -1,5 +1,6 @@
 defmodule VmemoWeb.ApiTokenLive.Index do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Account.ApiTokens
 
@@ -8,8 +9,8 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     <div class="page-shell">
       <div class="content-shell max-w-6xl mx-auto">
         <.header>
-          Tokens
-          <:subtitle>Manage your API access tokens</:subtitle>
+          {gettext("Tokens")}
+          <:subtitle>{gettext("Manage your API access tokens")}</:subtitle>
         </.header>
 
         <div class="mt-8">
@@ -17,8 +18,10 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           <.alert :if={length(@expired_tokens) > 0} variant={:error} class="mb-4">
             <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <div>
-              <div class="font-semibold">{length(@expired_tokens)} tokens have expired</div>
-              <div class="text-sm">Please update or delete expired tokens promptly</div>
+              <div class="font-semibold">
+                {length(@expired_tokens)} {gettext("tokens have expired")}
+              </div>
+              <div class="text-sm">{gettext("Please update or delete expired tokens promptly")}</div>
             </div>
           </.alert>
 
@@ -26,9 +29,11 @@ defmodule VmemoWeb.ApiTokenLive.Index do
             <:icon><.icon name="hero-clock" class="h-5 w-5" /></:icon>
             <div>
               <div class="font-semibold">
-                {length(@expiring_tokens)} tokens will expire within 7 days
+                {length(@expiring_tokens)} {gettext("tokens will expire within 7 days")}
               </div>
-              <div class="text-sm">It's recommended to update these tokens in advance</div>
+              <div class="text-sm">
+                {gettext("It's recommended to update these tokens in advance")}
+              </div>
             </div>
           </.alert>
           
@@ -36,20 +41,20 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           <.alert :if={@error_message} variant={:error} class="mb-4">
             <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <span>{@error_message}</span>
-            <.button variant="ghost" phx-click="clear-error">Close</.button>
+            <.button variant="ghost" phx-click="clear-error">{gettext("Close")}</.button>
           </.alert>
           
     <!-- Loading state -->
           <div :if={@loading} class="flex justify-center items-center py-8">
             <div class="loading loading-spinner loading-lg text-primary"></div>
-            <span class="ml-2 text-lg">Processing...</span>
+            <span class="ml-2 text-lg">{gettext("Processing...")}</span>
           </div>
 
           <div :if={!@loading} class="space-y-6">
             <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-semibold">Tokens</h2>
+              <h2 class="text-xl font-semibold">{gettext("Tokens")}</h2>
               <.link navigate={~p"/tokens/new"} class="btn btn-primary">
-                <.icon name="hero-plus" class="h-4 w-4" /> Create New Token
+                <.icon name="hero-plus" class="h-4 w-4" /> {gettext("Create New Token")}
               </.link>
             </div>
             
@@ -59,7 +64,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="stat-figure text-primary">
                   <.icon name="hero-key" class="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <div class="stat-title text-sm sm:text-base">Total Tokens</div>
+                <div class="stat-title text-sm sm:text-base">{gettext("Total Tokens")}</div>
                 <div class="stat-value text-primary text-lg sm:text-2xl">{length(@api_tokens)}</div>
               </div>
 
@@ -67,7 +72,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="stat-figure text-success">
                   <.icon name="hero-check-circle" class="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <div class="stat-title text-sm sm:text-base">Active Tokens</div>
+                <div class="stat-title text-sm sm:text-base">{gettext("Active Tokens")}</div>
                 <div class="stat-value text-success text-lg sm:text-2xl">{@active_tokens_count}</div>
               </div>
 
@@ -75,7 +80,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="stat-figure text-error">
                   <.icon name="hero-exclamation-triangle" class="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <div class="stat-title text-sm sm:text-base">Expired Tokens</div>
+                <div class="stat-title text-sm sm:text-base">{gettext("Expired Tokens")}</div>
                 <div class="stat-value text-error text-lg sm:text-2xl">{@expired_tokens_count}</div>
               </div>
 
@@ -83,7 +88,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 <div class="stat-figure text-info">
                   <.icon name="hero-chart-bar" class="h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
-                <div class="stat-title text-sm sm:text-base">Today's Usage</div>
+                <div class="stat-title text-sm sm:text-base">{gettext("Today's Usage")}</div>
                 <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
               </div>
             </div>
@@ -91,32 +96,32 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     <!-- Token list -->
             <div class="surface-card overflow-x-auto">
               <.table id="api-tokens" rows={@api_tokens}>
-                <:col :let={token} label="Name">
+                <:col :let={token} label={gettext("Name")}>
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-sm sm:text-base">{token.name}</span>
                     <.status_badge :if={!token.is_active} variant={:warning} size="sm">
-                      Disabled
+                      {gettext("Disabled")}
                     </.status_badge>
                     <.status_badge :if={expired?(token)} variant={:error} size="sm">
-                      Expired
+                      {gettext("Expired")}
                     </.status_badge>
                   </div>
                 </:col>
-                <:col :let={token} label="Token">
+                <:col :let={token} label={gettext("Token")}>
                   <div class="flex items-center gap-2">
                     <code class="text-xs bg-base-200 px-2 py-1 rounded">
                       {display_token_preview(token)}
                     </code>
                   </div>
                 </:col>
-                <:col :let={token} label="Expires">
+                <:col :let={token} label={gettext("Expires")}>
                   <span class="text-sm">
                     {if token.expires_at,
                       do: format_datetime_to_local(token.expires_at),
-                      else: "Never expires"}
+                      else: gettext("Never expires")}
                   </span>
                 </:col>
-                <:col :let={token} label="Usage Count">
+                <:col :let={token} label={gettext("Usage Count")}>
                   <.status_badge variant={:info} class="badge-ghost">
                     {token.usage_count || 0}
                   </.status_badge>
@@ -156,21 +161,25 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     <!-- Delete confirmation Modal -->
         <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
           <:header>
-            <h3 class="text-lg font-semibold text-error">Delete API Token</h3>
+            <h3 class="text-lg font-semibold text-error">{gettext("Delete API Token")}</h3>
           </:header>
 
           <div class="space-y-2">
             <p>
-              Are you sure you want to delete the token "<span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
+              {gettext("Are you sure you want to delete the token")} " <span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
             </p>
             <p class="text-sm text-base-content/70">
-              This action cannot be undone. Applications using this token will no longer be able to access the API.
+              {gettext(
+                "This action cannot be undone. Applications using this token will no longer be able to access the API."
+              )}
             </p>
           </div>
 
           <:footer>
-            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>Cancel</.button>
-            <.button variant="danger" phx-click="confirm-delete">Delete</.button>
+            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>
+              {gettext("Cancel")}
+            </.button>
+            <.button variant="danger" phx-click="confirm-delete">{gettext("Delete")}</.button>
           </:footer>
         </.modal>
       </div>
@@ -222,13 +231,13 @@ defmodule VmemoWeb.ApiTokenLive.Index do
          |> assign(:show_delete_modal, false)
          |> assign(:token_to_delete, nil)
          |> assign(:loading, false)
-         |> put_flash(:info, "API Token deleted")}
+         |> put_flash(:info, gettext("API Token deleted"))}
 
       {:error, _} ->
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, "Delete failed, please try again")}
+         |> assign(:error_message, gettext("Delete failed, please try again"))}
     end
   end
 
@@ -241,19 +250,21 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
         updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
-        status_text = if updated_token.is_active, do: "Enabled", else: "Disabled"
+
+        status_text =
+          if updated_token.is_active, do: gettext("Enabled"), else: gettext("Disabled")
 
         {:noreply,
          socket
          |> assign(:api_tokens, updated_tokens)
          |> assign(:loading, false)
-         |> put_flash(:info, "Token #{status_text}")}
+         |> put_flash(:info, gettext("Token %{status}", status: status_text))}
 
       {:error, _changeset} ->
         {:noreply,
          socket
          |> assign(:loading, false)
-         |> assign(:error_message, "Failed to toggle status")}
+         |> assign(:error_message, gettext("Failed to toggle status"))}
     end
   end
 
