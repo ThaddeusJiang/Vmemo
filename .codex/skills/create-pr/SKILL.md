@@ -31,7 +31,8 @@ Create a high-quality PR with:
 6. Build a conventional-style PR title.
 7. Build a structured PR body (with optional visuals).
 8. Create or update PR.
-9. Return PR URL and a short summary.
+9. Set assignee / draft state / labels according to policy.
+10. Return PR URL and a short summary.
 
 ## Step 1: Branch safety checks
 
@@ -223,6 +224,7 @@ gh pr create \
 ```
 
 If user explicitly asks for draft PR, add `--draft`.
+If the work is still WIP (incomplete scope, pending checks, pending follow-up commits), create Draft PR by default.
 
 If PR already exists for the branch, update it instead of creating a duplicate:
 
@@ -230,13 +232,63 @@ If PR already exists for the branch, update it instead of creating a duplicate:
 gh pr edit <number> --title "$PR_TITLE" --body-file "$PR_BODY_FILE"
 ```
 
-## Step 8: Final response format
+## Step 8: Assignee / Draft / Label policy (must apply)
+
+1. Assignee
+
+- Always set assignee to the current developer (the authenticated `gh` user).
+- Resolve login with:
+
+```bash
+gh api user --jq .login
+```
+
+- Apply with:
+
+```bash
+gh pr edit <number> --add-assignee <login>
+```
+
+2. Draft state
+
+- If PR is WIP, ensure draft state:
+
+```bash
+gh pr ready <number> --undo
+```
+
+- Only mark Ready for review when scope and checks are complete:
+
+```bash
+gh pr ready <number>
+```
+
+3. UI change label
+
+- If PR includes UI changes, add label `run-e2e-test`.
+- UI changes include modifications under web UI paths such as:
+  - `lib/vmemo_web/`
+  - `assets/`
+  - `priv/static/`
+  - LiveView templates/components (`*.heex`)
+- Detect with diff in `origin/$BASE..HEAD` and apply:
+
+```bash
+gh pr edit <number> --add-label run-e2e-test
+```
+
+- If no UI changes, do not add this label.
+
+## Step 9: Final response format
 
 Return:
 
 - PR URL
 - Base branch used and why it was selected
 - The exact PR title used (including prefix)
+- Assignee applied
+- Draft/Ready state and reason
+- Whether `run-e2e-test` label was added and why
 - A 3-5 bullet summary of the PR body
 
 ## Guardrails
@@ -250,3 +302,6 @@ Return:
 - Never omit verification steps in PR body.
 - Always include related issues and pulls sections.
 - Always provide a Visual Evidence section (use `- None` when no images are available).
+- Always assign PR to current developer.
+- WIP must be Draft PR.
+- UI changes must include `run-e2e-test` label.
