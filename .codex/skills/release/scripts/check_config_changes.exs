@@ -78,15 +78,15 @@ defmodule Release.CheckConfigChanges do
 
   defp fallback_base do
     cond do
-      ref_exists?("origin/develop") ->
-        {:ok, "origin/develop"}
-
       ref_exists?("origin/main") ->
         {:ok, "origin/main"}
 
+      ref_exists?("origin/master") ->
+        {:ok, "origin/master"}
+
       true ->
         {:error,
-         "Cannot determine BASE_REF (no calver tag and no origin/develop or origin/main)."}
+         "Cannot determine BASE_REF (no calver tag and no origin/main or origin/master)."}
     end
   end
 

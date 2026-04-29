@@ -61,8 +61,8 @@ git rev-parse --abbrev-ref HEAD
 
 约束：
 
-- 不允许直接从 `main` 或 `develop` 创建 PR。
-- 若当前在 `main` 或 `develop`，先让用户切换到功能分支。
+- 不允许直接从 `main` 创建 PR。
+- 若当前在 `main`，先让用户切换到功能分支。
 
 ## 步骤 2：收集上下文
 
@@ -88,7 +88,7 @@ gh pr list --head "$CURRENT_BRANCH" --state all --json number,baseRefName,url,is
 ```bash
 git for-each-ref --format='%(refname:short)' refs/remotes/origin \
   | sed 's#^origin/##' \
-  | rg '^(develop|main|master|release/.+)$'
+  | rg '^(main|master|release/.+)$'
 ```
 
 2. 按分叉点新旧评分：
@@ -101,10 +101,9 @@ git for-each-ref --format='%(refname:short)' refs/remotes/origin \
 
 同分时优先级：
 
-1. `develop`
-2. `main`
-3. `master`
-4. `release/*`（最近）
+1. `main`
+2. `master`
+3. `release/*`（最近）
 
 ## 步骤 4：构建 PR 标题与正文
 
