@@ -10,22 +10,22 @@ and this project uses Calendar Versioning for releases.
 ### End Users
 
 #### Added
-- 登录后页面已支持中/英/日三语切换。
-- 新增全局 AI Drawer，可在任意页面快速打开会话入口。
-- 图片 caption 与 query 流程已统一到 OpenRouter 调用链，后续能力扩展更一致。
-- 统一浅色语义组件（Alert/Badge/Toast），跨页面提示样式更一致。
-- 新增用户档案信息（名称、头像、语言、外观）独立存储能力。
-- 通知下拉已抽离为可复用组件，交互一致性更好。
+- Post-login pages now support English, Chinese, and Japanese.
+- Added a global AI Drawer entry so users can open AI chat from anywhere.
+- Unified image caption/query flows through the OpenRouter path for more consistent AI behavior.
+- Unified light-theme semantic components (Alert/Badge/Toast) for more consistent feedback UI.
+- Added independent profile fields (name, avatar, language, appearance).
+- Extracted notifications dropdown into a reusable component for more consistent interaction.
 
 #### Fixed
-- landing/auth/app 视觉与交互细节对齐，修复多处样式不一致问题。
+- Aligned visual and interaction details across landing/auth/app pages.
 
 ### Maintainers
 
-- Change: dev/test 的运行时 URL 配置统一收敛到 `config/runtime.exs`。
+- Change: Runtime URL settings for dev/test are now centralized in `config/runtime.exs`.
   Migration:
-  1. 在运行环境中补齐并校验以下变量。
-  2. 重启服务并确认启动检查通过。
+  1. Ensure the following variables are set in your runtime environment.
+  2. Restart services and verify runtime checks.
   Example:
 
 ```bash
@@ -35,29 +35,29 @@ MOONDREAM_URL=<value>
 ```
 
 #### Changed
-- worktree 开发流程规范收敛：仅在明确需要时触发，并统一创建/清理步骤。
+- Refined worktree workflow: trigger only on explicit request, with standardized create/cleanup steps.
 
 ## [Vmemo - 2026.4.19] - 2026-04-19
 
 ### End Users
 
 #### Added
-- 新增会话内已上传图片回显，上传后可立即看到当前会话资源。
-- 引入用户级导入/导出与批量恢复能力，提升数据迁移与备份可用性。
-- 后台任务队列按业务拆分（会话、同步、视觉、导入），异步处理稳定性提升。
-- 管理端导入流程支持流式上传与大文件处理优化。
+- Added in-session uploaded-image preview so users can immediately see uploaded assets.
+- Added user-level import/export and batch restore support for better migration and backup workflows.
+- Split background job queues by business domain (chat/sync/vision/import) for more stable async behavior.
+- Improved admin import flow with streaming upload and better large-file handling.
 
 #### Fixed
-- 修复图片/笔记删除时的关联约束问题。
-- 修复找回密码邮箱匹配、聊天图片渲染与多处 CI/格式校验问题。
-- 将 Moondream 默认超时调高到 2 分钟，降低慢请求失败率。
+- Fixed image/note deletion failures caused by relation constraints.
+- Fixed password-reset email matching, chat image rendering issues, and multiple CI/format-related defects.
+- Increased Moondream default timeout to 2 minutes to reduce failures on slow responses.
 
 ### Maintainers
 
-- Change: 发布与测试流程中的环境变量约束统一，运行时依赖显式化。
+- Change: Unified environment-variable constraints across release/test pipelines and made runtime dependencies explicit.
   Migration:
-  1. 校验发布/部署环境中的关键变量是否已配置。
-  2. 重新部署后执行启动与基础功能验收。
+  1. Verify required variables in deployment environments.
+  2. Re-deploy and run startup/basic flow verification.
   Example:
 
 ```bash
@@ -68,21 +68,21 @@ ADMIN_PASSWORD=<value>
 ```
 
 #### Changed
-- release 工作流从“脚本拼接”调整为更明确的发布门禁与职责拆分。
-- Docker 多架构发布流程调整为分架构构建后合并，发布可观察性更好。
-- Docker 自托管接入 Moondream sidecar 转发方案，部署链路更清晰。
-- 增加外部服务监控与多平台镜像发布能力。
-- Typesense 相关目录与迁移策略收敛，减少运行时隐式行为。
+- Refined release workflow from script-style chaining to clearer release gates and ownership boundaries.
+- Updated Docker multi-arch publishing to split-build then merge for better observability.
+- Added Moondream sidecar forwarding path for self-hosted Docker deployments.
+- Added external service monitoring and multi-platform image publishing support.
+- Consolidated Typesense structure/migration strategy to reduce implicit runtime behavior.
 
 #### Fixed
-- 修复 Docker 发布流程中 checkout、digest 合并等关键稳定性问题。
+- Fixed Docker release pipeline stability issues around checkout and digest/manifest handling.
 
 ## [Vmemo - 2024.12.25] - 2024-12-25
 
 ### End Users
 
 #### Added
-- 首版发布：图片上传、基础检索、笔记能力与初始界面。
+- Initial release: image upload, basic search, note capability, and first UI.
 
 #### Fixed
-- 修复早期 UI 与 Docker 安装流程中的关键问题。
+- Fixed key early-stage UI and Docker installation issues.
