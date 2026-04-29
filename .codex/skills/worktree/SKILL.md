@@ -1,110 +1,72 @@
 ---
 name: "worktree"
-description: "Create a Git worktree for Vmemo with .env copy, env-only runtime URL setup, optional Docker port conflict handling, and mandatory container cleanup after verification."
+description: "Create or validate a Vmemo Git worktree with automatic .env bootstrap from develop, minimal env/runtime checks, optional port-conflict handling, and mandatory cleanup."
 ---
 
 # worktree Skill
 
-当用户主动要求“创建/初始化/验证 worktree”时使用此技能。
+当用户明确要求“创建 / 初始化 / 验证 worktree”时使用本技能。
 
 ## Goal
 
-创建一个可独立开发与验证的 worktree，并确保：
+以最小步骤完成 worktree 准备与验证，不中断、不做无关改动。
 
-- 从当前目录复制 `.env` 到新 worktree（必须用 `cp`）
-- 新 worktree 的运行环境变量与当前 runtime 配置一致（`DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL`）
-- 验证结束后及时执行 `docker compose down` 关闭容器
+## Single source rules
 
-## Required workflow
+1. `.env` 缺失时：直接从 `develop` 复制并继续（必须 `cp`，禁止符号链接）。
+2. 只在端口冲突时修改 `docker-compose.yml`，并同步 `.env` URL。
+3. 验证结束后必须执行 `docker compose down`。
 
-### Path A: 需要创建新 worktree
+## Required vars
 
-1. 在当前目录先执行 `mise trust && mise install`。
-2. 确认当前目录存在 `.env`；不存在则停止并告知用户。
-3. 创建 worktree（按用户给定分支名/路径；未给定时做最小合理假设）。
-4. 使用 `cp` 复制 `.env` 到新 worktree。
-5. 在新 worktree 中确认 `.env` 提供 `DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL`。
-6. 在启动容器前检查目标端口是否被占用；若被占用，再按需调整新 worktree 的 `docker-compose.yml` 端口映射，并同步更新 `.env` 对应 URL。
-7. 启动所需容器（`docker compose up -d`，必要时再启 test profile）。
-8. 在新 worktree 中执行 `mix deps.get`。
-9. 在新 worktree 中执行 `mix setup`。
-10. 验证完成后，必须执行 `docker compose down` 清理容器。
+目标目录 `.env` 必须包含：
+- `DATABASE_URL`
+- `TYPESENSE_URL`
+- `MOONDREAM_URL`
 
-### Path B: 用户已触发且当前目录已是 worktree
+## Unified flow
 
-1. 识别当前目录为 Git worktree 后，执行 `mise trust && mise install`。
-2. 确认当前 worktree 下存在 `.env`；若缺失则从对应源目录使用 `cp` 补齐，无法确定源目录时停止并告知用户。
-3. 在当前 worktree 中确认 `.env` 提供 `DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL`。
-4. 在启动容器前检查目标端口是否被占用；若被占用，再按需调整当前 worktree 的 `docker-compose.yml` 端口映射，并同步更新 `.env` 对应 URL。
-5. 启动所需容器（`docker compose up -d`，必要时再启 test profile）。
-6. 在当前 worktree 中执行 `mix deps.get`。
-7. 在当前 worktree 中执行 `mix setup`。
-8. 验证完成后，必须执行 `docker compose down` 清理容器。
+1. `mise trust && mise install`
+2. 若目标目录缺少 `.env`：
+   - 定位本地 `develop` 目录
+   - `cp <develop-dir>/.env <target-dir>/.env`
+3. 校验 `.env` 包含 Required vars
+4. 若端口冲突：更新端口映射并同步 `.env` URL
+5. `docker compose up -d`（需要时再启 test profile）
+6. `mix deps.get && mix setup`
+7. 验证完成后 `docker compose down`
 
-## Commands (reference)
+## Path switch (only differences)
 
-### 1) Create worktree
+### Path A: 创建新 worktree
+
+- 先创建 worktree：
+  - `git worktree add ../<worktree-dir> -b <branch-name>`
+  - 或 `git worktree add ../<worktree-dir> <existing-branch>`
+- 然后对新 worktree 执行 Unified flow。
+
+### Path B: 当前目录已是 worktree
+
+- 直接对当前目录执行 Unified flow。
+
+## Minimal commands
 
 ```bash
+# create (Path A only)
 git worktree add ../<worktree-dir> -b <branch-name>
-```
 
-如分支已存在，可改用：
-
-```bash
-git worktree add ../<worktree-dir> <existing-branch>
-```
-
-### 2) Copy `.env` from current directory (required)
-
-```bash
-cp .env ../<worktree-dir>/.env
-```
-
-禁止使用符号链接替代此步骤；必须是复制。
-
-### 3) Handle port conflicts only when needed
-
-默认优先复用仓库现有 `docker-compose.yml`。仅在端口冲突时，才修改当前 worktree 的端口映射，并同步更新 `.env`：
-
-- dev services: `postgres`, `typesense`
-- test services/profile: `postgres-test`, `typesense-test`
-
-### 4) Verify (minimal)
-
-```bash
-cd ../<worktree-dir>
+# verify (both paths, in target worktree)
 mise trust && mise install
-# Check required ports before compose up.
-# If occupied, update .env URLs first, then continue.
-# Example URL fields:
-# - DATABASE_URL
-# - TYPESENSE_URL
-# - MOONDREAM_URL
 docker compose up -d
 docker compose --profile test up -d
 mix deps.get
 mix setup
-```
 
-可选检查：
-
-```bash
-docker compose ps
-```
-
-### 5) Mandatory cleanup
-
-验证结束后立即执行：
-
-```bash
+# cleanup (mandatory)
 docker compose down
 ```
 
-若本次启用了 test profile，仍使用同一条 `down` 命令即可回收对应容器与网络。
-
 ## Guardrails
 
-- 遵循“最小改动”原则，不做与 worktree 启用无关的重构。
-- 不修改 `main`/`develop` 现有行为，除非用户明确要求。
-- 若需要改 schema/migration、依赖、路由、认证等高风险项，先征求用户确认。
+- 不修改 `main` / `develop` 行为，除非用户明确要求。
+- 涉及 schema/migration、依赖、路由、认证等高风险项需先征求确认。
