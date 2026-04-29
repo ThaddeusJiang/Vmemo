@@ -1007,7 +1007,7 @@ msgstr ""
 msgid "tokens will expire within 7 days"
 msgstr ""
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:172
+#: lib/vmemo_web/live/components/moondream_panel.ex:173
 #, elixir-autogen, elixir-format
 msgid "Connection error. Check your network."
 msgstr "连接错误。请检查网络。"
@@ -1018,7 +1018,7 @@ msgstr "连接错误。请检查网络。"
 msgid "Delete failed. Retry."
 msgstr "删除失败。请重试。"
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:90
+#: lib/vmemo_web/live/components/moondream_panel.ex:91
 #, elixir-autogen, elixir-format
 msgid "Failed to create request: %{reason}"
 msgstr "创建请求失败：%{reason}"
@@ -1028,7 +1028,7 @@ msgstr "创建请求失败：%{reason}"
 msgid "Login failed. Check your email and password, then try again."
 msgstr "登录失败。请检查邮箱和密码后重试。"
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:175
+#: lib/vmemo_web/live/components/moondream_panel.ex:176
 #, elixir-autogen, elixir-format
 msgid "Network error. Check your connection."
 msgstr "网络错误。请检查连接。"
@@ -1043,15 +1043,15 @@ msgstr "密码重置失败。请检查下方字段。"
 msgid "Password reset failed. Check your input and submit again."
 msgstr "密码重置失败。请检查输入后重新提交。"
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:166
-#: lib/vmemo_web/live/components/moondream_panel.ex:182
-#: lib/vmemo_web/live/components/moondream_panel.ex:208
+#: lib/vmemo_web/live/components/moondream_panel.ex:167
+#: lib/vmemo_web/live/components/moondream_panel.ex:183
+#: lib/vmemo_web/live/components/moondream_panel.ex:209
 #, elixir-autogen, elixir-format
 msgid "Request failed."
 msgstr "请求失败。"
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:160
-#: lib/vmemo_web/live/components/moondream_panel.ex:169
+#: lib/vmemo_web/live/components/moondream_panel.ex:161
+#: lib/vmemo_web/live/components/moondream_panel.ex:170
 #, elixir-autogen, elixir-format
 msgid "Request timed out."
 msgstr "请求超时。"

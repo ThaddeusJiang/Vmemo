@@ -1007,7 +1007,7 @@ msgstr ""
 msgid "tokens will expire within 7 days"
 msgstr ""
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:172
+#: lib/vmemo_web/live/components/moondream_panel.ex:173
 #, elixir-autogen, elixir-format
 msgid "Connection error. Check your network."
 msgstr "Connection error. Check your network."
@@ -1018,7 +1018,7 @@ msgstr "Connection error. Check your network."
 msgid "Delete failed. Retry."
 msgstr "Delete failed. Retry."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:90
+#: lib/vmemo_web/live/components/moondream_panel.ex:91
 #, elixir-autogen, elixir-format
 msgid "Failed to create request: %{reason}"
 msgstr "Failed to create request: %{reason}"
@@ -1028,7 +1028,7 @@ msgstr "Failed to create request: %{reason}"
 msgid "Login failed. Check your email and password, then try again."
 msgstr "Login failed. Check your email and password, then try again."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:175
+#: lib/vmemo_web/live/components/moondream_panel.ex:176
 #, elixir-autogen, elixir-format
 msgid "Network error. Check your connection."
 msgstr "Network error. Check your connection."
@@ -1043,15 +1043,15 @@ msgstr "Password reset failed. Check the fields below."
 msgid "Password reset failed. Check your input and submit again."
 msgstr "Password reset failed. Check your input and submit again."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:166
-#: lib/vmemo_web/live/components/moondream_panel.ex:182
-#: lib/vmemo_web/live/components/moondream_panel.ex:208
+#: lib/vmemo_web/live/components/moondream_panel.ex:167
+#: lib/vmemo_web/live/components/moondream_panel.ex:183
+#: lib/vmemo_web/live/components/moondream_panel.ex:209
 #, elixir-autogen, elixir-format
 msgid "Request failed."
 msgstr "Request failed."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:160
-#: lib/vmemo_web/live/components/moondream_panel.ex:169
+#: lib/vmemo_web/live/components/moondream_panel.ex:161
+#: lib/vmemo_web/live/components/moondream_panel.ex:170
 #, elixir-autogen, elixir-format
 msgid "Request timed out."
 msgstr "Request timed out."

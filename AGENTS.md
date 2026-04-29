@@ -125,6 +125,8 @@ Useful commands:
 - When adding or changing UI copy, update corresponding `priv/gettext/*/LC_MESSAGES/*.po` entries.
 - User-facing error messages must be specific and actionable. Avoid vague filler (for example "Oops" or generic "Something went wrong").
 - Log error messages should be concise and factual, without conversational filler (for example no "please try again" in logs).
+- Hard gate: any PR that changes user-facing copy is incomplete unless `mix gettext.extract --merge` is run and related `priv/gettext` files are committed.
+- CI enforcement: `scripts/check_gettext_sync.sh` must pass.
 
 ## Pre-PR checklist
 Before creating a PR, all must pass:
