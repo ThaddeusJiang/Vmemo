@@ -24,6 +24,10 @@ defmodule VmemoWeb.UserResetPasswordLive do
             id="reset_password_form"
             phx-submit="reset-password"
           >
+            <.error :if={@form_error != nil}>
+              {@form_error}
+            </.error>
+
             <.error :if={@form.errors != []}>
               Oops, something went wrong! Please check the errors below.
             </.error>
@@ -55,6 +59,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
              |> assign(:user, user)
              |> assign(:token, token)
              |> assign(:token_error, nil)
+             |> assign(:form_error, nil)
              |> assign(:form, to_form(%{}, as: "user"))}
 
           {:error, reason} ->
@@ -63,6 +68,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
             {:ok,
              socket
              |> assign(:token_error, error_message)
+             |> assign(:form_error, nil)
              |> assign(:user, nil)
              |> assign(:token, nil)
              |> assign(:form, to_form(%{}, as: "user"))}
@@ -72,6 +78,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
         {:ok,
          socket
          |> assign(:token_error, "Reset password link is missing.")
+         |> assign(:form_error, nil)
          |> assign(:user, nil)
          |> assign(:token, nil)
          |> assign(:form, to_form(%{}, as: "user"))}
@@ -145,7 +152,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
       {:error, _changeset} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Failed to reset password. Please try again.")
+         |> assign(:form_error, "Failed to reset password. Please try again.")
          |> assign(:form, to_form(user_params, as: "user"))}
     end
   end
@@ -153,12 +160,14 @@ defmodule VmemoWeb.UserResetPasswordLive do
   defp assign_missing_token_error(socket, user_params) do
     socket
     |> assign(:token_error, "Reset password link is missing.")
+    |> assign(:form_error, nil)
     |> assign(:form, to_form(user_params, as: "user"))
   end
 
   defp assign_token_error(socket, user_params, reason) do
     socket
     |> assign(:token_error, get_error_message(reason))
+    |> assign(:form_error, nil)
     |> assign(:form, to_form(user_params, as: "user"))
   end
 

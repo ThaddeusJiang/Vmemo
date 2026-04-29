@@ -10,6 +10,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
      socket
      |> assign(show_expanded: false)
      |> assign(:q, "")
+     |> assign(:submit_error, nil)
      |> allow_upload(:image,
        accept: ~w(.png .jpg .jpeg .gif .webp),
        max_entries: 1
@@ -43,6 +44,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         cancel_upload(acc, :image, entry.ref)
       end)
       |> assign(show_expanded: false)
+      |> assign(:submit_error, nil)
 
     {:noreply, socket}
   end
@@ -68,7 +70,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
         socket
       end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, :submit_error, nil)}
   end
 
   @impl true
@@ -91,7 +93,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       {_completed, errors} ->
         error_msg = "Upload failed: #{inspect(errors)}"
-        {:noreply, socket |> put_flash(:error, error_msg)}
+        {:noreply, assign(socket, :submit_error, error_msg)}
     end
   end
 
@@ -100,14 +102,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   end
 
   defp handle_completed_upload_entries(socket, _current_user, []) do
-    {:noreply, socket |> put_flash(:error, "Please wait for upload to complete")}
+    {:noreply, assign(socket, :submit_error, "Please wait for upload to complete")}
   end
 
   defp handle_completed_upload_entries(socket, _current_user, _entries) do
     {:noreply,
-     socket
-     |> put_flash(
-       :error,
+     assign(
+       socket,
+       :submit_error,
        "Search by image uses exactly one image. Remove extra files and try again."
      )}
   end
@@ -138,14 +140,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
       {:error, _reason} ->
         {:noreply,
-         socket
-         |> put_flash(
-           :error,
+         assign(
+           socket,
+           :submit_error,
            "Search index is not ready or upload failed. Please try again."
          )}
 
       other ->
-        {:noreply, socket |> put_flash(:error, "Search by image failed: #{inspect(other)}")}
+        {:noreply, assign(socket, :submit_error, "Search by image failed: #{inspect(other)}")}
     end
   end
 
@@ -195,6 +197,10 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           phx-hook="ClipboardMediaFetcher"
           phx-drop-target={@uploads.image.ref}
         >
+          <.error :if={@submit_error != nil}>
+            {@submit_error}
+          </.error>
+
           <%!-- Always include the file input --%>
           <.live_file_input upload={@uploads.image} class="hidden" />
 

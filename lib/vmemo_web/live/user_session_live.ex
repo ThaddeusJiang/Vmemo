@@ -1,10 +1,18 @@
 defmodule VmemoWeb.UserSessionLive do
   use VmemoWeb, :live_view
+  alias Vmemo.Account
 
   def mount(_params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
-    form = to_form(%{"email" => email}, as: "user")
-    {:ok, assign(socket, current_scope: :user, form: form), temporary_assigns: [form: form]}
+    form = to_form(%{"email" => email, "remember_me" => "false"}, as: "user")
+
+    {:ok,
+     assign(socket,
+       current_scope: :user,
+       form: form,
+       trigger_submit: false,
+       form_error: nil
+     )}
   end
 
   def render(assigns) do
@@ -39,10 +47,19 @@ defmodule VmemoWeb.UserSessionLive do
               Logout and Register
             </.link>
           <% else %>
-            <.simple_form for={@form} id="login_form" action={~p"/login"} phx-update="ignore">
+            <.simple_form
+              for={@form}
+              id="login_form"
+              action={~p"/login"}
+              phx-submit="login"
+              phx-trigger-action={@trigger_submit}
+            >
               <.input field={@form[:email]} type="email" label="Email " required />
               <.input field={@form[:password]} type="password" label="Password" required />
               <.input field={@form[:remember_me]} type="checkbox" label="Remember me" />
+              <.error :if={@form_error != nil}>
+                {@form_error}
+              </.error>
 
               <:actions>
                 <.button phx-disable-with="Logging in..." class="w-full">
@@ -74,5 +91,24 @@ defmodule VmemoWeb.UserSessionLive do
       </div>
     </div>
     """
+  end
+
+  def handle_event("login", %{"user" => user_params}, socket) do
+    email = Map.get(user_params, "email", "") |> String.trim()
+    password = Map.get(user_params, "password", "")
+
+    case Account.get_user_by_email_and_password(email, password) do
+      %{confirmed_at: %DateTime{}} ->
+        {:noreply,
+         socket
+         |> assign(form: to_form(user_params, as: "user"))
+         |> assign(trigger_submit: true, form_error: nil)}
+
+      _ ->
+        {:noreply,
+         socket
+         |> assign(form: to_form(user_params, as: "user"))
+         |> assign(trigger_submit: false, form_error: "Invalid credentials")}
+    end
   end
 end

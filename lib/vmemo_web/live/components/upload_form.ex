@@ -39,6 +39,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       end)
       |> assign_new(:show_full_form, fn -> false end)
       |> assign_new(:uploaded_photos, fn -> [] end)
+      |> assign_new(:submit_error, fn -> nil end)
 
     has_files = Enum.any?(socket.assigns.uploads.images.entries)
     upload_ref = socket.assigns.uploads.images.ref
@@ -181,6 +182,10 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
             </.alert>
 
             <div :if={@has_files} class="mt-4 space-y-1 flex-none">
+              <.error :if={@submit_error != nil}>
+                {@submit_error}
+              </.error>
+
               <.textarea_field
                 id={@form[:note].id}
                 name={@form[:note].name}
@@ -249,6 +254,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     socket =
       socket
       |> assign(form: to_form(new_form_data))
+      |> assign(:submit_error, nil)
       |> assign(previous_file_count: current_file_count)
       |> maybe_focus_note_field(file_count_changed and has_files)
 
@@ -279,7 +285,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       ) do
     case Map.get(socket.assigns, :current_user) do
       nil ->
-        {:noreply, socket |> put_flash(:error, "User not found")}
+        {:noreply, assign(socket, :submit_error, "User not found")}
 
       current_user ->
         handle_save_upload(socket, note_text, is_whole, current_user)
@@ -300,7 +306,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
         {:noreply, process_uploaded_images(socket, entries, note_text, note, current_user)}
 
       _ ->
-        {:noreply, socket}
+        {:noreply, assign(socket, :submit_error, "Upload is still in progress. Please wait.")}
     end
   end
 

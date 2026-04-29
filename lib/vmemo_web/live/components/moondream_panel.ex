@@ -15,7 +15,8 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
      |> assign(:prompt, "")
      |> assign(:function, "query")
      |> assign(:requests, [])
-     |> assign(:loading_requests, MapSet.new())}
+     |> assign(:loading_requests, MapSet.new())
+     |> assign(:submit_error, nil)}
   end
 
   @impl true
@@ -38,7 +39,8 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
       {:noreply,
        socket
        |> assign(:prompt, prompt)
-       |> assign(:function, function)}
+       |> assign(:function, function)
+       |> assign(:submit_error, nil)}
     end
   end
 
@@ -75,11 +77,12 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
           {:noreply,
            socket
            |> assign(:loading_requests, loading_requests)
-           |> assign(:prompt, "")}
+           |> assign(:prompt, "")
+           |> assign(:submit_error, nil)}
 
         {:error, changeset} ->
           error_msg = format_changeset_errors(changeset)
-          {:noreply, socket |> put_flash(:error, "Failed to create request: #{error_msg}")}
+          {:noreply, assign(socket, :submit_error, "Failed to create request: #{error_msg}")}
       end
     end
   end
@@ -419,6 +422,10 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         phx-target={@myself}
         class="pt-2"
       >
+        <.error :if={@submit_error != nil}>
+          {@submit_error}
+        </.error>
+
         <div class="flex flex-wrap gap-2">
           <label
             :for={func <- function_types()}
