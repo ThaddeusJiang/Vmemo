@@ -1,5 +1,6 @@
 defmodule VmemoWeb.UserSessionLive do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
   alias Vmemo.Account
 
   def mount(_params, _session, socket) do
@@ -108,7 +109,10 @@ defmodule VmemoWeb.UserSessionLive do
         {:noreply,
          socket
          |> assign(form: to_form(user_params, as: "user"))
-         |> assign(trigger_submit: false, form_error: "Invalid credentials")}
+         |> assign(
+           trigger_submit: false,
+           form_error: gettext("Login failed. Check your email and password, then try again.")
+         )}
     end
   end
 end

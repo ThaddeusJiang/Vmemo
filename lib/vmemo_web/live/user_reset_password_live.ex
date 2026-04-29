@@ -1,5 +1,6 @@
 defmodule VmemoWeb.UserResetPasswordLive do
   use VmemoWeb, :live_view
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Account
 
@@ -29,7 +30,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
             </.error>
 
             <.error :if={@form.errors != []}>
-              Oops, something went wrong! Please check the errors below.
+              {gettext("Password reset failed. Check the fields below.")}
             </.error>
 
             <.input field={@form[:password]} type="password" label="New password" required />
@@ -152,7 +153,10 @@ defmodule VmemoWeb.UserResetPasswordLive do
       {:error, _changeset} ->
         {:noreply,
          socket
-         |> assign(:form_error, "Failed to reset password. Please try again.")
+         |> assign(
+           :form_error,
+           gettext("Password reset failed. Check your input and submit again.")
+         )
          |> assign(:form, to_form(user_params, as: "user"))}
     end
   end

@@ -291,11 +291,11 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
   defp stream_error_text(nil), do: nil
 
   defp stream_error_text(:max_iterations_reached) do
-    "I hit a response limit while generating this reply. Please try again."
+    "Response limit reached while generating this reply."
   end
 
   defp stream_error_text(_reason) do
-    "I hit an error while generating this response. Please try again."
+    "Response generation failed."
   end
 
   defp upsert_final_response!(message, attrs) when is_map(attrs) do

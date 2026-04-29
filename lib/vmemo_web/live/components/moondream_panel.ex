@@ -1,6 +1,7 @@
 defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   @moduledoc false
   use VmemoWeb, :live_component
+  use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Ai.VisionRequest
 
@@ -82,7 +83,13 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
         {:error, changeset} ->
           error_msg = format_changeset_errors(changeset)
-          {:noreply, assign(socket, :submit_error, "Failed to create request: #{error_msg}")}
+
+          {:noreply,
+           assign(
+             socket,
+             :submit_error,
+             gettext("Failed to create request: %{reason}", reason: error_msg)
+           )}
       end
     end
   end
@@ -151,29 +158,29 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
     cond do
       is_transport_error and String.contains?(error_message_lower, "timeout") ->
-        "Request timeout. Please try again."
+        gettext("Request timed out.")
 
       is_transport_error ->
         format_transport_error_reason(error_message)
 
       String.contains?(error_message, "Req.Error") ->
-        "Request failed. Please try again."
+        gettext("Request failed.")
 
       String.contains?(error_message_lower, "timeout") ->
-        "Request timeout. Please try again."
+        gettext("Request timed out.")
 
       String.contains?(error_message_lower, "connection") ->
-        "Connection error. Please check your network and try again."
+        gettext("Connection error. Check your network.")
 
       String.contains?(error_message_lower, "network") ->
-        "Network error. Please check your connection and try again."
+        gettext("Network error. Check your connection.")
 
       true ->
         format_unknown_error_message(error_message)
     end
   end
 
-  defp format_error_message(_), do: "An error occurred. Please try again."
+  defp format_error_message(_), do: gettext("Request failed.")
 
   defp format_changeset_error(%Ash.Error.Changes.Required{field: field}),
     do: "#{field} is required"
@@ -199,7 +206,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
 
   defp format_unknown_error_message(error_message) do
     if String.contains?(error_message, "%") or String.contains?(error_message, "{") do
-      "An error occurred. Please try again."
+      gettext("Request failed.")
     else
       error_message
     end
