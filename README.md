@@ -31,6 +31,18 @@ More self-hosting [docs](docs/guides/self-hosting/README.md)
 
 - [Contributor guides](docs/guides/development/README.md)
 
+## Changelog Policy
+
+- `CHANGELOG.md` is maintained manually for users, not generated from raw commit/PR titles.
+- Focus on user-visible impact, upgrade risk, and migration actions.
+- Structure each release with priority:
+  - `End Users` first (upload, Ask AI, search, UX behavior).
+  - `Maintainers` second (environment variables, Docker, CI/release pipeline).
+- When environment/config variables change, include:
+  - `Change`
+  - `Migration` steps
+  - `Example` env block
+
 ## Author
 
 Created and maintained by [Thaddeus Jiang](https://github.com/ThaddeusJiang).
