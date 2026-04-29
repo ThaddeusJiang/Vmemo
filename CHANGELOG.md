@@ -7,6 +7,8 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+## [Vmemo - 2026.4.29] - 2026-04-29
+
 ### End Users
 
 #### Added
