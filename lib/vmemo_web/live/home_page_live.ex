@@ -35,7 +35,8 @@ defmodule VmemoWeb.HomePageLive do
             <h1 class="section-title text-4xl">{gettext("Search")}</h1>
 
             <div class="text-sm text-base-content/70">
-              {gettext("Total")} <span class="font-semibold">{@total_photos}</span> {gettext("images")}
+              {gettext("Total")}
+              <span class="font-semibold">{@total_photos}</span> {gettext("images")}
             </div>
 
             <.live_component

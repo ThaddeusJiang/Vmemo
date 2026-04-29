@@ -63,7 +63,12 @@ defmodule VmemoWeb.UserSettingsLive do
                 id="hidden_user_email"
                 value={@current_email}
               />
-              <.input field={@password_form[:password]} type="password" label={gettext("New password")} required />
+              <.input
+                field={@password_form[:password]}
+                type="password"
+                label={gettext("New password")}
+                required
+              />
               <.input
                 field={@password_form[:password_confirmation]}
                 type="password"
@@ -102,7 +107,9 @@ defmodule VmemoWeb.UserSettingsLive do
             <div class="border border-base-300 rounded-md p-4 space-y-2">
               <h2 class="text-base font-medium">{gettext("Data Import")}</h2>
               <p class="text-sm text-base-content/70">
-                {gettext("Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources.")}
+                {gettext(
+                  "Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources."
+                )}
               </p>
 
               <.form
@@ -185,15 +192,25 @@ defmodule VmemoWeb.UserSettingsLive do
                 <p>{gettext("Images skipped")}: {result_value(images, [:skipped, "skipped"], 0)}</p>
                 <p>{gettext("Notes created")}: {result_value(notes, [:created, "created"], 0)}</p>
                 <p>{gettext("Notes skipped")}: {result_value(notes, [:skipped, "skipped"], 0)}</p>
-                <p>{gettext("Links created")}: {result_value(image_notes, [:created, "created"], 0)}</p>
-                <p>{gettext("Links skipped")}: {result_value(image_notes, [:skipped, "skipped"], 0)}</p>
                 <p>
-                  {gettext("Typesense images upserted")}:
-                  {result_value(typesense_images, [:success, "success"], 0)}
+                  {gettext("Links created")}: {result_value(image_notes, [:created, "created"], 0)}
                 </p>
                 <p>
-                  {gettext("Typesense notes upserted")}:
-                  {result_value(typesense_notes, [:success, "success"], 0)}
+                  {gettext("Links skipped")}: {result_value(image_notes, [:skipped, "skipped"], 0)}
+                </p>
+                <p>
+                  {gettext("Typesense images upserted")}: {result_value(
+                    typesense_images,
+                    [:success, "success"],
+                    0
+                  )}
+                </p>
+                <p>
+                  {gettext("Typesense notes upserted")}: {result_value(
+                    typesense_notes,
+                    [:success, "success"],
+                    0
+                  )}
                 </p>
                 <p :if={errors != []} class="text-error">
                   {gettext("Errors")}: {error_count}
@@ -404,7 +421,10 @@ defmodule VmemoWeb.UserSettingsLive do
       {:error, reason} ->
         socket
         |> assign(:is_importing, false)
-        |> assign(:import_error, gettext("Import failed: %{reason}", reason: format_error(reason)))
+        |> assign(
+          :import_error,
+          gettext("Import failed: %{reason}", reason: format_error(reason))
+        )
     end
   end
 

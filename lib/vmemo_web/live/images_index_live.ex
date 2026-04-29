@@ -97,7 +97,9 @@ defmodule VmemoWeb.ImagesIndexLive do
       <div class="flex flex-col gap-4 w-full">
         <%= if @similar_image_id && @similar_photo do %>
           <div class="flex items-center gap-3 p-2">
-            <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">{gettext("Search")}:</div>
+            <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">
+              {gettext("Search")}:
+            </div>
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/60 shadow-md">
               <img
                 src={@similar_photo.url}
@@ -120,7 +122,9 @@ defmodule VmemoWeb.ImagesIndexLive do
         <% else %>
           <%= if @q != "" do %>
             <div class="flex items-center gap-3 p-2">
-              <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">{gettext("Search")}:</div>
+              <div class="text-sm text-base-content/70 font-normal whitespace-nowrap">
+                {gettext("Search")}:
+              </div>
               <div class="text-lg text-base-content font-semibold">{@q}</div>
               <.button
                 phx-click="clear-search"
@@ -140,7 +144,9 @@ defmodule VmemoWeb.ImagesIndexLive do
               <h2 class="section-title text-2xl text-base-content/80">{gettext("No results")}</h2>
               <p class="text-base-content/65 text-center">
                 {gettext("Try a different search above or")}
-                <.link href="/images/upload" class="link link-primary">{gettext("Upload images")}</.link>
+                <.link href="/images/upload" class="link link-primary">
+                  {gettext("Upload images")}
+                </.link>
               </p>
             </div>
           </:empty>
