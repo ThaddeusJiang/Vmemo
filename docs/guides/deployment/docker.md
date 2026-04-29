@@ -93,6 +93,7 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 - `rel/entrypoint.sh` exists and is executable.
 - Entrypoint runs `bin/vmemo eval "Vmemo.Release.migrate()"`.
 - Dockerfile runner starts via `ENTRYPOINT + CMD ["start"]`.
+- Dockerfile runner includes ImageMagick (`magick`) for AI vision request preprocessing.
 
 ### Required Environment Variables
 
@@ -120,6 +121,12 @@ Missing environment variables:
 
 1. Verify keys against `config/runtime.exs`
 2. Verify key names and values
+
+Image preprocessing unavailable:
+
+1. Enter container shell and check tool existence: `which magick`
+2. Verify version: `magick -version`
+3. Rebuild image from root `Dockerfile` if tool is missing.
 
 ## Best Practices
 

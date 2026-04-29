@@ -17,6 +17,9 @@ and this project uses Calendar Versioning for releases.
 - Added independent profile fields (name, avatar, language, appearance).
 - Extracted notifications dropdown into a reusable component for more consistent interaction.
 
+#### Changed
+- AI image requests now preprocess large images before calling external vision services, reducing transfer size while keeping original uploads intact in storage.
+
 #### Fixed
 - Aligned visual and interaction details across landing/auth/app pages.
 
@@ -36,6 +39,7 @@ MOONDREAM_URL=<value>
 
 #### Changed
 - Refined worktree workflow: trigger only on explicit request, with standardized create/cleanup steps.
+- Docker runtime image now includes ImageMagick so vision preprocessing is always available in production containers.
 
 ## [Vmemo - 2026.4.19] - 2026-04-19
 
