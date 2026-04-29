@@ -88,6 +88,7 @@ defmodule Vmemo.MixProject do
       {:oban_met, "~> 1.0"},
       {:owl, "~> 0.13"},
       {:spark, "~> 2.3"},
+      {:mock, "~> 0.3.9", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
