@@ -2,7 +2,7 @@ name: E2E Test
 
 on:
   pull_request:
-    types: [ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
   workflow_dispatch:
     inputs:
       update_snapshots:
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   e2e-test:
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-e2e-test') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
