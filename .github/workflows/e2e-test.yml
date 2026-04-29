@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   e2e-test:
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (contains(github.event.pull_request.labels.*.name, 'LGTM') && contains(github.event.pull_request.labels.*.name, 'run-e2e-test')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:

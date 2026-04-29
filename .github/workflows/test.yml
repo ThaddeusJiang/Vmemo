@@ -24,7 +24,7 @@ env:
 
 jobs:
   mix-check:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'LGTM') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -67,7 +67,7 @@ jobs:
         run: mix gettext.extract --check-up-to-date
 
   mix-test:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'Ready to merge') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'LGTM') }}
     runs-on: ubuntu-latest
 
     steps:
