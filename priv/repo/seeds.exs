@@ -10,8 +10,8 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-# Seed shared image fixture for all environments.
-Code.require_file("seeds/image.exs", __DIR__)
+# Seed test fixtures shared by local development and e2e testing.
+Code.require_file("seeds/test.exs", __DIR__)
 
-# Always execute image seed in mix setup / db.seed.
-Vmemo.Seeds.Image.run()
+# Always execute shared test fixtures in mix setup / db.seed.
+Vmemo.Seeds.Test.run()

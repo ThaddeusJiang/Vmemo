@@ -73,7 +73,7 @@ By default, `vmemo` resolves runtime connections as:
 In prod-like mode, container startup runs:
 
 - release migrations (`Vmemo.Release.migrate/0`)
-- e2e SQL seed via `e2e-seed` service (`others/e2e-test/sql/seed_e2e.sql`)
+- shared SQL seed via `e2e-seed` service (`priv/repo/seeds/test.sql`)
 
 ## Auth Setup
 
