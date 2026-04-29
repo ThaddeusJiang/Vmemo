@@ -3,12 +3,13 @@ name: Test
 on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: test-pr-${{ github.event.pull_request.number }}
+  group: test-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 env:
@@ -24,7 +25,7 @@ env:
 
 jobs:
   mix-check:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'LGTM') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'LGTM') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -67,7 +68,7 @@ jobs:
         run: mix gettext.extract --check-up-to-date
 
   mix-test:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'LGTM') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'LGTM') }}
     runs-on: ubuntu-latest
 
     steps:
