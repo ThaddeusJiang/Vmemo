@@ -32,9 +32,11 @@ description: "Create or validate a Vmemo Git worktree with automatic .env bootst
    - `cp <develop-dir>/.env <target-dir>/.env`
 3. 校验 `.env` 包含 Required vars
 4. 若端口冲突：更新端口映射并同步 `.env` URL
-5. `docker compose up -d`（需要时再启 test profile）
-6. `mix deps.get && mix setup`
-7. 验证完成后 `docker compose down`
+5. `mix deps.get`
+6. 仅在需要运行 dev server 或 `mix test` 时，再执行：
+   - `docker compose up -d`（需要时再启 test profile）
+   - `mix setup`
+7. 若本次启动过容器，验证完成后执行 `docker compose down`
 
 ## Path switch (only differences)
 
@@ -57,9 +59,17 @@ git worktree add ../<worktree-dir> -b <branch-name>
 
 # verify (both paths, in target worktree)
 mise trust && mise install
+# Check required ports before compose up.
+# If occupied, update .env URLs first, then continue.
+# Example URL fields:
+# - DATABASE_URL
+# - TYPESENSE_URL
+# - MOONDREAM_URL
+mix deps.get
+
+# Only when running dev server or tests:
 docker compose up -d
 docker compose --profile test up -d
-mix deps.get
 mix setup
 
 # cleanup (mandatory)
