@@ -81,7 +81,15 @@ This section lists project-available tasks used in day-to-day development, group
 - `mix phx.routes`
 - `mix compile`
 
-### 3. Test And Quality
+### 3. Install Git Hooks
+
+Configure Git 2.54+ to load the repository hook config:
+
+```bash
+git config --local include.path "$(git rev-parse --show-toplevel)/.git-hooks.gitconfig"
+```
+
+### 4. Test And Quality
 
 - `mix test`
   - Alias behavior: ensure DB and Typesense migration tasks run before tests
@@ -94,7 +102,7 @@ This section lists project-available tasks used in day-to-day development, group
 - `mix dialyzer --format short`
 - `mix xref graph --format cycles --label compile --fail-above 0`
 
-### 4. Reset And Recovery
+### 5. Reset And Recovery
 
 - `mix reset`
   - Expands to: `mix db.reset`, `mix ts.reset`

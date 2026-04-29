@@ -114,6 +114,7 @@
 - Prefer Tidewave tools for Phoenix-aware discovery and runtime checks.
 - Use `mix` for project tasks.
 - Do not use Python for ad-hoc project automation.
+- Keep Git 2.54+ hook definitions in `.git-hooks.gitconfig`; local config should include that file.
 
 ## Setup commands
 Run before project scripts:
