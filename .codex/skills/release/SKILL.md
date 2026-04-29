@@ -36,7 +36,7 @@ git status --porcelain
 
 Guardrails:
 
-- Prefer releasing from `main` or `develop` (current repo may use either in docs/workflows).
+- Prefer releasing from `main`.
 - If working tree is dirty, list changed files and ask whether to proceed.
 
 ## Step 2: Resolve release version
@@ -62,7 +62,7 @@ mix run --no-start .codex/skills/release/scripts/check_config_changes.exs [BASE_
 
 Defaults:
 
-- `BASE_REF`: latest release tag matching CalVer; fallback `origin/develop`, then `origin/main`.
+- `BASE_REF`: latest release tag matching CalVer; fallback `origin/main`, then `origin/master`.
 - `TARGET_REF`: `HEAD`.
 
 Required behavior:

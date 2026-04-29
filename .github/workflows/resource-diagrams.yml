@@ -5,7 +5,7 @@ name: Resource diagrams
 
 on:
   push:
-    branches: [develop]
+    branches: [main]
     paths:
       - "lib/vmemo/**"
       - ".github/workflows/resource-diagrams.yml"

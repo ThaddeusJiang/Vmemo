@@ -1,7 +1,7 @@
 # Vmemo
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/thaddeusjiang/vmemo)](https://hub.docker.com/r/thaddeusjiang/vmemo)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/ThaddeusJiang/Vmemo/blob/develop/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/ThaddeusJiang/Vmemo/blob/main/LICENSE)
 
 Vmemo is a visual memo app for capturing life with images, searching with AI, and reviewing moments quickly without writing long text notes.
 

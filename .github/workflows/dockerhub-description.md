@@ -142,5 +142,5 @@ Open `http://localhost:4000`.
 
 ## More docs
 
-- Self-hosting docs: https://github.com/ThaddeusJiang/Vmemo/tree/develop/docs/guides/self-hosting
-- Zeabur docs: https://github.com/ThaddeusJiang/Vmemo/tree/develop/docs/guides/self-hosting/zeabur
+- Self-hosting docs: https://github.com/ThaddeusJiang/Vmemo/tree/main/docs/guides/self-hosting
+- Zeabur docs: https://github.com/ThaddeusJiang/Vmemo/tree/main/docs/guides/self-hosting/zeabur

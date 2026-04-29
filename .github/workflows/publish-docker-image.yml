@@ -1,12 +1,9 @@
 name: Publish Docker Image
 
 on:
-  push:
-    branches:
-      - develop
   release:
-    types:
-      - published
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,10 +14,25 @@ concurrency:
 
 env:
   IMAGE_NAME: thaddeusjiang/vmemo
-  TARGET_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || 'develop' }}
+  TARGET_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
   CHECKOUT_REF: ${{ github.event_name == 'release' && format('refs/tags/{0}', github.event.release.tag_name) || github.ref }}
 
 jobs:
+  update-dockerhub-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v5.0.0
+        with:
+          username: thaddeusjiang
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: thaddeusjiang/vmemo
+          readme-filepath: ./.github/workflows/dockerhub-description.md
+          short-description: ${{ github.event.repository.description }}
+
   build_by_arch:
     name: build ${{ matrix.arch }} image
     if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}

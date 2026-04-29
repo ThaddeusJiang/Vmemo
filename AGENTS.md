@@ -156,7 +156,7 @@ mix compile
   - `chore(scope): ...`
 - Keep each commit focused on one independent change.
 - PR title and PR body must be Chinese.
-- If on a non-`develop`/`main` branch and no PR exists, create one.
+- If on a non-`main` branch and no PR exists, create one.
 
 ## Output expectations
 - Briefly explain goal.

@@ -1,6 +1,6 @@
 ---
 name: "worktree"
-description: "Create or validate a Vmemo Git worktree with automatic .env bootstrap from develop, minimal env/runtime checks, optional port-conflict handling, and mandatory cleanup."
+description: "Create or validate a Vmemo Git worktree with automatic .env bootstrap from main, minimal env/runtime checks, optional port-conflict handling, and mandatory cleanup."
 ---
 
 # worktree Skill
@@ -13,7 +13,7 @@ description: "Create or validate a Vmemo Git worktree with automatic .env bootst
 
 ## Single source rules
 
-1. `.env` 缺失时：直接从 `develop` 复制并继续（必须 `cp`，禁止符号链接）。
+1. `.env` 缺失时：直接从 `main` 复制并继续（必须 `cp`，禁止符号链接）。
 2. 只在端口冲突时修改 `docker-compose.yml`，并同步 `.env` URL。
 3. 验证结束后必须执行 `docker compose down`。
 
@@ -28,8 +28,8 @@ description: "Create or validate a Vmemo Git worktree with automatic .env bootst
 
 1. `mise trust && mise install`
 2. 若目标目录缺少 `.env`：
-   - 定位本地 `develop` 目录
-   - `cp <develop-dir>/.env <target-dir>/.env`
+   - 定位本地 `main` 目录
+   - `cp <main-dir>/.env <target-dir>/.env`
 3. 校验 `.env` 包含 Required vars
 4. 若端口冲突：更新端口映射并同步 `.env` URL
 5. `mix deps.get`
@@ -78,5 +78,5 @@ docker compose down
 
 ## Guardrails
 
-- 不修改 `main` / `develop` 行为，除非用户明确要求。
+- 不修改 `main` 行为，除非用户明确要求。
 - 涉及 schema/migration、依赖、路由、认证等高风险项需先征求确认。
