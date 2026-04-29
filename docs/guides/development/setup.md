@@ -7,6 +7,7 @@ This guide focuses on local development workflows and project-available `mix` ta
 - macOS or Linux
 - Docker runtime
 - `mise` for Elixir/Erlang version management
+- ImageMagick (`magick`) for local verification of AI vision image preprocessing
 
 ## Quickstart
 
@@ -14,6 +15,12 @@ This guide focuses on local development workflows and project-available `mix` ta
 
 ```bash
 mise install
+```
+
+Install ImageMagick if missing:
+
+```bash
+brew install imagemagick
 ```
 
 2. Start local dependencies:
@@ -160,6 +167,13 @@ git config --local include.path "$(git rev-parse --show-toplevel)/.git-hooks.git
   2. `docker compose down -v`
   3. `docker compose up -d`
   4. `mix reset`
+
+- Verify AI vision image preprocessing output manually:
+  1. `mix test test/vmemo/ai/image_preprocessor_test.exs`
+  2. Open generated files:
+     - `${TMPDIR}/vmemo-vision-preprocess-manual/wall-e-original.png`
+     - `${TMPDIR}/vmemo-vision-preprocess-manual/wall-e-processed.png`
+  3. Confirm processed image is smaller and visually acceptable for your scenario.
 
 ## Local Environment Variables
 

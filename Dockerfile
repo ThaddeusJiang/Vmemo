@@ -28,7 +28,7 @@ RUN mix release
 FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates && \
+  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates imagemagick && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the locale
