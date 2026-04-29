@@ -9,6 +9,7 @@ defmodule Vmemo.Ai.VisionRequest do
   require Logger
   alias SmallSdk.Moondream
   alias Vmemo.Ai.AshAiVision
+  alias Vmemo.Ai.ImagePreprocessor
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
 
@@ -397,7 +398,15 @@ defmodule Vmemo.Ai.VisionRequest do
     case File.read(file_path) do
       {:ok, binary} ->
         mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
-        {:ok, {Base.encode64(binary), mime_type}}
+
+        case ImagePreprocessor.maybe_prepare_for_vision(binary, mime_type) do
+          {:ok, prepared_binary} ->
+            {:ok, {Base.encode64(prepared_binary), mime_type}}
+
+          {:error, reason} ->
+            Logger.warning("Image preprocess failed, fallback to original: #{inspect(reason)}")
+            {:ok, {Base.encode64(binary), mime_type}}
+        end
 
       {:error, :enoent} ->
         {:error, :file_not_found}
