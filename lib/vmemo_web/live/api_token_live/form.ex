@@ -24,7 +24,11 @@ defmodule VmemoWeb.ApiTokenLive.Form do
             <!-- Form -->
             <div class="surface-card p-6">
               <.simple_form for={@form} phx-submit="save-token" phx-change="validate-token">
-                <.input field={@form[:name]} label={gettext("Token Name")} placeholder={gettext("e.g., Mobile App")} />
+                <.input
+                  field={@form[:name]}
+                  label={gettext("Token Name")}
+                  placeholder={gettext("e.g., Mobile App")}
+                />
 
                 <.input
                   field={@form[:expires_at]}
@@ -49,10 +53,18 @@ defmodule VmemoWeb.ApiTokenLive.Form do
             <div class="surface-card bg-info/10 p-4">
               <h4 class="font-semibold mb-2">{gettext("Usage Instructions")}</h4>
               <ul class="text-sm space-y-1">
-                <li>• {gettext("Token name is used to identify different applications or purposes")}</li>
-                <li>• {gettext("It's recommended to set a reasonable expiration time for better security")}</li>
                 <li>
-                  • {gettext("Please save the token immediately after creation, as you won't be able to view the full content again")}
+                  • {gettext("Token name is used to identify different applications or purposes")}
+                </li>
+                <li>
+                  • {gettext(
+                    "It's recommended to set a reasonable expiration time for better security"
+                  )}
+                </li>
+                <li>
+                  • {gettext(
+                    "Please save the token immediately after creation, as you won't be able to view the full content again"
+                  )}
                 </li>
                 <li>• {gettext("Usage format")}: <code>Authorization: Bearer your_token</code></li>
               </ul>
@@ -67,7 +79,9 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           on_cancel={JS.hide(to: "#token-created-modal")}
         >
           <:header>
-            <h3 class="text-lg font-semibold text-success">{gettext("Token Created Successfully")}</h3>
+            <h3 class="text-lg font-semibold text-success">
+              {gettext("Token Created Successfully")}
+            </h3>
           </:header>
 
           <div class="space-y-2">

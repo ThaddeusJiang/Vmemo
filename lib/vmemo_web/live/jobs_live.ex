@@ -117,7 +117,9 @@ defmodule VmemoWeb.JobsLive do
               </thead>
               <tbody>
                 <tr :if={Enum.empty?(@jobs)}>
-                  <td colspan="3" class="text-center text-base-content/60 py-8">{gettext("No jobs yet")}</td>
+                  <td colspan="3" class="text-center text-base-content/60 py-8">
+                    {gettext("No jobs yet")}
+                  </td>
                 </tr>
 
                 <tr :for={job <- @jobs}>

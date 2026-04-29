@@ -45,7 +45,9 @@ defmodule VmemoWeb.ApiTokenLive.Show do
                   <.status_badge :if={!@api_token.is_active} variant={:warning}>
                     {gettext("Disabled")}
                   </.status_badge>
-                  <.status_badge :if={expired?(@api_token)} variant={:error}>{gettext("Expired")}</.status_badge>
+                  <.status_badge :if={expired?(@api_token)} variant={:error}>
+                    {gettext("Expired")}
+                  </.status_badge>
                 </div>
               </div>
 
@@ -195,16 +197,19 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
           <div class="space-y-2">
             <p>
-              {gettext("Are you sure you want to delete the token")} "
-              <span class="font-medium">{@api_token.name}</span>"?
+              {gettext("Are you sure you want to delete the token")} " <span class="font-medium">{@api_token.name}</span>"?
             </p>
             <p class="text-sm text-base-content/70">
-              {gettext("This action cannot be undone. Applications using this token will no longer be able to access the API.")}
+              {gettext(
+                "This action cannot be undone. Applications using this token will no longer be able to access the API."
+              )}
             </p>
           </div>
 
           <:footer>
-            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>{gettext("Cancel")}</.button>
+            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>
+              {gettext("Cancel")}
+            </.button>
             <.button variant="danger" phx-click="confirm-delete">{gettext("Delete")}</.button>
           </:footer>
         </.modal>
@@ -261,7 +266,8 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
     case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
-        status_text = if updated_token.is_active, do: gettext("Enabled"), else: gettext("Disabled")
+        status_text =
+          if updated_token.is_active, do: gettext("Enabled"), else: gettext("Disabled")
 
         {:noreply,
          socket

@@ -136,7 +136,10 @@ defmodule VmemoWeb.UserProfileLive do
       {:error, error} ->
         {:noreply,
          socket
-         |> put_flash(:error, gettext("Failed to save profile: %{reason}", reason: format_error(error)))}
+         |> put_flash(
+           :error,
+           gettext("Failed to save profile: %{reason}", reason: format_error(error))
+         )}
     end
   end
 

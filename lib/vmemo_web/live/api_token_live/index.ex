@@ -18,7 +18,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           <.alert :if={length(@expired_tokens) > 0} variant={:error} class="mb-4">
             <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <div>
-              <div class="font-semibold">{length(@expired_tokens)} {gettext("tokens have expired")}</div>
+              <div class="font-semibold">
+                {length(@expired_tokens)} {gettext("tokens have expired")}
+              </div>
               <div class="text-sm">{gettext("Please update or delete expired tokens promptly")}</div>
             </div>
           </.alert>
@@ -29,7 +31,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               <div class="font-semibold">
                 {length(@expiring_tokens)} {gettext("tokens will expire within 7 days")}
               </div>
-              <div class="text-sm">{gettext("It's recommended to update these tokens in advance")}</div>
+              <div class="text-sm">
+                {gettext("It's recommended to update these tokens in advance")}
+              </div>
             </div>
           </.alert>
           
@@ -162,16 +166,19 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
           <div class="space-y-2">
             <p>
-              {gettext("Are you sure you want to delete the token")} "
-              <span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
+              {gettext("Are you sure you want to delete the token")} " <span class="font-medium">{if @token_to_delete, do: @token_to_delete.name, else: ""}</span>"?
             </p>
             <p class="text-sm text-base-content/70">
-              {gettext("This action cannot be undone. Applications using this token will no longer be able to access the API.")}
+              {gettext(
+                "This action cannot be undone. Applications using this token will no longer be able to access the API."
+              )}
             </p>
           </div>
 
           <:footer>
-            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>{gettext("Cancel")}</.button>
+            <.button variant="ghost" phx-click={JS.hide(to: "#delete-modal")}>
+              {gettext("Cancel")}
+            </.button>
             <.button variant="danger" phx-click="confirm-delete">{gettext("Delete")}</.button>
           </:footer>
         </.modal>
@@ -243,7 +250,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     case ApiTokens.toggle_api_token_status(token) do
       {:ok, updated_token} ->
         updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
-        status_text = if updated_token.is_active, do: gettext("Enabled"), else: gettext("Disabled")
+
+        status_text =
+          if updated_token.is_active, do: gettext("Enabled"), else: gettext("Disabled")
 
         {:noreply,
          socket
