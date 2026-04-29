@@ -67,6 +67,7 @@ This section lists project-available tasks used in day-to-day development, group
   - Expands to: `mix ash.migrate`
 - `mix db.seed`
   - Expands to: `mix run priv/repo/seeds.exs`
+  - Shared local/e2e fixture SQL: `priv/repo/seeds/test.sql`
 - `mix ts.setup`
   - Expands to: `mix ts.migrate`
 - `mix assets.setup`

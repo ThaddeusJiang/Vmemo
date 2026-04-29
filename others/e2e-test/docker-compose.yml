@@ -50,7 +50,7 @@ services:
       - postgres-e2e
       - vmemo-e2e
     volumes:
-      - ./sql/seed_e2e.sql:/seed/seed_e2e.sql:ro
+      - ../../priv/repo/seeds/test.sql:/seed/test.sql:ro
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
@@ -61,7 +61,7 @@ services:
           echo "Waiting for app migrations to complete..."
           sleep 1
         done
-        env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -f /seed/seed_e2e.sql
+        env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -f /seed/test.sql
 
 volumes:
   pg-e2e-data:

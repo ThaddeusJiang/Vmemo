@@ -1,5 +1,3 @@
-BEGIN;
-
 INSERT INTO auth_users (
   id,
   email,
@@ -114,5 +112,3 @@ VALUES (
 )
 ON CONFLICT (id)
 DO NOTHING;
-
-COMMIT;
