@@ -63,6 +63,17 @@
   - `docs/guides/coding/uiux.md`
   - `docs/guides/coding/debug.md`
 
+## Changelog Policy (AI workflow)
+- `CHANGELOG.md` is maintained manually for users; do not auto-generate final entries from raw commit/PR titles.
+- Prioritize release notes by audience:
+  - `End Users` first (upload, Ask AI, search, UX behavior).
+  - `Maintainers` second (environment variables, Docker, CI/release pipeline).
+- Keep wording user-facing, concise, and outcome-oriented.
+- For environment/config changes, include:
+  - `Change`
+  - `Migration` steps
+  - `Example` env block when applicable.
+
 ## Design docs ownership (keep maintenance simple)
 - `DESIGN.md`: design intent, visual system decisions, and stable product-level principles.
 - `docs/guides/coding/uiux.md`: implementable UI rules used during coding and review.
