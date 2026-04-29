@@ -26,10 +26,12 @@ Create a high-quality PR with:
 1. Ensure you are on a non-default working branch.
 2. Collect branch and PR context.
 3. Infer base branch intelligently.
-4. Build a conventional-style PR title.
-5. Build a structured PR body (with optional visuals).
-6. Create PR.
-7. Return PR URL and a short summary.
+4. Run mandatory local quality gates before creating/updating PR.
+5. Confirm docs/release-note completeness for shipped behavior.
+6. Build a conventional-style PR title.
+7. Build a structured PR body (with optional visuals).
+8. Create or update PR.
+9. Return PR URL and a short summary.
 
 ## Step 1: Branch safety checks
 
@@ -114,7 +116,42 @@ Examples:
 - `fix(auth): handle expired session redirect`
 - `ci(e2e): run visual tests on labeled PRs`
 
-## Step 5: Build structured PR body (with visuals)
+## Step 4.5: Mandatory local quality gates (must pass)
+
+Run at minimum:
+
+```bash
+mix format
+mix test
+```
+
+If scope is large or risky, run:
+
+```bash
+mix check
+```
+
+Rules:
+
+- Never create/update a PR before local checks pass.
+- If checks fail, fix issues first, then rerun checks.
+- In PR body `## Verification`, list executed commands and key outcomes.
+
+## Step 5: Docs and changelog completeness gate (must verify)
+
+For user-facing or maintainer-facing behavior changes, verify and update:
+
+- `CHANGELOG.md` (`## [Unreleased]` section)
+- Relevant feature docs under `docs/features/`
+- Relevant maintainer/deployment/development docs under `docs/guides/`
+- Any referenced skill docs if workflow expectations changed
+
+Rules:
+
+- Do not treat docs/changelog as optional.
+- If no docs change is needed, explain why in PR body.
+
+## Step 6: Build structured PR body (with visuals)
 
 Collect related references from commits in `BASE..HEAD`:
 
@@ -139,6 +176,10 @@ PR body template:
 ## Verification
 1. ...
 2. ...
+
+## Docs & Changelog
+- CHANGELOG: updated / not needed (reason)
+- Docs: updated / not needed (reason)
 
 ## Visual Evidence
 ### Requirement / Context
@@ -167,10 +208,11 @@ Rules:
 - Add images when they improve review clarity.
 - Visuals can include requirement screenshots, bug screenshots, error-message screenshots, and after-change results.
 - Use standard Markdown image syntax.
+- Escape backticks in shell commands or prefer `--body-file` with a safely generated file to avoid command-substitution corruption.
 - If no related issues/pulls are found, write `- None`.
 - If no visuals are available, keep `## Visual Evidence` and write `- None` under it.
 
-## Step 6: Create PR
+## Step 7: Create PR
 
 ```bash
 gh pr create \
@@ -182,7 +224,13 @@ gh pr create \
 
 If user explicitly asks for draft PR, add `--draft`.
 
-## Step 7: Final response format
+If PR already exists for the branch, update it instead of creating a duplicate:
+
+```bash
+gh pr edit <number> --title "$PR_TITLE" --body-file "$PR_BODY_FILE"
+```
+
+## Step 8: Final response format
 
 Return:
 
@@ -196,6 +244,8 @@ Return:
 - Follow global Codex `AGENTS.md` for dependency/tooling constraints.
 - Never silently target only the repository default branch.
 - Never skip base-branch reasoning.
+- Never skip `mix format` and `mix test` before PR create/update.
+- Never skip docs/changelog gate for behavior changes.
 - Never use a PR title without conventional prefix.
 - Never omit verification steps in PR body.
 - Always include related issues and pulls sections.
