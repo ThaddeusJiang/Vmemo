@@ -114,7 +114,6 @@ defmodule VmemoWeb.CoreComponents do
   """
   attr :id, :string, doc: "the optional id of flash container"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
-  attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
   attr :class, :string, default: nil, doc: "custom classes for flash container"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
@@ -144,9 +143,6 @@ defmodule VmemoWeb.CoreComponents do
         <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
       </:icon>
 
-      <div :if={@title} class="flex items-center gap-2">
-        <span class="font-semibold">{@title}</span>
-      </div>
       <div class="text-sm">{msg}</div>
       <button
         type="button"
@@ -160,7 +156,7 @@ defmodule VmemoWeb.CoreComponents do
   end
 
   @doc """
-  Shows the flash group with standard titles and content.
+  Shows the flash group with standard content.
 
   ## Examples
 
@@ -173,11 +169,7 @@ defmodule VmemoWeb.CoreComponents do
   def flash_group(assigns) do
     ~H"""
     <.toast_stack id={@id} class={@class}>
-      <.flash
-        kind={:info}
-        title={gettext("Success!")}
-        flash={@flash}
-      />
+      <.flash kind={:info} flash={@flash} />
       <.flash
         kind={:error}
         flash={@flash}

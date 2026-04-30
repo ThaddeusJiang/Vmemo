@@ -75,3 +75,4 @@ lib/vmemo/*-mermaid-*.png
 # Intermediate Mermaid source output
 lib/vmemo/*-mermaid-*.mmd
 AGENTS.override.md
+docker-compose.override.yml

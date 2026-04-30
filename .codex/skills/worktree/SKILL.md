@@ -14,7 +14,7 @@ description: "Create or validate a Vmemo Git worktree with automatic .env bootst
 ## Single source rules
 
 1. `.env` 缺失时：直接从 `main` 复制并继续（必须 `cp`，禁止符号链接）。
-2. 只在端口冲突时修改 `docker-compose.yml`，并同步 `.env` URL。
+2. 端口冲突时必须使用 `docker-compose.override.yml` 覆盖端口映射，禁止修改 `docker-compose.yml`；并同步 `.env` URL。
 3. 验证结束后必须执行 `docker compose down`。
 
 ## Required vars
@@ -31,7 +31,7 @@ description: "Create or validate a Vmemo Git worktree with automatic .env bootst
    - 定位本地 `main` 目录
    - `cp <main-dir>/.env <target-dir>/.env`
 3. 校验 `.env` 包含 Required vars
-4. 若端口冲突：更新端口映射并同步 `.env` URL
+4. 若端口冲突：创建/更新 `docker-compose.override.yml` 端口映射并同步 `.env` URL
 5. `mix deps.get`
 6. 仅在需要运行 dev server 或 `mix test` 时，再执行：
    - `docker compose up -d`（需要时再启 test profile）
@@ -60,7 +60,7 @@ git worktree add ../<worktree-dir> -b <branch-name>
 # verify (both paths, in target worktree)
 mise trust && mise install
 # Check required ports before compose up.
-# If occupied, update .env URLs first, then continue.
+# If occupied, create/update docker-compose.override.yml and update .env URLs first, then continue.
 # Example URL fields:
 # - DATABASE_URL
 # - TYPESENSE_URL
@@ -79,4 +79,5 @@ docker compose down
 ## Guardrails
 
 - 不修改 `main` 行为，除非用户明确要求。
+- 端口冲突处理仅允许在当前 worktree 新增或更新 `docker-compose.override.yml`；禁止改动 `docker-compose.yml`。
 - 涉及 schema/migration、依赖、路由、认证等高风险项需先征求确认。
