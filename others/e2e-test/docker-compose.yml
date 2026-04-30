@@ -27,6 +27,8 @@ services:
     restart: on-failure
     ports:
       - "4000:4000"
+    volumes:
+      - ../../test/support/fixtures/images:/app/storage/v1/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/images:ro
     environment:
       DATABASE_URL: ecto://postgres:postgres@postgres-e2e:5432/vmemo
       TYPESENSE_URL: http://typesense-e2e:8108
