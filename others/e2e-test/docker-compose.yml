@@ -28,7 +28,7 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ../../test/support/fixtures/images:/app/storage/v1/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/images:ro
+      - storage-e2e:/app/storage
     environment:
       DATABASE_URL: ecto://postgres:postgres@postgres-e2e:5432/vmemo
       TYPESENSE_URL: http://typesense-e2e:8108
@@ -53,9 +53,13 @@ services:
       - vmemo-e2e
     volumes:
       - ../../priv/repo/seeds/test.sql:/seed/test.sql:ro
+      - ../../test/support/fixtures/images:/fixtures/images:ro
+      - storage-e2e:/app/storage
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
+        mkdir -p /app/storage/v1/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/images
+        cp /fixtures/images/wall-e.png /app/storage/v1/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/images/wall-e.png
         while true; do
           if env PGPASSWORD=postgres psql -h postgres-e2e -U postgres -d vmemo -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='memo_notes'" | grep -q 1; then
             break
@@ -68,3 +72,4 @@ services:
 volumes:
   pg-e2e-data:
   ts-e2e-data:
+  storage-e2e:
