@@ -56,7 +56,7 @@ defmodule VmemoWeb.NotificationsComponents do
           />
         </div>
         <div class="mt-2 pt-2">
-          <.link href={~p"/jobs"} class="btn btn-ghost btn-sm w-full justify-start text-xs">
+          <.link href={~p"/notifications"} class="btn btn-ghost btn-sm w-full justify-start text-xs">
             {gettext("View all notifications")}
           </.link>
         </div>
