@@ -14,6 +14,11 @@ Maintain a human-written changelog aligned with:
 - Keep a Changelog 1.1.0
 - Vmemo Calendar Versioning (`Vmemo - YYYY.MM.DD`)
 
+## PR gate
+
+- Any PR that changes user-visible behavior (features or bug fixes) must update `## [Unreleased]` in `CHANGELOG.md`.
+- Treat missing `Unreleased` updates for user-visible changes as an incomplete PR.
+
 ## Principle
 
 - `CHANGELOG.md` is release communication for users, not a commit/PR dump.

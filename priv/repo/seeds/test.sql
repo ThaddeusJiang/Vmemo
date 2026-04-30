@@ -66,9 +66,9 @@ INSERT INTO memo_images (
 )
 SELECT
   '11111111-1111-4111-8111-111111111111',
-  '/images/logo.svg',
+  '/storage/v1/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/images/wall-e.png',
   'Seeded e2e note reference photo',
-  'seeded-e2e-note-reference-logo',
+  'seeded-e2e-note-reference-wall-e',
   id,
   timezone('utc', now()),
   timezone('utc', now())

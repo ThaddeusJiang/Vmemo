@@ -59,7 +59,7 @@ msgstr "中文"
 
 #: lib/vmemo_web/live/api_token_live/index.ex:182
 #: lib/vmemo_web/live/api_token_live/show.ex:213
-#: lib/vmemo_web/live/image_id_live.ex:378
+#: lib/vmemo_web/live/image_id_live.ex:395
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
@@ -90,7 +90,7 @@ msgstr ""
 msgid "Find images with language, not file names. Text and visual similarity both work."
 msgstr "用语言而不是文件名找图；文本与视觉相似度都可检索。"
 
-#: lib/vmemo_web/live/image_id_live.ex:334
+#: lib/vmemo_web/live/image_id_live.ex:351
 #, elixir-autogen, elixir-format
 msgid "Generate caption"
 msgstr ""
@@ -178,7 +178,7 @@ msgstr "资料更新成功。"
 msgid "Recall"
 msgstr "回忆"
 
-#: lib/vmemo_web/live/image_id_live.ex:333
+#: lib/vmemo_web/live/image_id_live.ex:350
 #, elixir-autogen, elixir-format
 msgid "Regenerate caption"
 msgstr ""
@@ -188,12 +188,12 @@ msgstr ""
 msgid "Remember more life."
 msgstr "记住更多生活。"
 
-#: lib/vmemo_web/live/image_id_live.ex:350
+#: lib/vmemo_web/live/image_id_live.ex:367
 #, elixir-autogen, elixir-format
 msgid "Retry Typesense sync"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:365
+#: lib/vmemo_web/live/image_id_live.ex:382
 #: lib/vmemo_web/live/jobs_live.ex:370
 #: lib/vmemo_web/live/jobs_live.ex:371
 #, elixir-autogen, elixir-format
@@ -296,8 +296,8 @@ msgstr "Vmemo 将快照、收据、白板和日常瞬间转化为可搜索记忆
 msgid "close"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:284
-#: lib/vmemo_web/live/image_id_live.ex:292
+#: lib/vmemo_web/live/image_id_live.ex:301
+#: lib/vmemo_web/live/image_id_live.ex:309
 #, elixir-autogen, elixir-format
 msgid "expand"
 msgstr ""
@@ -1065,3 +1065,9 @@ msgstr "搜索失败：索引不可用或上传失败。"
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr "搜索时只能使用一张图片。请移除多余文件。"
+
+#: lib/vmemo_web/live/image_id_live.ex:570
+#: lib/vmemo_web/live/image_id_live.ex:571
+#, elixir-autogen, elixir-format
+msgid "Rotate and save"
+msgstr "旋转并保存"

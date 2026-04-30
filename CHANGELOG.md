@@ -7,6 +7,19 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+### End Users
+
+#### Added
+- Added image rotation in image detail dialog with instant on-screen preview, so users can quickly correct wrong upload orientation.
+
+#### Fixed
+- Fixed delayed rotation feedback where images appeared unchanged until a full page refresh.
+
+### Maintainers
+
+#### Changed
+- Changed image file response cache negotiation to use stronger validators (`ETag`/`Last-Modified`) for storage-updated images.
+
 ## [Vmemo - 2026.4.29] - 2026-04-29
 
 ### End Users

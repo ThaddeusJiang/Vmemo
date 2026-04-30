@@ -7,6 +7,7 @@ defmodule VmemoWeb.ImageIdLive do
   alias Vmemo.Ai.VisionRequest
   alias Vmemo.Memo.Image
 
+  alias SmallSdk.ImageMagick
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -194,6 +195,20 @@ defmodule VmemoWeb.ImageIdLive do
   end
 
   @impl true
+  def handle_event("rotate-image", _, socket) do
+    image = socket.assigns.image
+    next_rotation = rem(socket.assigns.image_rotation + 90, 360)
+
+    _ =
+      case image_storage_path(image) do
+        {:ok, file_path} -> rotate_image(file_path)
+        _ -> :ok
+      end
+
+    {:noreply, assign(socket, :image_rotation, next_rotation)}
+  end
+
+  @impl true
   def handle_event("show-expanded", _, socket) do
     {:noreply, socket |> assign(show_expanded: true)}
   end
@@ -273,9 +288,11 @@ defmodule VmemoWeb.ImageIdLive do
 
                 <.img
                   src={@image.url}
+                  id={"image-main-#{@image_dom_version}"}
                   alt={@image.note}
                   wrapper_class="w-full h-full rounded-lg"
-                  class="block !w-full !h-full !max-w-none !max-h-none !object-contain rounded-lg shadow hover:shadow-lg transition-shadow"
+                  class="block !w-full !h-full !max-w-none !max-h-none !object-contain rounded-lg shadow hover:shadow-lg transition-shadow duration-200"
+                  style={"transform: rotate(#{@image_rotation}deg); transform-origin: center;"}
                 />
 
                 <.link
@@ -491,13 +508,25 @@ defmodule VmemoWeb.ImageIdLive do
                   <.icon name="hero-x-mark-solid" class="h-4 w-4" />
                 </.button>
 
-                <div id="expanded_photo-content" class="flex items-center justify-center">
+                <div
+                  id="expanded_photo-content"
+                  class="flex flex-col items-center justify-center gap-3"
+                >
                   <.img
                     src={@image.url}
+                    id={"expanded_photo-image-#{@image_dom_version}"}
                     alt={@image.note}
-                    class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block"
-                    id="expanded_photo-image"
+                    class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block transition-transform duration-200"
+                    style={"transform: rotate(#{@image_rotation}deg); transform-origin: center;"}
                   />
+                  <.button
+                    phx-click="rotate-image"
+                    class="btn btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
+                    aria-label={gettext("Rotate and save")}
+                    title={gettext("Rotate and save")}
+                  >
+                    <.icon name="hero-arrow-path-rounded-square" class="h-5 w-5" />
+                  </.button>
                 </div>
               </.focus_wrap>
             </div>
@@ -531,6 +560,8 @@ defmodule VmemoWeb.ImageIdLive do
     |> assign(caption_requests: caption_requests)
     |> assign(caption_loading_requests: MapSet.new())
     |> assign(latest_caption_request: latest_caption_request)
+    |> assign(:image_rotation, 0)
+    |> assign(:image_dom_version, 0)
     |> assign(save_error: nil)
     |> assign(form_dirty: false)
     |> assign(original_form_values: original_form_values)
@@ -580,5 +611,47 @@ defmodule VmemoWeb.ImageIdLive do
 
   defp caption_requests_from(requests) do
     Enum.filter(requests, &(&1.function_type == "caption"))
+  end
+
+  defp image_storage_path(%{url: url, user_id: user_id})
+       when is_binary(url) and not is_nil(user_id) do
+    storage_prefix = Path.join(["storage", "v1"]) |> Path.expand()
+    parsed = URI.parse(url)
+    raw_path = parsed.path || url
+
+    primary =
+      raw_path
+      |> String.trim_leading("/")
+      |> Path.expand()
+
+    fallback =
+      raw_path
+      |> Path.basename()
+      |> then(&Path.join(["storage", "v1", to_string(user_id), "images", &1]))
+      |> Path.expand()
+
+    cond do
+      String.starts_with?(primary, storage_prefix <> "/") and
+        String.contains?(primary, "/images/") and
+          File.exists?(primary) ->
+        {:ok, primary}
+
+      String.starts_with?(fallback, storage_prefix <> "/") and File.exists?(fallback) ->
+        {:ok, fallback}
+
+      true ->
+        {:error, :file_not_found}
+    end
+  end
+
+  defp image_storage_path(_), do: {:error, :invalid_url}
+
+  defp rotate_image(file_path) do
+    try do
+      ImageMagick.rotate_90_clockwise!(file_path)
+      :ok
+    rescue
+      _ -> {:error, :rotate_failed}
+    end
   end
 end

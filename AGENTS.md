@@ -65,6 +65,8 @@
 
 ## Changelog Policy (AI workflow)
 - `CHANGELOG.md` is maintained manually for users; do not auto-generate final entries from raw commit/PR titles.
+- Any PR with user-visible behavior changes (including feature work and bug fixes) is incomplete unless `## [Unreleased]` is updated in `CHANGELOG.md`.
+- Default classification: user-visible fixes/features go under `### End Users`; deploy/runtime/tooling updates go under `### Maintainers`.
 - Prioritize release notes by audience:
   - `End Users` first (upload, Ask AI, search, UX behavior).
   - `Maintainers` second (environment variables, Docker, CI/release pipeline).

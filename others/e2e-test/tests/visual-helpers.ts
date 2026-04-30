@@ -6,7 +6,7 @@ export const seededNoteId = "22222222-2222-4222-8222-222222222222";
 
 const uploadFile = path.resolve(
   import.meta.dirname,
-  "../fixtures/upload-files/test-red-image.png",
+  "../../../test/support/fixtures/images/wall-e.png",
 );
 
 const visualNote = "Playwright visual upload fixture";
