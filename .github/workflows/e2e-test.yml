@@ -1,4 +1,8 @@
 name: E2E Test
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+      && (inputs.update_snapshots && 'E2E Test (Update visual snapshots)' || 'E2E Test')
+      || 'E2E Test' }}
 
 on:
   pull_request:
@@ -14,8 +18,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e-test:
+    name: >-
+      ${{ github.event_name == 'workflow_dispatch'
+          && (inputs.update_snapshots && 'Update snapshots' || 'E2E testing')
+          || 'E2E testing' }}
     if: ${{ github.event_name == 'workflow_dispatch' || (contains(github.event.pull_request.labels.*.name, 'LGTM') && contains(github.event.pull_request.labels.*.name, 'run-e2e-test')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
