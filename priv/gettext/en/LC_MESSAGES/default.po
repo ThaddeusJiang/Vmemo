@@ -59,7 +59,7 @@ msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex:182
 #: lib/vmemo_web/live/api_token_live/show.ex:213
-#: lib/vmemo_web/live/image_id_live.ex:378
+#: lib/vmemo_web/live/image_id_live.ex:402
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
@@ -90,7 +90,7 @@ msgstr ""
 msgid "Find images with language, not file names. Text and visual similarity both work."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:334
+#: lib/vmemo_web/live/image_id_live.ex:351
 #, elixir-autogen, elixir-format
 msgid "Generate caption"
 msgstr ""
@@ -178,7 +178,7 @@ msgstr ""
 msgid "Recall"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:333
+#: lib/vmemo_web/live/image_id_live.ex:350
 #, elixir-autogen, elixir-format
 msgid "Regenerate caption"
 msgstr ""
@@ -188,12 +188,12 @@ msgstr ""
 msgid "Remember more life."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:350
+#: lib/vmemo_web/live/image_id_live.ex:374
 #, elixir-autogen, elixir-format
 msgid "Retry Typesense sync"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:365
+#: lib/vmemo_web/live/image_id_live.ex:389
 #: lib/vmemo_web/live/jobs_live.ex:370
 #: lib/vmemo_web/live/jobs_live.ex:371
 #, elixir-autogen, elixir-format
@@ -301,8 +301,8 @@ msgstr ""
 msgid "close"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:284
-#: lib/vmemo_web/live/image_id_live.ex:292
+#: lib/vmemo_web/live/image_id_live.ex:301
+#: lib/vmemo_web/live/image_id_live.ex:309
 #, elixir-autogen, elixir-format
 msgid "expand"
 msgstr ""
@@ -1070,3 +1070,18 @@ msgstr "Search failed: index unavailable or upload failed."
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr "Use exactly one image for search. Remove extra files."
+
+#: lib/vmemo_web/live/image_id_live.ex:209
+#, elixir-autogen, elixir-format
+msgid "Failed to rotate image"
+msgstr "Failed to rotate image"
+
+#: lib/vmemo_web/live/image_id_live.ex:206
+#, elixir-autogen, elixir-format
+msgid "Image rotated"
+msgstr "Image rotated"
+
+#: lib/vmemo_web/live/image_id_live.ex:359
+#, elixir-autogen, elixir-format
+msgid "Rotate and save"
+msgstr "Rotate and save"
