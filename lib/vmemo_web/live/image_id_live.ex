@@ -200,9 +200,9 @@ defmodule VmemoWeb.ImageIdLive do
     next_rotation = rem(socket.assigns.image_rotation + 90, 360)
 
     _ =
-      with {:ok, file_path} <- image_storage_path(image),
-           :ok <- rotate_image(file_path) do
-        :ok
+      case image_storage_path(image) do
+        {:ok, file_path} -> rotate_image(file_path)
+        _ -> :ok
       end
 
     {:noreply, assign(socket, :image_rotation, next_rotation)}
