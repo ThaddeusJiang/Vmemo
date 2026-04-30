@@ -12,7 +12,7 @@ msgstr ""
 msgid "AI indexing"
 msgstr "AI 索引"
 
-#: lib/vmemo_web/components/core_components.ex:702
+#: lib/vmemo_web/components/core_components.ex:694
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -248,11 +248,6 @@ msgstr "设置"
 msgid "Start capturing"
 msgstr "开始捕捉"
 
-#: lib/vmemo_web/components/core_components.ex:178
-#, elixir-autogen, elixir-format
-msgid "Success!"
-msgstr ""
-
 #: lib/vmemo_web/components/layouts.ex:126
 #, elixir-autogen, elixir-format
 msgid "Toggle light or dark mode"
@@ -296,7 +291,7 @@ msgid "Vmemo turns snapshots, receipts, whiteboards, and random moments into sea
 msgstr "Vmemo 将快照、收据、白板和日常瞬间转化为可搜索记忆。"
 
 #: lib/vmemo_web/components/core_components.ex:81
-#: lib/vmemo_web/components/core_components.ex:154
+#: lib/vmemo_web/components/core_components.ex:150
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
