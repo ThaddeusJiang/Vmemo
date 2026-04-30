@@ -49,10 +49,10 @@ storage
 .elixir_ls
 
 # E2E test results
-e2e-test/node_modules/
-e2e-test/test-results/
-e2e-test/playwright-report/
-e2e-test/playwright/.cache/
+node_modules/
+test-results/
+playwright-report/
+playwright/.cache/
 .playwright-cli/
 
 # Ash Postgres resource snapshots (generated build artifacts)
@@ -62,8 +62,6 @@ debug.log
 .alma-snapshots
 
 .env
-node_modules
-test-results
 _local_docs/
 
 # Dialyzer PLT cache
