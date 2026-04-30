@@ -68,7 +68,7 @@ msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex:182
 #: lib/vmemo_web/live/api_token_live/show.ex:213
-#: lib/vmemo_web/live/image_id_live.ex:402
+#: lib/vmemo_web/live/image_id_live.ex:395
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
@@ -197,12 +197,12 @@ msgstr ""
 msgid "Remember more life."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:374
+#: lib/vmemo_web/live/image_id_live.ex:367
 #, elixir-autogen, elixir-format
 msgid "Retry Typesense sync"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:389
+#: lib/vmemo_web/live/image_id_live.ex:382
 #: lib/vmemo_web/live/jobs_live.ex:370
 #: lib/vmemo_web/live/jobs_live.ex:371
 #, elixir-autogen, elixir-format
@@ -1080,17 +1080,8 @@ msgstr ""
 msgid "Use exactly one image for search. Remove extra files."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:209
-#, elixir-autogen, elixir-format
-msgid "Failed to rotate image"
-msgstr ""
-
-#: lib/vmemo_web/live/image_id_live.ex:206
-#, elixir-autogen, elixir-format
-msgid "Image rotated"
-msgstr ""
-
-#: lib/vmemo_web/live/image_id_live.ex:359
+#: lib/vmemo_web/live/image_id_live.ex:570
+#: lib/vmemo_web/live/image_id_live.ex:571
 #, elixir-autogen, elixir-format
 msgid "Rotate and save"
 msgstr ""
