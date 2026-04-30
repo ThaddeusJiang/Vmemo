@@ -309,67 +309,6 @@ defmodule VmemoWeb.ImageIdLive do
                   <li>
                     <button
                       type="button"
-                      phx-click="gen-description"
-                      disabled={
-                        if @latest_caption_request,
-                          do:
-                            @latest_caption_request.status == "pending" ||
-                              @latest_caption_request.status == "processing",
-                          else: false
-                      }
-                    >
-                      <.icon
-                        name="hero-sparkles"
-                        class={
-                          "h-4 w-4 " <>
-                            if(@image.caption && @image.caption != "",
-                              do: "text-green-500",
-                              else: "text-base-content"
-                            )
-                        }
-                      />
-                      <span>
-                        {if @image.caption && @image.caption != "",
-                          do: gettext("Regenerate caption"),
-                          else: gettext("Generate caption")}
-                      </span>
-                    </button>
-                  </li>
-                  <li class="border-t border-base-300 my-1"></li>
-                  <li>
-                    <button
-                      type="button"
-                      phx-click="update-search-engine"
-                      disabled={
-                        @image.typesense_status == "pending" or
-                          @image.typesense_status == "processing"
-                      }
-                    >
-                      <.icon name="hero-arrow-path" class="h-4 w-4" />
-                      <span>
-                        {gettext("Retry Typesense sync")} ({@image.typesense_status})
-                      </span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      type="button"
-                      phx-click="generate-caption"
-                      disabled={
-                        vision_caption_status(@image) == "pending" or
-                          vision_caption_status(@image) == "processing"
-                      }
-                    >
-                      <.icon name="hero-arrow-path" class="h-4 w-4" />
-                      <span>
-                        {gettext("Retry Vision AI caption")} ({vision_caption_status(@image)})
-                      </span>
-                    </button>
-                  </li>
-                  <li class="border-t border-base-300 my-1"></li>
-                  <li>
-                    <button
-                      type="button"
                       phx-click="delete-image"
                       phx-value-id={@image.id}
                       data-confirm="You can't undo this action. Are you sure?"
@@ -407,46 +346,62 @@ defmodule VmemoWeb.ImageIdLive do
                           <span class="text-sm text-success animate-pulse">thinking</span>
                         <% end %>
                         <%= if @latest_caption_request.status == "failed" && @latest_caption_request.error_message do %>
-                          <div class="text-sm text-error space-y-2">
+                          <div class="text-sm text-error">
                             <div>
                               <span class="font-medium">Error:</span> {format_error_message(
                                 @latest_caption_request.error_message
                               )}
                             </div>
-                            <div>
-                              <.button
-                                variant="outline"
-                                size="sm"
-                                phx-click="retry-caption-request"
-                                phx-value-request_id={@latest_caption_request.id}
-                              >
-                                Retry
-                              </.button>
-                            </div>
                           </div>
                         <% end %>
                       <% end %>
                     </div>
-                    <textarea
-                      id={@form[:caption].id}
-                      name={@form[:caption].name}
-                      class={[
-                        "textarea textarea-bordered w-full rounded-lg",
-                        if(@latest_caption_request,
-                          do:
-                            @latest_caption_request.status == "pending" ||
-                              @latest_caption_request.status == "processing",
-                          else: false
-                        ) && "animate-pulse"
-                      ]}
-                      disabled={
-                        if @latest_caption_request,
-                          do:
-                            @latest_caption_request.status == "pending" ||
-                              @latest_caption_request.status == "processing",
-                          else: false
-                      }
-                    >{Phoenix.HTML.Form.normalize_value("textarea", @form[:caption].value)}</textarea>
+                    <div class="relative group/caption">
+                      <textarea
+                        id={@form[:caption].id}
+                        name={@form[:caption].name}
+                        class={[
+                          "textarea textarea-bordered w-full rounded-lg pr-12",
+                          if(@latest_caption_request,
+                            do:
+                              @latest_caption_request.status == "pending" ||
+                                @latest_caption_request.status == "processing",
+                            else: false
+                          ) && "animate-pulse"
+                        ]}
+                        disabled={
+                          if @latest_caption_request,
+                            do:
+                              @latest_caption_request.status == "pending" ||
+                                @latest_caption_request.status == "processing",
+                            else: false
+                        }
+                      >{Phoenix.HTML.Form.normalize_value("textarea", @form[:caption].value)}</textarea>
+                      <button
+                        type="button"
+                        phx-click="gen-description"
+                        class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 hidden group-focus-within/caption:inline-flex"
+                        aria-label={
+                          if @image.caption && @image.caption != "",
+                            do: gettext("Regenerate caption"),
+                            else: gettext("Generate caption")
+                        }
+                        title={
+                          if @image.caption && @image.caption != "",
+                            do: gettext("Regenerate caption"),
+                            else: gettext("Generate caption")
+                        }
+                        disabled={
+                          if @latest_caption_request,
+                            do:
+                              @latest_caption_request.status == "pending" ||
+                                @latest_caption_request.status == "processing",
+                            else: false
+                        }
+                      >
+                        <.icon name="hero-sparkles" class="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   <.error :for={msg <- @form[:caption].errors}>
                     {msg}
