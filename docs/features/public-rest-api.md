@@ -111,8 +111,7 @@ Success response (`200`):
 ```json
 {
   "data": {
-    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "message": "Image deleted successfully"
+    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0"
   }
 }
 ```

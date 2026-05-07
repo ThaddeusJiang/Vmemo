@@ -69,7 +69,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
-        delete_response = %{data: %{id: image.id, message: "Image deleted successfully"}}
+        delete_response = %{data: %{id: image.id}}
 
         case Image.destroy(image, actor: current_user) do
           :ok ->

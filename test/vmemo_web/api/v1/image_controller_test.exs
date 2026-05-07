@@ -160,7 +160,6 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> delete(~p"/api/v1/images/#{image.id}")
 
       assert conn.status == 200
-      assert json_response(conn, 200)["data"]["message"] == "Image deleted successfully"
       assert json_response(conn, 200)["data"]["id"] == image.id
     end
   end
