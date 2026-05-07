@@ -14,6 +14,31 @@ and this project uses Calendar Versioning for releases.
 
 #### Changed
 - Changed REST API image responses to use HTTP status for success/error state, return image detail page URLs for create/show, and include deleted image `id` in delete responses for easier client-side cache updates.
+- Breaking change (REST API contract):
+  - Change:
+    - Response bodies no longer include a top-level `status` field for either success or error.
+    - `DELETE /api/v1/images/:id` success payload now returns only `data.id` (no success `message`).
+    - `POST/GET /api/v1/images` now return image detail page URLs in `data.url` instead of storage file paths.
+  - Migration (client side):
+    - Use HTTP status code as the single source of truth for success/error.
+    - Replace checks like `response.status === "success"` with `response.ok` (or `status` range checks).
+    - For failed requests, read `error.code` and `error.message` from response body.
+    - For delete cache updates, read `response.data.id` and invalidate/remove that image id locally.
+  - Example:
+
+```javascript
+// before
+if (result.status === "success") {
+  const deletedId = result.data.id;
+}
+
+// after
+if (response.ok) {
+  const deletedId = result.data.id;
+} else {
+  console.error(result.error.code, result.error.message);
+}
+```
 
 #### Fixed
 - Fixed delayed rotation feedback where images appeared unchanged until a full page refresh.
