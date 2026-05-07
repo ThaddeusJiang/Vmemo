@@ -28,7 +28,6 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> post(~p"/api/v1/images", %{})
 
       assert conn.status == 400
-      assert json_response(conn, 400)["status"] == "error"
       assert json_response(conn, 400)["error"]["code"] == "INVALID_FILE"
     end
 
@@ -105,7 +104,6 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> get(~p"/api/v1/images/999999")
 
       assert conn.status == 404
-      assert json_response(conn, 404)["status"] == "error"
       assert json_response(conn, 404)["error"]["code"] == "PHOTO_NOT_FOUND"
     end
 

@@ -122,7 +122,6 @@ All API errors follow this shape:
 
 ```json
 {
-  "status": "error",
   "error": {
     "code": "ERROR_CODE",
     "message": "Human readable error message"

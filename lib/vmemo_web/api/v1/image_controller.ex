@@ -192,7 +192,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
     conn
     |> put_status(status_code)
     |> json(%{
-      status: "error",
       error: %{
         code: code,
         message: message
