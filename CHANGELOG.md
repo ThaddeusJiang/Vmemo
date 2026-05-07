@@ -12,6 +12,9 @@ and this project uses Calendar Versioning for releases.
 #### Added
 - Added image rotation in image detail dialog with instant on-screen preview, so users can quickly correct wrong upload orientation.
 
+#### Changed
+- Changed REST API image responses to use HTTP status for success/error state, return image detail page URLs for create/show, and include deleted image `id` in delete responses for easier client-side cache updates.
+
 #### Fixed
 - Fixed delayed rotation feedback where images appeared unchanged until a full page refresh.
 

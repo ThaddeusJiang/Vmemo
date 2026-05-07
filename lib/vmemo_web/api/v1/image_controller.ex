@@ -69,12 +69,14 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
+        delete_response = %{data: %{id: image.id, message: "Image deleted successfully"}}
+
         case Image.destroy(image, actor: current_user) do
           :ok ->
-            json(conn, %{data: %{message: "Image deleted successfully"}})
+            json(conn, delete_response)
 
           {:ok, _deleted} ->
-            json(conn, %{data: %{message: "Image deleted successfully"}})
+            json(conn, delete_response)
 
           {:error, _reason} ->
             error_response(conn, 500, "DELETE_FAILED", "Failed to delete image")
