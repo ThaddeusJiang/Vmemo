@@ -140,13 +140,12 @@ defmodule Vmemo.Account.ApiToken do
       prepare fn query, _context ->
         user_id = Ash.Query.get_argument(query, :user_id)
         days = Ash.Query.get_argument(query, :days)
-        cutoff_date = DateTime.utc_now() |> DateTime.add(days * 24 * 60 * 60, :second)
+        now = DateTime.utc_now()
+        cutoff_date = DateTime.add(now, days * 24 * 60 * 60, :second)
 
-        Ash.Query.filter(query,
-          user_id: user_id,
-          is_active: true,
-          expires_at: [less_than_or_equal_to: cutoff_date, greater_than: DateTime.utc_now()]
-        )
+        query
+        |> Ash.Query.filter(user_id == ^user_id and is_active == true)
+        |> Ash.Query.filter(expr(not is_nil(expires_at) and expires_at <= ^cutoff_date and expires_at > ^now))
         |> Ash.Query.sort(expires_at: :asc)
       end
     end
@@ -156,12 +155,11 @@ defmodule Vmemo.Account.ApiToken do
 
       prepare fn query, _context ->
         user_id = Ash.Query.get_argument(query, :user_id)
+        now = DateTime.utc_now()
 
-        Ash.Query.filter(query,
-          user_id: user_id,
-          is_active: true,
-          expires_at: [less_than_or_equal_to: DateTime.utc_now()]
-        )
+        query
+        |> Ash.Query.filter(user_id == ^user_id and is_active == true)
+        |> Ash.Query.filter(expr(not is_nil(expires_at) and expires_at <= ^now))
         |> Ash.Query.sort(expires_at: :desc)
       end
     end
