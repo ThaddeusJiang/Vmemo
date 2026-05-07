@@ -754,7 +754,7 @@ msgstr "管理你的 API 访问令牌"
 #: lib/vmemo_web/live/api_token_live/show.ex:117
 #, elixir-autogen, elixir-format
 msgid "Never expires"
-msgstr ""
+msgstr "永不过期"
 
 #: lib/vmemo_web/live/api_token_live/show.ex:130
 #, elixir-autogen, elixir-format

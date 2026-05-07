@@ -151,10 +151,12 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         params -> params
       end
 
+    normalized_form_params = normalize_token_form_params(form_params)
+
     socket = assign(socket, :loading, true)
 
     # Use ApiTokenService to create token (includes token generation logic)
-    case ApiTokens.create_api_token(user, form_params) do
+    case ApiTokens.create_api_token(user, normalized_form_params) do
       {:ok, token, raw_token} ->
         {:noreply,
          socket
@@ -169,7 +171,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         # Error messages are mapped to fields automatically via validate
         form =
           AshPhoenix.Form.for_create(Vmemo.Account.ApiToken, :create)
-          |> AshPhoenix.Form.validate(form_params)
+          |> AshPhoenix.Form.validate(normalized_form_params)
           |> to_form()
 
         {:noreply,
@@ -187,8 +189,10 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         params -> params
       end
 
+    normalized_form_params = normalize_token_form_params(form_params)
+
     form =
-      AshPhoenix.Form.validate(socket.assigns.form.source, form_params)
+      AshPhoenix.Form.validate(socket.assigns.form.source, normalized_form_params)
       |> to_form()
 
     {:noreply, assign(socket, :form, form)}
@@ -216,5 +220,12 @@ defmodule VmemoWeb.ApiTokenLive.Form do
       body: formData
     })
     """
+  end
+
+  defp normalize_token_form_params(params) when is_map(params) do
+    case Map.get(params, "expires_at") do
+      "never" -> Map.put(params, "expires_at", nil)
+      _ -> params
+    end
   end
 end

@@ -189,23 +189,36 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    api_tokens = ApiTokens.list_user_api_tokens(user)
-    expiring_tokens = ApiTokens.get_expiring_tokens(user.id)
-    expired_tokens = ApiTokens.get_expired_tokens(user.id)
-    today_usage_count = ApiTokens.count_today_usage(user.id)
 
-    {:ok,
-     socket
-     |> assign(:api_tokens, api_tokens)
-     |> assign(:show_delete_modal, false)
-     |> assign(:token_to_delete, nil)
-     |> assign(:active_tokens_count, count_active_tokens(api_tokens))
-     |> assign(:expired_tokens_count, count_expired_tokens(api_tokens))
-     |> assign(:today_usage_count, today_usage_count)
-     |> assign(:loading, false)
-     |> assign(:error_message, nil)
-     |> assign(:expiring_tokens, expiring_tokens)
-     |> assign(:expired_tokens, expired_tokens)}
+    socket =
+      socket
+      |> assign(:show_delete_modal, false)
+      |> assign(:token_to_delete, nil)
+      |> assign(:loading, false)
+
+    case load_token_dashboard_data(user) do
+      {:ok, data} ->
+        {:ok,
+         socket
+         |> assign(:api_tokens, data.api_tokens)
+         |> assign(:active_tokens_count, count_active_tokens(data.api_tokens))
+         |> assign(:expired_tokens_count, count_expired_tokens(data.api_tokens))
+         |> assign(:today_usage_count, data.today_usage_count)
+         |> assign(:error_message, nil)
+         |> assign(:expiring_tokens, data.expiring_tokens)
+         |> assign(:expired_tokens, data.expired_tokens)}
+
+      {:error, _reason} ->
+        {:ok,
+         socket
+         |> assign(:api_tokens, [])
+         |> assign(:active_tokens_count, 0)
+         |> assign(:expired_tokens_count, 0)
+         |> assign(:today_usage_count, 0)
+         |> assign(:expiring_tokens, [])
+         |> assign(:expired_tokens, [])
+         |> assign(:error_message, gettext("Request failed."))}
+    end
   end
 
   def handle_event("delete-token", %{"id" => id}, socket) do
@@ -220,10 +233,11 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def handle_event("confirm-delete", _params, socket) do
     token = socket.assigns.token_to_delete
+    user = socket.assigns.current_user
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokens.delete_api_token(token) do
+    case ApiTokens.delete_api_token(token, user) do
       :ok ->
         {:noreply,
          socket
@@ -247,7 +261,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     socket = assign(socket, :loading, true)
     token = ApiTokens.get_user_api_token!(user, id)
 
-    case ApiTokens.toggle_api_token_status(token) do
+    case ApiTokens.toggle_api_token_status(token, user) do
       {:ok, updated_token} ->
         updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
 
@@ -320,5 +334,20 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     Enum.map(tokens, fn token ->
       if token.id == updated_token.id, do: updated_token, else: token
     end)
+  end
+
+  defp load_token_dashboard_data(user) do
+    with {:ok, api_tokens} <- ApiTokens.list_user_api_tokens(user),
+         {:ok, expiring_tokens} <- ApiTokens.get_expiring_tokens(user),
+         {:ok, expired_tokens} <- ApiTokens.get_expired_tokens(user),
+         {:ok, today_usage_count} <- ApiTokens.count_today_usage(user) do
+      {:ok,
+       %{
+         api_tokens: api_tokens,
+         expiring_tokens: expiring_tokens,
+         expired_tokens: expired_tokens,
+         today_usage_count: today_usage_count
+       }}
+    end
   end
 end
