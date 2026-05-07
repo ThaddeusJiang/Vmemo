@@ -101,6 +101,7 @@ defmodule Vmemo.Account.ApiToken do
       argument :user_id, :uuid, allow_nil?: false
 
       filter expr(user_id == ^arg(:user_id))
+      prepare build(sort: [created_at: :desc])
     end
 
     read :verify_token do
