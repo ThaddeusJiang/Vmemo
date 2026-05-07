@@ -2,7 +2,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   use VmemoWeb, :live_view
   use Gettext, backend: VmemoWeb.Gettext
 
-  alias Vmemo.Account.ApiTokens
+  alias Vmemo.Account.ApiToken
 
   def render(assigns) do
     ~H"""
@@ -156,7 +156,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
     socket = assign(socket, :loading, true)
 
     # Use ApiTokenService to create token (includes token generation logic)
-    case ApiTokens.create_api_token(user, normalized_form_params) do
+    case ApiToken.create_for_user(user, normalized_form_params) do
       {:ok, token, raw_token} ->
         {:noreply,
          socket

@@ -2,7 +2,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   use VmemoWeb, :live_view
   use Gettext, backend: VmemoWeb.Gettext
 
-  alias Vmemo.Account.ApiTokens
+  alias Vmemo.Account.ApiToken
 
   def render(assigns) do
     ~H"""
@@ -221,7 +221,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     user = socket.assigns.current_user
 
-    case ApiTokens.get_user_api_token!(user, id) do
+    case ApiToken.get_user_token!(user, id) do
       api_token ->
         {:ok,
          socket
@@ -244,7 +244,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokens.delete_api_token(token, user) do
+    case ApiToken.delete_for_user(token, user) do
       :ok ->
         {:noreply,
          socket
@@ -266,7 +266,7 @@ defmodule VmemoWeb.ApiTokenLive.Show do
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokens.toggle_api_token_status(token, user) do
+    case ApiToken.toggle_status_for_user(token, user) do
       {:ok, updated_token} ->
         status_text =
           if updated_token.is_active, do: gettext("Enabled"), else: gettext("Disabled")

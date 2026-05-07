@@ -23,7 +23,7 @@ defmodule VmemoWeb.ApiAuth do
   end
 
   defp verify_token(conn, token) do
-    case Vmemo.Account.ApiTokens.verify_api_token(token) do
+    case Vmemo.Account.ApiToken.verify_api_token(token) do
       {:ok, api_token} ->
         # Attach user info to the connection
         conn

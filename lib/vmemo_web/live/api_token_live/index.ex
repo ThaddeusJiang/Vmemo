@@ -2,7 +2,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   use VmemoWeb, :live_view
   use Gettext, backend: VmemoWeb.Gettext
 
-  alias Vmemo.Account.ApiTokens
+  alias Vmemo.Account.ApiToken
 
   def render(assigns) do
     ~H"""
@@ -223,7 +223,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def handle_event("delete-token", %{"id" => id}, socket) do
     user = socket.assigns.current_user
-    token = ApiTokens.get_user_api_token!(user, id)
+    token = ApiToken.get_user_token!(user, id)
 
     {:noreply,
      socket
@@ -237,7 +237,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
     socket = assign(socket, :loading, true)
 
-    case ApiTokens.delete_api_token(token, user) do
+    case ApiToken.delete_for_user(token, user) do
       :ok ->
         {:noreply,
          socket
@@ -259,9 +259,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
     user = socket.assigns.current_user
 
     socket = assign(socket, :loading, true)
-    token = ApiTokens.get_user_api_token!(user, id)
+    token = ApiToken.get_user_token!(user, id)
 
-    case ApiTokens.toggle_api_token_status(token, user) do
+    case ApiToken.toggle_status_for_user(token, user) do
       {:ok, updated_token} ->
         updated_tokens = replace_token(socket.assigns.api_tokens, updated_token)
 
@@ -337,10 +337,10 @@ defmodule VmemoWeb.ApiTokenLive.Index do
   end
 
   defp load_token_dashboard_data(user) do
-    with {:ok, api_tokens} <- ApiTokens.list_user_api_tokens(user),
-         {:ok, expiring_tokens} <- ApiTokens.get_expiring_tokens(user),
-         {:ok, expired_tokens} <- ApiTokens.get_expired_tokens(user),
-         {:ok, today_usage_count} <- ApiTokens.count_today_usage(user) do
+    with {:ok, api_tokens} <- ApiToken.list_user_tokens(user),
+         {:ok, expiring_tokens} <- ApiToken.get_expiring_for_user(user),
+         {:ok, expired_tokens} <- ApiToken.get_expired_for_user(user),
+         {:ok, today_usage_count} <- ApiToken.count_today_usage_for_user(user) do
       {:ok,
        %{
          api_tokens: api_tokens,

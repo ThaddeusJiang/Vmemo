@@ -253,4 +253,107 @@ defmodule Vmemo.Account.ApiToken do
     computed_hash = :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
     computed_hash == token_hash
   end
+
+  def list_user_tokens(user), do: list_by_user(user.id, actor: user)
+
+  def get_user_token!(user, id) do
+    case get_by_user_and_id(id, user.id, actor: user) do
+      {:ok, token} -> token
+      {:error, _} -> raise "No API token found with id: #{id} for user: #{user.id}"
+    end
+  end
+
+  def create_for_user(user, attrs) do
+    expires_at = attrs |> fetch_expires_at_param() |> parse_expires_at()
+
+    attrs_with_user =
+      attrs
+      |> normalize_create_attrs()
+      |> Map.put(:expires_at, expires_at)
+      |> Map.put(:user_id, user.id)
+
+    {raw_token, hash} = generate_token()
+    attrs_with_hash = Map.put(attrs_with_user, :token_hash, hash)
+
+    case create(attrs_with_hash, actor: user) do
+      {:ok, api_token} -> {:ok, api_token, raw_token}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  def delete_for_user(api_token, actor), do: destroy(api_token, actor: actor)
+  def toggle_status_for_user(api_token, actor), do: toggle_status(api_token.id, actor: actor)
+  def get_expiring_for_user(user, days \\ 7), do: get_expiring_tokens(user.id, days, actor: user)
+  def get_expired_for_user(user), do: get_expired_tokens(user.id, actor: user)
+  def get_today_used_for_user(user), do: get_today_used_tokens(user.id, actor: user)
+
+  def count_today_usage_for_user(user) do
+    with {:ok, tokens} <- get_today_used_for_user(user) do
+      {:ok, Enum.map(tokens, &(&1.usage_count || 0)) |> Enum.sum()}
+    end
+  end
+
+  def verify_api_token(token) do
+    case verify_token(token) do
+      {:ok, api_token} ->
+        if api_token.expires_at && DateTime.compare(DateTime.utc_now(), api_token.expires_at) == :gt do
+          {:error, "Token expired"}
+        else
+          update_usage(api_token)
+          {:ok, Ash.load!(api_token, :user)}
+        end
+
+      {:error, _} ->
+        {:error, "Invalid token"}
+    end
+  end
+
+  defp fetch_expires_at_param(attrs) when is_map(attrs) do
+    Map.get(attrs, "expires_at") || Map.get(attrs, :expires_at)
+  end
+
+  defp normalize_create_attrs(attrs) when is_map(attrs) do
+    %{
+      name: Map.get(attrs, "name") || Map.get(attrs, :name),
+      description: Map.get(attrs, "description") || Map.get(attrs, :description)
+    }
+    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+    |> Map.new()
+  end
+
+  defp parse_expires_at("30"), do: expires_in_days(30)
+  defp parse_expires_at("90"), do: expires_in_days(90)
+  defp parse_expires_at("180"), do: expires_in_days(180)
+  defp parse_expires_at("never"), do: nil
+  defp parse_expires_at(nil), do: expires_in_days(90)
+
+  defp parse_expires_at(date) when is_binary(date) do
+    case DateTime.from_iso8601(date <> ":00") do
+      {:ok, datetime, _} -> DateTime.truncate(datetime, :second)
+      {:error, _} -> expires_in_days(90)
+    end
+  end
+
+  defp parse_expires_at(%DateTime{} = date), do: DateTime.truncate(date, :second)
+  defp parse_expires_at(_), do: expires_in_days(90)
+
+  defp expires_in_days(days) do
+    DateTime.utc_now()
+    |> DateTime.add(days * 24 * 60 * 60, :second)
+    |> DateTime.truncate(:second)
+  end
+
+  defp update_usage(api_token) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    current_count = api_token.usage_count || 0
+
+    case update(
+           api_token,
+           %{last_used_at: now, usage_count: current_count + 1},
+           actor: api_token
+         ) do
+      {:ok, _updated_token} -> :ok
+      {:error, _changeset} -> :error
+    end
+  end
 end
