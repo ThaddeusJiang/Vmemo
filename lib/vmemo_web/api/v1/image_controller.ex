@@ -45,11 +45,13 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
-        success_response(conn, %{
-          id: image.id,
-          url: image.url,
-          note: image.note,
-          inserted_at: image.inserted_at
+        json(conn, %{
+          data: %{
+            id: image.id,
+            url: url(~p"/images/#{image.id}"),
+            note: image.note,
+            inserted_at: image.inserted_at
+          }
         })
 
       {:error, _reason} ->
@@ -67,12 +69,14 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
+        delete_response = %{data: %{id: image.id}}
+
         case Image.destroy(image, actor: current_user) do
           :ok ->
-            success_response(conn, %{message: "Image deleted successfully"})
+            json(conn, delete_response)
 
           {:ok, _deleted} ->
-            success_response(conn, %{message: "Image deleted successfully"})
+            json(conn, delete_response)
 
           {:error, _reason} ->
             error_response(conn, 500, "DELETE_FAILED", "Failed to delete image")
@@ -167,11 +171,13 @@ defmodule VmemoWeb.Api.V1.ImageController do
            actor: current_user
          ) do
       {:ok, image} ->
-        success_response(conn, %{
-          id: image.id,
-          url: image.url,
-          note: image.note,
-          inserted_at: image.inserted_at
+        json(conn, %{
+          data: %{
+            id: image.id,
+            url: url(~p"/images/#{image.id}"),
+            note: image.note,
+            inserted_at: image.inserted_at
+          }
         })
 
       {:error, changeset} ->
@@ -180,18 +186,10 @@ defmodule VmemoWeb.Api.V1.ImageController do
     end
   end
 
-  defp success_response(conn, data) do
-    json(conn, %{
-      status: "success",
-      data: data
-    })
-  end
-
   defp error_response(conn, status_code, code, message) do
     conn
     |> put_status(status_code)
     |> json(%{
-      status: "error",
       error: %{
         code: code,
         message: message

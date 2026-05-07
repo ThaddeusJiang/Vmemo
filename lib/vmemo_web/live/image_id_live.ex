@@ -543,8 +543,6 @@ defmodule VmemoWeb.ImageIdLive do
 
   defp format_error_message(_), do: "Unknown error"
 
-  defp vision_caption_status(image), do: Map.get(image, :moondream_status)
-
   defp assign_loaded_photo(socket, user, image, images) do
     vision_requests = list_vision_requests(image.id, user)
     caption_requests = caption_requests_from(vision_requests)

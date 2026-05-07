@@ -33,7 +33,6 @@ defmodule VmemoWeb.Api.V1.AuthTest do
       assert conn.status == 401
 
       assert json_response(conn, 401) == %{
-               "status" => "error",
                "error" => %{
                  "code" => "UNAUTHORIZED",
                  "message" => "Invalid or missing API token"
