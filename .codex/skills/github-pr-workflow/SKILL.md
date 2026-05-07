@@ -42,10 +42,20 @@ mix compile
 mix test
 ```
 
+若项目依赖运行时环境变量（如 `DATABASE_URL`），必须先加载再执行检查（示例）：
+
+```bash
+set -a; source .env; set +a
+mix format
+mix compile --warnings-as-errors
+mix test
+```
+
 规则：
 
 - 任一检查失败时，禁止提交 commit。
 - 修复后必须重新执行失败项，直至通过。
+- `mix compile` 必须使用 `--warnings-as-errors`，避免 warning 在 CI 中转为失败。
 - 若本次变更涉及用户文案，额外执行并通过：
 
 ```bash
@@ -67,12 +77,27 @@ mix test
 
 - 任一检查失败时，禁止 `git push`。
 - 若 push 前有新增提交或新增代码改动，必须重新执行受影响检查项。
+- 若本地无法直接运行测试（例如缺少环境变量/依赖服务），必须先补齐本地运行条件，不允许以“本地跑不了，等 CI”替代。
 - 若本次变更涉及用户文案，push 前同样必须通过：
 
 ```bash
 mix gettext.extract --merge
 scripts/check_gettext_sync.sh
 ```
+
+## 步骤 0.8：CI 等价性检查（强制）
+
+在 push 前，至少保证以下两点与 CI 行为一致：
+
+1. 编译检查使用：
+
+```bash
+mix compile --warnings-as-errors
+```
+
+2. 测试不得依赖不稳定外部服务（如第三方 API、外部搜索服务实时可用）：
+   - 单元/控制器测试优先使用本地可控数据或 mock/stub。
+   - 若某测试必须依赖外部服务，应标记为 integration 并与常规 PR 必测集隔离。
 
 ## 步骤 1：分支安全检查
 
@@ -217,8 +242,12 @@ ASSIGNEE=$(gh api user --jq .login)
 gh pr edit <number-or-url> \
   --title "$PR_TITLE" \
   --body-file "$PR_BODY_FILE" \
-  --assignee "$ASSIGNEE"
+  --add-assignee "$ASSIGNEE"
 ```
+
+说明：
+- 不同 `gh` 版本参数存在差异；若 `--assignee` 不可用，必须使用 `--add-assignee`。
+- 更新 assignee 时应避免重复添加无关用户。
 
 状态切换：
 
@@ -246,6 +275,8 @@ gh pr comment <number-or-url> --body "已推送新提交，PR 描述已同步更
 
 - 必须遵守仓库与全局 `AGENTS.md`。
 - 在提交前和 push 前都必须通过本地必要检查（至少 `mix format`、`mix compile`、`mix test`），失败不得提交或 push。
+- 编译检查必须按 CI 标准使用 `mix compile --warnings-as-errors`。
+- 不允许把不稳定外部依赖直接引入常规 PR 必测用例；应隔离为 integration 或使用可控替身。
 - 禁止盲目使用默认分支作为 base。
 - 禁止无 conventional prefix 的 PR 标题。
 - 禁止内联 `\\n` 传 PR 正文，必须使用 `--body-file`。
