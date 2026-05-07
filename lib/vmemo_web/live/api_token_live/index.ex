@@ -38,14 +38,14 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               </div>
             </div>
           </.alert>
-
+          
     <!-- Error message -->
           <.alert :if={@error_message} variant={:error} class="mb-4">
             <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <span>{@error_message}</span>
             <.button variant="ghost" phx-click="clear-error">{gettext("Close")}</.button>
           </.alert>
-
+          
     <!-- Loading state -->
           <div :if={@loading} class="flex justify-center items-center py-8">
             <div class="loading loading-spinner loading-lg text-primary"></div>
@@ -53,7 +53,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           </div>
 
           <div :if={!@loading} class="space-y-3">
-    <!-- Statistics cards -->
+            <!-- Statistics cards -->
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <.metric_card
                 label={gettext("Total Tokens")}
@@ -76,7 +76,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 icon="hero-chart-bar"
               />
             </div>
-
+            
     <!-- Token list -->
             <div class="w-full rounded-lg border border-base-300 bg-base-100 overflow-hidden">
               <.table
@@ -110,7 +110,9 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                   </span>
                 </:col>
                 <:col :let={token} label={gettext("Usage Count")}>
-                  <span class="text-sm font-medium text-base-content/80">{token.usage_count || 0}</span>
+                  <span class="text-sm font-medium text-base-content/80">
+                    {token.usage_count || 0}
+                  </span>
                 </:col>
                 <:action :let={token}>
                   <div class="flex gap-1">
@@ -143,7 +145,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
             </div>
           </div>
         </div>
-
+        
     <!-- Delete confirmation Modal -->
         <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
           <:header>

@@ -146,7 +146,9 @@ defmodule Vmemo.Account.ApiToken do
 
         query
         |> Ash.Query.filter(user_id == ^user_id and is_active == true)
-        |> Ash.Query.filter(expr(not is_nil(expires_at) and expires_at <= ^cutoff_date and expires_at > ^now))
+        |> Ash.Query.filter(
+          expr(not is_nil(expires_at) and expires_at <= ^cutoff_date and expires_at > ^now)
+        )
         |> Ash.Query.sort(expires_at: :asc)
       end
     end
@@ -295,7 +297,8 @@ defmodule Vmemo.Account.ApiToken do
   def verify_api_token(token) do
     case verify_token(token) do
       {:ok, api_token} ->
-        if api_token.expires_at && DateTime.compare(DateTime.utc_now(), api_token.expires_at) == :gt do
+        if api_token.expires_at &&
+             DateTime.compare(DateTime.utc_now(), api_token.expires_at) == :gt do
           {:error, "Token expired"}
         else
           update_usage(api_token)

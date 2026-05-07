@@ -53,7 +53,8 @@ defmodule Vmemo.Account.ApiTokenTest do
       {:ok, token} ->
         token
 
-      {:error, error} -> raise "failed to create token fixture: #{inspect(error)}"
+      {:error, error} ->
+        raise "failed to create token fixture: #{inspect(error)}"
     end
   end
 end
