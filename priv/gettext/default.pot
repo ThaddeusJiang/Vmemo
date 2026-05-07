@@ -68,7 +68,7 @@ msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex:182
 #: lib/vmemo_web/live/api_token_live/show.ex:213
-#: lib/vmemo_web/live/image_id_live.ex:395
+#: lib/vmemo_web/live/image_id_live.ex:334
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
@@ -99,7 +99,8 @@ msgstr ""
 msgid "Find images with language, not file names. Text and visual similarity both work."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:351
+#: lib/vmemo_web/live/image_id_live.ex:404
+#: lib/vmemo_web/live/image_id_live.ex:409
 #, elixir-autogen, elixir-format
 msgid "Generate caption"
 msgstr ""
@@ -187,7 +188,8 @@ msgstr ""
 msgid "Recall"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:350
+#: lib/vmemo_web/live/image_id_live.ex:403
+#: lib/vmemo_web/live/image_id_live.ex:408
 #, elixir-autogen, elixir-format
 msgid "Regenerate caption"
 msgstr ""
@@ -197,12 +199,6 @@ msgstr ""
 msgid "Remember more life."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:367
-#, elixir-autogen, elixir-format
-msgid "Retry Typesense sync"
-msgstr ""
-
-#: lib/vmemo_web/live/image_id_live.ex:382
 #: lib/vmemo_web/live/jobs_live.ex:370
 #: lib/vmemo_web/live/jobs_live.ex:371
 #, elixir-autogen, elixir-format
@@ -229,6 +225,7 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
+#: lib/vmemo_web/live/components/search_box.ex:256
 #: lib/vmemo_web/live/home_page_live.ex:35
 #: lib/vmemo_web/live/images_index_live.ex:101
 #: lib/vmemo_web/live/images_index_live.ex:126
@@ -498,7 +495,7 @@ msgstr ""
 msgid "Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:106
+#: lib/vmemo_web/live/components/search_box.ex:108
 #: lib/vmemo_web/live/user_settings_live.ex:284
 #, elixir-autogen, elixir-format
 msgid "Upload is still in progress."
@@ -776,6 +773,7 @@ msgid "No jobs yet"
 msgstr ""
 
 #: lib/vmemo_web/components/notifications_components.ex:46
+#: lib/vmemo_web/live/notifications_live.ex:29
 #, elixir-autogen, elixir-format
 msgid "No notifications yet"
 msgstr ""
@@ -788,6 +786,7 @@ msgstr ""
 #: lib/vmemo_web/components/notifications_components.ex:25
 #: lib/vmemo_web/components/notifications_components.ex:26
 #: lib/vmemo_web/components/notifications_components.ex:43
+#: lib/vmemo_web/live/notifications_live.ex:25
 #, elixir-autogen, elixir-format
 msgid "Notifications"
 msgstr ""
@@ -1060,23 +1059,54 @@ msgstr ""
 msgid "Request timed out."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:155
+#: lib/vmemo_web/live/components/search_box.ex:157
 #, elixir-autogen, elixir-format
 msgid "Search by image failed: %{reason}"
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:147
+#: lib/vmemo_web/live/components/search_box.ex:149
 #, elixir-autogen, elixir-format
 msgid "Search failed: index unavailable or upload failed."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:114
+#: lib/vmemo_web/live/components/search_box.ex:116
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:570
-#: lib/vmemo_web/live/image_id_live.ex:571
+#: lib/vmemo_web/live/image_id_live.ex:525
+#: lib/vmemo_web/live/image_id_live.ex:526
 #, elixir-autogen, elixir-format
 msgid "Rotate and save"
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:235
+#: lib/vmemo_web/live/components/search_box.ex:239
+#, elixir-autogen, elixir-format
+msgid "Drop image to upload"
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:260
+#, elixir-autogen, elixir-format
+msgid "Image search and text search are mutually exclusive. Remove image to search by text."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:194
+#, elixir-autogen, elixir-format
+msgid "Image uploaded successfully."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:73
+#, elixir-autogen, elixir-format
+msgid "Unknown image action."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:202
+#, elixir-autogen, elixir-format
+msgid "Upload failed. Please retry."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:210
+#, elixir-autogen, elixir-format
+msgid "Upload failed: %{reason}"
 msgstr ""

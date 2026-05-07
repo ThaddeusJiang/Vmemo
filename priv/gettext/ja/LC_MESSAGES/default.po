@@ -59,7 +59,7 @@ msgstr "中文"
 
 #: lib/vmemo_web/live/api_token_live/index.ex:182
 #: lib/vmemo_web/live/api_token_live/show.ex:213
-#: lib/vmemo_web/live/image_id_live.ex:395
+#: lib/vmemo_web/live/image_id_live.ex:334
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
@@ -90,7 +90,8 @@ msgstr ""
 msgid "Find images with language, not file names. Text and visual similarity both work."
 msgstr "ファイル名ではなく言葉で画像検索。テキストと視覚の類似検索の両方に対応。"
 
-#: lib/vmemo_web/live/image_id_live.ex:351
+#: lib/vmemo_web/live/image_id_live.ex:404
+#: lib/vmemo_web/live/image_id_live.ex:409
 #, elixir-autogen, elixir-format
 msgid "Generate caption"
 msgstr ""
@@ -178,7 +179,8 @@ msgstr "プロフィールを更新しました。"
 msgid "Recall"
 msgstr "想起"
 
-#: lib/vmemo_web/live/image_id_live.ex:350
+#: lib/vmemo_web/live/image_id_live.ex:403
+#: lib/vmemo_web/live/image_id_live.ex:408
 #, elixir-autogen, elixir-format
 msgid "Regenerate caption"
 msgstr ""
@@ -188,12 +190,6 @@ msgstr ""
 msgid "Remember more life."
 msgstr "もっと生活を記憶する。"
 
-#: lib/vmemo_web/live/image_id_live.ex:367
-#, elixir-autogen, elixir-format
-msgid "Retry Typesense sync"
-msgstr ""
-
-#: lib/vmemo_web/live/image_id_live.ex:382
 #: lib/vmemo_web/live/jobs_live.ex:370
 #: lib/vmemo_web/live/jobs_live.ex:371
 #, elixir-autogen, elixir-format
@@ -220,6 +216,7 @@ msgstr "プロフィールを保存"
 msgid "Saving..."
 msgstr "保存中..."
 
+#: lib/vmemo_web/live/components/search_box.ex:256
 #: lib/vmemo_web/live/home_page_live.ex:35
 #: lib/vmemo_web/live/images_index_live.ex:101
 #: lib/vmemo_web/live/images_index_live.ex:126
@@ -489,7 +486,7 @@ msgstr "Typesense ノートを upsert 済み"
 msgid "Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources."
 msgstr "このアプリでエクスポートした ZIP をアップロードしてください。インポートはファイルとDBレコードを作成し、Ash リソースから検索インデックスを再構築します。"
 
-#: lib/vmemo_web/live/components/search_box.ex:106
+#: lib/vmemo_web/live/components/search_box.ex:108
 #: lib/vmemo_web/live/user_settings_live.ex:284
 #, elixir-autogen, elixir-format
 msgid "Upload is still in progress."
@@ -767,6 +764,7 @@ msgid "No jobs yet"
 msgstr "ジョブはまだありません"
 
 #: lib/vmemo_web/components/notifications_components.ex:46
+#: lib/vmemo_web/live/notifications_live.ex:29
 #, elixir-autogen, elixir-format
 msgid "No notifications yet"
 msgstr "通知はありません"
@@ -779,6 +777,7 @@ msgstr ""
 #: lib/vmemo_web/components/notifications_components.ex:25
 #: lib/vmemo_web/components/notifications_components.ex:26
 #: lib/vmemo_web/components/notifications_components.ex:43
+#: lib/vmemo_web/live/notifications_live.ex:25
 #, elixir-autogen, elixir-format
 msgid "Notifications"
 msgstr "通知"
@@ -1051,23 +1050,54 @@ msgstr "リクエストに失敗しました。"
 msgid "Request timed out."
 msgstr "リクエストがタイムアウトしました。"
 
-#: lib/vmemo_web/live/components/search_box.ex:155
+#: lib/vmemo_web/live/components/search_box.ex:157
 #, elixir-autogen, elixir-format
 msgid "Search by image failed: %{reason}"
 msgstr "画像検索に失敗しました: %{reason}"
 
-#: lib/vmemo_web/live/components/search_box.ex:147
+#: lib/vmemo_web/live/components/search_box.ex:149
 #, elixir-autogen, elixir-format
 msgid "Search failed: index unavailable or upload failed."
 msgstr "検索に失敗しました: インデックスが利用できないか、アップロードに失敗しました。"
 
-#: lib/vmemo_web/live/components/search_box.ex:114
+#: lib/vmemo_web/live/components/search_box.ex:116
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr "検索には画像を1枚だけ使用してください。余分なファイルを削除してください。"
 
-#: lib/vmemo_web/live/image_id_live.ex:570
-#: lib/vmemo_web/live/image_id_live.ex:571
+#: lib/vmemo_web/live/image_id_live.ex:525
+#: lib/vmemo_web/live/image_id_live.ex:526
 #, elixir-autogen, elixir-format
 msgid "Rotate and save"
 msgstr "回転して保存"
+
+#: lib/vmemo_web/live/components/search_box.ex:235
+#: lib/vmemo_web/live/components/search_box.ex:239
+#, elixir-autogen, elixir-format
+msgid "Drop image to upload"
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:260
+#, elixir-autogen, elixir-format
+msgid "Image search and text search are mutually exclusive. Remove image to search by text."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:194
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Image uploaded successfully."
+msgstr "プロフィールを更新しました。"
+
+#: lib/vmemo_web/live/components/search_box.ex:73
+#, elixir-autogen, elixir-format
+msgid "Unknown image action."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:202
+#, elixir-autogen, elixir-format
+msgid "Upload failed. Please retry."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:210
+#, elixir-autogen, elixir-format
+msgid "Upload failed: %{reason}"
+msgstr ""
