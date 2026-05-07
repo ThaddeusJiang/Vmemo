@@ -48,7 +48,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
         json(conn, %{
           data: %{
             id: image.id,
-            url: image_detail_page_url(image.id),
+            url: url(~p"/images/#{image.id}"),
             note: image.note,
             inserted_at: image.inserted_at
           }
@@ -172,7 +172,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
         json(conn, %{
           data: %{
             id: image.id,
-            url: image_detail_page_url(image.id),
+            url: url(~p"/images/#{image.id}"),
             note: image.note,
             inserted_at: image.inserted_at
           }
@@ -182,10 +182,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
         Logger.error("Failed to create image: #{inspect(changeset.errors)}")
         error_response(conn, 500, "CREATE_FAILED", "Failed to create image")
     end
-  end
-
-  defp image_detail_page_url(image_id) do
-    URI.merge(VmemoWeb.Endpoint.url(), "/images/#{image_id}") |> to_string()
   end
 
   defp error_response(conn, status_code, code, message) do
