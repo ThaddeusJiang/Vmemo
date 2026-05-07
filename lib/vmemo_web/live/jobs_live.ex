@@ -97,7 +97,7 @@ defmodule VmemoWeb.JobsLive do
   def render(assigns) do
     ~H"""
     <section class="page-shell grow">
-      <div class="content-shell w-full flex flex-col gap-4">
+      <div class="w-full flex flex-col gap-4">
         <div :if={@live_action == :index}>
           <h1 class="section-title text-2xl">{gettext("Jobs")}</h1>
         </div>

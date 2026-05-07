@@ -61,7 +61,13 @@ defmodule VmemoWeb.UserProfileLive do
               </div>
             </div>
 
-            <.input field={@profile_form[:name]} type="text" label={gettext("Name")} required />
+            <.input
+              field={@profile_form[:name]}
+              type="text"
+              label={gettext("Name")}
+              autocomplete="name"
+              required
+            />
 
             <.input
               field={@profile_form[:language]}
