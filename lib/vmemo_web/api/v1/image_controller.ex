@@ -47,7 +47,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
       {:ok, image} ->
         success_response(conn, %{
           id: image.id,
-          url: image.url,
+          url: image_detail_page_url(image.id),
           note: image.note,
           inserted_at: image.inserted_at
         })
@@ -169,7 +169,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
       {:ok, image} ->
         success_response(conn, %{
           id: image.id,
-          url: image.url,
+          url: image_detail_page_url(image.id),
           note: image.note,
           inserted_at: image.inserted_at
         })
@@ -181,10 +181,11 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   defp success_response(conn, data) do
-    json(conn, %{
-      status: "success",
-      data: data
-    })
+    json(conn, %{data: data})
+  end
+
+  defp image_detail_page_url(image_id) do
+    URI.merge(VmemoWeb.Endpoint.url(), "/images/#{image_id}") |> to_string()
   end
 
   defp error_response(conn, status_code, code, message) do

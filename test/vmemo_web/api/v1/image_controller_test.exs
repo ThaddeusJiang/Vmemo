@@ -65,6 +65,29 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
 
       assert conn.status == 400
     end
+
+    test "returns image detail page url on successful upload", %{conn: conn, raw_token: raw_token} do
+      test_image_path = create_test_image()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: test_image_path,
+            filename: "test.png",
+            content_type: "image/png"
+          },
+          "note" => "Test upload from curl"
+        })
+
+      assert conn.status == 200
+      response = json_response(conn, 200)
+      assert is_map(response["data"])
+      assert String.starts_with?(response["data"]["url"], "http")
+      assert String.contains?(response["data"]["url"], "/images/")
+      refute Map.has_key?(response, "status")
+    end
   end
 
   describe "GET /api/v1/images/:id - Show image" do
@@ -139,7 +162,6 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> delete(~p"/api/v1/images/#{image.id}")
 
       assert conn.status == 200
-      assert json_response(conn, 200)["status"] == "success"
       assert json_response(conn, 200)["data"]["message"] == "Image deleted successfully"
     end
   end
