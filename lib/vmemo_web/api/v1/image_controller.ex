@@ -45,11 +45,13 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
-        success_response(conn, %{
-          id: image.id,
-          url: image_detail_page_url(image.id),
-          note: image.note,
-          inserted_at: image.inserted_at
+        json(conn, %{
+          data: %{
+            id: image.id,
+            url: image_detail_page_url(image.id),
+            note: image.note,
+            inserted_at: image.inserted_at
+          }
         })
 
       {:error, _reason} ->
@@ -69,10 +71,10 @@ defmodule VmemoWeb.Api.V1.ImageController do
       {:ok, image} ->
         case Image.destroy(image, actor: current_user) do
           :ok ->
-            success_response(conn, %{message: "Image deleted successfully"})
+            json(conn, %{data: %{message: "Image deleted successfully"}})
 
           {:ok, _deleted} ->
-            success_response(conn, %{message: "Image deleted successfully"})
+            json(conn, %{data: %{message: "Image deleted successfully"}})
 
           {:error, _reason} ->
             error_response(conn, 500, "DELETE_FAILED", "Failed to delete image")
@@ -167,21 +169,19 @@ defmodule VmemoWeb.Api.V1.ImageController do
            actor: current_user
          ) do
       {:ok, image} ->
-        success_response(conn, %{
-          id: image.id,
-          url: image_detail_page_url(image.id),
-          note: image.note,
-          inserted_at: image.inserted_at
+        json(conn, %{
+          data: %{
+            id: image.id,
+            url: image_detail_page_url(image.id),
+            note: image.note,
+            inserted_at: image.inserted_at
+          }
         })
 
       {:error, changeset} ->
         Logger.error("Failed to create image: #{inspect(changeset.errors)}")
         error_response(conn, 500, "CREATE_FAILED", "Failed to create image")
     end
-  end
-
-  defp success_response(conn, data) do
-    json(conn, %{data: data})
   end
 
   defp image_detail_page_url(image_id) do
