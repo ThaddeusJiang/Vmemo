@@ -25,7 +25,8 @@ defmodule VmemoWeb.UserSessionControllerTest do
       conn = get(conn, ~p"/home")
       response = html_response(conn, 200)
       # assert response =~ user.display_name
-      assert response =~ ~p"/settings"
+      assert response =~ ~p"/profile"
+      assert response =~ ~p"/tokens"
       assert response =~ ~p"/users/logout"
     end
 

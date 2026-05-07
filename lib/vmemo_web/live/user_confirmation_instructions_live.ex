@@ -13,7 +13,13 @@ defmodule VmemoWeb.UserConfirmationInstructionsLive do
         </.header>
 
         <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send-instructions">
-          <.input field={@form[:email]} type="email" placeholder="Email" required />
+          <.input
+            field={@form[:email]}
+            type="email"
+            placeholder="Email"
+            autocomplete="email"
+            required
+          />
           <:actions>
             <.button phx-disable-with="Sending..." class="w-full">
               Resend confirmation instructions

@@ -83,8 +83,20 @@ defmodule VmemoWeb.UserRegistrationLive do
               phx-change="validate"
               phx-submit="register"
             >
-              <.input field={@form[:email]} type="email" label="Email" required />
-              <.input field={@form[:password]} type="password" label="Password" required />
+              <.input
+                field={@form[:email]}
+                type="email"
+                label="Email"
+                autocomplete="email"
+                required
+              />
+              <.input
+                field={@form[:password]}
+                type="password"
+                label="Password"
+                autocomplete="new-password"
+                required
+              />
 
               <:actions>
                 <.button class="w-full">

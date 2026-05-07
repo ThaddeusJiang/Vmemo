@@ -21,15 +21,16 @@ defmodule VmemoWeb.NotificationsLive do
   def render(assigns) do
     ~H"""
     <section class="page-shell grow">
-      <div class="content-shell w-full flex flex-col gap-4">
+      <div class="w-full flex flex-col gap-4">
         <h1 class="section-title text-2xl">{gettext("Notifications")}</h1>
+        <p class="text-sm text-base-content/70 -mt-2">{gettext("View all notifications")}</p>
 
-        <div class="rounded-lg border border-base-300 bg-base-100 p-2 sm:p-3">
+        <div class="rounded-lg border border-base-300 bg-base-100 overflow-hidden">
           <div :if={Enum.empty?(@notifications)} class="px-2 py-4 text-sm text-base-content/60">
             {gettext("No notifications yet")}
           </div>
 
-          <div :if={not Enum.empty?(@notifications)} class="notifications-list">
+          <div :if={not Enum.empty?(@notifications)} class="notifications-list p-2 sm:p-3">
             <VmemoWeb.NotificationsComponents.notification_item
               :for={notification <- @notifications}
               notification={notification}

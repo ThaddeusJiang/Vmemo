@@ -31,13 +31,20 @@ defmodule VmemoWeb.UserSettingsLive do
               phx-submit="update-email"
               phx-change="validate-email"
             >
-              <.input field={@email_form[:email]} type="email" label={gettext("Email")} required />
+              <.input
+                field={@email_form[:email]}
+                type="email"
+                label={gettext("Email")}
+                autocomplete="email"
+                required
+              />
               <.input
                 field={@email_form[:current_password]}
                 name="current_password"
                 id="current_password_for_email"
                 type="password"
                 label={gettext("Current password")}
+                autocomplete="current-password"
                 value={@email_form_current_password}
                 required
               />
@@ -67,12 +74,14 @@ defmodule VmemoWeb.UserSettingsLive do
                 field={@password_form[:password]}
                 type="password"
                 label={gettext("New password")}
+                autocomplete="new-password"
                 required
               />
               <.input
                 field={@password_form[:password_confirmation]}
                 type="password"
                 label={gettext("Confirm new password")}
+                autocomplete="new-password"
               />
               <.input
                 field={@password_form[:current_password]}
@@ -80,6 +89,7 @@ defmodule VmemoWeb.UserSettingsLive do
                 type="password"
                 label={gettext("Current password")}
                 id="current_password_for_password"
+                autocomplete="current-password"
                 value={@current_password}
                 required
               />

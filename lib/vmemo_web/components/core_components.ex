@@ -337,9 +337,10 @@ defmodule VmemoWeb.CoreComponents do
   """
   attr :for, :any, required: true, doc: "the data structure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
+  attr :autocomplete, :string, default: "off", doc: "HTML autocomplete behavior for this form"
 
   attr :rest, :global,
-    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
+    include: ~w(name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
   slot :inner_block, required: true
@@ -347,7 +348,7 @@ defmodule VmemoWeb.CoreComponents do
 
   def simple_form(assigns) do
     ~H"""
-    <.form :let={f} for={@for} as={@as} {@rest}>
+    <.form :let={f} for={@for} as={@as} autocomplete={@autocomplete} {@rest}>
       <div class="space-y-3">
         {render_slot(@inner_block, f)}
         <div :for={action <- @actions} class="pt-2 flex items-center justify-end gap-2">
@@ -447,9 +448,10 @@ defmodule VmemoWeb.CoreComponents do
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
+  attr :autocomplete, :string, default: nil
 
   attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
+    include: ~w(accept capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
@@ -529,7 +531,7 @@ defmodule VmemoWeb.CoreComponents do
             "input input-bordered w-full rounded-lg",
             @errors != [] && "input-error"
           ]}
-          autocomplete={get_autocomplete_value(@type, @name)}
+          autocomplete={@autocomplete || "off"}
           {@rest}
         />
       </div>
@@ -539,18 +541,6 @@ defmodule VmemoWeb.CoreComponents do
     </div>
     """
   end
-
-  # Helper function to set appropriate autocomplete values
-  defp get_autocomplete_value(type, _name) when type == "email", do: "email"
-
-  defp get_autocomplete_value(type, name) when type == "password" do
-    case name do
-      "current_password" -> "current-password"
-      _ -> "new-password"
-    end
-  end
-
-  defp get_autocomplete_value(_type, _name), do: nil
 
   attr :id, :string, required: true
   attr :name, :string, required: true
@@ -665,6 +655,7 @@ defmodule VmemoWeb.CoreComponents do
   """
   attr :id, :string, required: true
   attr :rows, :list, required: true
+  attr :class, :string, default: nil
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
 
@@ -685,8 +676,8 @@ defmodule VmemoWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full">
+    <div class="overflow-x-auto w-full">
+      <table class={["table table-zebra w-full min-w-full", @class]}>
         <thead>
           <tr>
             <th :for={col <- @col} class="normal-case">{col[:label]}</th>

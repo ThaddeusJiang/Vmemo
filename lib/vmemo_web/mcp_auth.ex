@@ -40,7 +40,7 @@ defmodule VmemoWeb.McpAuth do
   end
 
   defp verify_token(conn, token) do
-    case Vmemo.Account.ApiTokens.verify_api_token(token) do
+    case Vmemo.Account.ApiToken.verify_api_token(token) do
       {:ok, api_token} ->
         # Set actor if token is valid
         # Use Ash.PlugHelpers.set_actor/2 to store actor in conn.private[:ash][:actor]
