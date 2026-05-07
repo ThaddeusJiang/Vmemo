@@ -6,14 +6,16 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def render(assigns) do
     ~H"""
-    <div class="page-shell">
-      <div class="content-shell max-w-6xl mx-auto">
-        <.header>
-          {gettext("Tokens")}
-          <:subtitle>{gettext("Manage your API access tokens")}</:subtitle>
-        </.header>
+    <section class="page-shell grow">
+      <div class="w-full flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h1 class="section-title text-2xl">{gettext("Tokens")}</h1>
+          <.link navigate={~p"/tokens/new"} class="btn btn-primary">
+            <.icon name="hero-plus" class="h-4 w-4" /> {gettext("Create New Token")}
+          </.link>
+        </div>
 
-        <div class="mt-8">
+        <div class="space-y-3">
           <!-- Expiration alerts -->
           <.alert :if={length(@expired_tokens) > 0} variant={:error} class="mb-4">
             <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
@@ -36,69 +38,55 @@ defmodule VmemoWeb.ApiTokenLive.Index do
               </div>
             </div>
           </.alert>
-          
+
     <!-- Error message -->
           <.alert :if={@error_message} variant={:error} class="mb-4">
             <:icon><.icon name="hero-exclamation-triangle" class="h-5 w-5" /></:icon>
             <span>{@error_message}</span>
             <.button variant="ghost" phx-click="clear-error">{gettext("Close")}</.button>
           </.alert>
-          
+
     <!-- Loading state -->
           <div :if={@loading} class="flex justify-center items-center py-8">
             <div class="loading loading-spinner loading-lg text-primary"></div>
             <span class="ml-2 text-lg">{gettext("Processing...")}</span>
           </div>
 
-          <div :if={!@loading} class="space-y-6">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-semibold">{gettext("Tokens")}</h2>
-              <.link navigate={~p"/tokens/new"} class="btn btn-primary">
-                <.icon name="hero-plus" class="h-4 w-4" /> {gettext("Create New Token")}
-              </.link>
-            </div>
-            
+          <div :if={!@loading} class="space-y-3">
     <!-- Statistics cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div class="stat bg-base-100 rounded-box shadow border-r-0">
-                <div class="stat-figure text-primary">
-                  <.icon name="hero-key" class="h-6 w-6 sm:h-8 sm:w-8" />
-                </div>
-                <div class="stat-title text-sm sm:text-base">{gettext("Total Tokens")}</div>
-                <div class="stat-value text-primary text-lg sm:text-2xl">{length(@api_tokens)}</div>
-              </div>
-
-              <div class="stat bg-base-100 rounded-box shadow border-r-0">
-                <div class="stat-figure text-success">
-                  <.icon name="hero-check-circle" class="h-6 w-6 sm:h-8 sm:w-8" />
-                </div>
-                <div class="stat-title text-sm sm:text-base">{gettext("Active Tokens")}</div>
-                <div class="stat-value text-success text-lg sm:text-2xl">{@active_tokens_count}</div>
-              </div>
-
-              <div class="stat bg-base-100 rounded-box shadow border-r-0">
-                <div class="stat-figure text-error">
-                  <.icon name="hero-exclamation-triangle" class="h-6 w-6 sm:h-8 sm:w-8" />
-                </div>
-                <div class="stat-title text-sm sm:text-base">{gettext("Expired Tokens")}</div>
-                <div class="stat-value text-error text-lg sm:text-2xl">{@expired_tokens_count}</div>
-              </div>
-
-              <div class="stat bg-base-100 rounded-box shadow border-r-0">
-                <div class="stat-figure text-info">
-                  <.icon name="hero-chart-bar" class="h-6 w-6 sm:h-8 sm:w-8" />
-                </div>
-                <div class="stat-title text-sm sm:text-base">{gettext("Today's Usage")}</div>
-                <div class="stat-value text-info text-lg sm:text-2xl">{@today_usage_count}</div>
-              </div>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <.metric_card
+                label={gettext("Total Tokens")}
+                value={length(@api_tokens)}
+                icon="hero-key"
+              />
+              <.metric_card
+                label={gettext("Active Tokens")}
+                value={@active_tokens_count}
+                icon="hero-check-circle"
+              />
+              <.metric_card
+                label={gettext("Expired Tokens")}
+                value={@expired_tokens_count}
+                icon="hero-exclamation-triangle"
+              />
+              <.metric_card
+                label={gettext("Today's Usage")}
+                value={@today_usage_count}
+                icon="hero-chart-bar"
+              />
             </div>
-            
+
     <!-- Token list -->
-            <div class="surface-card overflow-x-auto">
-              <.table id="api-tokens" rows={@api_tokens}>
+            <div class="w-full rounded-lg border border-base-300 bg-base-100 overflow-hidden">
+              <.table
+                id="api-tokens"
+                rows={@api_tokens}
+                class="w-full min-w-full [&_tbody_tr:nth-child(even)]:bg-transparent [&_tbody_tr:hover]:bg-base-200/40 [&_tbody_tr:hover]:shadow-sm [&_tbody_tr]:transition-all [&_tbody_tr]:duration-150"
+              >
                 <:col :let={token} label={gettext("Name")}>
                   <div class="flex items-center gap-2">
-                    <span class="font-medium text-sm sm:text-base">{token.name}</span>
+                    <span class="font-semibold text-sm sm:text-base">{token.name}</span>
                     <.status_badge :if={!token.is_active} variant={:warning} size="sm">
                       {gettext("Disabled")}
                     </.status_badge>
@@ -109,7 +97,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                 </:col>
                 <:col :let={token} label={gettext("Token")}>
                   <div class="flex items-center gap-2">
-                    <code class="text-xs bg-base-200 px-2 py-1 rounded">
+                    <code class="text-xs bg-base-200/60 px-2 py-1 rounded-md font-medium">
                       {display_token_preview(token)}
                     </code>
                   </div>
@@ -122,20 +110,18 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                   </span>
                 </:col>
                 <:col :let={token} label={gettext("Usage Count")}>
-                  <.status_badge variant={:info} class="badge-ghost">
-                    {token.usage_count || 0}
-                  </.status_badge>
+                  <span class="text-sm font-medium text-base-content/80">{token.usage_count || 0}</span>
                 </:col>
                 <:action :let={token}>
                   <div class="flex gap-1">
                     <.button
-                      variant="outline"
+                      variant="ghost"
                       phx-click="toggle-token-status"
                       phx-value-id={token.id}
                       class={
                         if token.is_active,
-                          do: "btn-square text-warning",
-                          else: "btn-square text-success"
+                          do: "btn-square text-base-content/70",
+                          else: "btn-square text-base-content/70"
                       }
                     >
                       <.icon
@@ -144,10 +130,10 @@ defmodule VmemoWeb.ApiTokenLive.Index do
                       />
                     </.button>
                     <.button
-                      variant="outline"
+                      variant="ghost"
                       phx-click="delete-token"
                       phx-value-id={token.id}
-                      class="btn-square text-error"
+                      class="btn-square text-base-content/70"
                     >
                       <.icon name="hero-trash" class="h-4 w-4" />
                     </.button>
@@ -157,7 +143,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
             </div>
           </div>
         </div>
-        
+
     <!-- Delete confirmation Modal -->
         <.modal id="delete-modal" show={@show_delete_modal} on_cancel={JS.hide(to: "#delete-modal")}>
           <:header>
@@ -183,7 +169,7 @@ defmodule VmemoWeb.ApiTokenLive.Index do
           </:footer>
         </.modal>
       </div>
-    </div>
+    </section>
     """
   end
 
@@ -284,6 +270,22 @@ defmodule VmemoWeb.ApiTokenLive.Index do
 
   def handle_event("clear-error", _params, socket) do
     {:noreply, assign(socket, :error_message, nil)}
+  end
+
+  attr :label, :string, required: true
+  attr :value, :any, required: true
+  attr :icon, :string, required: true
+
+  defp metric_card(assigns) do
+    ~H"""
+    <div class="rounded-lg border border-solid border-base-300 [border-inline-end-style:solid] bg-base-100 px-6 py-4 flex items-center justify-between">
+      <div class="space-y-1">
+        <div class="text-sm sm:text-base text-base-content/70">{@label}</div>
+        <div class="text-base-content text-lg sm:text-2xl font-semibold">{@value}</div>
+      </div>
+      <.icon name={@icon} class="h-6 w-6 sm:h-8 sm:w-8 text-base-content/70" />
+    </div>
+    """
   end
 
   # Helper functions
