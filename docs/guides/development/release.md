@@ -30,7 +30,7 @@ Use CalVer: `YYYY.M.Patch` (example: `2026.4.19`).
 Recommended command:
 
 ```bash
-mix run --no-start .codex/skills/release/scripts/resolve_release_version.exs [VERSION]
+mix run --no-start .agents/skills/release/scripts/resolve_release_version.exs [VERSION]
 ```
 
 Rules:
@@ -43,7 +43,7 @@ Rules:
 Before publishing, detect config/env changes and explicitly confirm impact.
 
 ```bash
-mix run --no-start .codex/skills/release/scripts/check_config_changes.exs [BASE_REF] [TARGET_REF]
+mix run --no-start .agents/skills/release/scripts/check_config_changes.exs [BASE_REF] [TARGET_REF]
 ```
 
 Required behavior:
