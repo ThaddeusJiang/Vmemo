@@ -5,6 +5,8 @@ defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
 
   import ReqLLM.Context
 
+  alias Vmemo.Account
+
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.before_transaction(changeset, fn changeset ->
@@ -23,6 +25,7 @@ defmodule Vmemo.Chat.Conversation.Changes.GenerateName do
           system("""
           Provide a short name for the current conversation.
           2-8 words, preferring more succinct names.
+          Language: #{Account.preferred_language(context.actor)}.
           RESPOND WITH ONLY THE NEW CONVERSATION NAME.
           """)
         ] ++

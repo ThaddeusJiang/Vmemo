@@ -101,7 +101,7 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
   end
 
   defp build_prompt_messages(conversation, actor, messages, scoped_image_id) do
-    language = actor_language(actor)
+    language = Account.preferred_language(actor)
     convo_type = conversation.kind || "global"
     image_id = conversation.image_id
     effective_image_id = scoped_image_id || image_id
@@ -116,7 +116,7 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
       Do not use normal Markdown links for images.
       If a user asks clearly unrelated general-purpose questions, do not answer the off-topic request.
       Instead, briefly explain this assistant is limited to Vmemo content and recommend using ChatGPT, Grok, or similar general-purpose assistants for those questions.
-      Default response language: #{language}.
+      You MUST reply in the user's profile language: #{language}.
       Conversation type: #{convo_type}.
       Initial image id: #{image_id || "none"}.
       Effective image id: #{effective_image_id || "none"}.
@@ -138,15 +138,6 @@ defmodule Vmemo.Chat.Message.Changes.Respond do
   end
 
   defp resolve_scoped_image_id(_, _), do: nil
-
-  defp actor_language(nil), do: "en"
-
-  defp actor_language(actor) do
-    case Account.get_user_profile_by_user_id(actor.id) do
-      %{language: language} when is_binary(language) and language != "" -> language
-      _ -> "en"
-    end
-  end
 
   defp append_event(items, value) when is_list(items), do: items ++ [value]
   defp append_event(_items, value), do: [value]

@@ -70,6 +70,17 @@ defmodule Vmemo.Account do
 
   def get_user_profile_by_user_id(_), do: nil
 
+  def preferred_language(nil), do: "en"
+
+  def preferred_language(%{id: user_id}) when is_binary(user_id) do
+    case get_user_profile_by_user_id(user_id) do
+      %{language: language} when is_binary(language) and language != "" -> language
+      _ -> "en"
+    end
+  end
+
+  def preferred_language(_), do: "en"
+
   def upsert_user_profile(%User{} = user, attrs \\ %{}) do
     attrs = normalize_profile_attrs(attrs)
 

@@ -5,12 +5,12 @@ defmodule Vmemo.Ai.AshAiVision do
 
   alias ReqLLM.Message.ContentPart
 
-  @default_caption_prompt "Describe this image in concise and accurate English."
   @default_caption_max_tokens 256
   @default_query_max_tokens 1024
 
   def caption(image_base64, opts \\ []) when is_binary(image_base64) do
-    prompt = Keyword.get(opts, :prompt, @default_caption_prompt)
+    language = Keyword.get(opts, :language, "en")
+    prompt = Keyword.get(opts, :prompt, default_caption_prompt(language))
     opts = Keyword.put_new(opts, :max_tokens, @default_caption_max_tokens)
     query(image_base64, prompt, opts)
   end
@@ -82,4 +82,10 @@ defmodule Vmemo.Ai.AshAiVision do
     do: max_tokens
 
   defp normalize_max_tokens(_), do: @default_query_max_tokens
+
+  defp default_caption_prompt(language) when is_binary(language) and language != "" do
+    "Describe this image concisely and accurately. Reply in #{language}."
+  end
+
+  defp default_caption_prompt(_), do: "Describe this image concisely and accurately. Reply in en."
 end

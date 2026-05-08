@@ -15,15 +15,18 @@ defmodule Vmemo.Ai.Caption do
 
   alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.VisionConfig
+  alias Vmemo.Account
 
   def generate_caption(image_base64, opts \\ []) do
     config = VisionConfig.resolve()
     mime_type = Keyword.get(opts, :mime_type)
+    language = resolve_language(Keyword.get(opts, :user_id))
 
     case AshAiVision.caption(
            image_base64,
            model: config.model,
-           mime_type: mime_type
+           mime_type: mime_type,
+           language: language
          ) do
       {:ok, caption} ->
         {:ok, caption}
@@ -73,4 +76,10 @@ defmodule Vmemo.Ai.Caption do
   end
 
   defp handle_caption_error(reason), do: {:error, reason}
+
+  defp resolve_language(user_id) when is_binary(user_id) do
+    Account.preferred_language(%{id: user_id})
+  end
+
+  defp resolve_language(_), do: "en"
 end
