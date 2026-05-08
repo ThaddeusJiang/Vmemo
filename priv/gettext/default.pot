@@ -1009,7 +1009,7 @@ msgstr ""
 msgid "Failed to create request: %{reason}"
 msgstr ""
 
-#: lib/vmemo_web/live/user_session_live.ex:126
+#: lib/vmemo_web/live/user_session_live.ex:127
 #, elixir-autogen, elixir-format
 msgid "Login failed. Check your email and password, then try again."
 msgstr ""
