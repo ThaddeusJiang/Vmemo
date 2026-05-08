@@ -28,7 +28,6 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> post(~p"/api/v1/images", %{})
 
       assert conn.status == 400
-      assert json_response(conn, 400)["status"] == "error"
       assert json_response(conn, 400)["error"]["code"] == "INVALID_FILE"
     end
 
@@ -82,7 +81,6 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> get(~p"/api/v1/images/999999")
 
       assert conn.status == 404
-      assert json_response(conn, 404)["status"] == "error"
       assert json_response(conn, 404)["error"]["code"] == "PHOTO_NOT_FOUND"
     end
 
@@ -90,6 +88,34 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
       conn = get(conn, ~p"/api/v1/images/1")
 
       assert conn.status == 401
+    end
+
+    test "returns image detail page url for existing image", %{
+      conn: conn,
+      raw_token: raw_token,
+      user: user
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/show-image.png",
+          note: "show image",
+          caption: "caption",
+          file_id: "show-image",
+          user_id: user.id
+        })
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> get(~p"/api/v1/images/#{image.id}")
+
+      assert conn.status == 200
+      response = json_response(conn, 200)
+      assert is_map(response["data"])
+      assert response["data"]["id"] == image.id
+      assert String.starts_with?(response["data"]["url"], "http")
+      assert String.contains?(response["data"]["url"], "/images/#{image.id}")
+      refute Map.has_key?(response, "status")
     end
   end
 
@@ -139,8 +165,7 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> delete(~p"/api/v1/images/#{image.id}")
 
       assert conn.status == 200
-      assert json_response(conn, 200)["status"] == "success"
-      assert json_response(conn, 200)["data"]["message"] == "Image deleted successfully"
+      assert json_response(conn, 200)["data"]["id"] == image.id
     end
   end
 

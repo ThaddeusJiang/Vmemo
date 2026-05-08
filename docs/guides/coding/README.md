@@ -13,6 +13,10 @@ Centralized coding guidelines live in this directory.
 - Keep this directory as the single source of coding guideline documents.
 - If new guidelines are discovered in conversations, sync them into this directory promptly.
 - Enforce module isolation and external dependency isolation.
+- Use Ash Framework style for backend domain logic:
+  - avoid Phoenix context wrapper modules for single-resource operations
+  - use resource modules directly
+  - use domain methods only for cross-resource orchestration
 - In `vmemo_web`, only use business semantics:
   - treat Typesense as "search engine"
   - treat Moondream as "vision ai"

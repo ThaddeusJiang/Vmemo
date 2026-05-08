@@ -4,7 +4,7 @@ defmodule VmemoWeb.ApiFixtures do
   """
 
   alias Vmemo.Account
-  alias Vmemo.Account.ApiTokens
+  alias Vmemo.Account.ApiToken
 
   @doc """
   Create and return a test user
@@ -37,7 +37,7 @@ defmodule VmemoWeb.ApiFixtures do
 
     attrs = Map.merge(default_attrs, attrs)
 
-    case ApiTokens.create_api_token(user, attrs) do
+    case ApiToken.create_for_user(user, attrs) do
       {:ok, _api_token, raw_token} -> raw_token
       {:error, error} -> raise "Failed to create test API token: #{inspect(error)}"
     end

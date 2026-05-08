@@ -179,6 +179,10 @@ Use this pattern for long-running work that must continue after page leave:
 
 ## 7) Ash Framework
 
+- Use Ash style, not Phoenix context style, for domain operations.
+- Do not add context wrapper modules like `Vmemo.*.*s` that proxy a single resource.
+- For single-resource operations, call and extend the canonical resource module directly.
+- Only add domain-level methods when orchestrating multiple resources or cross-resource workflows.
 - For **inner** attributes (not shown or edited by end users):
   - Prefer a descriptive resource attribute name without a leading underscore (for example `inner_purpose`).
   - Set `public? false`, and map persisted DB/search fields with leading underscore via `source :_field_name`.

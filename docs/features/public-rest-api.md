@@ -56,10 +56,9 @@ Success response (`200`):
 
 ```json
 {
-  "status": "success",
   "data": {
     "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "url": "/storage/v1/<user_id>/images/<timestamp>_<file_id>.jpg",
+    "url": "https://your-domain.com/images/e1015cc4-245c-47b9-a86f-50d8874652d0",
     "note": "My vacation photo",
     "inserted_at": "2026-04-17T07:09:47.519172Z"
   }
@@ -86,10 +85,9 @@ Success response (`200`):
 
 ```json
 {
-  "status": "success",
   "data": {
     "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "url": "/storage/v1/<user_id>/images/<timestamp>_<file_id>.jpg",
+    "url": "https://your-domain.com/images/e1015cc4-245c-47b9-a86f-50d8874652d0",
     "note": "My vacation photo",
     "inserted_at": "2026-04-17T07:09:47.519172Z"
   }
@@ -112,9 +110,8 @@ Success response (`200`):
 
 ```json
 {
-  "status": "success",
   "data": {
-    "message": "Image deleted successfully"
+    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0"
   }
 }
 ```
@@ -125,7 +122,6 @@ All API errors follow this shape:
 
 ```json
 {
-  "status": "error",
   "error": {
     "code": "ERROR_CODE",
     "message": "Human readable error message"

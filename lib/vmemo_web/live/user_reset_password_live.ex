@@ -33,11 +33,18 @@ defmodule VmemoWeb.UserResetPasswordLive do
               {gettext("Password reset failed. Check the fields below.")}
             </.error>
 
-            <.input field={@form[:password]} type="password" label="New password" required />
+            <.input
+              field={@form[:password]}
+              type="password"
+              label="New password"
+              autocomplete="new-password"
+              required
+            />
             <.input
               field={@form[:password_confirmation]}
               type="password"
               label="Confirm new password"
+              autocomplete="new-password"
               required
             />
             <:actions>

@@ -19,6 +19,7 @@ defmodule VmemoWeb.TokenLiveTest do
       assert html =~ "Tokens"
       assert html =~ "Total Tokens"
       assert html =~ "0"
+      refute html =~ "Request failed."
     end
 
     test "show token stats", %{conn: conn, user: user} do
@@ -30,6 +31,7 @@ defmodule VmemoWeb.TokenLiveTest do
       assert html =~ "Total Tokens"
       assert html =~ "Active Tokens"
       assert html =~ "Expired Tokens"
+      refute html =~ "Request failed."
     end
 
     test "can navigate to create page", %{conn: conn} do

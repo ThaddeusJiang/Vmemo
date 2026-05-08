@@ -55,8 +55,20 @@ defmodule VmemoWeb.UserSessionLive do
               phx-submit="login"
               phx-trigger-action={@trigger_submit}
             >
-              <.input field={@form[:email]} type="email" label="Email " required />
-              <.input field={@form[:password]} type="password" label="Password" required />
+              <.input
+                field={@form[:email]}
+                type="email"
+                label="Email "
+                autocomplete="email"
+                required
+              />
+              <.input
+                field={@form[:password]}
+                type="password"
+                label="Password"
+                autocomplete="current-password"
+                required
+              />
               <.input field={@form[:remember_me]} type="checkbox" label="Remember me" />
               <.error :if={@form_error != nil}>
                 {@form_error}

@@ -2,7 +2,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
   use VmemoWeb, :live_view
   use Gettext, backend: VmemoWeb.Gettext
 
-  alias Vmemo.Account.ApiTokens
+  alias Vmemo.Account.ApiToken
 
   def render(assigns) do
     ~H"""
@@ -76,7 +76,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         <.modal
           id="token-created-modal"
           show={@show_token_created}
-          on_cancel={JS.hide(to: "#token-created-modal")}
+          on_cancel={JS.push("close")}
         >
           <:header>
             <h3 class="text-lg font-semibold text-success">
@@ -101,6 +101,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
                   variant="outline"
                   phx-click="copy-token"
                   phx-value-token={@new_token}
+                  class="btn-square"
                 >
                   <.icon name="hero-clipboard" class="h-4 w-4" />
                 </.button>
@@ -114,9 +115,7 @@ defmodule VmemoWeb.ApiTokenLive.Form do
           </div>
 
           <:footer>
-            <.button phx-click={
-              JS.hide(to: "#token-created-modal") |> JS.push("navigate", to: ~p"/tokens")
-            }>
+            <.button phx-click="close">
               {gettext("I've Saved It")}
             </.button>
           </:footer>
@@ -151,25 +150,26 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         params -> params
       end
 
+    normalized_form_params = normalize_token_form_params(form_params)
+
     socket = assign(socket, :loading, true)
 
     # Use ApiTokenService to create token (includes token generation logic)
-    case ApiTokens.create_api_token(user, form_params) do
+    case ApiToken.create_for_user(user, normalized_form_params) do
       {:ok, token, raw_token} ->
         {:noreply,
          socket
          |> assign(:show_token_created, true)
          |> assign(:new_token, raw_token)
          |> assign(:new_token_expires_at, token.expires_at)
-         |> assign(:loading, false)
-         |> put_flash(:info, gettext("API Token created successfully"))}
+         |> assign(:loading, false)}
 
       {:error, _changeset} ->
         # Use AshPhoenix.Form to validate form and show errors
         # Error messages are mapped to fields automatically via validate
         form =
           AshPhoenix.Form.for_create(Vmemo.Account.ApiToken, :create)
-          |> AshPhoenix.Form.validate(form_params)
+          |> AshPhoenix.Form.validate(normalized_form_params)
           |> to_form()
 
         {:noreply,
@@ -187,8 +187,10 @@ defmodule VmemoWeb.ApiTokenLive.Form do
         params -> params
       end
 
+    normalized_form_params = normalize_token_form_params(form_params)
+
     form =
-      AshPhoenix.Form.validate(socket.assigns.form.source, form_params)
+      AshPhoenix.Form.validate(socket.assigns.form.source, normalized_form_params)
       |> to_form()
 
     {:noreply, assign(socket, :form, form)}
@@ -199,6 +201,10 @@ defmodule VmemoWeb.ApiTokenLive.Form do
      socket
      |> push_event("copy_to_clipboard", %{text: token})
      |> put_flash(:info, gettext("Token copied to clipboard"))}
+  end
+
+  def handle_event("close", _params, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/tokens")}
   end
 
   # Helper functions
@@ -216,5 +222,12 @@ defmodule VmemoWeb.ApiTokenLive.Form do
       body: formData
     })
     """
+  end
+
+  defp normalize_token_form_params(params) when is_map(params) do
+    case Map.get(params, "expires_at") do
+      "never" -> Map.put(params, "expires_at", nil)
+      _ -> params
+    end
   end
 end
