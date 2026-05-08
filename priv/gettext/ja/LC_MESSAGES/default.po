@@ -12,12 +12,12 @@ msgstr ""
 msgid "AI indexing"
 msgstr "AI インデックス"
 
-#: lib/vmemo_web/components/core_components.ex:694
+#: lib/vmemo_web/components/core_components.ex:685
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:117
+#: lib/vmemo_web/components/layouts.ex:101
 #, elixir-autogen, elixir-format
 msgid "Appearance"
 msgstr "表示"
@@ -27,7 +27,7 @@ msgstr "表示"
 msgid "Ask naturally, find instantly."
 msgstr "自然に聞いて、すぐ見つかる。"
 
-#: lib/vmemo_web/live/user_profile_live.ex:216
+#: lib/vmemo_web/live/user_profile_live.ex:222
 #, elixir-autogen, elixir-format
 msgid "Avatar is too large"
 msgstr "アバター画像が大きすぎます"
@@ -52,12 +52,12 @@ msgstr "すばやく保存し、自然言語で質問して、長文メモなし
 msgid "Capture without friction"
 msgstr "スムーズにキャプチャ"
 
-#: lib/vmemo_web/live/user_profile_live.ex:72
+#: lib/vmemo_web/live/user_profile_live.ex:78
 #, elixir-autogen, elixir-format
 msgid "Chinese"
 msgstr "中文"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:182
+#: lib/vmemo_web/live/api_token_live/index.ex:170
 #: lib/vmemo_web/live/api_token_live/show.ex:213
 #: lib/vmemo_web/live/image_id_live.ex:334
 #, elixir-autogen, elixir-format
@@ -70,7 +70,7 @@ msgstr ""
 msgid "Deployed on Zeabur"
 msgstr "Zeabur で稼働中"
 
-#: lib/vmemo_web/live/user_profile_live.ex:71
+#: lib/vmemo_web/live/user_profile_live.ex:77
 #, elixir-autogen, elixir-format
 msgid "English"
 msgstr "English"
@@ -80,7 +80,7 @@ msgstr "English"
 msgid "Explore on GitHub"
 msgstr "GitHub で見る"
 
-#: lib/vmemo_web/live/user_profile_live.ex:148
+#: lib/vmemo_web/live/user_profile_live.ex:154
 #, elixir-autogen, elixir-format
 msgid "Failed to save profile: %{reason}"
 msgstr ""
@@ -111,29 +111,28 @@ msgstr "GitHub リポジトリ"
 msgid "Instant image intake from clipboard, upload, or mobile camera."
 msgstr "クリップボード、アップロード、モバイルカメラから即時取り込み。"
 
-#: lib/vmemo_web/live/user_profile_live.ex:162
+#: lib/vmemo_web/live/user_profile_live.ex:168
 #, elixir-autogen, elixir-format
 msgid "Invalid avatar upload"
 msgstr "無効なアバターアップロードです"
 
-#: lib/vmemo_web/live/user_profile_live.ex:73
+#: lib/vmemo_web/live/user_profile_live.ex:79
 #, elixir-autogen, elixir-format
 msgid "Japanese"
 msgstr "日本語"
 
-#: lib/vmemo_web/components/layouts.ex:93
 #: lib/vmemo_web/live/jobs_live.ex:102
 #: lib/vmemo_web/live/jobs_live.ex:238
 #, elixir-autogen, elixir-format
 msgid "Jobs"
 msgstr "ジョブ"
 
-#: lib/vmemo_web/live/user_profile_live.ex:69
+#: lib/vmemo_web/live/user_profile_live.ex:75
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr "言語"
 
-#: lib/vmemo_web/components/layouts.ex:141
+#: lib/vmemo_web/components/layouts.ex:125
 #, elixir-autogen, elixir-format
 msgid "Logout"
 msgstr "ログアウト"
@@ -143,8 +142,8 @@ msgstr "ログアウト"
 msgid "Multi-upload, drag-drop, and clipboard paste are tuned for fast daily use."
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:99
-#: lib/vmemo_web/live/user_profile_live.ex:64
+#: lib/vmemo_web/live/api_token_live/index.ex:87
+#: lib/vmemo_web/live/user_profile_live.ex:67
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "名前"
@@ -154,7 +153,7 @@ msgstr "名前"
 msgid "OCR and semantic extraction make visual memories query-ready."
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:217
+#: lib/vmemo_web/live/user_profile_live.ex:223
 #, elixir-autogen, elixir-format
 msgid "Only one avatar file is allowed"
 msgstr "アバターは1ファイルのみアップロードできます"
@@ -169,7 +168,7 @@ msgstr "貼り付けまたはドラッグ"
 msgid "Profile"
 msgstr "プロフィール"
 
-#: lib/vmemo_web/live/user_profile_live.ex:138
+#: lib/vmemo_web/live/user_profile_live.ex:144
 #, elixir-autogen, elixir-format
 msgid "Profile updated successfully."
 msgstr "プロフィールを更新しました。"
@@ -206,17 +205,17 @@ msgstr "数秒で見直し"
 msgid "Revisit moments quickly and keep your memory timeline clean and predictable."
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:79
+#: lib/vmemo_web/live/user_profile_live.ex:85
 #, elixir-autogen, elixir-format
 msgid "Save Profile"
 msgstr "プロフィールを保存"
 
-#: lib/vmemo_web/live/user_profile_live.ex:78
+#: lib/vmemo_web/live/user_profile_live.ex:84
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr "保存中..."
 
-#: lib/vmemo_web/live/components/search_box.ex:256
+#: lib/vmemo_web/live/components/search_box.ex:313
 #: lib/vmemo_web/live/home_page_live.ex:35
 #: lib/vmemo_web/live/images_index_live.ex:101
 #: lib/vmemo_web/live/images_index_live.ex:126
@@ -235,24 +234,18 @@ msgstr "意味で検索"
 msgid "See less text."
 msgstr "文字を減らす。"
 
-#: lib/vmemo_web/components/layouts.ex:101
-#, elixir-autogen, elixir-format
-msgid "Settings"
-msgstr "設定"
-
 #: lib/vmemo_web/controllers/page_html/landing.html.heex:39
 #, elixir-autogen, elixir-format
 msgid "Start capturing"
 msgstr "キャプチャを開始"
 
-#: lib/vmemo_web/components/layouts.ex:126
+#: lib/vmemo_web/components/layouts.ex:110
 #, elixir-autogen, elixir-format
 msgid "Toggle light or dark mode"
 msgstr "ライト/ダークモードを切り替え"
 
-#: lib/vmemo_web/components/layouts.ex:109
+#: lib/vmemo_web/components/layouts.ex:93
 #: lib/vmemo_web/live/api_token_live/index.ex:12
-#: lib/vmemo_web/live/api_token_live/index.ex:55
 #, elixir-autogen, elixir-format
 msgid "Tokens"
 msgstr "トークン"
@@ -267,7 +260,7 @@ msgstr "合計"
 msgid "Understand"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:218
+#: lib/vmemo_web/live/user_profile_live.ex:224
 #, elixir-autogen, elixir-format
 msgid "Unsupported avatar file type"
 msgstr ""
@@ -304,7 +297,7 @@ msgstr ""
 msgid "images"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:335
+#: lib/vmemo_web/live/user_settings_live.ex:345
 #, elixir-autogen, elixir-format
 msgid "A link to confirm your email change has been sent to the new address."
 msgstr "メール変更確認リンクを新しいメールアドレスに送信しました。"
@@ -314,124 +307,124 @@ msgstr "メール変更確認リンクを新しいメールアドレスに送信
 msgid "Account Settings"
 msgstr "アカウント設定"
 
-#: lib/vmemo_web/live/user_settings_live.ex:45
+#: lib/vmemo_web/live/user_settings_live.ex:52
 #, elixir-autogen, elixir-format
 msgid "Change Email"
 msgstr "メール変更"
 
-#: lib/vmemo_web/live/user_settings_live.ex:88
+#: lib/vmemo_web/live/user_settings_live.ex:98
 #, elixir-autogen, elixir-format
 msgid "Change Password"
 msgstr "パスワード変更"
 
-#: lib/vmemo_web/live/user_settings_live.ex:45
-#: lib/vmemo_web/live/user_settings_live.ex:87
+#: lib/vmemo_web/live/user_settings_live.ex:52
+#: lib/vmemo_web/live/user_settings_live.ex:97
 #, elixir-autogen, elixir-format
 msgid "Changing..."
 msgstr "変更中..."
 
-#: lib/vmemo_web/live/user_settings_live.ex:75
+#: lib/vmemo_web/live/user_settings_live.ex:83
 #, elixir-autogen, elixir-format
 msgid "Confirm new password"
 msgstr "新しいパスワード（確認）"
 
-#: lib/vmemo_web/live/user_settings_live.ex:40
-#: lib/vmemo_web/live/user_settings_live.ex:81
+#: lib/vmemo_web/live/user_settings_live.ex:46
+#: lib/vmemo_web/live/user_settings_live.ex:90
 #, elixir-autogen, elixir-format
 msgid "Current password"
 msgstr "現在のパスワード"
 
-#: lib/vmemo_web/live/user_settings_live.ex:96
+#: lib/vmemo_web/live/user_settings_live.ex:106
 #, elixir-autogen, elixir-format
 msgid "Data Export"
 msgstr "データエクスポート"
 
-#: lib/vmemo_web/live/user_settings_live.ex:108
+#: lib/vmemo_web/live/user_settings_live.ex:118
 #, elixir-autogen, elixir-format
 msgid "Data Import"
 msgstr "データインポート"
 
-#: lib/vmemo_web/live/user_settings_live.ex:98
+#: lib/vmemo_web/live/user_settings_live.ex:108
 #, elixir-autogen, elixir-format
 msgid "Download your images, notes, and linked files as a ZIP file."
 msgstr "画像・ノート・関連ファイルを ZIP ファイルとしてダウンロードします。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:34
+#: lib/vmemo_web/live/user_settings_live.ex:37
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "メール"
 
-#: lib/vmemo_web/live/user_settings_live.ex:234
+#: lib/vmemo_web/live/user_settings_live.ex:244
 #, elixir-autogen, elixir-format
 msgid "Email change link is invalid or it has expired."
 msgstr "メール変更リンクが無効か、有効期限切れです。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:231
+#: lib/vmemo_web/live/user_settings_live.ex:241
 #, elixir-autogen, elixir-format
 msgid "Email changed successfully."
 msgstr "メールを変更しました。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:216
+#: lib/vmemo_web/live/user_settings_live.ex:226
 #, elixir-autogen, elixir-format
 msgid "Errors"
 msgstr "エラー"
 
-#: lib/vmemo_web/live/user_settings_live.ex:102
+#: lib/vmemo_web/live/user_settings_live.ex:112
 #, elixir-autogen, elixir-format
 msgid "Export Data"
 msgstr "データをエクスポート"
 
-#: lib/vmemo_web/live/user_settings_live.ex:302
+#: lib/vmemo_web/live/user_settings_live.ex:312
 #, elixir-autogen, elixir-format
 msgid "Failed to read ZIP file."
 msgstr "ZIP ファイルの読み込みに失敗しました。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:189
+#: lib/vmemo_web/live/user_settings_live.ex:199
 #, elixir-autogen, elixir-format
 msgid "Files copied"
 msgstr "コピー済みファイル"
 
-#: lib/vmemo_web/live/user_settings_live.ex:190
+#: lib/vmemo_web/live/user_settings_live.ex:200
 #, elixir-autogen, elixir-format
 msgid "Files skipped"
 msgstr "スキップしたファイル"
 
-#: lib/vmemo_web/live/user_settings_live.ex:191
+#: lib/vmemo_web/live/user_settings_live.ex:201
 #, elixir-autogen, elixir-format
 msgid "Images created"
 msgstr "作成した画像"
 
-#: lib/vmemo_web/live/user_settings_live.ex:192
+#: lib/vmemo_web/live/user_settings_live.ex:202
 #, elixir-autogen, elixir-format
 msgid "Images skipped"
 msgstr "スキップした画像"
 
-#: lib/vmemo_web/live/user_settings_live.ex:170
+#: lib/vmemo_web/live/user_settings_live.ex:180
 #, elixir-autogen, elixir-format
 msgid "Import Data"
 msgstr "データをインポート"
 
-#: lib/vmemo_web/live/user_settings_live.ex:179
+#: lib/vmemo_web/live/user_settings_live.ex:189
 #, elixir-autogen, elixir-format
 msgid "Import Result"
 msgstr "インポート結果"
 
-#: lib/vmemo_web/live/user_settings_live.ex:419
+#: lib/vmemo_web/live/user_settings_live.ex:429
 #, elixir-autogen, elixir-format
 msgid "Import completed with errors."
 msgstr "エラー付きでインポートが完了しました。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:426
+#: lib/vmemo_web/live/user_settings_live.ex:436
 #, elixir-autogen, elixir-format
 msgid "Import failed: %{reason}"
 msgstr "インポート失敗: %{reason}"
 
-#: lib/vmemo_web/live/user_settings_live.ex:196
+#: lib/vmemo_web/live/user_settings_live.ex:206
 #, elixir-autogen, elixir-format
 msgid "Links created"
 msgstr "作成したリンク"
 
-#: lib/vmemo_web/live/user_settings_live.ex:199
+#: lib/vmemo_web/live/user_settings_live.ex:209
 #, elixir-autogen, elixir-format
 msgid "Links skipped"
 msgstr "スキップしたリンク"
@@ -441,68 +434,68 @@ msgstr "スキップしたリンク"
 msgid "Manage your account email and password settings"
 msgstr "アカウントのメールとパスワード設定を管理します"
 
-#: lib/vmemo_web/live/user_settings_live.ex:69
+#: lib/vmemo_web/live/user_settings_live.ex:76
 #, elixir-autogen, elixir-format
 msgid "New password"
 msgstr "新しいパスワード"
 
-#: lib/vmemo_web/live/user_settings_live.ex:193
+#: lib/vmemo_web/live/user_settings_live.ex:203
 #, elixir-autogen, elixir-format
 msgid "Notes created"
 msgstr "作成したノート"
 
-#: lib/vmemo_web/live/user_settings_live.ex:194
+#: lib/vmemo_web/live/user_settings_live.ex:204
 #, elixir-autogen, elixir-format
 msgid "Notes skipped"
 msgstr "スキップしたノート"
 
-#: lib/vmemo_web/live/user_settings_live.ex:281
+#: lib/vmemo_web/live/user_settings_live.ex:291
 #, elixir-autogen, elixir-format
 msgid "Please choose a ZIP file to import."
 msgstr "インポートする ZIP ファイルを選択してください。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:139
+#: lib/vmemo_web/live/user_settings_live.ex:149
 #, elixir-autogen, elixir-format
 msgid "Remove"
 msgstr "削除"
 
-#: lib/vmemo_web/live/user_settings_live.ex:404
+#: lib/vmemo_web/live/user_settings_live.ex:414
 #, elixir-autogen, elixir-format
 msgid "Too large"
 msgstr "ファイルが大きすぎます"
 
-#: lib/vmemo_web/live/user_settings_live.ex:202
+#: lib/vmemo_web/live/user_settings_live.ex:212
 #, elixir-autogen, elixir-format
 msgid "Typesense images upserted"
 msgstr "Typesense 画像を upsert 済み"
 
-#: lib/vmemo_web/live/user_settings_live.ex:209
+#: lib/vmemo_web/live/user_settings_live.ex:219
 #, elixir-autogen, elixir-format
 msgid "Typesense notes upserted"
 msgstr "Typesense ノートを upsert 済み"
 
-#: lib/vmemo_web/live/user_settings_live.ex:110
+#: lib/vmemo_web/live/user_settings_live.ex:120
 #, elixir-autogen, elixir-format
 msgid "Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources."
 msgstr "このアプリでエクスポートした ZIP をアップロードしてください。インポートはファイルとDBレコードを作成し、Ash リソースから検索インデックスを再構築します。"
 
-#: lib/vmemo_web/live/components/search_box.ex:108
-#: lib/vmemo_web/live/user_settings_live.ex:284
+#: lib/vmemo_web/live/components/search_box.ex:100
+#: lib/vmemo_web/live/user_settings_live.ex:294
 #, elixir-autogen, elixir-format
 msgid "Upload is still in progress."
 msgstr "アップロードはまだ進行中です。"
 
-#: lib/vmemo_web/live/user_settings_live.ex:152
+#: lib/vmemo_web/live/user_settings_live.ex:162
 #, elixir-autogen, elixir-format
 msgid "Upload progress"
 msgstr "アップロード進捗"
 
-#: lib/vmemo_web/live/user_settings_live.ex:406
+#: lib/vmemo_web/live/user_settings_live.ex:416
 #, elixir-autogen, elixir-format
 msgid "You have selected an unacceptable file type"
 msgstr "許可されていないファイル形式が選択されています"
 
-#: lib/vmemo_web/live/user_settings_live.ex:405
+#: lib/vmemo_web/live/user_settings_live.ex:415
 #, elixir-autogen, elixir-format
 msgid "You have selected too many files"
 msgstr "選択したファイル数が多すぎます"
@@ -527,13 +520,8 @@ msgstr "90日"
 msgid "API Token Details"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:165
-#, elixir-autogen, elixir-format
-msgid "API Token created successfully"
-msgstr "API トークンを作成しました"
-
-#: lib/vmemo_web/live/api_token_live/index.ex:234
-#: lib/vmemo_web/live/api_token_live/show.ex:251
+#: lib/vmemo_web/live/api_token_live/index.ex:236
+#: lib/vmemo_web/live/api_token_live/show.ex:252
 #, elixir-autogen, elixir-format
 msgid "API Token deleted"
 msgstr ""
@@ -543,19 +531,19 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:75
+#: lib/vmemo_web/live/api_token_live/index.ex:64
 #, elixir-autogen, elixir-format
 msgid "Active Tokens"
 msgstr "有効なトークン"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:169
+#: lib/vmemo_web/live/api_token_live/index.ex:157
 #: lib/vmemo_web/live/api_token_live/show.ex:200
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete the token"
 msgstr "このトークンを削除しますか"
 
 #: lib/vmemo_web/live/api_token_live/form.ex:46
-#: lib/vmemo_web/live/api_token_live/index.ex:180
+#: lib/vmemo_web/live/api_token_live/index.ex:168
 #: lib/vmemo_web/live/api_token_live/show.ex:211
 #, elixir-autogen, elixir-format
 msgid "Cancel"
@@ -592,7 +580,7 @@ msgstr "キャプション状態"
 msgid "Clear search"
 msgstr "検索をクリア"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:44
+#: lib/vmemo_web/live/api_token_live/index.ex:46
 #: lib/vmemo_web/live/api_token_live/show.ex:21
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Close"
@@ -608,7 +596,7 @@ msgstr "完了"
 msgid "Create API Token"
 msgstr "API トークンを作成"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:57
+#: lib/vmemo_web/live/api_token_live/index.ex:14
 #, elixir-autogen, elixir-format
 msgid "Create New Token"
 msgstr "新しいトークンを作成"
@@ -619,7 +607,7 @@ msgstr "新しいトークンを作成"
 msgid "Created"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:164
+#: lib/vmemo_web/live/api_token_live/index.ex:152
 #: lib/vmemo_web/live/api_token_live/show.ex:195
 #, elixir-autogen, elixir-format
 msgid "Delete API Token"
@@ -635,10 +623,10 @@ msgstr ""
 msgid "Disable"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:103
-#: lib/vmemo_web/live/api_token_live/index.ex:255
+#: lib/vmemo_web/live/api_token_live/index.ex:91
+#: lib/vmemo_web/live/api_token_live/index.ex:257
 #: lib/vmemo_web/live/api_token_live/show.ex:46
-#: lib/vmemo_web/live/api_token_live/show.ex:270
+#: lib/vmemo_web/live/api_token_live/show.ex:272
 #, elixir-autogen, elixir-format
 msgid "Disabled"
 msgstr ""
@@ -648,8 +636,8 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:255
-#: lib/vmemo_web/live/api_token_live/show.ex:270
+#: lib/vmemo_web/live/api_token_live/index.ex:257
+#: lib/vmemo_web/live/api_token_live/show.ex:272
 #, elixir-autogen, elixir-format
 msgid "Enabled"
 msgstr "有効"
@@ -659,18 +647,18 @@ msgstr "有効"
 msgid "Expiration"
 msgstr "有効期限"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:106
+#: lib/vmemo_web/live/api_token_live/index.ex:94
 #: lib/vmemo_web/live/api_token_live/show.ex:49
 #, elixir-autogen, elixir-format
 msgid "Expired"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:83
+#: lib/vmemo_web/live/api_token_live/index.ex:69
 #, elixir-autogen, elixir-format
 msgid "Expired Tokens"
 msgstr "期限切れトークン"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:117
+#: lib/vmemo_web/live/api_token_live/index.ex:105
 #: lib/vmemo_web/live/api_token_live/show.ex:68
 #: lib/vmemo_web/live/api_token_live/show.ex:112
 #, elixir-autogen, elixir-format
@@ -693,8 +681,8 @@ msgstr ""
 msgid "Failed to retry vision embedding"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:267
-#: lib/vmemo_web/live/api_token_live/show.ex:282
+#: lib/vmemo_web/live/api_token_live/index.ex:269
+#: lib/vmemo_web/live/api_token_live/show.ex:284
 #, elixir-autogen, elixir-format
 msgid "Failed to toggle status"
 msgstr "ステータス切替に失敗しました"
@@ -704,7 +692,7 @@ msgstr "ステータス切替に失敗しました"
 msgid "Failure reason"
 msgstr "失敗理由"
 
-#: lib/vmemo_web/live/api_token_live/form.ex:120
+#: lib/vmemo_web/live/api_token_live/form.ex:119
 #, elixir-autogen, elixir-format
 msgid "I've Saved It"
 msgstr "保存しました"
@@ -725,7 +713,7 @@ msgstr ""
 msgid "It's recommended to set a reasonable expiration time for better security"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:35
+#: lib/vmemo_web/live/api_token_live/index.ex:37
 #, elixir-autogen, elixir-format
 msgid "It's recommended to update these tokens in advance"
 msgstr ""
@@ -740,13 +728,8 @@ msgstr ""
 msgid "Last Used"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:13
-#, elixir-autogen, elixir-format
-msgid "Manage your API access tokens"
-msgstr "API アクセストークンを管理"
-
 #: lib/vmemo_web/live/api_token_live/form.ex:41
-#: lib/vmemo_web/live/api_token_live/index.ex:121
+#: lib/vmemo_web/live/api_token_live/index.ex:109
 #: lib/vmemo_web/live/api_token_live/show.ex:72
 #: lib/vmemo_web/live/api_token_live/show.ex:117
 #, elixir-autogen, elixir-format
@@ -764,7 +747,7 @@ msgid "No jobs yet"
 msgstr "ジョブはまだありません"
 
 #: lib/vmemo_web/components/notifications_components.ex:46
-#: lib/vmemo_web/live/notifications_live.ex:29
+#: lib/vmemo_web/live/notifications_live.ex:30
 #, elixir-autogen, elixir-format
 msgid "No notifications yet"
 msgstr "通知はありません"
@@ -798,7 +781,7 @@ msgstr "保留"
 msgid "Please save the token immediately after creation, as you won't be able to view the full content again"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:24
+#: lib/vmemo_web/live/api_token_live/index.ex:26
 #, elixir-autogen, elixir-format
 msgid "Please update or delete expired tokens promptly"
 msgstr ""
@@ -810,7 +793,7 @@ msgid "Processing"
 msgstr "処理中"
 
 #: lib/vmemo_web/live/api_token_live/form.ex:20
-#: lib/vmemo_web/live/api_token_live/index.ex:50
+#: lib/vmemo_web/live/api_token_live/index.ex:52
 #: lib/vmemo_web/live/api_token_live/show.ex:27
 #, elixir-autogen, elixir-format
 msgid "Processing..."
@@ -857,7 +840,7 @@ msgstr ""
 msgid "This Week"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:172
+#: lib/vmemo_web/live/api_token_live/index.ex:160
 #: lib/vmemo_web/live/api_token_live/show.ex:203
 #, elixir-autogen, elixir-format
 msgid "This action cannot be undone. Applications using this token will no longer be able to access the API."
@@ -868,18 +851,18 @@ msgstr "この操作は取り消せません。このトークンを使うアプ
 msgid "Today"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:91
+#: lib/vmemo_web/live/api_token_live/index.ex:74
 #, elixir-autogen, elixir-format
 msgid "Today's Usage"
 msgstr "本日の利用数"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:110
+#: lib/vmemo_web/live/api_token_live/index.ex:98
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Token"
 msgstr "トークン"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:261
-#: lib/vmemo_web/live/api_token_live/show.ex:276
+#: lib/vmemo_web/live/api_token_live/index.ex:263
+#: lib/vmemo_web/live/api_token_live/show.ex:278
 #, elixir-autogen, elixir-format
 msgid "Token %{status}"
 msgstr "トークン: %{status}"
@@ -910,7 +893,7 @@ msgstr ""
 msgid "Token Status"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:201
+#: lib/vmemo_web/live/api_token_live/form.ex:203
 #, elixir-autogen, elixir-format
 msgid "Token copied to clipboard"
 msgstr "トークンをクリップボードにコピーしました"
@@ -920,7 +903,7 @@ msgstr "トークンをクリップボードにコピーしました"
 msgid "Token name is used to identify different applications or purposes"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:67
+#: lib/vmemo_web/live/api_token_live/index.ex:59
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Total Tokens"
 msgstr "トークン合計"
@@ -940,13 +923,13 @@ msgstr "上の検索を変えるか、"
 msgid "Upload images"
 msgstr "画像をアップロード"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:124
+#: lib/vmemo_web/live/api_token_live/index.ex:112
 #: lib/vmemo_web/live/api_token_live/show.ex:136
 #, elixir-autogen, elixir-format
 msgid "Usage Count"
 msgstr "利用回数"
 
-#: lib/vmemo_web/live/api_token_live/form.ex:111
+#: lib/vmemo_web/live/api_token_live/form.ex:112
 #, elixir-autogen, elixir-format
 msgid "Usage Example"
 msgstr "利用例"
@@ -967,6 +950,7 @@ msgid "Usage format"
 msgstr ""
 
 #: lib/vmemo_web/components/notifications_components.ex:60
+#: lib/vmemo_web/live/notifications_live.ex:26
 #, elixir-autogen, elixir-format
 msgid "View all notifications"
 msgstr "すべての通知を見る"
@@ -991,12 +975,12 @@ msgstr ""
 msgid "results"
 msgstr "件の結果"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:22
+#: lib/vmemo_web/live/api_token_live/index.ex:24
 #, elixir-autogen, elixir-format
 msgid "tokens have expired"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:32
+#: lib/vmemo_web/live/api_token_live/index.ex:34
 #, elixir-autogen, elixir-format
 msgid "tokens will expire within 7 days"
 msgstr ""
@@ -1006,8 +990,8 @@ msgstr ""
 msgid "Connection error. Check your network."
 msgstr "接続エラーです。ネットワークを確認してください。"
 
-#: lib/vmemo_web/live/api_token_live/index.ex:240
-#: lib/vmemo_web/live/api_token_live/show.ex:258
+#: lib/vmemo_web/live/api_token_live/index.ex:242
+#: lib/vmemo_web/live/api_token_live/show.ex:259
 #, elixir-autogen, elixir-format
 msgid "Delete failed. Retry."
 msgstr "削除に失敗しました。再試行してください。"
@@ -1017,7 +1001,7 @@ msgstr "削除に失敗しました。再試行してください。"
 msgid "Failed to create request: %{reason}"
 msgstr "リクエストの作成に失敗しました: %{reason}"
 
-#: lib/vmemo_web/live/user_session_live.ex:114
+#: lib/vmemo_web/live/user_session_live.ex:126
 #, elixir-autogen, elixir-format
 msgid "Login failed. Check your email and password, then try again."
 msgstr "ログインに失敗しました。メールアドレスとパスワードを確認して再試行してください。"
@@ -1032,11 +1016,12 @@ msgstr "ネットワークエラーです。接続を確認してください。
 msgid "Password reset failed. Check the fields below."
 msgstr "パスワードのリセットに失敗しました。以下の項目を確認してください。"
 
-#: lib/vmemo_web/live/user_reset_password_live.ex:158
+#: lib/vmemo_web/live/user_reset_password_live.ex:165
 #, elixir-autogen, elixir-format
 msgid "Password reset failed. Check your input and submit again."
 msgstr "パスワードのリセットに失敗しました。入力内容を確認して再送信してください。"
 
+#: lib/vmemo_web/live/api_token_live/index.ex:208
 #: lib/vmemo_web/live/components/moondream_panel.ex:167
 #: lib/vmemo_web/live/components/moondream_panel.ex:183
 #: lib/vmemo_web/live/components/moondream_panel.ex:209
@@ -1050,17 +1035,17 @@ msgstr "リクエストに失敗しました。"
 msgid "Request timed out."
 msgstr "リクエストがタイムアウトしました。"
 
-#: lib/vmemo_web/live/components/search_box.ex:157
+#: lib/vmemo_web/live/components/search_box.ex:149
 #, elixir-autogen, elixir-format
 msgid "Search by image failed: %{reason}"
 msgstr "画像検索に失敗しました: %{reason}"
 
-#: lib/vmemo_web/live/components/search_box.ex:149
+#: lib/vmemo_web/live/components/search_box.ex:141
 #, elixir-autogen, elixir-format
 msgid "Search failed: index unavailable or upload failed."
 msgstr "検索に失敗しました: インデックスが利用できないか、アップロードに失敗しました。"
 
-#: lib/vmemo_web/live/components/search_box.ex:116
+#: lib/vmemo_web/live/components/search_box.ex:108
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr "検索には画像を1枚だけ使用してください。余分なファイルを削除してください。"
@@ -1071,33 +1056,50 @@ msgstr "検索には画像を1枚だけ使用してください。余分なフ�
 msgid "Rotate and save"
 msgstr "回転して保存"
 
-#: lib/vmemo_web/live/components/search_box.ex:235
-#: lib/vmemo_web/live/components/search_box.ex:239
+#: lib/vmemo_web/live/components/search_box.ex:292
+#: lib/vmemo_web/live/components/search_box.ex:296
 #, elixir-autogen, elixir-format
 msgid "Drop image to upload"
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:260
+#: lib/vmemo_web/live/components/search_box.ex:317
 #, elixir-autogen, elixir-format
 msgid "Image search and text search are mutually exclusive. Remove image to search by text."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:194
+#: lib/vmemo_web/live/components/search_box.ex:186
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Image uploaded successfully."
 msgstr "プロフィールを更新しました。"
 
-#: lib/vmemo_web/live/components/search_box.ex:73
+#: lib/vmemo_web/live/components/search_box.ex:60
 #, elixir-autogen, elixir-format
 msgid "Unknown image action."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:202
+#: lib/vmemo_web/live/components/search_box.ex:194
+#: lib/vmemo_web/live/components/search_box.ex:242
 #, elixir-autogen, elixir-format
 msgid "Upload failed. Please retry."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:210
+#: lib/vmemo_web/live/components/search_box.ex:202
 #, elixir-autogen, elixir-format
 msgid "Upload failed: %{reason}"
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:249
+#: lib/vmemo_web/live/components/search_box.ex:258
+#, elixir-autogen, elixir-format
+msgid "%{count} images uploaded successfully."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:438
+#, elixir-autogen, elixir-format
+msgid "Search by image supports exactly one image. Use Upload for multiple images."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:262
+#, elixir-autogen, elixir-format
+msgid "Some images failed to upload. Please retry failed ones."
 msgstr ""
