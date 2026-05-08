@@ -1,8 +1,10 @@
 defmodule Vmemo.ChatImageScopedTest do
   use Vmemo.DataCase, async: true
 
+  import Mock
   import Vmemo.AccountFixtures
 
+  alias Vmemo.Account
   alias Vmemo.Chat
   alias Vmemo.Chat.AiRouter
   alias Vmemo.Chat.Commands
@@ -69,6 +71,30 @@ defmodule Vmemo.ChatImageScopedTest do
 
       assert :skip =
                AiRouter.route_image_tool(conversation, "帮我找其他图片", nil)
+    end
+
+    test "passes actor profile language to caption tool" do
+      user = user_fixture()
+      {:ok, _profile} = Account.upsert_user_profile(user, %{name: "Tester", language: "zh"})
+      image = create_image!(user)
+      conversation = %{kind: "image_scoped", image_id: image.id}
+
+      with_mock Vmemo.Ai.ImageData,
+        fetch_base64_from_url: fn _url -> {:ok, {Base.encode64("img"), "image/png"}} end do
+        with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
+          with_mock Vmemo.Ai.AshAiVision,
+            caption: fn _image_base64, opts ->
+              send(self(), {:caption_opts, opts})
+              {:ok, "中文说明"}
+            end do
+            assert {:ok, %{tool_name: "caption", provider: "openrouter", text: "中文说明"}} =
+                     AiRouter.route_image_tool(conversation, "/caption", user)
+
+            assert_receive {:caption_opts, opts}
+            assert opts[:language] == "zh"
+          end
+        end
+      end
     end
   end
 

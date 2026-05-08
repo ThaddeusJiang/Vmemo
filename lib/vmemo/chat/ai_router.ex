@@ -2,6 +2,7 @@ defmodule Vmemo.Chat.AiRouter do
   @moduledoc false
 
   alias SmallSdk.Moondream
+  alias Vmemo.Account
   alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.ImageData
   alias Vmemo.Ai.VisionConfig
@@ -113,7 +114,7 @@ defmodule Vmemo.Chat.AiRouter do
   defp run_tool(image_id, tool, prompt, actor) do
     with {:ok, image} <- Ash.get(Image, image_id, actor: actor),
          {:ok, {image_base64, mime_type}} <- ImageData.fetch_base64_from_url(image.url),
-         {:ok, result} <- call_tool(tool, image_base64, mime_type, prompt) do
+         {:ok, result} <- call_tool(tool, image_base64, mime_type, prompt, actor) do
       {:ok, %{provider: provider_for(tool), tool_name: tool, text: normalize_result(result)}}
     else
       {:error, reason} ->
@@ -126,38 +127,45 @@ defmodule Vmemo.Chat.AiRouter do
     end
   end
 
-  defp call_tool("caption", image_base64, mime_type, _prompt) do
+  defp call_tool("caption", image_base64, mime_type, _prompt, actor) do
     config = VisionConfig.resolve()
-    AshAiVision.caption(image_base64, model: config.model, mime_type: mime_type)
+
+    AshAiVision.caption(
+      image_base64,
+      model: config.model,
+      mime_type: mime_type,
+      language: Account.preferred_language(actor)
+    )
   end
 
-  defp call_tool("query", _image_base64, _mime_type, ""),
+  defp call_tool("query", _image_base64, _mime_type, "", _actor),
     do: {:error, "Prompt is required for /query"}
 
-  defp call_tool("query", image_base64, mime_type, prompt) do
+  defp call_tool("query", image_base64, mime_type, prompt, _actor) do
     config = VisionConfig.resolve()
     AshAiVision.query(image_base64, prompt, model: config.model, mime_type: mime_type)
   end
 
-  defp call_tool("point", _image_base64, _mime_type, ""),
+  defp call_tool("point", _image_base64, _mime_type, "", _actor),
     do: {:error, "Prompt is required for /point"}
 
-  defp call_tool("detect", _image_base64, _mime_type, ""),
+  defp call_tool("detect", _image_base64, _mime_type, "", _actor),
     do: {:error, "Prompt is required for /detect"}
 
-  defp call_tool("segment", _image_base64, _mime_type, ""),
+  defp call_tool("segment", _image_base64, _mime_type, "", _actor),
     do: {:error, "Prompt is required for /segment"}
 
-  defp call_tool("point", image_base64, mime_type, prompt),
+  defp call_tool("point", image_base64, mime_type, prompt, _actor),
     do: Moondream.point(image_base64, prompt, mime_type: mime_type)
 
-  defp call_tool("detect", image_base64, mime_type, prompt),
+  defp call_tool("detect", image_base64, mime_type, prompt, _actor),
     do: Moondream.detect(image_base64, prompt, mime_type: mime_type)
 
-  defp call_tool("segment", image_base64, mime_type, prompt),
+  defp call_tool("segment", image_base64, mime_type, prompt, _actor),
     do: Moondream.segment(image_base64, prompt, mime_type: mime_type)
 
-  defp call_tool(_tool, _image_base64, _mime_type, _prompt), do: {:error, "Unsupported tool"}
+  defp call_tool(_tool, _image_base64, _mime_type, _prompt, _actor),
+    do: {:error, "Unsupported tool"}
 
   defp provider_for(tool) when tool in ["query", "caption"], do: "openrouter"
   defp provider_for(_tool), do: "moondream-station"

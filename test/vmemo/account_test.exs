@@ -42,6 +42,24 @@ defmodule Vmemo.AccountTest do
     end
   end
 
+  describe "preferred_language/1" do
+    test "returns en when actor is nil" do
+      assert Account.preferred_language(nil) == "en"
+    end
+
+    test "returns profile language when profile exists" do
+      user = user_fixture()
+      {:ok, _profile} = Account.upsert_user_profile(user, %{name: "Tester", language: "zh"})
+
+      assert Account.preferred_language(%{id: user.id}) == "zh"
+    end
+
+    test "returns en when user has no profile" do
+      user = user_fixture()
+      assert Account.preferred_language(%{id: user.id}) == "en"
+    end
+  end
+
   describe "get_user!/1" do
     test "raises if id is invalid" do
       assert_raise Ash.Error.Invalid, fn ->

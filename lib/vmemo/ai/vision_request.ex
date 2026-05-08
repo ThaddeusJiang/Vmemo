@@ -8,6 +8,7 @@ defmodule Vmemo.Ai.VisionRequest do
   require Ash.Query
   require Logger
   alias SmallSdk.Moondream
+  alias Vmemo.Account
   alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.ImagePreprocessor
   alias Vmemo.Ai.VisionConfig
@@ -258,13 +259,14 @@ defmodule Vmemo.Ai.VisionRequest do
 
   defp run_vision_request({:error, _} = error, _request, _image_base64, _mime_type), do: error
 
-  defp run_vision_request({:ok, :caption}, _request, image_base64, mime_type) do
+  defp run_vision_request({:ok, :caption}, request, image_base64, mime_type) do
     config = VisionConfig.resolve()
 
     AshAiVision.caption(
       image_base64,
       model: config.model,
-      mime_type: mime_type
+      mime_type: mime_type,
+      language: Account.preferred_language(%{id: request.user_id})
     )
   end
 
