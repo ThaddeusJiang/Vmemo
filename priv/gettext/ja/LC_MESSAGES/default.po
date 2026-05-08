@@ -1060,46 +1060,46 @@ msgstr "回転して保存"
 #: lib/vmemo_web/live/components/search_box.ex:296
 #, elixir-autogen, elixir-format
 msgid "Drop image to upload"
-msgstr ""
+msgstr "画像をドロップしてアップロード"
 
 #: lib/vmemo_web/live/components/search_box.ex:317
 #, elixir-autogen, elixir-format
 msgid "Image search and text search are mutually exclusive. Remove image to search by text."
-msgstr ""
+msgstr "画像検索とテキスト検索は同時に使えません。テキスト検索するには画像を削除してください。"
 
 #: lib/vmemo_web/live/components/search_box.ex:186
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Image uploaded successfully."
-msgstr "プロフィールを更新しました。"
+msgstr "画像をアップロードしました。"
 
 #: lib/vmemo_web/live/components/search_box.ex:60
 #, elixir-autogen, elixir-format
 msgid "Unknown image action."
-msgstr ""
+msgstr "不明な画像アクションです。"
 
 #: lib/vmemo_web/live/components/search_box.ex:194
 #: lib/vmemo_web/live/components/search_box.ex:242
 #, elixir-autogen, elixir-format
 msgid "Upload failed. Please retry."
-msgstr ""
+msgstr "アップロードに失敗しました。再試行してください。"
 
 #: lib/vmemo_web/live/components/search_box.ex:202
 #, elixir-autogen, elixir-format
 msgid "Upload failed: %{reason}"
-msgstr ""
+msgstr "アップロード失敗: %{reason}"
 
 #: lib/vmemo_web/live/components/search_box.ex:249
 #: lib/vmemo_web/live/components/search_box.ex:258
 #, elixir-autogen, elixir-format
 msgid "%{count} images uploaded successfully."
-msgstr ""
+msgstr "%{count} 枚の画像をアップロードしました。"
 
 #: lib/vmemo_web/live/components/search_box.ex:438
 #, elixir-autogen, elixir-format
 msgid "Search by image supports exactly one image. Use Upload for multiple images."
-msgstr ""
+msgstr "画像検索は1枚のみ対応です。複数枚はアップロードを使用してください。"
 
 #: lib/vmemo_web/live/components/search_box.ex:262
 #, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
-msgstr ""
+msgstr "一部の画像のアップロードに失敗しました。失敗した画像を再試行してください。"

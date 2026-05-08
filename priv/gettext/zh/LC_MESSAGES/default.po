@@ -1060,46 +1060,46 @@ msgstr "旋转并保存"
 #: lib/vmemo_web/live/components/search_box.ex:296
 #, elixir-autogen, elixir-format
 msgid "Drop image to upload"
-msgstr ""
+msgstr "拖拽图片以上传"
 
 #: lib/vmemo_web/live/components/search_box.ex:317
 #, elixir-autogen, elixir-format
 msgid "Image search and text search are mutually exclusive. Remove image to search by text."
-msgstr ""
+msgstr "图片搜索与文字搜索互斥。请移除图片后再使用文字搜索。"
 
 #: lib/vmemo_web/live/components/search_box.ex:186
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Image uploaded successfully."
-msgstr "资料更新成功。"
+msgstr "图片上传成功。"
 
 #: lib/vmemo_web/live/components/search_box.ex:60
 #, elixir-autogen, elixir-format
 msgid "Unknown image action."
-msgstr ""
+msgstr "未知的图片操作。"
 
 #: lib/vmemo_web/live/components/search_box.ex:194
 #: lib/vmemo_web/live/components/search_box.ex:242
 #, elixir-autogen, elixir-format
 msgid "Upload failed. Please retry."
-msgstr ""
+msgstr "上传失败，请重试。"
 
 #: lib/vmemo_web/live/components/search_box.ex:202
 #, elixir-autogen, elixir-format
 msgid "Upload failed: %{reason}"
-msgstr ""
+msgstr "上传失败：%{reason}"
 
 #: lib/vmemo_web/live/components/search_box.ex:249
 #: lib/vmemo_web/live/components/search_box.ex:258
 #, elixir-autogen, elixir-format
 msgid "%{count} images uploaded successfully."
-msgstr ""
+msgstr "已成功上传 %{count} 张图片。"
 
 #: lib/vmemo_web/live/components/search_box.ex:438
 #, elixir-autogen, elixir-format
 msgid "Search by image supports exactly one image. Use Upload for multiple images."
-msgstr ""
+msgstr "以图搜索仅支持 1 张图片。多张图片请使用上传。"
 
 #: lib/vmemo_web/live/components/search_box.ex:262
 #, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
-msgstr ""
+msgstr "部分图片上传失败，请重试失败的图片。"
