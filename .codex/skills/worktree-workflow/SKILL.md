@@ -1,6 +1,6 @@
 ---
-name: "worktree"
-description: "Create or validate a Vmemo Git worktree with automatic .env bootstrap from main, minimal env/runtime checks, optional port-conflict handling, and mandatory cleanup."
+name: "worktree-workflow"
+description: "在 Vmemo 中创建或校验 Git worktree，自动从 main 复制 .env，执行最小环境/运行时检查，按需处理端口冲突，并在结束后强制清理容器。"
 ---
 
 # worktree Skill
