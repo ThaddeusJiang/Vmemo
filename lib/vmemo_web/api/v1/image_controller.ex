@@ -2,7 +2,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   @moduledoc """
   API V1 Image Controller
 
-  Handles photo CRUD operations
+  Handles image CRUD operations
   """
 
   use VmemoWeb, :controller
@@ -14,7 +14,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   require Logger
 
   @doc """
-  Create a new photo
+  Create a new image
 
   POST /api/v1/images
   Content-Type: multipart/form-data
@@ -28,15 +28,15 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case handle_file_upload(conn, params) do
       {:ok, %{path: path, filename: filename}} ->
-        process_photo_upload(conn, path, filename, params, current_user)
+        process_image_upload(conn, path, filename, params, current_user)
 
       {:error, reason} ->
-        error_response(conn, 400, "INVALID_FILE", reason)
+        error_response(conn, 400, reason)
     end
   end
 
   @doc """
-  Get photo information
+  Get image information
 
   GET /api/v1/images/:id
   """
@@ -45,22 +45,15 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
-        json(conn, %{
-          data: %{
-            id: image.id,
-            url: url(~p"/images/#{image.id}"),
-            note: image.note,
-            inserted_at: image.inserted_at
-          }
-        })
+        json(conn, image_response(image, conn))
 
       {:error, _reason} ->
-        error_response(conn, 404, "PHOTO_NOT_FOUND", "Image not found")
+        error_response(conn, 404, "Image not found")
     end
   end
 
   @doc """
-  Delete photo
+  Delete image
 
   DELETE /api/v1/images/:id
   """
@@ -69,7 +62,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     case Image.get_with_notes(image_id, current_user.id, actor: current_user) do
       {:ok, image} ->
-        delete_response = %{data: %{id: image.id}}
+        delete_response = %{id: image.id}
 
         case Image.destroy(image, actor: current_user) do
           :ok ->
@@ -79,11 +72,11 @@ defmodule VmemoWeb.Api.V1.ImageController do
             json(conn, delete_response)
 
           {:error, _reason} ->
-            error_response(conn, 500, "DELETE_FAILED", "Failed to delete image")
+            error_response(conn, 500, "Failed to delete image")
         end
 
       {:error, _reason} ->
-        error_response(conn, 404, "PHOTO_NOT_FOUND", "Image not found")
+        error_response(conn, 404, "Image not found")
     end
   end
 
@@ -151,7 +144,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
     "#{uuid}#{extension}"
   end
 
-  defp process_photo_upload(conn, path, filename, params, current_user) do
+  defp process_image_upload(conn, path, filename, params, current_user) do
     user_id = to_string(current_user.id)
 
     # Copy file to storage directory
@@ -171,29 +164,30 @@ defmodule VmemoWeb.Api.V1.ImageController do
            actor: current_user
          ) do
       {:ok, image} ->
-        json(conn, %{
-          data: %{
-            id: image.id,
-            url: url(~p"/images/#{image.id}"),
-            note: image.note,
-            inserted_at: image.inserted_at
-          }
-        })
+        json(conn, image_response(image, conn))
 
       {:error, changeset} ->
         Logger.error("Failed to create image: #{inspect(changeset.errors)}")
-        error_response(conn, 500, "CREATE_FAILED", "Failed to create image")
+        error_response(conn, 500, "Failed to create image")
     end
   end
 
-  defp error_response(conn, status_code, code, message) do
+  defp image_response(image, conn) do
+    %{
+      id: image.id,
+      url: url(conn, ~p"/images/#{image.id}"),
+      note: image.note,
+      inserted_at: image.inserted_at
+    }
+  end
+
+  defp error_response(conn, status_code, message) do
     conn
     |> put_status(status_code)
     |> json(%{
-      error: %{
-        code: code,
-        message: message
-      }
+      statusCode: status_code,
+      statusMessage: Plug.Conn.Status.reason_phrase(status_code),
+      message: message
     })
   end
 end

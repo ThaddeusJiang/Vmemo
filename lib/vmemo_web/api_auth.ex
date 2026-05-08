@@ -40,10 +40,9 @@ defmodule VmemoWeb.ApiAuth do
     conn
     |> put_status(401)
     |> json(%{
-      error: %{
-        code: "UNAUTHORIZED",
-        message: "Invalid or missing API token"
-      }
+      statusCode: 401,
+      statusMessage: Plug.Conn.Status.reason_phrase(401),
+      message: "Invalid or missing API token"
     })
     |> halt()
   end

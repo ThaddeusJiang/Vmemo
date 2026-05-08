@@ -49,19 +49,17 @@ Example:
 curl -X POST https://your-domain.com/api/v1/images \
   -H "Authorization: Bearer vmemo_your_token" \
   -F "file=@/path/to/image.jpg" \
-  -F "note=My vacation photo"
+  -F "note=My vacation image"
 ```
 
 Success response (`200`):
 
 ```json
 {
-  "data": {
-    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "url": "https://your-domain.com/images/e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "note": "My vacation photo",
-    "inserted_at": "2026-04-17T07:09:47.519172Z"
-  }
+  "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
+  "url": "https://your-domain.com/images/e1015cc4-245c-47b9-a86f-50d8874652d0",
+  "note": "My vacation image",
+  "inserted_at": "2026-04-17T07:09:47.519172Z"
 }
 ```
 
@@ -85,12 +83,10 @@ Success response (`200`):
 
 ```json
 {
-  "data": {
-    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "url": "https://your-domain.com/images/e1015cc4-245c-47b9-a86f-50d8874652d0",
-    "note": "My vacation photo",
-    "inserted_at": "2026-04-17T07:09:47.519172Z"
-  }
+  "id": "e1015cc4-245c-47b9-a86f-50d8874652d0",
+  "url": "https://your-domain.com/images/e1015cc4-245c-47b9-a86f-50d8874652d0",
+  "note": "My vacation image",
+  "inserted_at": "2026-04-17T07:09:47.519172Z"
 }
 ```
 
@@ -110,9 +106,7 @@ Success response (`200`):
 
 ```json
 {
-  "data": {
-    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0"
-  }
+  "id": "e1015cc4-245c-47b9-a86f-50d8874652d0"
 }
 ```
 
@@ -122,22 +116,25 @@ All API errors follow this shape:
 
 ```json
 {
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human readable error message"
-  }
+  "statusCode": 400,
+  "statusMessage": "Bad Request",
+  "message": "Human readable error message"
 }
 ```
 
-### Error Codes
+Notes:
+- `statusCode` is the HTTP status code.
+- `statusMessage` is the standard HTTP reason phrase.
 
-| HTTP | Code | Meaning |
+### Common Errors
+
+| HTTP | Message Example | Meaning |
 |---|---|---|
-| `400` | `INVALID_FILE` | No file provided, invalid file type, or invalid image format |
-| `401` | `UNAUTHORIZED` | Missing, invalid, disabled, or expired token |
-| `404` | `PHOTO_NOT_FOUND` | Image not found or not owned by token user |
-| `500` | `CREATE_FAILED` | Failed to create image record |
-| `500` | `DELETE_FAILED` | Failed to delete image |
+| `400` | `No file provided` / `Invalid image format` | Invalid upload payload or file content |
+| `401` | `Invalid or missing API token` | Missing, invalid, disabled, or expired token |
+| `404` | `Image not found` | Image not found or not owned by token user |
+| `500` | `Failed to create image` | Failed to create image record |
+| `500` | `Failed to delete image` | Failed to delete image |
 
 ## File Constraints
 

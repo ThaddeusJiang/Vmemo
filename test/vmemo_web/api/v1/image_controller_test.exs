@@ -28,7 +28,8 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> post(~p"/api/v1/images", %{})
 
       assert conn.status == 400
-      assert json_response(conn, 400)["error"]["code"] == "INVALID_FILE"
+      assert json_response(conn, 400)["statusCode"] == 400
+      assert json_response(conn, 400)["message"] == "No file provided"
     end
 
     test "returns 401 without token", %{conn: conn} do
@@ -81,7 +82,8 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> get(~p"/api/v1/images/999999")
 
       assert conn.status == 404
-      assert json_response(conn, 404)["error"]["code"] == "PHOTO_NOT_FOUND"
+      assert json_response(conn, 404)["statusCode"] == 404
+      assert json_response(conn, 404)["message"] == "Image not found"
     end
 
     test "returns 401 without token", %{conn: conn} do
@@ -111,11 +113,12 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
 
       assert conn.status == 200
       response = json_response(conn, 200)
-      assert is_map(response["data"])
-      assert response["data"]["id"] == image.id
-      assert String.starts_with?(response["data"]["url"], "http")
-      assert String.contains?(response["data"]["url"], "/images/#{image.id}")
+      assert is_map(response)
+      assert response["id"] == image.id
+      assert String.starts_with?(response["url"], "http")
+      assert String.contains?(response["url"], "/images/#{image.id}")
       refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "data")
     end
   end
 
@@ -165,7 +168,7 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> delete(~p"/api/v1/images/#{image.id}")
 
       assert conn.status == 200
-      assert json_response(conn, 200)["data"]["id"] == image.id
+      assert json_response(conn, 200)["id"] == image.id
     end
   end
 
