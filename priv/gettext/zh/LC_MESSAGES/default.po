@@ -215,7 +215,6 @@ msgstr "保存资料"
 msgid "Saving..."
 msgstr "保存中..."
 
-#: lib/vmemo_web/live/components/search_box.ex:313
 #: lib/vmemo_web/live/home_page_live.ex:35
 #: lib/vmemo_web/live/images_index_live.ex:101
 #: lib/vmemo_web/live/images_index_live.ex:126
@@ -1056,17 +1055,6 @@ msgstr "搜索时只能使用一张图片。请移除多余文件。"
 msgid "Rotate and save"
 msgstr "旋转并保存"
 
-#: lib/vmemo_web/live/components/search_box.ex:292
-#: lib/vmemo_web/live/components/search_box.ex:296
-#, elixir-autogen, elixir-format
-msgid "Drop image to upload"
-msgstr "拖拽图片以上传"
-
-#: lib/vmemo_web/live/components/search_box.ex:317
-#, elixir-autogen, elixir-format
-msgid "Image search and text search are mutually exclusive. Remove image to search by text."
-msgstr "图片搜索与文字搜索互斥。请移除图片后再使用文字搜索。"
-
 #: lib/vmemo_web/live/components/search_box.ex:186
 #, elixir-autogen, elixir-format
 msgid "Image uploaded successfully."
@@ -1094,7 +1082,7 @@ msgstr "上传失败：%{reason}"
 msgid "%{count} images uploaded successfully."
 msgstr "已成功上传 %{count} 张图片。"
 
-#: lib/vmemo_web/live/components/search_box.ex:438
+#: lib/vmemo_web/live/components/search_box.ex:425
 #, elixir-autogen, elixir-format
 msgid "Search by image supports exactly one image. Use Upload for multiple images."
 msgstr "以图搜索仅支持 1 张图片。多张图片请使用上传。"

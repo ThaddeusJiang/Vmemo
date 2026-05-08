@@ -224,7 +224,6 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:313
 #: lib/vmemo_web/live/home_page_live.ex:35
 #: lib/vmemo_web/live/images_index_live.ex:101
 #: lib/vmemo_web/live/images_index_live.ex:126
@@ -1065,17 +1064,6 @@ msgstr ""
 msgid "Rotate and save"
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:292
-#: lib/vmemo_web/live/components/search_box.ex:296
-#, elixir-autogen, elixir-format
-msgid "Drop image to upload"
-msgstr ""
-
-#: lib/vmemo_web/live/components/search_box.ex:317
-#, elixir-autogen, elixir-format
-msgid "Image search and text search are mutually exclusive. Remove image to search by text."
-msgstr ""
-
 #: lib/vmemo_web/live/components/search_box.ex:186
 #, elixir-autogen, elixir-format
 msgid "Image uploaded successfully."
@@ -1103,7 +1091,7 @@ msgstr ""
 msgid "%{count} images uploaded successfully."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:438
+#: lib/vmemo_web/live/components/search_box.ex:425
 #, elixir-autogen, elixir-format
 msgid "Search by image supports exactly one image. Use Upload for multiple images."
 msgstr ""
