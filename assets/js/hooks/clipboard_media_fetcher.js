@@ -2,6 +2,7 @@
 export const ClipboardMediaFetcher = {
     mounted() {
         const fileInput = this.el.querySelector('input[type="file"]');
+        const uploadTrigger = this.el.querySelector('[data-upload-trigger="true"]');
 
         if (!fileInput) {
             return;
@@ -13,7 +14,22 @@ export const ClipboardMediaFetcher = {
             this.el.addEventListener("click", (event) => {
                 const target = event.target;
                 if (!(target instanceof Element)) return;
+                const inputId = fileInput.id;
+
+                // Avoid double dialogs: native label click already opens chooser once.
+                if (target.closest('[data-upload-trigger="true"]')) {
+                    return;
+                }
+                if (inputId && target.closest(`label[for="${inputId}"]`)) {
+                    return;
+                }
+
                 if (target === fileInput || target.closest('button, a, input:not([type="file"]), textarea, select, [role="button"]')) {
+                    return;
+                }
+
+                if (uploadTrigger instanceof HTMLElement) {
+                    uploadTrigger.click();
                     return;
                 }
 

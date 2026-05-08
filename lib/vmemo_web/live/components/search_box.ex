@@ -285,39 +285,22 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
     ~H"""
     <div class="w-full max-w-2xl flex flex-col gap-3">
-      <div
-        id={"#{@id}-fullscreen-drop"}
-        phx-hook="FullscreenDrop"
-        phx-drop-target={@uploads.image.ref}
-        data-drop-text={gettext("Drop image to upload")}
-        class="hidden fixed inset-0 z-[95] bg-base-100/70 backdrop-blur-sm border-2 border-dashed border-primary/60 items-center justify-center px-6"
-      >
-        <p class="text-base font-medium text-base-content/80 text-center">
-          {gettext("Drop image to upload")}
-        </p>
-      </div>
-
-      <form action="/images" method="get" class="form-control w-full">
+      <form :if={!@has_image} action="/images" method="get" class="form-control w-full">
         <label class="input input-bordered search-shell-input flex items-center rounded-xl w-full h-12">
           <.icon name="hero-magnifying-glass" class="size-6 text-base-content/45" />
           <input
+            id={"#{@id}-text-search-input"}
             type="search"
             name="q"
             class="grow"
             placeholder="Search"
             value={@q}
             disabled={@has_image}
+            enterkeyhint="search"
+            inputmode="search"
+            phx-hook="SearchSubmitOnEnter"
           />
-
-          <button class="btn btn-ghost btn-sm" type="submit" disabled={@has_image}>
-            {gettext("Search")}
-          </button>
         </label>
-        <p :if={@has_image} class="text-xs text-base-content/60 mt-1">
-          {gettext(
-            "Image search and text search are mutually exclusive. Remove image to search by text."
-          )}
-        </p>
       </form>
 
       <form
@@ -342,13 +325,17 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
           {error_to_string(err)}
         </.error>
 
-        <.live_file_input upload={@uploads.image} class="hidden" />
+        <.live_file_input
+          upload={@uploads.image}
+          class="absolute w-px h-px p-0 -m-px overflow-hidden border-0 opacity-0 pointer-events-none"
+        />
 
         <%= if @has_image do %>
           <div class="relative w-full flex flex-col items-center gap-4 flex-1">
             <label
               for={@uploads.image.ref}
               class="absolute inset-0 z-0 cursor-pointer"
+              data-upload-trigger="true"
               aria-label="Select more images"
             >
             </label>
@@ -442,14 +429,15 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
             </div>
           </div>
         <% else %>
-          <div class="relative w-full h-full">
+          <div class="relative w-full flex-1 min-h-[14rem]">
             <label
               for={@uploads.image.ref}
               class="absolute inset-0 z-0 cursor-pointer"
+              data-upload-trigger="true"
               aria-label="Select images"
             >
             </label>
-            <div class="relative z-10 w-full h-full flex flex-col justify-center items-center pointer-events-none text-center">
+            <div class="absolute inset-0 z-10 flex flex-col justify-center items-center pointer-events-none text-center">
               <img src="/images/undraw_images.svg" alt="Upload images" class="h-20 w-auto" />
               <div class="text-xs text-base-content/60 mt-4">
                 Drop an image anywhere on this page or <span class="link">click here</span>
