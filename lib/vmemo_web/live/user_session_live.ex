@@ -6,6 +6,7 @@ defmodule VmemoWeb.UserSessionLive do
   def mount(_params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email, "remember_me" => "false"}, as: "user")
+    socket = Phoenix.Component.assign_new(socket, :current_user, fn -> nil end)
 
     {:ok,
      assign(socket,

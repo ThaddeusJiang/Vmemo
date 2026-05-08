@@ -16,12 +16,11 @@ defmodule VmemoWeb.UserSettingsLiveTest do
       assert html =~ "Change Password"
     end
 
-    test "redirects if user is not logged in", %{conn: conn} do
-      assert {:error, redirect} = live(conn, ~p"/settings")
-
-      assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/login"
-      assert %{"error" => "You must login to access this page."} = flash
+    test "renders login form in-place if user is not logged in", %{conn: conn} do
+      conn = get(conn, ~p"/settings")
+      html = html_response(conn, 401)
+      assert html =~ "id=\"login_form\""
+      assert html =~ "You must login to access this page."
     end
   end
 
@@ -202,13 +201,12 @@ defmodule VmemoWeb.UserSettingsLiveTest do
       assert Account.get_user_by_email(user.email)
     end
 
-    test "redirects if user is not logged in", %{token: token} do
+    test "renders login form in-place if user is not logged in", %{token: token} do
       conn = build_conn()
-      {:error, redirect} = live(conn, ~p"/settings/confirm_email/#{token}")
-      assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/login"
-      assert %{"error" => message} = flash
-      assert message == "You must login to access this page."
+      conn = get(conn, ~p"/settings/confirm_email/#{token}")
+      html = html_response(conn, 401)
+      assert html =~ "id=\"login_form\""
+      assert html =~ "You must login to access this page."
     end
   end
 end

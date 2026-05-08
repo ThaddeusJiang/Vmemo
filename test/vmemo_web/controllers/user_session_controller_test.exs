@@ -99,6 +99,18 @@ defmodule VmemoWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/login"
     end
 
+    test "redirects back to return_to with invalid credentials", %{conn: conn} do
+      conn =
+        conn
+        |> init_test_session(user_return_to: "/home")
+        |> post(~p"/login", %{
+          "user" => %{"email" => "invalid@email.com", "password" => "invalid_password"}
+        })
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid credentials"
+      assert redirected_to(conn) == "/home"
+    end
+
     test "rejects unconfirmed users", %{conn: conn} do
       user = user_fixture()
 

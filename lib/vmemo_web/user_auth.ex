@@ -4,6 +4,7 @@ defmodule VmemoWeb.UserAuth do
 
   import Plug.Conn
   import Phoenix.Controller
+  import Phoenix.LiveView.Controller, only: [live_render: 3]
 
   alias Vmemo.Account
   alias Vmemo.Account.User
@@ -182,7 +183,8 @@ defmodule VmemoWeb.UserAuth do
       |> Phoenix.Controller.fetch_flash()
       |> put_flash(:error, "You must login to access this page.")
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/login")
+      |> put_status(:unauthorized)
+      |> live_render(VmemoWeb.UserSessionLive, session: %{})
       |> halt()
     end
   end
