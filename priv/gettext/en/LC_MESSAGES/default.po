@@ -2,1092 +2,1065 @@ msgid ""
 msgstr ""
 "Language: en\n"
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:86
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "\"Show me that coffee shop sketch from last winter\" works even when filenames and folders do not."
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:71
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "AI indexing"
 msgstr ""
 
-#: lib/vmemo_web/components/core_components.ex:685
+#: lib/vmemo_web/components/core_components.ex
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:101
+#: lib/vmemo_web/components/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Appearance"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:83
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Ask naturally, find instantly."
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:222
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Avatar is too large"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:40
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Avatar preview"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:57
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Capture"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:32
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Capture quickly, ask in natural language, and retrieve what mattered without writing long notes."
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:101
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Capture without friction"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:78
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Chinese"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:170
-#: lib/vmemo_web/live/api_token_live/show.ex:213
-#: lib/vmemo_web/live/image_id_live.ex:334
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
+#: lib/vmemo_web/live/image_id_live.ex
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:154
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:158
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Deployed on Zeabur"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:77
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "English"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:47
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Explore on GitHub"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:154
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to save profile: %{reason}"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:111
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Find images with language, not file names. Text and visual similarity both work."
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:404
-#: lib/vmemo_web/live/image_id_live.ex:409
+#: lib/vmemo_web/live/image_id_live.ex
 #, elixir-autogen, elixir-format
 msgid "Generate caption"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:47
+#: lib/vmemo_web/components/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Get started"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:134
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "GitHub repository"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:63
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Instant image intake from clipboard, upload, or mobile camera."
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:168
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Invalid avatar upload"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:79
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Japanese"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:102
-#: lib/vmemo_web/live/jobs_live.ex:238
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Jobs"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:75
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Language"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:125
+#: lib/vmemo_web/components/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Logout"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:104
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Multi-upload, drag-drop, and clipboard paste are tuned for fast daily use."
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:87
-#: lib/vmemo_web/live/user_profile_live.ex:67
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:74
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "OCR and semantic extraction make visual memories query-ready."
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:223
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Only one avatar file is allowed"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:60
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Paste or drag"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:85
+#: lib/vmemo_web/components/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Profile"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:144
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Profile updated successfully."
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:80
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Recall"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:403
-#: lib/vmemo_web/live/image_id_live.ex:408
+#: lib/vmemo_web/live/image_id_live.ex
 #, elixir-autogen, elixir-format
 msgid "Regenerate caption"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:25
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Remember more life."
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:370
-#: lib/vmemo_web/live/jobs_live.ex:371
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Retry Vision AI caption"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:118
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Review in seconds"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:120
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Revisit moments quickly and keep your memory timeline clean and predictable."
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:85
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Save Profile"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:84
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr ""
 
-#: lib/vmemo_web/live/home_page_live.ex:35
-#: lib/vmemo_web/live/images_index_live.ex:101
-#: lib/vmemo_web/live/images_index_live.ex:126
-#: lib/vmemo_web/live/jobs_live.ex:263
+#: lib/vmemo_web/live/home_page_live.ex
+#: lib/vmemo_web/live/images_index_live.ex
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Search"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:109
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Search by meaning"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:24
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "See less text."
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:39
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Start capturing"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:110
+#: lib/vmemo_web/components/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Toggle light or dark mode"
 msgstr ""
 
-#: lib/vmemo_web/components/layouts.ex:93
-#: lib/vmemo_web/live/api_token_live/index.ex:12
+#: lib/vmemo_web/components/layouts.ex
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Tokens"
 msgstr ""
 
-#: lib/vmemo_web/live/home_page_live.ex:38
+#: lib/vmemo_web/live/home_page_live.ex
 #, elixir-autogen, elixir-format
 msgid "Total"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:68
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Understand"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:224
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "Unsupported avatar file type"
 msgstr ""
 
-#: lib/vmemo_web/live/user_profile_live.ex:16
+#: lib/vmemo_web/live/user_profile_live.ex
 #, elixir-autogen, elixir-format
 msgid "User Profile"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:20
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Visual-first memory workspace"
 msgstr ""
 
-#: lib/vmemo_web/controllers/page_html/landing.html.heex:29
+#: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Vmemo turns snapshots, receipts, whiteboards, and random moments into searchable memory."
 msgstr ""
 
-#: lib/vmemo_web/components/core_components.ex:81
-#: lib/vmemo_web/components/core_components.ex:150
+#: lib/vmemo_web/components/core_components.ex
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
 
-#: lib/vmemo_web/live/image_id_live.ex:301
-#: lib/vmemo_web/live/image_id_live.ex:309
+#: lib/vmemo_web/live/image_id_live.ex
 #, elixir-autogen, elixir-format
 msgid "expand"
 msgstr ""
 
-#: lib/vmemo_web/live/home_page_live.ex:39
+#: lib/vmemo_web/live/home_page_live.ex
 #, elixir-autogen, elixir-format
 msgid "images"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:345
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "A link to confirm your email change has been sent to the new address."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:22
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Account Settings"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:52
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Change Email"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:98
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Change Password"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:52
-#: lib/vmemo_web/live/user_settings_live.ex:97
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Changing..."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:83
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Confirm new password"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:46
-#: lib/vmemo_web/live/user_settings_live.ex:90
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Current password"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:106
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Data Export"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:118
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Data Import"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:108
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Download your images, notes, and linked files as a ZIP file."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:37
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:244
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Email change link is invalid or it has expired."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:241
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Email changed successfully."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:226
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Errors"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:112
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Export Data"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:312
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to read ZIP file."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:199
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Files copied"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:200
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Files skipped"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:201
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Images created"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:202
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Images skipped"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:180
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Import Data"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:189
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Import Result"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:429
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Import completed with errors."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:436
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Import failed: %{reason}"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:206
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Links created"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:209
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Links skipped"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:23
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Manage your account email and password settings"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:76
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "New password"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:203
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Notes created"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:204
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Notes skipped"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:291
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Please choose a ZIP file to import."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:149
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Remove"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:414
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Too large"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:212
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Typesense images upserted"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:219
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Typesense notes upserted"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:120
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:100
-#: lib/vmemo_web/live/user_settings_live.ex:294
+#: lib/vmemo_web/live/components/search_box.ex
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Upload is still in progress."
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:162
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "Upload progress"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:416
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "You have selected an unacceptable file type"
 msgstr ""
 
-#: lib/vmemo_web/live/user_settings_live.ex:415
+#: lib/vmemo_web/live/user_settings_live.ex
 #, elixir-autogen, elixir-format
 msgid "You have selected too many files"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:40
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "180 days"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:38
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "30 days"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:39
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "90 days"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:12
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "API Token Details"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:236
-#: lib/vmemo_web/live/api_token_live/show.ex:252
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "API Token deleted"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:43
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Active"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:64
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Active Tokens"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:157
-#: lib/vmemo_web/live/api_token_live/show.ex:200
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete the token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:46
-#: lib/vmemo_web/live/api_token_live/index.ex:168
-#: lib/vmemo_web/live/api_token_live/show.ex:211
+#: lib/vmemo_web/live/api_token_live/form.ex
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:319
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Caption"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:435
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Caption generation failed."
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:438
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Caption is being generated."
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:422
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Caption result"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:420
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Caption status"
 msgstr ""
 
-#: lib/vmemo_web/live/images_index_live.ex:117
-#: lib/vmemo_web/live/images_index_live.ex:133
+#: lib/vmemo_web/live/images_index_live.ex
 #, elixir-autogen, elixir-format
 msgid "Clear search"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:46
-#: lib/vmemo_web/live/api_token_live/show.ex:21
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Close"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:410
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Completed"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:12
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Create API Token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:14
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Create New Token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:58
-#: lib/vmemo_web/live/api_token_live/show.ex:103
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:152
-#: lib/vmemo_web/live/api_token_live/show.ex:195
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Delete API Token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:186
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Delete Token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:182
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Disable"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:91
-#: lib/vmemo_web/live/api_token_live/index.ex:257
-#: lib/vmemo_web/live/api_token_live/show.ex:46
-#: lib/vmemo_web/live/api_token_live/show.ex:272
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Disabled"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:182
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Enable"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:257
-#: lib/vmemo_web/live/api_token_live/show.ex:272
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Enabled"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:36
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Expiration"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:94
-#: lib/vmemo_web/live/api_token_live/show.ex:49
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Expired"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:69
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Expired Tokens"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:105
-#: lib/vmemo_web/live/api_token_live/show.ex:68
-#: lib/vmemo_web/live/api_token_live/show.ex:112
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Expires"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:107
-#: lib/vmemo_web/live/jobs_live.ex:411
+#: lib/vmemo_web/components/notifications_components.ex
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Failed"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:55
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to retry search embedding"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:78
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to retry vision embedding"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:269
-#: lib/vmemo_web/live/api_token_live/show.ex:284
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to toggle status"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:421
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Failure reason"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:119
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "I've Saved It"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:87
+#: lib/vmemo_web/components/notifications_components.ex
 #, elixir-autogen, elixir-format
 msgid "Image job"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:59
-#: lib/vmemo_web/live/jobs_live.ex:82
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Image not found"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:60
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "It's recommended to set a reasonable expiration time for better security"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:37
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "It's recommended to update these tokens in advance"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:29
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Job not found"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:125
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Last Used"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:41
-#: lib/vmemo_web/live/api_token_live/index.ex:109
-#: lib/vmemo_web/live/api_token_live/show.ex:72
-#: lib/vmemo_web/live/api_token_live/show.ex:117
+#: lib/vmemo_web/live/api_token_live/form.ex
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Never expires"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:130
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Never used"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:121
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "No jobs yet"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:46
-#: lib/vmemo_web/live/notifications_live.ex:30
+#: lib/vmemo_web/components/notifications_components.ex
+#: lib/vmemo_web/live/notifications_live.ex
 #, elixir-autogen, elixir-format
 msgid "No notifications yet"
 msgstr ""
 
-#: lib/vmemo_web/live/images_index_live.ex:144
+#: lib/vmemo_web/live/images_index_live.ex
 #, elixir-autogen, elixir-format
 msgid "No results"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:25
-#: lib/vmemo_web/components/notifications_components.ex:26
-#: lib/vmemo_web/components/notifications_components.ex:43
-#: lib/vmemo_web/live/notifications_live.ex:25
+#: lib/vmemo_web/components/notifications_components.ex
+#: lib/vmemo_web/live/notifications_live.ex
 #, elixir-autogen, elixir-format
 msgid "Notifications"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:106
+#: lib/vmemo_web/components/notifications_components.ex
 #, elixir-autogen, elixir-format
 msgid "Partial Failed"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:413
-#: lib/vmemo_web/live/jobs_live.ex:414
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Pending"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:65
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Please save the token immediately after creation, as you won't be able to view the full content again"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:26
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Please update or delete expired tokens promptly"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:109
-#: lib/vmemo_web/live/jobs_live.ex:412
+#: lib/vmemo_web/components/notifications_components.ex
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Processing"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:20
-#: lib/vmemo_web/live/api_token_live/index.ex:52
-#: lib/vmemo_web/live/api_token_live/show.ex:27
+#: lib/vmemo_web/live/api_token_live/form.ex
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Processing..."
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:179
-#: lib/vmemo_web/live/jobs_live.ex:225
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Retry"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:429
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Retry requested. Caption is being generated."
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:47
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:114
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Search embedding"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:13
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Set up your API access token"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:108
+#: lib/vmemo_web/components/notifications_components.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Success"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:160
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "This Month"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:155
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "This Week"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:160
-#: lib/vmemo_web/live/api_token_live/show.ex:203
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "This action cannot be undone. Applications using this token will no longer be able to access the API."
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:150
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:74
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Today's Usage"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:98
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:263
-#: lib/vmemo_web/live/api_token_live/show.ex:278
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Token %{status}"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:83
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Token Created Successfully"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:79
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Token Information"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:29
-#: lib/vmemo_web/live/api_token_live/show.ex:85
+#: lib/vmemo_web/live/api_token_live/form.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Token Name"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:92
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Token Preview"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:37
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Token Status"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:203
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Token copied to clipboard"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:57
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Token name is used to identify different applications or purposes"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:59
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Total Tokens"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:165
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Total Usage"
 msgstr ""
 
-#: lib/vmemo_web/live/images_index_live.ex:146
+#: lib/vmemo_web/live/images_index_live.ex
 #, elixir-autogen, elixir-format
 msgid "Try a different search above or"
 msgstr ""
 
-#: lib/vmemo_web/live/images_index_live.ex:148
+#: lib/vmemo_web/live/images_index_live.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Upload images"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:112
-#: lib/vmemo_web/live/api_token_live/show.ex:136
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Usage Count"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:112
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Usage Example"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:54
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Usage Instructions"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/show.ex:146
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Usage Statistics"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:69
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Usage format"
 msgstr ""
 
-#: lib/vmemo_web/components/notifications_components.ex:60
-#: lib/vmemo_web/live/notifications_live.ex:26
+#: lib/vmemo_web/components/notifications_components.ex
+#: lib/vmemo_web/live/notifications_live.ex
 #, elixir-autogen, elixir-format
 msgid "View all notifications"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex:115
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Vision embedding"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:90
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Your API Token"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/form.ex:30
+#: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "e.g., Mobile App"
 msgstr ""
 
-#: lib/vmemo_web/live/images_index_live.ex:111
+#: lib/vmemo_web/live/images_index_live.ex
 #, elixir-autogen, elixir-format
 msgid "results"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:24
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "tokens have expired"
 msgstr ""
 
-#: lib/vmemo_web/live/api_token_live/index.ex:34
+#: lib/vmemo_web/live/api_token_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "tokens will expire within 7 days"
 msgstr ""
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:173
+#: lib/vmemo_web/live/components/moondream_panel.ex
 #, elixir-autogen, elixir-format
 msgid "Connection error. Check your network."
 msgstr "Connection error. Check your network."
 
-#: lib/vmemo_web/live/api_token_live/index.ex:242
-#: lib/vmemo_web/live/api_token_live/show.ex:259
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Delete failed. Retry."
 msgstr "Delete failed. Retry."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:91
+#: lib/vmemo_web/live/components/moondream_panel.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to create request: %{reason}"
 msgstr "Failed to create request: %{reason}"
 
-#: lib/vmemo_web/live/user_session_live.ex:127
+#: lib/vmemo_web/live/user_session_live.ex
 #, elixir-autogen, elixir-format
 msgid "Login failed. Check your email and password, then try again."
 msgstr "Login failed. Check your email and password, then try again."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:176
+#: lib/vmemo_web/live/components/moondream_panel.ex
 #, elixir-autogen, elixir-format
 msgid "Network error. Check your connection."
 msgstr "Network error. Check your connection."
 
-#: lib/vmemo_web/live/user_reset_password_live.ex:33
+#: lib/vmemo_web/live/user_reset_password_live.ex
 #, elixir-autogen, elixir-format
 msgid "Password reset failed. Check the fields below."
 msgstr "Password reset failed. Check the fields below."
 
-#: lib/vmemo_web/live/user_reset_password_live.ex:165
+#: lib/vmemo_web/live/user_reset_password_live.ex
 #, elixir-autogen, elixir-format
 msgid "Password reset failed. Check your input and submit again."
 msgstr "Password reset failed. Check your input and submit again."
 
-#: lib/vmemo_web/live/api_token_live/index.ex:208
-#: lib/vmemo_web/live/components/moondream_panel.ex:167
-#: lib/vmemo_web/live/components/moondream_panel.ex:183
-#: lib/vmemo_web/live/components/moondream_panel.ex:209
+#: lib/vmemo_web/live/api_token_live/index.ex
+#: lib/vmemo_web/live/components/moondream_panel.ex
 #, elixir-autogen, elixir-format
 msgid "Request failed."
 msgstr "Request failed."
 
-#: lib/vmemo_web/live/components/moondream_panel.ex:161
-#: lib/vmemo_web/live/components/moondream_panel.ex:170
+#: lib/vmemo_web/live/components/moondream_panel.ex
 #, elixir-autogen, elixir-format
 msgid "Request timed out."
 msgstr "Request timed out."
 
-#: lib/vmemo_web/live/components/search_box.ex:149
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Search by image failed: %{reason}"
 msgstr "Search by image failed: %{reason}"
 
-#: lib/vmemo_web/live/components/search_box.ex:141
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Search failed: index unavailable or upload failed."
 msgstr "Search failed: index unavailable or upload failed."
 
-#: lib/vmemo_web/live/components/search_box.ex:108
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr "Use exactly one image for search. Remove extra files."
 
-#: lib/vmemo_web/live/image_id_live.ex:525
-#: lib/vmemo_web/live/image_id_live.ex:526
+#: lib/vmemo_web/live/image_id_live.ex
 #, elixir-autogen, elixir-format
 msgid "Rotate and save"
 msgstr "Rotate and save"
 
-#: lib/vmemo_web/live/components/search_box.ex:186
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Image uploaded successfully."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:60
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Unknown image action."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:194
-#: lib/vmemo_web/live/components/search_box.ex:242
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Upload failed. Please retry."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:202
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Upload failed: %{reason}"
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:249
-#: lib/vmemo_web/live/components/search_box.ex:258
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} images uploaded successfully."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:425
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Search by image supports exactly one image. Use Upload for multiple images."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:262
+#: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
 msgstr ""

@@ -15,6 +15,9 @@ defmodule Vmemo.MixProject do
       dialyzer: dialyzer(),
       docs: &docs/0,
       compilers: Mix.compilers() ++ [],
+      gettext: [
+        write_reference_line_numbers: false
+      ],
       usage_rules: usage_rules()
     ]
   end
