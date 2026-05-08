@@ -8,6 +8,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      :if={VmemoWeb.Layouts.theme_data_value(assigns)}
+      name="theme-color"
+      content={VmemoWeb.Layouts.theme_color_value(assigns)}
+    />
+    <meta
+      :if={!VmemoWeb.Layouts.theme_data_value(assigns)}
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content={VmemoWeb.Layouts.theme_color_light()}
+    />
+    <meta
+      :if={!VmemoWeb.Layouts.theme_data_value(assigns)}
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content={VmemoWeb.Layouts.theme_color_dark()}
+    />
     <.live_title suffix=" | Visual Memory that you have seen">
       {assigns[:page_title] || "Vmemo"}
     </.live_title>
