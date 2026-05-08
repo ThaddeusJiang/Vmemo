@@ -21,13 +21,13 @@ defmodule VmemoWeb.UserSessionController do
       {:ok, _user} ->
         conn
         |> put_flash(:error, "Invalid credentials")
-        |> redirect(to: ~p"/login")
+        |> redirect(to: failed_login_redirect_path(conn))
 
       {:error, _reason} ->
         # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
         conn
         |> put_flash(:error, "Invalid credentials")
-        |> redirect(to: ~p"/login")
+        |> redirect(to: failed_login_redirect_path(conn))
     end
   end
 
@@ -58,6 +58,10 @@ defmodule VmemoWeb.UserSessionController do
   end
 
   defp maybe_put_action_flash(conn, _), do: conn
+
+  defp failed_login_redirect_path(conn) do
+    get_session(conn, :user_return_to) || ~p"/login"
+  end
 
   def delete(conn, params) do
     # Support return_to so sign-out can redirect to a specific page

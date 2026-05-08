@@ -110,7 +110,7 @@ defmodule VmemoWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [
-        {VmemoWeb.UserAuth, :ensure_authenticated_user},
+        {VmemoWeb.UserAuth, :mount_current_user},
         {VmemoWeb.Live.ImageJobsHook, :default}
       ] do
       live "/home", HomePageLive, :index

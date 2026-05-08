@@ -28,12 +28,11 @@ defmodule VmemoWeb.UserProfileLiveTest do
       assert changed_html =~ "Save Profile"
     end
 
-    test "redirects if user is not logged in", %{conn: conn} do
-      assert {:error, redirect} = live(conn, ~p"/profile")
-
-      assert {:redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/login"
-      assert %{"error" => "You must login to access this page."} = flash
+    test "renders login form in-place if user is not logged in", %{conn: conn} do
+      conn = get(conn, ~p"/profile")
+      html = html_response(conn, 401)
+      assert html =~ "id=\"login_form\""
+      assert html =~ "You must login to access this page."
     end
 
     test "updates name and language", %{conn: conn} do

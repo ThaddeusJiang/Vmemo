@@ -253,11 +253,17 @@ defmodule VmemoWeb.UserAuthTest do
   end
 
   describe "require_authenticated_user/2" do
-    test "redirects if user is not authenticated", %{conn: conn} do
+    setup %{conn: conn} do
+      conn = Plug.Conn.put_private(conn, :phoenix_endpoint, VmemoWeb.Endpoint)
+      %{conn: conn}
+    end
+
+    test "renders login form in-place if user is not authenticated", %{conn: conn} do
       conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user([])
       assert conn.halted
 
-      assert redirected_to(conn) == ~p"/login"
+      assert conn.status == 401
+      assert html_response(conn, 401) =~ "id=\"login_form\""
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "You must login to access this page."
