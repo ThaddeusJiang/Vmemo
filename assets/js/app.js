@@ -24,6 +24,7 @@ import { Focus } from "./hooks/focus"
 import { MoondreamOverlay } from "./hooks/moondream_overlay"
 import { DirectoryUpload } from "./hooks/directory_upload"
 import { DrawerResize } from "./hooks/drawer_resize"
+import { SearchSubmitOnEnter } from "./hooks/search_submit_on_enter"
 
 const FormatDatetime = {
   format() {
@@ -68,6 +69,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     DirectoryUpload,
     FormatDatetime,
     DrawerResize,
+    SearchSubmitOnEnter,
   },
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },

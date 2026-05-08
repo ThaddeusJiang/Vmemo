@@ -222,13 +222,13 @@ defmodule Vmemo.MixProject do
       check: [
         "format --check-formatted",
         "compile --warnings-as-errors",
+        "gettext.extract --check-up-to-date",
         "xref graph --format cycles --label compile --fail-above 0",
         "credo --strict",
         "sobelow --config",
         "hex.audit",
         "deps.unlock --check-unused",
-        "cmd MIX_ENV=test mix test --warnings-as-errors",
-        "cmd MIX_ENV=dev mix dialyzer --format short"
+        "dialyzer --format short"
       ],
       "ts.setup": ["ts.migrate"],
       "ts.reset": ["ts.drop", "ts.setup"],

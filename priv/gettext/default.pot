@@ -487,7 +487,7 @@ msgstr ""
 msgid "Upload a ZIP exported from this app. Import writes files and database records, then rebuilds search index data from Ash resources."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:106
+#: lib/vmemo_web/live/components/search_box.ex:100
 #: lib/vmemo_web/live/user_settings_live.ex:294
 #, elixir-autogen, elixir-format
 msgid "Upload is still in progress."
@@ -1043,17 +1043,17 @@ msgstr ""
 msgid "Request timed out."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:155
+#: lib/vmemo_web/live/components/search_box.ex:149
 #, elixir-autogen, elixir-format
 msgid "Search by image failed: %{reason}"
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:147
+#: lib/vmemo_web/live/components/search_box.ex:141
 #, elixir-autogen, elixir-format
 msgid "Search failed: index unavailable or upload failed."
 msgstr ""
 
-#: lib/vmemo_web/live/components/search_box.ex:114
+#: lib/vmemo_web/live/components/search_box.ex:108
 #, elixir-autogen, elixir-format
 msgid "Use exactly one image for search. Remove extra files."
 msgstr ""
@@ -1062,4 +1062,41 @@ msgstr ""
 #: lib/vmemo_web/live/image_id_live.ex:526
 #, elixir-autogen, elixir-format
 msgid "Rotate and save"
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:186
+#, elixir-autogen, elixir-format
+msgid "Image uploaded successfully."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:60
+#, elixir-autogen, elixir-format
+msgid "Unknown image action."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:194
+#: lib/vmemo_web/live/components/search_box.ex:242
+#, elixir-autogen, elixir-format
+msgid "Upload failed. Please retry."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:202
+#, elixir-autogen, elixir-format
+msgid "Upload failed: %{reason}"
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:249
+#: lib/vmemo_web/live/components/search_box.ex:258
+#, elixir-autogen, elixir-format
+msgid "%{count} images uploaded successfully."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:425
+#, elixir-autogen, elixir-format
+msgid "Search by image supports exactly one image. Use Upload for multiple images."
+msgstr ""
+
+#: lib/vmemo_web/live/components/search_box.ex:262
+#, elixir-autogen, elixir-format
+msgid "Some images failed to upload. Please retry failed ones."
 msgstr ""

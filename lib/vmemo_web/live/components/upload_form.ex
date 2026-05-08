@@ -20,7 +20,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
       socket
       |> allow_upload(:images,
         accept: ~w(.png .jpg .jpeg .gif .webp),
-        max_entries: 100
+        max_entries: 100,
+        max_file_size: 12_000_000
       )
 
     {:ok, socket}
