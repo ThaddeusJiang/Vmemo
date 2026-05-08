@@ -27,6 +27,8 @@
 ## Workflow
 - Read relevant files first.
 - Before making decisions, review existing decisions to avoid repeating past mistakes.
+- Treat accepted ADRs in `docs/adr/` as hard constraints for implementation.
+- If a request conflicts with an accepted ADR, stop and ask whether to supersede via a new ADR before proceeding.
 - When implementing features, review corresponding feature specs first.
 - Propose a short plan for non-trivial changes.
 - Implement in small steps.
