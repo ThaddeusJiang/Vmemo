@@ -440,7 +440,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
             <div class="absolute inset-0 z-10 flex flex-col justify-center items-center pointer-events-none text-center">
               <img src="/images/undraw_images.svg" alt="Upload images" class="h-20 w-auto" />
               <div class="text-xs text-base-content/60 mt-4">
-                Drop an image anywhere on this page or <span class="link">click here</span>
+                {gettext("Drop images here or click to upload")}
               </div>
             </div>
           </div>
