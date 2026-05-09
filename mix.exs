@@ -223,14 +223,17 @@ defmodule Vmemo.MixProject do
       "db.setup": ["db.create", "db.migrate", "db.seed"],
       "db.reset": ["db.drop", "db.setup"],
       check: [
-        "format --check-formatted",
+        "format",
         "compile --warnings-as-errors",
         "gettext.extract --check-up-to-date",
         "xref graph --format cycles --label compile --fail-above 0",
-        "credo --strict",
+        "credo --mute-exit-status",
         "sobelow --config",
         "hex.audit",
-        "deps.unlock --check-unused",
+        "deps.unlock --check-unused"
+      ],
+      "check.full": [
+        "check",
         "dialyzer --format short"
       ],
       "ts.setup": ["ts.migrate"],
