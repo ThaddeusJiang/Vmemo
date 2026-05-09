@@ -6,6 +6,8 @@ defmodule VmemoWeb.ImageIdLive do
 
   alias Vmemo.Ai.VisionRequest
   alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Storage
 
   alias SmallSdk.ImageMagick
   alias VmemoWeb.LiveComponents.Waterfall
@@ -20,13 +22,19 @@ defmodule VmemoWeb.ImageIdLive do
   end
 
   defp mount_photo(id, socket) do
-    user = socket.assigns.current_user
+    user = Map.get(socket.assigns, :current_user)
 
-    with {:ok, image} <- Image.get_with_notes(id, user.id, actor: user),
-         {:ok, images} <- Image.list_similar(image.id, user.id, actor: user) do
-      {:ok, assign_loaded_photo(socket, user, image, images)}
-    else
-      _ -> {:ok, assign_photo_not_found(socket)}
+    case user do
+      %{id: user_id} ->
+        with {:ok, image} <- Image.get_with_notes(id, user_id, actor: user),
+             {:ok, images} <- Image.list_similar(image.id, user_id, actor: user) do
+          {:ok, assign_loaded_photo(socket, user, image, images)}
+        else
+          _ -> {:ok, assign_photo_not_found(socket)}
+        end
+
+      _ ->
+        {:ok, assign_photo_not_found(socket)}
     end
   end
 
@@ -287,7 +295,7 @@ defmodule VmemoWeb.ImageIdLive do
                 </figcaption> --%>
 
                 <.img
-                  src={@image.url}
+                  src={Storage.img(@image.url, :m)}
                   id={"image-main-#{@image_dom_version}"}
                   alt={@image.note}
                   wrapper_class="w-full h-full rounded-lg"
@@ -448,7 +456,7 @@ defmodule VmemoWeb.ImageIdLive do
               <.live_component id="similar-images" module={Waterfall} items={@images}>
                 <:card :let={image}>
                   <.link navigate={~p"/images/#{image.id}"} class="link link-hover block">
-                    <.img src={image.url} alt={image.note} />
+                    <.img src={Storage.img(image.url, :s)} alt={image.note} />
                   </.link>
                 </:card>
               </.live_component>
@@ -647,6 +655,7 @@ defmodule VmemoWeb.ImageIdLive do
   defp rotate_image(file_path) do
     try do
       ImageMagick.rotate_90_clockwise!(file_path)
+      ImageStorage.thumbs!(file_path)
       :ok
     rescue
       _ -> {:error, :rotate_failed}
