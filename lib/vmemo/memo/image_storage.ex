@@ -46,7 +46,7 @@ defmodule Vmemo.Memo.ImageStorage do
 
     cond do
       String.starts_with?(primary, storage_prefix <> "/") and
-          String.contains?(primary, "/images/") and File.exists?(primary) ->
+        String.contains?(primary, "/images/") and File.exists?(primary) ->
         {:ok, primary}
 
       String.starts_with?(fallback, storage_prefix <> "/") and File.exists?(fallback) ->

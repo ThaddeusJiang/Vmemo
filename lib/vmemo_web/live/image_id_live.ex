@@ -653,12 +653,10 @@ defmodule VmemoWeb.ImageIdLive do
   defp image_storage_path(_), do: {:error, :invalid_url}
 
   defp rotate_image(file_path) do
-    try do
-      ImageMagick.rotate_90_clockwise!(file_path)
-      ImageStorage.thumbs!(file_path)
-      :ok
-    rescue
-      _ -> {:error, :rotate_failed}
-    end
+    ImageMagick.rotate_90_clockwise!(file_path)
+    ImageStorage.thumbs!(file_path)
+    :ok
+  rescue
+    _ -> {:error, :rotate_failed}
   end
 end

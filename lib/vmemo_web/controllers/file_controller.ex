@@ -140,12 +140,10 @@ defmodule VmemoWeb.FileController do
       _ ->
         exact_candidate = fallback_root <> ext
 
-        cond do
-          File.exists?(exact_candidate) ->
-            {:ok, exact_candidate}
-
-          true ->
-            find_fallback_candidate_by_extension(fallback_root, ext)
+        if File.exists?(exact_candidate) do
+          {:ok, exact_candidate}
+        else
+          find_fallback_candidate_by_extension(fallback_root, ext)
         end
     end
   end
