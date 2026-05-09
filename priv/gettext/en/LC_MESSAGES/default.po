@@ -1062,5 +1062,10 @@ msgstr ""
 
 #: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
+msgid "Drop images here or click to upload"
+msgstr "Drop images here or click to upload"
+
+#: lib/vmemo_web/live/components/search_box.ex
+#, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
 msgstr ""

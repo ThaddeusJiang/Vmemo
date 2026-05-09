@@ -1062,5 +1062,10 @@ msgstr "以图搜索仅支持 1 张图片。多张图片请使用上传。"
 
 #: lib/vmemo_web/live/components/search_box.ex
 #, elixir-autogen, elixir-format
+msgid "Drop images here or click to upload"
+msgstr "将图片拖到此区域，或点击上传"
+
+#: lib/vmemo_web/live/components/search_box.ex
+#, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
 msgstr "部分图片上传失败，请重试失败的图片。"
