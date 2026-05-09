@@ -21,6 +21,11 @@ For people who think and remember visually, image notes can be much more effecti
 - REST API for external integrations.
 - Responsive web UI for desktop and mobile.
 
+## Integrations
+
+- Apple Shortcuts: [Setup guide](others/apple-shortcuts/README.md)
+- AI app MCP: [MCP server guide](docs/features/mcp-server.md)
+
 ## One-Click Self-Hosting on Zeabur 
 
 [![Deploy on zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/H3EL85)
