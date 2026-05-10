@@ -1,6 +1,7 @@
 defmodule Vmemo.Memo.Changes.SyncTypesense do
   @moduledoc false
   use Ash.Resource.Change
+  alias Ash.Resource.Info
 
   @impl true
   def change(changeset, opts, _context) do
@@ -45,7 +46,7 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
   defp supports_status_update?(resource) do
     match?(
       %{name: :set_typesense_status},
-      Ash.Resource.Info.action(resource, :set_typesense_status)
+      Info.action(resource, :set_typesense_status)
     )
   end
 end

@@ -9,6 +9,8 @@ defmodule VmemoWeb.McpAuth do
   import Plug.Conn
 
   require Logger
+  alias Ash.PlugHelpers
+  alias Vmemo.Account.ApiToken
 
   def init(opts), do: opts
 
@@ -40,14 +42,14 @@ defmodule VmemoWeb.McpAuth do
   end
 
   defp verify_token(conn, token) do
-    case Vmemo.Account.ApiToken.verify_api_token(token) do
+    case ApiToken.verify_api_token(token) do
       {:ok, api_token} ->
         # Set actor if token is valid
         # Use Ash.PlugHelpers.set_actor/2 to store actor in conn.private[:ash][:actor]
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_user, api_token.user)
-        |> Ash.PlugHelpers.set_actor(api_token.user)
+        |> PlugHelpers.set_actor(api_token.user)
 
       {:error, reason} ->
         Logger.warning("MCP API token verification failed: #{reason}")

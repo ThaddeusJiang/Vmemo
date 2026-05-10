@@ -1,5 +1,6 @@
 defmodule Vmemo.Ts.SchemaMigratorTest do
   use ExUnit.Case, async: true
+  alias Vmemo.Ts.SchemaMigrator
 
   setup_all do
     ts_dir = Application.app_dir(:vmemo, "priv/ts")
@@ -17,7 +18,7 @@ defmodule Vmemo.Ts.SchemaMigratorTest do
       applied_versions = []
 
       assert [%{version: "2024-12-19"}] =
-               Vmemo.Ts.SchemaMigrator.pending_migrations(entries, applied_versions)
+               SchemaMigrator.pending_migrations(entries, applied_versions)
     end
 
     test "returns empty list when migration was already applied" do
@@ -27,7 +28,7 @@ defmodule Vmemo.Ts.SchemaMigratorTest do
 
       applied_versions = ["2024-12-19"]
 
-      assert [] = Vmemo.Ts.SchemaMigrator.pending_migrations(entries, applied_versions)
+      assert [] = SchemaMigrator.pending_migrations(entries, applied_versions)
     end
   end
 
@@ -38,7 +39,7 @@ defmodule Vmemo.Ts.SchemaMigratorTest do
         %{version: "2024-12-20", path: "b"}
       ]
 
-      assert entries == Vmemo.Ts.SchemaMigrator.validate_unique_migration_versions(entries)
+      assert entries == SchemaMigrator.validate_unique_migration_versions(entries)
     end
 
     test "raises when duplicated migration versions exist" do
@@ -48,7 +49,7 @@ defmodule Vmemo.Ts.SchemaMigratorTest do
       ]
 
       assert_raise RuntimeError, ~r/Typesense migration versions must be unique/, fn ->
-        Vmemo.Ts.SchemaMigrator.validate_unique_migration_versions(entries)
+        SchemaMigrator.validate_unique_migration_versions(entries)
       end
     end
   end

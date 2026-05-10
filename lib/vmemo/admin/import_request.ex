@@ -1,5 +1,8 @@
 defmodule Vmemo.Admin.ImportRequest do
   @moduledoc false
+  alias Ash.Type.File, as: AshFile
+  alias Vmemo.Admin.ImportRequest.ProcessRunner
+
   use Ash.Resource,
     domain: Vmemo.Admin,
     data_layer: AshPostgres.DataLayer,
@@ -61,7 +64,7 @@ defmodule Vmemo.Admin.ImportRequest do
 
     create :import do
       accept []
-      argument :import_zip, Ash.Type.File, allow_nil?: false
+      argument :import_zip, AshFile, allow_nil?: false
       change set_attribute(:status, "pending")
 
       change fn changeset, _context ->
@@ -89,7 +92,7 @@ defmodule Vmemo.Admin.ImportRequest do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, request ->
-          case Vmemo.Admin.ImportRequest.ProcessRunner.execute(%{
+          case ProcessRunner.execute(%{
                  "request_id" => request.id
                }) do
             :ok ->
@@ -148,7 +151,7 @@ defmodule Vmemo.Admin.ImportRequest do
 
   defp persist_import_zip(changeset) do
     case Ash.Changeset.get_argument(changeset, :import_zip) do
-      %Ash.Type.File{} = file ->
+      %AshFile{} = file ->
         dest_dir = Path.join(System.tmp_dir!(), "vmemo-import-upload")
         File.mkdir_p!(dest_dir)
         copy_import_zip(file, dest_dir)
@@ -159,7 +162,7 @@ defmodule Vmemo.Admin.ImportRequest do
   end
 
   defp copy_import_zip(file, dest_dir) do
-    case Ash.Type.File.path(file) do
+    case AshFile.path(file) do
       {:ok, path} ->
         filename = Path.basename(path)
         dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
@@ -175,7 +178,7 @@ defmodule Vmemo.Admin.ImportRequest do
     filename = file_source_filename(file)
     dest_path = Path.join(dest_dir, "#{System.unique_integer([:positive])}-#{filename}")
 
-    case Ash.Type.File.open(file, [:read, :binary]) do
+    case AshFile.open(file, [:read, :binary]) do
       {:ok, source} ->
         result = copy_stream(source, dest_path)
         File.close(source)
@@ -200,12 +203,12 @@ defmodule Vmemo.Admin.ImportRequest do
     end)
   end
 
-  defp file_source_filename(%Ash.Type.File{source: %Plug.Upload{filename: filename}})
+  defp file_source_filename(%AshFile{source: %Plug.Upload{filename: filename}})
        when is_binary(filename) and filename != "" do
     filename
   end
 
-  defp file_source_filename(%Ash.Type.File{source: path}) when is_binary(path) do
+  defp file_source_filename(%AshFile{source: path}) when is_binary(path) do
     Path.basename(path)
   end
 

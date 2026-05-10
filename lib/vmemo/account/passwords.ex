@@ -1,8 +1,10 @@
 defmodule Vmemo.Account.Passwords do
   @moduledoc false
 
+  alias AshAuthentication.TokenResource.Actions
   alias Vmemo.Account.User
   alias Vmemo.Account.UserNotifier
+  alias Vmemo.Account.UserToken
 
   def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
@@ -91,13 +93,13 @@ defmodule Vmemo.Account.Passwords do
     }
 
     with :ok <-
-           AshAuthentication.TokenResource.Actions.store_token(
-             Vmemo.Account.UserToken,
+           Actions.store_token(
+             UserToken,
              %{"token" => token, "purpose" => "reset_password"},
              context: context_patch
            ),
          {:ok, %{"jti" => jti}} <- AshAuthentication.Jwt.peek(token),
-         {:ok, token_record} <- Ash.get(Vmemo.Account.UserToken, jti) do
+         {:ok, token_record} <- Ash.get(UserToken, jti) do
       Ash.update(token_record, %{user_id: user.id}, action: :update_user_id)
     end
   end
@@ -110,7 +112,7 @@ defmodule Vmemo.Account.Passwords do
   end
 
   defp fetch_reset_token_record(jti) do
-    case Ash.get(Vmemo.Account.UserToken, jti) do
+    case Ash.get(UserToken, jti) do
       {:ok, token_record} -> {:ok, token_record}
       _ -> {:error, :token_not_found}
     end

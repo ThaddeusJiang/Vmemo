@@ -7,6 +7,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   use VmemoWeb, :controller
 
+  alias Plug.Conn.Status
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageStorage
   # alias removed: SmallSdk.FileSystem
@@ -186,7 +187,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
     |> put_status(status_code)
     |> json(%{
       statusCode: status_code,
-      statusMessage: Plug.Conn.Status.reason_phrase(status_code),
+      statusMessage: Status.reason_phrase(status_code),
       message: message
     })
   end
