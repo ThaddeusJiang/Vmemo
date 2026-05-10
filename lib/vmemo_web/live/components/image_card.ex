@@ -5,19 +5,46 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
 
   attr :image, :map, default: nil
   attr :navigate, :string, default: nil
-  slot :media
+  slot :media, required: false
   slot :overlay, required: false
+
+  attr :rest, :global
+
+  def card_delete_menu(assigns) do
+    ~H"""
+    <div class="absolute top-2 right-2 z-10 hidden group-hover:block">
+      <.dropdown_menu class="dropdown-end" menu_class="w-40">
+        <:trigger>
+          <button
+            type="button"
+            tabindex="0"
+            class="btn btn-circle btn-sm bg-base-100/95 border border-base-300 text-base-content shadow-md backdrop-blur-sm hover:bg-base-100"
+            aria-label="Open image actions"
+          >
+            <.icon name="hero-ellipsis-vertical" class="h-4 w-4" />
+          </button>
+        </:trigger>
+        <:item>
+          <button type="button" {@rest}>
+            <.icon name="hero-trash" class="h-4 w-4 text-error" />
+            <span>Delete</span>
+          </button>
+        </:item>
+      </.dropdown_menu>
+    </div>
+    """
+  end
 
   def image_card(assigns) do
     assigns =
       assigns
-      |> assign(:has_media_slot, assigns.media != [])
+      |> assign(:has_media_slot, Map.get(assigns, :media, []) != [])
       |> assign(:resolved_navigate, resolve_navigate(assigns))
       |> assign(:photo_url, resolve_photo_url(assigns))
       |> assign(:photo_alt, resolve_photo_alt(assigns))
 
     ~H"""
-    <div class="relative">
+    <div class="group relative">
       <%= if @resolved_navigate do %>
         <.link href={@resolved_navigate} class="link link-hover block">
           <%= if @has_media_slot do %>

@@ -1033,4 +1033,35 @@ defmodule VmemoWeb.CoreComponents do
     </div>
     """
   end
+
+  attr :class, :string, default: nil
+  attr :menu_class, :string, default: nil
+  slot :trigger, required: true
+  slot :item, required: true
+
+  @doc """
+  Generic dropdown menu container.
+
+  Caller provides:
+  - `:trigger` slot (focusable/button element)
+  - one or more `:item` slots (each rendered inside `<li>`)
+  """
+  def dropdown_menu(assigns) do
+    ~H"""
+    <div class={["dropdown", @class]}>
+      {render_slot(@trigger)}
+      <ul
+        tabindex="0"
+        class={[
+          "dropdown-content elevated-popover menu bg-base-100 rounded-box z-[90] p-2",
+          @menu_class
+        ]}
+      >
+        <li :for={item <- @item}>
+          {render_slot(item)}
+        </li>
+      </ul>
+    </div>
+    """
+  end
 end
