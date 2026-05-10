@@ -9,9 +9,10 @@ defmodule VmemoWeb.FileController do
     if File.exists?(file_path) do
       send_storage_file(conn, file_path)
     else
-      conn
-      |> put_status(404)
-      |> text("File not found")
+      case fallback_original_image_path(file_path) do
+        {:ok, fallback_path} -> send_storage_file(conn, fallback_path)
+        :error -> send_missing_image_not_found(conn)
+      end
     end
   end
 
@@ -29,12 +30,13 @@ defmodule VmemoWeb.FileController do
 
   defp send_storage_file(conn, file_path) do
     with {:ok, stat} <- File.stat(file_path),
-         etag <- build_etag(file_path),
+         etag <- build_etag(file_path, stat),
          last_modified <- build_last_modified(stat),
          false <- fresh?(conn, etag, stat) do
       conn
-      |> put_resp_content_type(MIME.from_path(file_path))
-      |> put_resp_header("cache-control", "public, max-age=0, must-revalidate")
+      |> put_resp_content_type(MIME.from_path(file_path), nil)
+      |> put_resp_header("content-disposition", "inline")
+      |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
       |> put_resp_header("etag", etag)
       |> put_resp_header("last-modified", last_modified)
       |> send_file(200, file_path)
@@ -90,7 +92,8 @@ defmodule VmemoWeb.FileController do
   end
 
   defp build_etag!(file_path) do
-    build_etag(file_path)
+    {:ok, stat} = File.stat(file_path)
+    build_etag(file_path, stat)
   end
 
   defp build_last_modified!(file_path) do
@@ -98,19 +101,73 @@ defmodule VmemoWeb.FileController do
     build_last_modified(stat)
   end
 
-  defp build_etag(file_path) do
-    hash =
-      file_path
-      |> File.read!()
-      |> then(&:crypto.hash(:sha256, &1))
-      |> Base.encode16(case: :lower)
-
-    ~s("#{hash}")
+  defp build_etag(_file_path, stat) do
+    # Avoid reading whole file on every request; use stable metadata-based ETag instead.
+    mtime = :calendar.datetime_to_gregorian_seconds(stat.mtime)
+    size = stat.size
+    inode = Map.get(stat, :inode, 0)
+    ~s("vmemo-#{inode}-#{size}-#{mtime}")
   end
 
   defp build_last_modified(stat) do
     stat.mtime
     |> :httpd_util.rfc1123_date()
     |> to_string()
+  end
+
+  defp send_missing_image_not_found(conn) do
+    conn
+    |> put_resp_content_type("text/plain")
+    |> put_resp_header("cache-control", "no-store")
+    |> send_resp(404, "File not found")
+  end
+
+  defp fallback_original_image_path(file_path) do
+    ext = Path.extname(file_path)
+    root = Path.rootname(file_path, ext)
+
+    fallback_root =
+      cond do
+        String.ends_with?(root, "--s") -> String.trim_trailing(root, "--s")
+        String.ends_with?(root, "--m") -> String.trim_trailing(root, "--m")
+        true -> nil
+      end
+
+    case fallback_root do
+      nil ->
+        :error
+
+      _ ->
+        exact_candidate = fallback_root <> ext
+
+        if File.exists?(exact_candidate) do
+          {:ok, exact_candidate}
+        else
+          find_fallback_candidate_by_extension(fallback_root, ext)
+        end
+    end
+  end
+
+  defp find_fallback_candidate_by_extension(fallback_root, requested_ext) do
+    requested_ext = String.downcase(requested_ext || "")
+
+    ext_priority =
+      [requested_ext, ".png", ".jpg", ".jpeg", ".webp", ".gif"]
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.uniq()
+
+    candidates_by_ext =
+      Path.wildcard(fallback_root <> ".*")
+      |> Enum.group_by(&(Path.extname(&1) |> String.downcase()))
+
+    match =
+      Enum.find_value(ext_priority, fn ext ->
+        case Map.get(candidates_by_ext, ext, []) do
+          [path | _] -> path
+          [] -> nil
+        end
+      end)
+
+    if is_binary(match), do: {:ok, match}, else: :error
   end
 end

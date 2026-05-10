@@ -15,6 +15,7 @@ defmodule Vmemo.MixProject do
       dialyzer: dialyzer(),
       docs: &docs/0,
       compilers: Mix.compilers() ++ [],
+      elixirc_options: [ignore_module_conflict: true],
       listeners: [Phoenix.CodeReloader],
       gettext: [
         write_reference_line_numbers: false
@@ -214,7 +215,7 @@ defmodule Vmemo.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "db.setup", "ts.setup", "assets.setup", "assets.build"],
-      reset: ["db.reset", "ts.reset"],
+      reset: ["db.reset", "ts.reset", "storage.drop"],
       "db.create": ["ash_postgres.create"],
       "db.drop": ["ash_postgres.drop"],
       "db.migrate": ["ash.migrate"],
@@ -224,7 +225,7 @@ defmodule Vmemo.MixProject do
       "db.reset": ["db.drop", "db.setup"],
       check: [
         "format",
-        "compile --warnings-as-errors",
+        "compile --warnings-as-errors --no-listeners --ignore-module-conflict",
         "gettext.extract --check-up-to-date",
         "xref graph --format cycles --label compile --fail-above 0",
         "credo --mute-exit-status",

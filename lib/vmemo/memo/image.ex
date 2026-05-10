@@ -68,6 +68,18 @@ defmodule Vmemo.Memo.Image do
         worker_module_name Vmemo.Memo.Image.Workers.GenerateCaption
         scheduler_module_name Vmemo.Memo.Image.Schedulers.GenerateCaption
       end
+
+      trigger :generate_thumbnails do
+        action :generate_thumbnails
+        queue :default
+        max_attempts 5
+        backoff 30
+        timeout 120_000
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Memo.Image.Workers.GenerateThumbnails
+        scheduler_module_name Vmemo.Memo.Image.Schedulers.GenerateThumbnails
+      end
     end
   end
 
@@ -127,10 +139,12 @@ defmodule Vmemo.Memo.Image do
     create :create_for_image_search do
       accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose, :upload_batch_id]
       change set_attribute(:typesense_status, "pending")
+      change run_oban_trigger(:generate_thumbnails)
     end
 
     create :import do
       accept [:id, :url, :note, :caption, :file_id, :user_id, :inner_purpose, :upload_batch_id]
+      change run_oban_trigger(:generate_thumbnails)
     end
 
     create :create_with_sync do
@@ -139,6 +153,7 @@ defmodule Vmemo.Memo.Image do
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:sync_typesense)
       change run_oban_trigger(:generate_caption)
+      change run_oban_trigger(:generate_thumbnails)
     end
 
     update :update do
@@ -193,6 +208,35 @@ defmodule Vmemo.Memo.Image do
       require_atomic? false
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:generate_caption)
+    end
+
+    update :generate_thumbnails do
+      accept []
+      require_atomic? false
+      transaction? false
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          case generate_thumbnails_for_image(record) do
+            :ok ->
+              {:ok, record}
+
+            {:discard, reason} ->
+              Logger.warning(
+                "thumbnail job discarded image_id=#{record.id} user_id=#{record.user_id} reason=#{inspect(reason)}"
+              )
+
+              {:ok, record}
+
+            {:error, reason} ->
+              Logger.error(
+                "thumbnail job failed image_id=#{record.id} user_id=#{record.user_id} reason=#{inspect(reason)}"
+              )
+
+              {:error, reason}
+          end
+        end)
+      end
     end
 
     update :set_typesense_status do
@@ -947,6 +991,22 @@ defmodule Vmemo.Memo.Image do
 
   defp generate_caption_for_photo(image) do
     if has_caption?(image.caption), do: :ok, else: do_generate_caption(image)
+  end
+
+  defp generate_thumbnails_for_image(image) do
+    case ImageStorage.storage_path_from_url(image.url, image.user_id) do
+      {:ok, storage_path} ->
+        ImageStorage.thumbs!(storage_path)
+        :ok
+
+      {:error, :file_not_found} ->
+        {:discard, :file_not_found}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    error -> {:error, error}
   end
 
   defp do_generate_caption(image) do

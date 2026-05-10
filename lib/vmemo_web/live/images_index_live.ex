@@ -5,6 +5,7 @@ defmodule VmemoWeb.ImagesIndexLive do
   use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
   alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
@@ -102,7 +103,7 @@ defmodule VmemoWeb.ImagesIndexLive do
             </div>
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/60 shadow-md">
               <img
-                src={@similar_photo.url}
+                src={Storage.img(@similar_photo.url, :s)}
                 alt={@similar_photo.note}
                 class="w-full h-full object-cover"
               />
