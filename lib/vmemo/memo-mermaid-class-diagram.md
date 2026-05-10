@@ -13,6 +13,7 @@ classDiagram
         generate_caption()
         update_search_engine()
         request_generate_caption()
+        generate_thumbnails()
         set_typesense_status(String typesense_status)
         set_moondream_status(String moondream_status)
         sync_typesense_by_id(UUID image_id)
