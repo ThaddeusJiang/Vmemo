@@ -1,5 +1,5 @@
 ---
-name: phoenix-framework
+name: "phoenix-framework"
 description: "Use this skill when working with Phoenix and LiveView web layers, routing, rendering, templates, and events."
 metadata:
   managed-by: usage-rules

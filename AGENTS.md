@@ -65,6 +65,15 @@
   - `docs/guides/coding/uiux.md`
   - `docs/guides/coding/debug.md`
 
+## Repo skills conventions
+- Skill files live under `.agents/skills/**/SKILL.md`.
+- Generic/cross-project skills must be stored in `.agents/skills/<skill-name>/` (not under `.agents/skills/vmemo/`).
+- Generic/cross-project skill names must not use `Vmemo/` prefix (for example `ash-framework`, `phoenix-framework`).
+- Vmemo-specific skills must be stored in `.agents/skills/vmemo/<skill-name>/`.
+- Vmemo-specific skill names must use `Vmemo/` prefix (for example `Vmemo/github-pr-workflow`, `Vmemo/local-development`).
+- Keep skill body content in English only.
+- When moving/renaming skills, keep directory, front-matter `name`, and referenced paths consistent in the same change.
+
 ## Changelog Policy (AI workflow)
 - `CHANGELOG.md` is maintained manually for users; do not auto-generate final entries from raw commit/PR titles.
 - Any PR with user-visible behavior changes (including feature work and bug fixes) is incomplete unless `## [Unreleased]` is updated in `CHANGELOG.md`.

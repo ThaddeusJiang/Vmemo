@@ -1,5 +1,5 @@
 ---
-name: ash-framework
+name: "ash-framework"
 description: "Use this skill when working with Ash Framework and its extensions. Consult before domain modeling, resources, actions, and data-layer changes."
 metadata:
   managed-by: usage-rules
