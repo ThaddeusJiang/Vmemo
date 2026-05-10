@@ -276,19 +276,10 @@
     }
 
     .btn {
-        @apply btn-sm;
         @apply transition-transform duration-200;
         border-radius: 0.75rem;
         border: none;
         box-shadow: none;
-    }
-
-    .btn-ghost {
-        background: transparent !important;
-    }
-
-    .btn-ghost:hover {
-        background: color-mix(in oklch, var(--color-base-content) 6%, transparent) !important;
     }
 
     .btn:hover:not(:disabled):not(.btn-ghost) {

@@ -28,6 +28,9 @@ Do not put framework-specific implementation details here.
   - default: `outline`
   - save/submit: `primary` or `accent`
   - destructive: `error`
+- `<.button>` variant is the semantic source of truth for button type (`submit` / `ghost` / `outline` / `danger`).
+- Do not mix conflicting semantic style classes on `<.button>` calls (for example `variant=\"ghost\"` with `btn-outline`, or `variant=\"outline\"` with `btn-ghost`).
+- Visual fine-tuning beyond semantic variant should use daisyUI utility classes/CSS (size, spacing, positioning, z-index, visibility, layout), not override semantic type.
 - `cancel` should use `ghost`.
 - `save/submit` should use `primary`.
 - Do not place destructive actions (for example `delete`) in the primary bottom action row.

@@ -304,10 +304,10 @@ defmodule VmemoWeb.ImageIdLive do
                 </.link>
 
                 <.button
-                  variant="outline"
+                  size="sm"
                   phx-click="show-expanded"
                   aria-label={gettext("expand")}
-                  class="absolute top-2 right-2 btn-circle hidden group-hover:hidden sm:group-hover:flex items-center justify-center group-hover:bg-base-100"
+                  class="absolute top-3 right-3 btn-circle hidden group-hover:hidden sm:group-hover:inline-flex items-center justify-center"
                 >
                   <.icon name="hero-arrows-pointing-out" class="h-4 w-4" />
                 </.button>
@@ -378,7 +378,7 @@ defmodule VmemoWeb.ImageIdLive do
                         id={@form[:caption].id}
                         name={@form[:caption].name}
                         class={[
-                          "textarea textarea-bordered w-full rounded-lg pr-12",
+                          "textarea textarea-bordered w-full rounded-lg pr-14",
                           if(@latest_caption_request,
                             do:
                               @latest_caption_request.status == "pending" ||
@@ -394,10 +394,12 @@ defmodule VmemoWeb.ImageIdLive do
                             else: false
                         }
                       >{Phoenix.HTML.Form.normalize_value("textarea", @form[:caption].value)}</textarea>
-                      <button
+                      <.button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         phx-click="gen-description"
-                        class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 hidden group-focus-within/caption:inline-flex"
+                        class="btn-circle absolute top-2.5 right-2.5 hidden group-focus-within/caption:inline-flex"
                         aria-label={
                           if @image.caption && @image.caption != "",
                             do: gettext("Regenerate caption"),
@@ -417,7 +419,7 @@ defmodule VmemoWeb.ImageIdLive do
                         }
                       >
                         <.icon name="hero-sparkles" class="h-4 w-4" />
-                      </button>
+                      </.button>
                     </div>
                   </div>
                   <.error :for={msg <- @form[:caption].errors}>
@@ -521,7 +523,7 @@ defmodule VmemoWeb.ImageIdLive do
                   />
                   <.button
                     phx-click="rotate-image"
-                    class="btn btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
+                    class="btn-circle bg-white text-black hover:bg-white border border-zinc-200 !shadow-none"
                     aria-label={gettext("Rotate and save")}
                     title={gettext("Rotate and save")}
                   >

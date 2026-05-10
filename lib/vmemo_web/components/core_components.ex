@@ -374,7 +374,7 @@ defmodule VmemoWeb.CoreComponents do
       <.button phx-click="go" class="ml-2">Send!</.button>
 
   """
-  attr :variant, :string, default: "submit", values: ~w(submit ghost danger outline)
+  attr :variant, :string, default: nil, values: [nil | ~w(submit ghost danger outline)]
   attr :size, :string, default: nil, values: [nil | ~w(xs sm lg)]
   attr :class, :string, default: nil
   attr :rest, :global, include: ~w(disabled form name value type  )

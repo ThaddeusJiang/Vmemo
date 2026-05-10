@@ -7,6 +7,11 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+### End Users
+
+#### Fixed
+- Fixed inconsistent icon-button styling/hover behavior in image detail forms, and aligned button variant/size usage for more predictable interaction feedback.
+
 ## [Vmemo - 2026.5.9] - 2026-05-09
 
 ### End Users
