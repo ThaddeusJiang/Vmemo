@@ -19,7 +19,8 @@ defmodule Mix.Tasks.Ts.Migrate do
     end
 
     load_ts_schema_modules()
-    apply(ts_schema_migrator_module(), :migrate, [])
+    migrator = ts_schema_migrator_module()
+    migrator.migrate()
   end
 
   defp load_ts_schema_modules do

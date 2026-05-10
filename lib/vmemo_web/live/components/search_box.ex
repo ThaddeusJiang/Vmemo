@@ -206,30 +206,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   defp consume_photos_for_upload_only(socket, current_user, entries) do
     results =
-      Enum.map(entries, fn entry ->
-        consume_uploaded_entry(socket, entry, fn %{path: path} ->
-          filename = entry.uuid <> Path.extname(entry.client_name)
-
-          with {:ok, dest} <- ImageStorage.cp_file(path, current_user.id, filename),
-               {:ok, image} <-
-                 Image.create_with_sync(
-                   %{
-                     note: "",
-                     url: Path.join("/", dest),
-                     file_id: filename,
-                     user_id: current_user.id,
-                     upload_batch_id: Ecto.UUID.generate(),
-                     inner_purpose: nil
-                   },
-                   actor: current_user
-                 ) do
-            {:ok, image.id}
-          else
-            {:error, reason} ->
-              {:ok, {:error, reason}}
-          end
-        end)
-      end)
+      Enum.map(entries, &consume_photo_entry(socket, current_user, &1))
 
     success_ids =
       results
@@ -263,6 +240,31 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
          )
          |> push_navigate(to: ~p"/images", replace: true)}
     end
+  end
+
+  defp consume_photo_entry(socket, current_user, entry) do
+    consume_uploaded_entry(socket, entry, fn %{path: path} ->
+      filename = entry.uuid <> Path.extname(entry.client_name)
+
+      with {:ok, dest} <- ImageStorage.cp_file(path, current_user.id, filename),
+           {:ok, image} <-
+             Image.create_with_sync(
+               %{
+                 note: "",
+                 url: Path.join("/", dest),
+                 file_id: filename,
+                 user_id: current_user.id,
+                 upload_batch_id: Ecto.UUID.generate(),
+                 inner_purpose: nil
+               },
+               actor: current_user
+             ) do
+        {:ok, image.id}
+      else
+        {:error, reason} ->
+          {:ok, {:error, reason}}
+      end
+    end)
   end
 
   @impl true
