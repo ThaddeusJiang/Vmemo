@@ -1,5 +1,5 @@
 ---
-name: "release"
+name: "Vmemo/release"
 description: "Prepare a Vmemo release PR with explicit config-change confirmation gates."
 ---
 
@@ -44,7 +44,7 @@ Guardrails:
 Use script:
 
 ```bash
-mix run --no-start .codex/skills/release/scripts/resolve_release_version.exs [VERSION]
+mix run --no-start .agents/skills/vmemo/release/scripts/resolve_release_version.exs [VERSION]
 ```
 
 Rules:
@@ -57,7 +57,7 @@ Rules:
 Use script:
 
 ```bash
-mix run --no-start .codex/skills/release/scripts/check_config_changes.exs [BASE_REF] [TARGET_REF]
+mix run --no-start .agents/skills/vmemo/release/scripts/check_config_changes.exs [BASE_REF] [TARGET_REF]
 ```
 
 Defaults:

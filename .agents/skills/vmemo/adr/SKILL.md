@@ -1,5 +1,5 @@
 ---
-name: "adr"
+name: "Vmemo/adr"
 description: "Create and update Architecture Decision Records (ADR) following MADR 4.x, and enforce ADR compliance in agent execution."
 ---
 
@@ -40,7 +40,7 @@ Agents must not silently violate ADRs.
 
 Use the template file:
 
-- `.codex/skills/adr/templates/adr-template.md`
+- `.agents/skills/vmemo/adr/templates/adr-template.md`
 
 ## Required workflow
 
