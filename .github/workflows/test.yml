@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: test-${{ github.event.pull_request.number || github.run_id }}
@@ -30,6 +30,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: erlef/setup-beam@v1.23.0
         id: beam
         with:
@@ -47,25 +49,35 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
-      - name: Compile
-        run: |
-          mix compile --warnings-as-errors
-          mix xref graph --format cycles --label compile-connected --fail-above 0
-
       - name: Format
-        run: |
-          mix format --check-formatted
+        run: mix format
 
-      - name: Credo
-        continue-on-error: true
-        run: mix credo --strict
+      - name: Commit formatted files
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "chore(ci): auto format"
 
-      - name: Sobelow
-        continue-on-error: true
-        run: mix sobelow --config
+      - name: Compile
+        run: mix compile --warnings-as-errors
 
       - name: Gettext sync
         run: mix gettext.extract --check-up-to-date
+
+      - name: Xref cycles
+        run: mix xref graph --format cycles --label compile --fail-above 0
+
+      - name: Credo (non-blocking)
+        run: mix credo --mute-exit-status
+
+      - name: Sobelow
+        run: mix sobelow --config
+
+      - name: Hex audit
+        run: mix hex.audit
+
+      - name: Check unused lock deps
+        run: mix deps.unlock --check-unused
 
   mix-test:
     if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'LGTM') }}
