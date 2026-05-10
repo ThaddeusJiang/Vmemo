@@ -350,11 +350,12 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                   <%= if entry.progress == 0 do %>
                     <.button
                       type="button"
+                      size="sm"
                       phx-target={@myself}
                       phx-click="cancel-image"
                       phx-value-ref={entry.ref}
                       aria-label="cancel"
-                      class="absolute top-2 right-2 btn btn-circle btn-sm btn-neutral z-10"
+                      class="absolute top-2 right-2 btn-circle z-10"
                     >
                       &times;
                     </.button>
