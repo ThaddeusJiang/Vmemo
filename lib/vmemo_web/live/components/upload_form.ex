@@ -9,10 +9,10 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
-  alias Vmemo.Memo.Note
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Memo.Note
 
   @impl true
   def mount(socket) do
