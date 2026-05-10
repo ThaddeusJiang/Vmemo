@@ -9,6 +9,8 @@ defmodule VmemoWeb.ApiAuth do
   import Phoenix.Controller
 
   require Logger
+  alias Plug.Conn.Status
+  alias Vmemo.Account.ApiToken
 
   def init(opts), do: opts
 
@@ -23,7 +25,7 @@ defmodule VmemoWeb.ApiAuth do
   end
 
   defp verify_token(conn, token) do
-    case Vmemo.Account.ApiToken.verify_api_token(token) do
+    case ApiToken.verify_api_token(token) do
       {:ok, api_token} ->
         # Attach user info to the connection
         conn
@@ -41,7 +43,7 @@ defmodule VmemoWeb.ApiAuth do
     |> put_status(401)
     |> json(%{
       statusCode: 401,
-      statusMessage: Plug.Conn.Status.reason_phrase(401),
+      statusMessage: Status.reason_phrase(401),
       message: "Invalid or missing API token"
     })
     |> halt()

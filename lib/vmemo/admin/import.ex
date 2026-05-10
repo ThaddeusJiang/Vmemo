@@ -6,9 +6,9 @@ defmodule Vmemo.Admin.Import do
   alias Vmemo.ImportExport.Ids
   alias Vmemo.ImportExport.Json
   alias Vmemo.ImportExport.Zip
-  alias Vmemo.Memo.Note
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
+  alias Vmemo.Memo.Note
 
   @error_limit 50
 

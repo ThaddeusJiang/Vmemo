@@ -20,7 +20,8 @@ defmodule Mix.Tasks.Ts.Drop do
     end
 
     load_ts_schema_modules()
-    apply(ts_schema_module(), :reset, [])
+    schema = ts_schema_module()
+    schema.reset()
   end
 
   defp load_ts_schema_modules do

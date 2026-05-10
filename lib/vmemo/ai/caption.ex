@@ -13,9 +13,9 @@ defmodule Vmemo.Ai.Caption do
     :timeout
   ]
 
+  alias Vmemo.Account
   alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.VisionConfig
-  alias Vmemo.Account
 
   def generate_caption(image_base64, opts \\ []) do
     config = VisionConfig.resolve()

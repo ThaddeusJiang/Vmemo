@@ -2,6 +2,7 @@ defmodule Vmemo.SearchEngine.TsNote do
   @moduledoc false
   require Logger
   alias SmallSdk.Typesense
+  alias Vmemo.SearchEngine.TsImage
 
   @collection_name "memo_notes"
   @image_collection_name "memo_images"
@@ -63,7 +64,7 @@ defmodule Vmemo.SearchEngine.TsNote do
 
     {:ok, images} = Typesense.handle_search_res(res)
 
-    {:ok, %{note: note, images: images |> Enum.map(&Vmemo.SearchEngine.TsImage.parse/1)}}
+    {:ok, %{note: note, images: images |> Enum.map(&TsImage.parse/1)}}
   end
 
   # TODO: renaming to read?

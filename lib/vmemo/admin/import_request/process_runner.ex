@@ -3,8 +3,8 @@ defmodule Vmemo.Admin.ImportRequest.ProcessRunner do
 
   require Logger
 
-  alias Vmemo.Admin.ImportRequest
   alias Vmemo.Admin.Import
+  alias Vmemo.Admin.ImportRequest
 
   def execute(%{"request_id" => request_id}) do
     case Ash.get(ImportRequest, request_id, actor: nil) do

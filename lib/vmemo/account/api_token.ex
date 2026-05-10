@@ -123,7 +123,7 @@ defmodule Vmemo.Account.ApiToken do
       change fn changeset, _context ->
         id = Ash.Query.get_argument(changeset, :id)
 
-        case Vmemo.Account.ApiToken.get_by_id(id) do
+        case __MODULE__.get_by_id(id) do
           {:ok, token} ->
             new_status = !token.is_active
             Ash.Changeset.change_attribute(changeset, :is_active, new_status)

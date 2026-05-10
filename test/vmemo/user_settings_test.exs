@@ -5,9 +5,9 @@ defmodule Vmemo.UserSettingsTest do
 
   require Ash.Query
 
-  alias Vmemo.Memo.Note
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
+  alias Vmemo.Memo.Note
   alias Vmemo.UserSettings
 
   test "exports and imports data per user" do

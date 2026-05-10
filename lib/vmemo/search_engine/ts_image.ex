@@ -5,6 +5,7 @@ defmodule Vmemo.SearchEngine.TsImage do
   CRUD and search operations are supported.
   """
   alias SmallSdk.Typesense
+  alias Vmemo.SearchEngine.TsNote
 
   @collection_name "memo_images"
   @note_collection_name "memo_notes"
@@ -103,7 +104,7 @@ defmodule Vmemo.SearchEngine.TsImage do
 
     {:ok, notes} = Typesense.handle_search_res(res)
 
-    {:ok, %{image: image, notes: notes |> Enum.map(&Vmemo.SearchEngine.TsNote.parse/1)}}
+    {:ok, %{image: image, notes: notes |> Enum.map(&TsNote.parse/1)}}
   end
 
   def update_image(image) do

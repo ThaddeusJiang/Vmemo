@@ -46,7 +46,8 @@ defmodule Vmemo.Release do
     _ = ensure_req_finch_started()
 
     load_ts_schema_modules()
-    apply(ts_schema_migrator_module(), :migrate, [])
+    migrator = ts_schema_migrator_module()
+    migrator.migrate()
   end
 
   defp repos do
