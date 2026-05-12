@@ -10,9 +10,9 @@ defmodule Vmemo.Ai.VisionRequest do
   alias SmallSdk.Moondream
   alias Vmemo.Account
   alias Vmemo.Ai.AshAiVision
-  alias Vmemo.Ai.ImagePreprocessor
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
 
   postgres do
     table "ai_vision_requests"
@@ -390,6 +390,23 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   defp read_image_as_base64(url) do
+    thumb_url = Storage.img(url, :s)
+
+    with {:error, :file_not_found} <- read_image_binary(thumb_url),
+         {:ok, binary} <- read_image_binary(url) do
+      mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
+      {:ok, {Base.encode64(binary), mime_type}}
+    else
+      {:ok, binary} ->
+        mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
+        {:ok, {Base.encode64(binary), mime_type}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp read_image_binary(url) do
     relative_path =
       url
       |> String.trim_leading("/")
@@ -398,16 +415,9 @@ defmodule Vmemo.Ai.VisionRequest do
     file_path = Path.join(["storage", "v1", relative_path])
 
     case File.read(file_path) do
-      {:ok, binary} ->
-        mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
-        prepared_binary = preprocess_binary_or_fallback(binary, mime_type)
-        {:ok, {Base.encode64(prepared_binary), mime_type}}
-
-      {:error, :enoent} ->
-        {:error, :file_not_found}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, binary} -> {:ok, binary}
+      {:error, :enoent} -> {:error, :file_not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -425,22 +435,4 @@ defmodule Vmemo.Ai.VisionRequest do
     do: "image/webp"
 
   defp detect_mime_type_from_binary(_), do: nil
-
-  defp preprocess_binary_or_fallback(binary, mime_type) do
-    case ImagePreprocessor.maybe_prepare_for_vision(binary, mime_type) do
-      {:ok, prepared_binary} ->
-        prepared_binary
-
-      other ->
-        Logger.warning(
-          "Image preprocess returned unexpected value, fallback to original: #{inspect(other)}"
-        )
-
-        binary
-    end
-  rescue
-    e ->
-      Logger.warning("Image preprocess failed, fallback to original: #{Exception.message(e)}")
-      binary
-  end
 end

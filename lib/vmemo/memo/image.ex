@@ -917,12 +917,10 @@ defmodule Vmemo.Memo.Image do
   defp build_mcp_create_asset_params(input, user_id) do
     file = Ash.ActionInput.get_argument(input, :file)
 
-    cond do
-      is_binary(file) and String.trim(file) != "" ->
-        save_mcp_base64_image(file, user_id)
-
-      true ->
-        {:error, "file must be provided"}
+    if is_binary(file) and String.trim(file) != "" do
+      save_mcp_base64_image(file, user_id)
+    else
+      {:error, "file must be provided"}
     end
   end
 
