@@ -61,7 +61,8 @@ defmodule Vmemo.Memo.ImageStorage do
 
   defp gen_dest(user_id, filename) do
     timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
+    normalized_filename = filename |> to_string() |> String.downcase()
 
-    Path.join([user_id, "images", timestamp <> "_" <> filename])
+    Path.join([user_id, "images", timestamp <> "_" <> normalized_filename])
   end
 end

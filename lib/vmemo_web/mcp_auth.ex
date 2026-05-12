@@ -7,6 +7,7 @@ defmodule VmemoWeb.McpAuth do
   """
 
   import Plug.Conn
+  import Phoenix.Controller, only: [json: 2]
 
   require Logger
   alias Ash.PlugHelpers
@@ -19,15 +20,12 @@ defmodule VmemoWeb.McpAuth do
     # GET requests are used for SSE endpoint discovery, but we only support StreamableHttp
     if conn.method == "GET" do
       conn
-      |> put_resp_header("content-type", "application/json")
-      |> send_resp(
-        405,
-        Jason.encode!(%{
-          error: "Method Not Allowed",
-          message:
-            "This MCP server only supports StreamableHttp transport. Please use POST requests instead of GET."
-        })
-      )
+      |> put_status(:method_not_allowed)
+      |> json(%{
+        error: "Method Not Allowed",
+        message:
+          "This MCP server only supports StreamableHttp transport. Please use POST requests instead of GET."
+      })
       |> halt()
     else
       case get_req_header(conn, "authorization") do
@@ -56,15 +54,12 @@ defmodule VmemoWeb.McpAuth do
 
   defp unauthorized(conn) do
     conn
-    |> put_resp_header("content-type", "application/json")
-    |> send_resp(
-      401,
-      Jason.encode!(%{
-        statusCode: 401,
-        statusMessage: Plug.Conn.Status.reason_phrase(401),
-        message: "Invalid or missing API token"
-      })
-    )
+    |> put_status(:unauthorized)
+    |> json(%{
+      statusCode: 401,
+      statusMessage: Plug.Conn.Status.reason_phrase(401),
+      message: "Invalid or missing API token"
+    })
     |> halt()
   end
 end
