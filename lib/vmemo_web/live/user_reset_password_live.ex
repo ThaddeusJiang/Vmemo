@@ -185,7 +185,7 @@ defmodule VmemoWeb.UserResetPasswordLive do
   defp destroy_user_token_by_jti(nil), do: :ok
 
   defp destroy_user_token_by_jti(jti) do
-    case Ash.get(Vmemo.Account.UserToken, jti) do
+    case Account.get_user_token(jti) do
       {:ok, token_record} -> Ash.destroy(token_record)
       _ -> :ok
     end

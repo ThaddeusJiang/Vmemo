@@ -31,6 +31,7 @@ defmodule Vmemo.Memo.Note do
   end
 
   code_interface do
+    define :get, action: :read, get_by: [:id]
     define :create_with_sync
     define :read
     define :update

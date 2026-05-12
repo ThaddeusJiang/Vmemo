@@ -38,7 +38,7 @@ defmodule VmemoWeb.ImagesIndexLive do
   def handle_event("delete-image", %{"id" => id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(Image, id, actor: user) do
+    case Image.get(id, actor: user) do
       {:ok, image} ->
         case Image.destroy(image, actor: user) do
           :ok ->

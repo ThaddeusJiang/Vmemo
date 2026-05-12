@@ -49,6 +49,7 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   code_interface do
+    define :get, action: :read, get_by: [:id]
     define :create
     define :create_caption
     define :read

@@ -150,7 +150,7 @@ defmodule VmemoWeb.ImageIdLive do
   def handle_event("retry-caption-request", %{"request_id" => request_id}, socket) do
     user = socket.assigns.current_user
 
-    with {:ok, request} <- Ash.get(VisionRequest, request_id, actor: user),
+    with {:ok, request} <- VisionRequest.get(request_id, actor: user),
          true <- request.status == "failed",
          {:ok, updated_request} <- VisionRequest.retry(request, %{}, actor: user) do
       updated_requests =
@@ -560,7 +560,7 @@ defmodule VmemoWeb.ImageIdLive do
   defp destroy_image(socket, id) do
     user = socket.assigns.current_user
 
-    case Ash.get(Image, id, actor: user) do
+    case Image.get(id, actor: user) do
       {:ok, image} ->
         case Image.destroy(image, actor: user) do
           :ok ->

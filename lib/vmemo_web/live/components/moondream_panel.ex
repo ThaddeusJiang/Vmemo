@@ -99,7 +99,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
   def handle_event("retry-request", %{"request_id" => request_id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(VisionRequest, request_id, actor: user) do
+    case VisionRequest.get(request_id, actor: user) do
       {:ok, %{status: "failed"} = request} ->
         retry_failed_request(socket, user, request)
 

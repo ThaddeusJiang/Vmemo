@@ -86,7 +86,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   def get_job(nil, _id), do: {:error, :not_found}
 
   def get_job(user, id) do
-    case Ash.get(Image, id, actor: user) do
+    case Image.get(id, actor: user) do
       {:ok, image} ->
         caption_error_by_image_id = caption_error_by_image_id([image])
         {:ok, to_job(image, caption_error_by_image_id)}

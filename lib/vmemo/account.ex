@@ -23,7 +23,9 @@ defmodule Vmemo.Account do
 
     resource Vmemo.Account.UserProfile
 
-    resource Vmemo.Account.UserToken
+    resource Vmemo.Account.UserToken do
+      define :get_user_token, action: :read, get_by: [:jti]
+    end
     resource Vmemo.Account.ApiToken
   end
 

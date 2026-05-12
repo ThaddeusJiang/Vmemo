@@ -13,26 +13,31 @@ Focus only on:
 - temporary port remap when conflicts exist
 
 ## Prepare
+- Run `mise trust && mise install`.
 - Copy `AGENTS.override.md` from the main checkout using `cp`.
 - Copy `.env` from the main checkout using `cp`.
 
+## Start Docker Compose
+
+1. Before `docker compose up -d`, check host port conflicts.
+2. If conflict exists, create/update `docker-compose.override.yml` with temporary ports and sync `.env` URLs to those ports.
+3. Start services and continue workflow.
+
 ## Setup
 
-1. Run `mise trust && mise install`.
-3. Check setup state:
-   - If deps missing or services unavailable, run `mix setup`.
-   - If state is broken/corrupted, run `mix reset` then `mix setup`.
-4. Before `docker compose up -d`, check host port conflicts.
-5. If conflict exists, create/update `docker-compose.override.yml` with temporary ports and sync `.env` URLs to those ports.
-6. Start services and continue workflow.
+Check setup state:
+- If deps missing or services unavailable, run `mix setup`.
+- If state is broken/corrupted, run `mix reset` then `mix setup`.
 
 ## Test 
 
 1. Run `docker compose --profile test up -d`.
+2. Run `mix test`.
+3. Run `docker compose --profile test down` to clean up.
 
 ## Check
 
-1. Run `mix check`
+- Run `mix check`.
 
 ## Notes
 - Temporary port handling must be done via `docker-compose.override.yml`; do not modify `docker-compose.yml`.
