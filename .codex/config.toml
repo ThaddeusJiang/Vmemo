@@ -1,3 +1,8 @@
 [mcp_servers.tidewave]
 url = "http://localhost:4000/tidewave/mcp"
 enabled = true
+
+[mcp_servers.vmemo]
+url = "http://localhost:4000/mcp"
+bearer_token_env_var = "VMEMO_MCP_TOKEN"
+enabled = true

@@ -7,6 +7,18 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+### End Users
+
+#### Added
+- Added Vmemo MCP image management tools for searching, creating, reading, updating, and deleting images from MCP-capable AI clients.
+- Added MCP image resources so clients can lazily read image URLs, HTML previews, or base64 image data after search results are returned.
+
+#### Changed
+- Changed MCP image search to return lightweight image details and resource references instead of embedding image data in every search result.
+
+#### Fixed
+- Fixed Vmemo MCP image tools returning a server error when requests reached AshAi without an authenticated actor.
+
 ## [Vmemo - 2026.5.9] - 2026-05-09
 
 ### End Users
