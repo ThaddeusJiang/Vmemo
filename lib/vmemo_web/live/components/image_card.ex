@@ -13,7 +13,7 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
   def card_delete_menu(assigns) do
     ~H"""
     <div class="absolute top-2 right-2 z-10 hidden group-hover:block">
-      <.dropdown_menu class="dropdown-end" menu_class="w-40">
+      <.dropdown class="dropdown-end">
         <:trigger>
           <button
             type="button"
@@ -30,7 +30,7 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
             <span>Delete</span>
           </button>
         </:item>
-      </.dropdown_menu>
+      </.dropdown>
     </div>
     """
   end

@@ -1034,8 +1034,7 @@ defmodule VmemoWeb.CoreComponents do
     """
   end
 
-  attr :class, :string, default: nil
-  attr :menu_class, :string, default: nil
+  attr :rest, :global
   slot :trigger, required: true
   slot :item, required: true
 
@@ -1046,16 +1045,13 @@ defmodule VmemoWeb.CoreComponents do
   - `:trigger` slot (focusable/button element)
   - one or more `:item` slots (each rendered inside `<li>`)
   """
-  def dropdown_menu(assigns) do
+  def dropdown(assigns) do
     ~H"""
-    <div class={["dropdown", @class]}>
+    <div class="dropdown" {@rest}>
       {render_slot(@trigger)}
       <ul
         tabindex="0"
-        class={[
-          "dropdown-content elevated-popover menu bg-base-100 rounded-box z-[90] p-2",
-          @menu_class
-        ]}
+        class="dropdown-content elevated-popover menu bg-base-100 rounded-box z-[90] p-2"
       >
         <li :for={item <- @item}>
           {render_slot(item)}
