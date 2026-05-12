@@ -49,8 +49,8 @@ defmodule VmemoWeb.ImageIdLive do
          |> push_navigate(to: ~p"/images")}
 
       {:error, socket} ->
-        {:noreply, socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
-
+        {:noreply,
+         socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
     end
   end
 
@@ -64,7 +64,8 @@ defmodule VmemoWeb.ImageIdLive do
          |> put_flash(:info, gettext("Deleted"))}
 
       {:error, socket} ->
-        {:noreply, socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
+        {:noreply,
+         socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
     end
   end
 
