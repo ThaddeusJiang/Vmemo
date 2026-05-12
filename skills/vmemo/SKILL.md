@@ -29,7 +29,7 @@ Use this skill when users ask to:
 
 ## Client configuration checklist
 
-1. Use the exact endpoint URL, for example `http://localhost:4000/mcp`.
+1. Use the exact endpoint URL, for example `https://vmemo.app/mcp`.
 2. Add `Authorization` header with Bearer token.
 3. Restart client after config updates.
 4. Verify tools are listed before first call.
@@ -40,7 +40,7 @@ Use this skill when users ask to:
 {
   "mcpServers": {
     "Vmemo": {
-      "url": "http://localhost:4000/mcp",
+      "url": "https://vmemo.app/mcp",
       "headers": {
         "Authorization": "Bearer vmemo_xxx"
       }
@@ -53,7 +53,7 @@ Use this skill when users ask to:
 
 ```bash
 codex mcp add vmemo \
-  --url http://localhost:4000/mcp \
+  --url https://vmemo.app/mcp \
   --bearer-token-env-var VMEMO_MCP_TOKEN
 ```
 
