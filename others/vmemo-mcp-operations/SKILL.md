@@ -1,5 +1,5 @@
 ---
-name: "Vmemo Operations"
+name: "vmemo"
 description: "Configure Vmemo MCP in clients and operate Vmemo images through MCP tools."
 ---
 
