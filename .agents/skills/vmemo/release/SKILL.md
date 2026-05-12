@@ -1,5 +1,5 @@
 ---
-name: "Vmemo/release"
+name: "vmemo-release-skill"
 description: "Prepare a Vmemo release PR with explicit config-change confirmation gates."
 ---
 
