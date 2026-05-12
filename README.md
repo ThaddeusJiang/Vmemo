@@ -24,7 +24,7 @@ For people who think and remember visually, image notes can be much more effecti
 ## Integrations
 
 - Apple Shortcuts: [Setup guide](others/apple-shortcuts/README.md)
-- AI app MCP: [MCP server guide](docs/features/mcp-server.md)
+- AI agent skill: [Setup guide](skills/README.md)
 
 ## One-Click Self-Hosting on Zeabur 
 

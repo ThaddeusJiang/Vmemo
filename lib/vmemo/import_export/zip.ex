@@ -9,27 +9,19 @@ defmodule Vmemo.ImportExport.Zip do
   end
 
   def zip_dir(source_dir, target_zip_path) do
-    cwd = File.cwd!()
+    entries =
+      source_dir
+      |> Path.join("**/*")
+      |> Path.wildcard()
+      |> Enum.reject(&File.dir?/1)
+      |> Enum.map(&Path.relative_to(&1, source_dir))
+      |> Enum.map(&String.to_charlist/1)
 
-    try do
-      File.cd!(source_dir)
-
-      entries =
-        source_dir
-        |> Path.join("**/*")
-        |> Path.wildcard()
-        |> Enum.reject(&File.dir?/1)
-        |> Enum.map(&Path.relative_to(&1, source_dir))
-        |> Enum.map(&String.to_charlist/1)
-
-      case :zip.create(String.to_charlist(target_zip_path), entries,
-             cwd: String.to_charlist(source_dir)
-           ) do
-        {:ok, _zip_path} -> :ok
-        {:error, reason} -> {:error, "Failed to create zip: #{inspect(reason)}"}
-      end
-    after
-      File.cd!(cwd)
+    case :zip.create(String.to_charlist(target_zip_path), entries,
+           cwd: String.to_charlist(source_dir)
+         ) do
+      {:ok, _zip_path} -> :ok
+      {:error, reason} -> {:error, "Failed to create zip: #{inspect(reason)}"}
     end
   end
 end
