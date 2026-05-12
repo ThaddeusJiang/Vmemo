@@ -1,5 +1,5 @@
 ---
-name: "Vmemo/changelog"
+name: "vmemo-changelog-skill"
 description: "Manually maintain CHANGELOG.md using Keep a Changelog with Vmemo CalVer releases (Vmemo - YYYY.MM.DD)."
 ---
 

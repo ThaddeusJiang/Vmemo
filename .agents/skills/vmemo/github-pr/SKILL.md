@@ -1,5 +1,5 @@
 ---
-name: "Vmemo/github-pr-workflow"
+name: "vmemo-github-pr-skill"
 description: "Run the full GitHub PR lifecycle: create, update, assign, and keep PR content in sync with new commits."
 ---
 

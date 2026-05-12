@@ -1,5 +1,5 @@
 ---
-name: "Vmemo/adr"
+name: "vmemo-adr-skill"
 description: "Create and update Architecture Decision Records (ADR) following MADR 4.x, and enforce ADR compliance in agent execution."
 ---
 

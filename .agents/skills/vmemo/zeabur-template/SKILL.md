@@ -1,5 +1,5 @@
 ---
-name: "Vmemo/zeabur-template-publish"
+name: "vmemo-zeabur-template-skill"
 description: "Use this skill when publishing or updating the Vmemo Zeabur template, including pre-publish validation, manual Zeabur console steps, and post-publish link updates."
 ---
 

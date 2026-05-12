@@ -1,11 +1,13 @@
 ---
-name: "Vmemo/local-development"
+name: "vmemo-development-skill"
 description: "Unified Vmemo local development workflow: setup-state check, reset decision, and temporary port conflict handling."
 ---
 
 # Local Development
 
 Trigger when the user asks for local `setup`, `reset`, `stop`, or environment validation.
+
+This skill is the source of truth for local environment bootstrap commands, reset flow, and temporary port-conflict handling.
 
 Ignore worktree-specific concepts. Focus only on:
 - whether environment is already setup
