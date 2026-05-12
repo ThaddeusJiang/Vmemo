@@ -45,21 +45,21 @@ defmodule VmemoWeb.ImagesIndexLive do
             {:noreply,
              socket
              |> remove_image_from_list(id)
-             |> put_flash(:info, "Deleted")}
+             |> put_flash(:info, gettext("Deleted"))}
 
           {:ok, _deleted} ->
             {:noreply,
              socket
              |> remove_image_from_list(id)
-             |> put_flash(:info, "Deleted")}
+             |> put_flash(:info, gettext("Deleted"))}
 
-          {:error, reason} ->
+          {:error, _reason} ->
             {:noreply,
-             put_flash(socket, :error, "Failed to delete image: #{Exception.message(reason)}")}
+             put_flash(socket, :error, gettext("Failed to delete image, please try again later."))}
         end
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Image not found")}
+        {:noreply, put_flash(socket, :error, gettext("Image not found"))}
     end
   end
 

@@ -7,6 +7,8 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
   alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
+  use Gettext, backend: VmemoWeb.Gettext
+
   @impl true
   def update(assigns, socket) do
     note_text = assigns.note.text
@@ -121,7 +123,7 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
          |> assign(:note_dirty, false)
          |> assign(:original_note_text, note.text)
          |> assign(form: to_form(%{"note" => note.text}))
-         |> put_flash(:info, "Updated")
+         |> put_flash(:info, gettext("Updated"))
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, changeset} ->
@@ -135,11 +137,11 @@ defmodule VmemoWeb.LiveComponents.NoteUpdateForm do
 
     case Note.destroy(socket.assigns.note, actor: actor) do
       {:ok, _note} ->
-        {:noreply, socket |> put_flash(:info, "Deleted") |> push_navigate(to: ~p"/home")}
+        {:noreply, socket |> put_flash(:info, gettext("Deleted")) |> push_navigate(to: ~p"/home")}
 
-      {:error, error} ->
+      {:error, _error} ->
         {:noreply,
-         socket |> put_flash(:error, "Failed to delete note: #{Exception.message(error)}")}
+         socket |> put_flash(:error, gettext("Failed to delete note, please try again later."))}
     end
   end
 

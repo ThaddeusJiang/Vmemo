@@ -41,12 +41,31 @@ defmodule VmemoWeb.ImageIdLive do
 
   @impl true
   def handle_event("delete-image", %{"id" => id}, socket) do
-    {:noreply, delete_main_image(socket, id)}
+    case destroy_image(socket, id) do
+      {:ok, _image} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Deleted"))
+         |> push_navigate(to: ~p"/images")}
+
+      {:error, socket} ->
+        {:noreply, socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
+
+    end
   end
 
   @impl true
   def handle_event("delete-similar-image", %{"id" => id}, socket) do
-    {:noreply, delete_similar_image(socket, id)}
+    case destroy_image(socket, id) do
+      {:ok, _image} ->
+        {:noreply,
+         socket
+         |> assign(:images, Enum.reject(socket.assigns.images, &(&1.id == id)))
+         |> put_flash(:info, gettext("Deleted"))}
+
+      {:error, socket} ->
+        {:noreply, socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
+    end
   end
 
   @impl true
@@ -536,30 +555,6 @@ defmodule VmemoWeb.ImageIdLive do
   end
 
   defp format_error_message(_), do: "Unknown error"
-
-  defp delete_main_image(socket, id) do
-    case destroy_image(socket, id) do
-      {:ok, _image} ->
-        socket
-        |> put_flash(:info, "Deleted")
-        |> push_navigate(to: ~p"/images")
-
-      {:error, socket} ->
-        socket
-    end
-  end
-
-  defp delete_similar_image(socket, id) do
-    case destroy_image(socket, id) do
-      {:ok, _image} ->
-        socket
-        |> assign(:images, Enum.reject(socket.assigns.images, &(&1.id == id)))
-        |> put_flash(:info, "Deleted")
-
-      {:error, socket} ->
-        socket
-    end
-  end
 
   defp destroy_image(socket, id) do
     user = socket.assigns.current_user
