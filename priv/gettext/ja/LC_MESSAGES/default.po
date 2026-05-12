@@ -686,6 +686,7 @@ msgstr "保存しました"
 msgid "Image job"
 msgstr "画像ジョブ"
 
+#: lib/vmemo_web/live/images_index_live.ex
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Image not found"
@@ -1069,3 +1070,30 @@ msgstr "ここに画像をドロップ、またはクリックしてアップロ
 #, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
 msgstr "一部の画像のアップロードに失敗しました。失敗した画像を再試行してください。"
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Failed to delete. Please try again later."
+msgstr "削除に失敗しました。後で再試行してください。"
+
+#: lib/vmemo_web/live/components/note_update_form.ex
+#: lib/vmemo_web/live/image_id_live.ex
+#: lib/vmemo_web/live/images_index_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Deleted"
+msgstr "削除済み"
+
+#: lib/vmemo_web/live/images_index_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Failed to delete image, please try again later."
+msgstr "削除に失敗しました。後で再試行してください。"
+
+#: lib/vmemo_web/live/components/note_update_form.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Failed to delete note, please try again later."
+msgstr "削除に失敗しました。後で再試行してください。"
+
+#: lib/vmemo_web/live/components/note_update_form.ex
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr "更新済み"
