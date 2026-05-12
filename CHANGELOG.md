@@ -12,6 +12,7 @@ and this project uses Calendar Versioning for releases.
 #### Added
 - Added Vmemo MCP image management tools for searching, creating, reading, updating, and deleting images from MCP-capable AI clients.
 - Added MCP image resources so clients can lazily read image URLs, HTML previews, or base64 image data after search results are returned.
+- Added README instructions for configuring Vmemo MCP clients and installing the Vmemo MCP skill.
 
 #### Changed
 - Changed MCP image search to return lightweight image details and resource references instead of embedding image data in every search result.
