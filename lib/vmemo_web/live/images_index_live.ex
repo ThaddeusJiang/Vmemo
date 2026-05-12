@@ -34,6 +34,35 @@ defmodule VmemoWeb.ImagesIndexLive do
     {:noreply, push_navigate(socket, to: ~p"/home")}
   end
 
+  @impl true
+  def handle_event("delete-image", %{"id" => id}, socket) do
+    user = socket.assigns.current_user
+
+    case Ash.get(Image, id, actor: user) do
+      {:ok, image} ->
+        case Image.destroy(image, actor: user) do
+          :ok ->
+            {:noreply,
+             socket
+             |> remove_image_from_list(id)
+             |> put_flash(:info, gettext("Deleted"))}
+
+          {:ok, _deleted} ->
+            {:noreply,
+             socket
+             |> remove_image_from_list(id)
+             |> put_flash(:info, gettext("Deleted"))}
+
+          {:error, _reason} ->
+            {:noreply,
+             put_flash(socket, :error, gettext("Failed to delete image, please try again later."))}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Image not found"))}
+    end
+  end
+
   defp load_photos(q, similar_image_id, page, user) do
     case Image.hybrid_search(q, similar_image_id, user.id, page, actor: user) do
       {:ok, records} -> records
@@ -155,8 +184,10 @@ defmodule VmemoWeb.ImagesIndexLive do
           <:card :let={image}>
             <ImageCard.image_card image={image}>
               <:overlay>
+                <ImageCard.card_delete_menu phx-click="delete-image" phx-value-id={image.id} />
+
                 <%= if @similar_image_id && similarity_score(image) do %>
-                  <div class="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
+                  <div class="absolute top-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
                     {similarity_score(image)}%
                   </div>
                 <% end %>
@@ -169,5 +200,14 @@ defmodule VmemoWeb.ImagesIndexLive do
       </div>
     </section>
     """
+  end
+
+  defp remove_image_from_list(socket, id) do
+    remaining_images = Enum.reject(socket.assigns.images, &(&1.id == id))
+    total_count = max(socket.assigns.total_count - 1, 0)
+
+    socket
+    |> assign(:images, remaining_images)
+    |> assign(:total_count, total_count)
   end
 end

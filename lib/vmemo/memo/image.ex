@@ -463,11 +463,22 @@ defmodule Vmemo.Memo.Image do
     end
 
     action :search_images, :string do
-      description "Search images by text query or find similar images. Returns JSON array of image data URLs (data:image/{type};base64,...) for direct image display."
+      description "Search images by text query or find similar images. Returns lightweight JSON results with MCP resource URIs for lazy image loading."
 
-      argument :query, :string, default: ""
-      argument :similar_image_id, :string, allow_nil?: true
-      argument :page, :integer, default: 1
+      argument :query, :string do
+        description "Text query for full-text and semantic image search."
+        default ""
+      end
+
+      argument :similar_image_id, :string do
+        description "Optional image UUID to search for visually similar images."
+        allow_nil? true
+      end
+
+      argument :page, :integer do
+        description "Pagination page number, starting from 1."
+        default 1
+      end
 
       run fn input, context ->
         q = Ash.ActionInput.get_argument(input, :query) || ""
@@ -501,28 +512,16 @@ defmodule Vmemo.Memo.Image do
 
             case Ash.read(query, actor: actor) do
               {:ok, records} ->
-                sorted_records =
+                results =
                   image_ids
                   |> Enum.map(fn id ->
                     Enum.find(records, fn record -> record.id == id end)
                   end)
                   |> Enum.reject(&is_nil/1)
                   |> Enum.map(&normalize_image_url_for_api/1)
+                  |> Enum.map(&mcp_image_payload/1)
 
-                image_data_urls =
-                  sorted_records
-                  |> Enum.map(fn image ->
-                    case read_image_as_base64(image.url) do
-                      {:ok, {base64_data, mime_type}} ->
-                        "data:#{mime_type};base64,#{base64_data}"
-
-                      {:error, _reason} ->
-                        # Fallback to URL if image read fails
-                        image.url
-                    end
-                  end)
-
-                {:ok, Jason.encode!(image_data_urls)}
+                {:ok, Jason.encode!(results)}
 
               {:error, reason} ->
                 {:error, reason}
@@ -532,23 +531,147 @@ defmodule Vmemo.Memo.Image do
       end
     end
 
-    # MCP Resource action: Return image URL as string
-    # URI format: vmemo://image/{id}/url
-    # The id will be extracted from the URI and passed as a parameter
+    action :mcp_image_create, :map do
+      description "Create an image for the current actor and return image detail."
+
+      argument :file, :string do
+        description "Image file as data URL, for example data:image/png;base64,..."
+        allow_nil? false
+      end
+
+      argument :note, :string do
+        description "Optional note text for this image."
+        default ""
+      end
+
+      argument :caption, :string do
+        description "Optional caption text for this image."
+        default ""
+      end
+
+      run fn input, context ->
+        actor = Map.get(context, :actor)
+
+        if is_nil(actor) do
+          {:error, "Actor is required for image create"}
+        else
+          user_id = to_string(actor.id)
+
+          with {:ok, asset_params} <- build_mcp_create_asset_params(input, user_id) do
+            params =
+              %{
+                note: Ash.ActionInput.get_argument(input, :note),
+                caption: Ash.ActionInput.get_argument(input, :caption),
+                user_id: actor.id
+              }
+              |> Map.merge(asset_params)
+
+            case Ash.create(__MODULE__, params, action: :create_with_sync, actor: actor) do
+              {:ok, image} -> {:ok, mcp_image_payload(image)}
+              {:error, reason} -> {:error, reason}
+            end
+          end
+        end
+      end
+    end
+
+    action :mcp_image_read, :map do
+      description "Read one image by ID and return REST-aligned image detail."
+
+      argument :id, :uuid do
+        description "Image UUID."
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        actor = Map.get(context, :actor)
+        id = Ash.ActionInput.get_argument(input, :id)
+
+        with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor) do
+          {:ok, mcp_image_payload(image)}
+        end
+      end
+    end
+
+    action :mcp_image_update, :map do
+      description "Update one image by ID and return REST-aligned image detail."
+
+      argument :id, :uuid do
+        description "Image UUID."
+        allow_nil? false
+      end
+
+      argument :note, :string do
+        description "Optional new note text."
+        allow_nil? true
+      end
+
+      argument :caption, :string do
+        description "Optional new caption text."
+        allow_nil? true
+      end
+
+      run fn input, context ->
+        actor = Map.get(context, :actor)
+        id = Ash.ActionInput.get_argument(input, :id)
+        note = Ash.ActionInput.get_argument(input, :note)
+        caption = Ash.ActionInput.get_argument(input, :caption)
+
+        attrs =
+          %{}
+          |> maybe_put(:note, note)
+          |> maybe_put(:caption, caption)
+
+        if map_size(attrs) == 0 do
+          {:error, "At least one of note or caption must be provided"}
+        else
+          with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor),
+               {:ok, updated} <- Ash.update(image, attrs, action: :update, actor: actor) do
+            {:ok, mcp_image_payload(updated)}
+          end
+        end
+      end
+    end
+
+    action :mcp_image_delete, :map do
+      description "Delete one image by ID and return REST-aligned delete response."
+
+      argument :id, :uuid do
+        description "Image UUID."
+        allow_nil? false
+      end
+
+      run fn input, context ->
+        actor = Map.get(context, :actor)
+        id = Ash.ActionInput.get_argument(input, :id)
+
+        with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor) do
+          case Ash.destroy(image, actor: actor) do
+            :ok -> {:ok, %{id: id}}
+            {:ok, _deleted} -> {:ok, %{id: id}}
+            {:error, reason} -> {:error, reason}
+          end
+        end
+      end
+    end
+
+    # MCP Resource action: Return image URL as string.
+    # Read with uri=vmemo://image/url and id=<image-id>.
     action :get_image_url, :string do
       description "Get the URL of an image by ID. Returns the image URL as a string."
 
-      argument :uri, :string, allow_nil?: false
+      argument :uri, :string, allow_nil?: true
+      argument :id, :uuid, allow_nil?: true
 
       run fn input, context ->
         uri = Ash.ActionInput.get_argument(input, :uri)
+        id = Ash.ActionInput.get_argument(input, :id)
         actor = Map.get(context, :actor)
 
-        # Extract image ID from URI: vmemo://image/{id}/url
-        id = extract_image_id_from_uri(uri)
+        id = id || extract_image_id_from_uri(uri)
 
         if is_nil(id) do
-          {:error, "Invalid URI format. Expected: vmemo://image/{id}/url"}
+          {:error, "Image id is required"}
         else
           case Ash.get(__MODULE__, id, actor: actor) do
             {:ok, image} ->
@@ -562,23 +685,23 @@ defmodule Vmemo.Memo.Image do
       end
     end
 
-    # MCP Resource action: Return image as HTML
-    # URI format: vmemo://image/{id}/html
-    # The id will be extracted from the URI and passed as a parameter
+    # MCP Resource action: Return image as HTML.
+    # Read with uri=vmemo://image/html and id=<image-id>.
     action :get_image_html, :string do
       description "Get an image as HTML. Returns an HTML img tag with the image URL, caption, and note."
 
-      argument :uri, :string, allow_nil?: false
+      argument :uri, :string, allow_nil?: true
+      argument :id, :uuid, allow_nil?: true
 
       run fn input, context ->
         uri = Ash.ActionInput.get_argument(input, :uri)
+        id = Ash.ActionInput.get_argument(input, :id)
         actor = Map.get(context, :actor)
 
-        # Extract image ID from URI: vmemo://image/{id}/html
-        id = extract_image_id_from_uri(uri)
+        id = id || extract_image_id_from_uri(uri)
 
         if is_nil(id) do
-          {:error, "Invalid URI format. Expected: vmemo://image/{id}/html"}
+          {:error, "Image id is required"}
         else
           case Ash.get(__MODULE__, id, actor: actor) do
             {:ok, image} ->
@@ -628,23 +751,23 @@ defmodule Vmemo.Memo.Image do
       end
     end
 
-    # MCP Resource action: Return image as base64 data
-    # URI format: vmemo://image/{id}/image
-    # The id will be extracted from the URI and passed as a parameter
+    # MCP Resource action: Return image as base64 data.
+    # Read with uri=vmemo://image/image and id=<image-id>.
     action :get_image_data, :string do
       description "Get an image as base64-encoded image data. Returns the image data in data URL format (data:image/{type};base64,...). The MIME type is auto-detected from file content (supports JPEG, PNG, GIF, WEBP)."
 
-      argument :uri, :string, allow_nil?: false
+      argument :uri, :string, allow_nil?: true
+      argument :id, :uuid, allow_nil?: true
 
       run fn input, context ->
         uri = Ash.ActionInput.get_argument(input, :uri)
+        id = Ash.ActionInput.get_argument(input, :id)
         actor = Map.get(context, :actor)
 
-        # Extract image ID from URI: vmemo://image/{id}/image
-        id = extract_image_id_from_uri(uri)
+        id = id || extract_image_id_from_uri(uri)
 
         if is_nil(id) do
-          {:error, "Invalid URI format. Expected: vmemo://image/{id}/image"}
+          {:error, "Image id is required"}
         else
           case Ash.get(__MODULE__, id, actor: actor) do
             {:ok, image} ->
@@ -677,45 +800,6 @@ defmodule Vmemo.Memo.Image do
         _ -> nil
       end
     end
-
-    # Helper function to read image file as base64 with MIME type detection
-    defp read_image_as_base64(url) do
-      relative_path =
-        url
-        |> String.trim_leading("/")
-        |> String.trim_leading("storage/v1/")
-
-      file_path = Path.join(["storage", "v1", relative_path])
-
-      case File.read(file_path) do
-        {:ok, binary} ->
-          mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
-          base64_data = Base.encode64(binary)
-          {:ok, {base64_data, mime_type}}
-
-        {:error, :enoent} ->
-          {:error, :file_not_found}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-
-    # Helper function to detect MIME type from binary image data
-    defp detect_mime_type_from_binary(<<0xFF, 0xD8, 0xFF, _::binary>>), do: "image/jpeg"
-
-    defp detect_mime_type_from_binary(
-           <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>
-         ),
-         do: "image/png"
-
-    defp detect_mime_type_from_binary(<<"GIF87a", _::binary>>), do: "image/gif"
-    defp detect_mime_type_from_binary(<<"GIF89a", _::binary>>), do: "image/gif"
-
-    defp detect_mime_type_from_binary(<<"RIFF", _::binary-size(4), "WEBP", _::binary>>),
-      do: "image/webp"
-
-    defp detect_mime_type_from_binary(_), do: nil
 
     read :list_similar do
       argument :image_id, :uuid, allow_nil?: false
@@ -811,7 +895,128 @@ defmodule Vmemo.Memo.Image do
     end
   end
 
-  # Normalize image URL for API responses (used in search_images action)
+  defp mcp_image_payload(image) do
+    image = normalize_image_url_for_api(image)
+
+    %{
+      id: image.id,
+      url: image.url,
+      note: image.note,
+      caption: image.caption,
+      inserted_at: image.inserted_at,
+      updated_at: image.updated_at,
+      resource_uri: "vmemo://image/image",
+      resource_params: %{id: image.id},
+      html_uri: "vmemo://image/html",
+      html_params: %{id: image.id},
+      url_uri: "vmemo://image/url",
+      url_params: %{id: image.id}
+    }
+  end
+
+  defp build_mcp_create_asset_params(input, user_id) do
+    file = Ash.ActionInput.get_argument(input, :file)
+
+    cond do
+      is_binary(file) and String.trim(file) != "" ->
+        save_mcp_base64_image(file, user_id)
+
+      true ->
+        {:error, "file must be provided"}
+    end
+  end
+
+  defp save_mcp_base64_image(image_base64_input, user_id) do
+    with {:ok, raw_base64, detected_mime} <- parse_mcp_base64_payload(image_base64_input),
+         {:ok, binary} <- Base.decode64(raw_base64),
+         {:ok, final_filename} <- build_mcp_upload_filename(detected_mime),
+         :ok <- File.mkdir_p("tmp/mcp_uploads"),
+         tmp_path <-
+           Path.join("tmp/mcp_uploads", "#{System.system_time(:microsecond)}-#{final_filename}"),
+         :ok <- File.write(tmp_path, binary),
+         {:ok, dest} <- ImageStorage.cp_file(tmp_path, user_id, final_filename) do
+      _ = File.rm(tmp_path)
+      {:ok, %{url: Path.join("/", dest), file_id: final_filename}}
+    else
+      :error ->
+        {:error, "Invalid file payload"}
+
+      {:error, :invalid_base64} ->
+        {:error, "Invalid file payload"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp parse_mcp_base64_payload(image_base64_input) do
+    trimmed = String.trim(image_base64_input)
+
+    case String.split(trimmed, ",", parts: 2) do
+      ["data:" <> meta, raw_base64] ->
+        parsed_mime = meta |> String.split(";") |> List.first()
+        {:ok, raw_base64, parsed_mime}
+
+      _ ->
+        {:error, "file must be a data URL (data:image/...;base64,...)"}
+    end
+  end
+
+  defp build_mcp_upload_filename(mime_type) do
+    ext = ext_from_mime_type(mime_type)
+    token = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+    {:ok, "mcp-#{token}#{ext}"}
+  end
+
+  defp ext_from_mime_type("image/jpeg"), do: ".jpg"
+  defp ext_from_mime_type("image/jpg"), do: ".jpg"
+  defp ext_from_mime_type("image/png"), do: ".png"
+  defp ext_from_mime_type("image/gif"), do: ".gif"
+  defp ext_from_mime_type("image/webp"), do: ".webp"
+  defp ext_from_mime_type(_), do: ".jpg"
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  # Helper function to read image file as base64 with MIME type detection
+  defp read_image_as_base64(url) do
+    relative_path =
+      url
+      |> String.trim_leading("/")
+      |> String.trim_leading("storage/v1/")
+
+    file_path = Path.join(["storage", "v1", relative_path])
+
+    case File.read(file_path) do
+      {:ok, binary} ->
+        mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
+        base64_data = Base.encode64(binary)
+        {:ok, {base64_data, mime_type}}
+
+      {:error, :enoent} ->
+        {:error, :file_not_found}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # Helper function to detect MIME type from binary image data
+  defp detect_mime_type_from_binary(<<0xFF, 0xD8, 0xFF, _::binary>>), do: "image/jpeg"
+
+  defp detect_mime_type_from_binary(
+         <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, _::binary>>
+       ),
+       do: "image/png"
+
+  defp detect_mime_type_from_binary(<<"GIF87a", _::binary>>), do: "image/gif"
+  defp detect_mime_type_from_binary(<<"GIF89a", _::binary>>), do: "image/gif"
+
+  defp detect_mime_type_from_binary(<<"RIFF", _::binary-size(4), "WEBP", _::binary>>),
+    do: "image/webp"
+
+  defp detect_mime_type_from_binary(_), do: nil
+
   defp normalize_image_url_for_api(image) do
     base_url = get_base_url()
 

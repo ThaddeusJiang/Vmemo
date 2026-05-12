@@ -134,7 +134,7 @@ Response:
   "result": {
     "content": [
       {
-        "text": "[\"http://localhost:4000/storage/v1/.../image1.png\", \"http://localhost:4000/storage/v1/.../image2.png\"]",
+        "text": "[{\"id\":\"e1015cc4-245c-47b9-a86f-50d8874652d0\",\"url\":\"http://localhost:4000/storage/v1/.../image.png\",\"note\":\"Wall-E sign\",\"caption\":\"A sign with Wall-E artwork\",\"resource_uri\":\"vmemo://image/image\",\"resource_params\":{\"id\":\"e1015cc4-245c-47b9-a86f-50d8874652d0\"},\"html_uri\":\"vmemo://image/html\",\"html_params\":{\"id\":\"e1015cc4-245c-47b9-a86f-50d8874652d0\"},\"url_uri\":\"vmemo://image/url\",\"url_params\":{\"id\":\"e1015cc4-245c-47b9-a86f-50d8874652d0\"}}]",
         "type": "text"
       }
     ],
@@ -143,11 +143,61 @@ Response:
 }
 ```
 
+`image_search` returns lightweight result metadata. Use `resource_uri` and `resource_params` with `resources/read` to lazily load image data only when a client needs the actual image bytes.
+
 Search behavior:
 - Text query only: full-text search on `note` and `caption` fields, falls back to semantic (vector) search if no text matches
 - `similar_image_id` only: pure vector similarity search
 - Both: combined text scoring + semantic similarity
 - Neither: returns paginated library images (newest first)
+
+### image_create
+
+Create an image record for the authenticated user.
+
+Input arguments:
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `file` | string | Yes | Data URL payload: `data:image/...;base64,...` |
+| `note` | string | No | Note text |
+| `caption` | string | No | Caption text |
+
+`image_create` uploads image content via `file`.
+
+### image_read
+
+Read one image by ID.
+
+Input arguments:
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `id` | string (UUID) | Yes | Image ID |
+
+### image_update
+
+Update one image by ID.
+
+Input arguments:
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `id` | string (UUID) | Yes | Image ID |
+| `note` | string | No | Updated note |
+| `caption` | string | No | Updated caption |
+
+At least one of `note`, `caption` must be provided.
+
+### image_delete
+
+Delete one image by ID.
+
+Input arguments:
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `id` | string (UUID) | Yes | Image ID |
 
 ## Resources
 
@@ -168,14 +218,16 @@ Vmemo exposes three MCP resources for image data. Each uses a URI template with 
 
 Get the URL of an image.
 
-- URI template: `vmemo://image/{id}/url`
+- URI: `vmemo://image/url`
+- Required read param: `id`
 - MIME type: `text/plain`
 
 ### image_html
 
 Get an image rendered as HTML with caption and note.
 
-- URI template: `vmemo://image/{id}/html`
+- URI: `vmemo://image/html`
+- Required read param: `id`
 - MIME type: `text/html`
 - Returns: `<div class="image-card"><img src="..."/><p class="image-caption">...</p><p class="image-note">...</p></div>`
 
@@ -183,7 +235,8 @@ Get an image rendered as HTML with caption and note.
 
 Get the image as a base64-encoded data URL.
 
-- URI template: `vmemo://image/{id}/image`
+- URI: `vmemo://image/image`
+- Required read param: `id`
 - MIME type: auto-detected (`image/jpeg`, `image/png`, `image/gif`, `image/webp`)
 - Returns: `data:image/{type};base64,{base64-data}`
 
@@ -195,12 +248,13 @@ Get the image as a base64-encoded data URL.
   "id": 5,
   "method": "resources/read",
   "params": {
-    "uri": "vmemo://image/e1015cc4-245c-47b9-a86f-50d8874652d0/url"
+    "uri": "vmemo://image/url",
+    "id": "e1015cc4-245c-47b9-a86f-50d8874652d0"
   }
 }
 ```
 
-> **Known limitation:** Resource reading with parameterized URIs currently returns "Resource not found" due to an AshAi library issue where URI template matching uses exact string comparison instead of pattern matching. This is tracked as an upstream issue. Use the `image_search` tool as a workaround to find and retrieve image data.
+Vmemo uses stable resource URIs plus an `id` read parameter so the resource works with AshAi's exact URI matching.
 
 ## Full Example Session
 

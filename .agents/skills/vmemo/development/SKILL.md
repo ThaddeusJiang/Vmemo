@@ -17,17 +17,21 @@ Ignore worktree-specific concepts. Focus only on:
 ## Decision flow
 
 1. Run `mise trust && mise install`.
-2. Ensure `.env` has required vars:
+2. Prepare `.env`:
+   - If current workspace is a git worktree, copy `.env` from the main checkout using `cp`.
+   - Do not inspect `.env` contents while preparing it; use file copy operations only.
+   - If not a worktree and `.env` is missing, copy from local template (`.env.example`).
+3. Ensure `.env` has required vars:
    - `DATABASE_URL`
    - `TYPESENSE_URL`
    - `MOONDREAM_URL`
-3. Check setup state:
+4. Check setup state:
    - If deps missing or services unavailable, run `setup`.
    - If user explicitly requests clean rebuild, run `setup`.
    - If state is broken/corrupted, run `reset` then `setup`.
-4. Before `docker compose up -d`, check host port conflicts.
-5. If conflict exists, create/update `docker-compose.override.yml` with temporary ports and sync `.env` URLs to those ports.
-6. Start services and continue workflow.
+5. Before `docker compose up -d`, check host port conflicts.
+6. If conflict exists, create/update `docker-compose.override.yml` with temporary ports and sync `.env` URLs to those ports.
+7. Start services and continue workflow.
 
 ## setup
 
@@ -59,3 +63,4 @@ pkill -f "mix phx.server" || true
 - Do not run `build` or `start` unless explicitly requested.
 - Since runtime config uses env-only URLs, fail fast if `DATABASE_URL` / `TYPESENSE_URL` / `MOONDREAM_URL` are missing.
 - Temporary port handling must be done via `docker-compose.override.yml`; do not modify `docker-compose.yml`.
+- In worktree workflows, `.env` should come from the main checkout by `cp`; avoid reading/parsing `.env` content for bootstrapping.

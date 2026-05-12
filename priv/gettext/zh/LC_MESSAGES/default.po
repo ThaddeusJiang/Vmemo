@@ -686,6 +686,7 @@ msgstr "我已保存"
 msgid "Image job"
 msgstr "图片任务"
 
+#: lib/vmemo_web/live/images_index_live.ex
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Image not found"
@@ -1069,3 +1070,30 @@ msgstr "将图片拖到此区域，或点击上传"
 #, elixir-autogen, elixir-format
 msgid "Some images failed to upload. Please retry failed ones."
 msgstr "部分图片上传失败，请重试失败的图片。"
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Failed to delete. Please try again later."
+msgstr "删除失败，请稍后重试。"
+
+#: lib/vmemo_web/live/components/note_update_form.ex
+#: lib/vmemo_web/live/image_id_live.ex
+#: lib/vmemo_web/live/images_index_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Deleted"
+msgstr "已删除"
+
+#: lib/vmemo_web/live/images_index_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Failed to delete image, please try again later."
+msgstr "删除失败，请稍后重试。"
+
+#: lib/vmemo_web/live/components/note_update_form.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Failed to delete note, please try again later."
+msgstr "删除失败，请稍后重试。"
+
+#: lib/vmemo_web/live/components/note_update_form.ex
+#, elixir-autogen, elixir-format
+msgid "Updated"
+msgstr "已更新"

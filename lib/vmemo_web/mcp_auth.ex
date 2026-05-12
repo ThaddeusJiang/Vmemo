@@ -1,9 +1,9 @@
 defmodule VmemoWeb.McpAuth do
   @moduledoc """
-  Optional authentication for MCP server.
+  Bearer token authentication for the MCP server.
 
-  Allows unauthenticated access, but sets actor if API token is provided.
-  This allows public tools to work while still supporting authenticated tools.
+  MCP image tools require an Ash actor, so unauthenticated requests are rejected
+  before they reach AshAi tool execution.
   """
 
   import Plug.Conn
@@ -35,8 +35,7 @@ defmodule VmemoWeb.McpAuth do
           verify_token(conn, token)
 
         _ ->
-          # Allow unauthenticated access for public tools
-          conn
+          unauthorized(conn)
       end
     end
   end
@@ -44,8 +43,6 @@ defmodule VmemoWeb.McpAuth do
   defp verify_token(conn, token) do
     case ApiToken.verify_api_token(token) do
       {:ok, api_token} ->
-        # Set actor if token is valid
-        # Use Ash.PlugHelpers.set_actor/2 to store actor in conn.private[:ash][:actor]
         conn
         |> assign(:current_api_token, api_token)
         |> assign(:current_user, api_token.user)
@@ -53,8 +50,21 @@ defmodule VmemoWeb.McpAuth do
 
       {:error, reason} ->
         Logger.warning("MCP API token verification failed: #{reason}")
-        # Still allow connection, but without actor
-        conn
+        unauthorized(conn)
     end
+  end
+
+  defp unauthorized(conn) do
+    conn
+    |> put_resp_header("content-type", "application/json")
+    |> send_resp(
+      401,
+      Jason.encode!(%{
+        statusCode: 401,
+        statusMessage: Plug.Conn.Status.reason_phrase(401),
+        message: "Invalid or missing API token"
+      })
+    )
+    |> halt()
   end
 end

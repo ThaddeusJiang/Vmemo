@@ -10,6 +10,7 @@ defmodule VmemoWeb.ImageIdLive do
   alias Vmemo.Storage
 
   alias SmallSdk.ImageMagick
+  alias VmemoWeb.LiveComponents.ImageCard
   alias VmemoWeb.LiveComponents.Waterfall
 
   @impl true
@@ -40,33 +41,31 @@ defmodule VmemoWeb.ImageIdLive do
 
   @impl true
   def handle_event("delete-image", %{"id" => id}, socket) do
-    user = socket.assigns.current_user
-
-    case Ash.get(Image, id, actor: user) do
-      {:ok, image} ->
-        case Image.destroy(image, actor: user) do
-          :ok ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Deleted")
-             |> push_navigate(to: ~p"/images")}
-
-          {:ok, _deleted} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Deleted")
-             |> push_navigate(to: ~p"/images")}
-
-          {:error, reason} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Failed to delete image: #{Exception.message(reason)}")}
-        end
-
-      _ ->
+    case destroy_image(socket, id) do
+      {:ok, _image} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Image not found")}
+         |> put_flash(:info, gettext("Deleted"))
+         |> push_navigate(to: ~p"/images")}
+
+      {:error, socket} ->
+        {:noreply,
+         socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
+    end
+  end
+
+  @impl true
+  def handle_event("delete-similar-image", %{"id" => id}, socket) do
+    case destroy_image(socket, id) do
+      {:ok, _image} ->
+        {:noreply,
+         socket
+         |> assign(:images, Enum.reject(socket.assigns.images, &(&1.id == id)))
+         |> put_flash(:info, gettext("Deleted"))}
+
+      {:error, socket} ->
+        {:noreply,
+         socket |> put_flash(:error, gettext("Failed to delete. Please try again later."))}
     end
   end
 
@@ -457,9 +456,14 @@ defmodule VmemoWeb.ImageIdLive do
 
               <.live_component id="similar-images" module={Waterfall} items={@images}>
                 <:card :let={image}>
-                  <.link navigate={~p"/images/#{image.id}"} class="link link-hover block">
-                    <.img src={Storage.img(image.url, :s)} alt={image.note} />
-                  </.link>
+                  <ImageCard.image_card image={image}>
+                    <:overlay>
+                      <ImageCard.card_delete_menu
+                        phx-click="delete-similar-image"
+                        phx-value-id={image.id}
+                      />
+                    </:overlay>
+                  </ImageCard.image_card>
                 </:card>
               </.live_component>
             </div>
@@ -552,6 +556,28 @@ defmodule VmemoWeb.ImageIdLive do
   end
 
   defp format_error_message(_), do: "Unknown error"
+
+  defp destroy_image(socket, id) do
+    user = socket.assigns.current_user
+
+    case Ash.get(Image, id, actor: user) do
+      {:ok, image} ->
+        case Image.destroy(image, actor: user) do
+          :ok ->
+            {:ok, image}
+
+          {:ok, deleted} ->
+            {:ok, deleted}
+
+          {:error, reason} ->
+            {:error,
+             put_flash(socket, :error, "Failed to delete image: #{Exception.message(reason)}")}
+        end
+
+      _ ->
+        {:error, put_flash(socket, :error, "Image not found")}
+    end
+  end
 
   defp assign_loaded_photo(socket, user, image, images) do
     vision_requests = list_vision_requests(image.id, user)
