@@ -178,10 +178,18 @@ defmodule Vmemo.Ai.Caption do
 
   defp handle_caption_error(reason), do: {:error, reason}
 
+  defp build_caption_and_tags_payload(%ReqLLM.Response{object: object}, existing_tags)
+       when is_map(object) do
+    build_caption_and_tags_payload(object, existing_tags)
+  end
+
+  defp build_caption_and_tags_payload(%ReqLLM.Response{}, _existing_tags) do
+    {:error, "Invalid structured response"}
+  end
+
   defp build_caption_and_tags_payload(result, existing_tags) when is_map(result) do
     result =
       case result do
-        %ReqLLM.Response{object: object} when is_map(object) -> object
         %{object: object} when is_map(object) -> object
         other -> other
       end
@@ -204,9 +212,6 @@ defmodule Vmemo.Ai.Caption do
       {:ok, %{caption: payload.caption, tags: payload.tags}}
     end
   end
-
-  defp build_caption_and_tags_payload(_result, _existing_tags),
-    do: {:error, "Invalid structured response"}
 
   defp resolve_language(user_id) when is_binary(user_id) do
     Account.preferred_language(%{id: user_id})
