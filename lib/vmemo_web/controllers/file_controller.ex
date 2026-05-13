@@ -141,22 +141,24 @@ defmodule VmemoWeb.FileController do
         String.slice(root, 0, byte_size(root) - 3)
       end
 
-    with fallback_root when is_binary(fallback_root) <- fallback_root do
-      candidates =
-        [fallback_root <> ext]
-        |> Kernel.++(
-          @allowed_mime_types
-          |> Map.keys()
-          |> Enum.reject(&(&1 == ext))
-          |> Enum.map(&(fallback_root <> &1))
-        )
+    case fallback_root do
+      root when is_binary(root) ->
+        candidates =
+          [root <> ext]
+          |> Kernel.++(
+            @allowed_mime_types
+            |> Map.keys()
+            |> Enum.reject(&(&1 == ext))
+            |> Enum.map(&(root <> &1))
+          )
 
-      case Enum.find(candidates, &File.exists?/1) do
-        nil -> :error
-        path -> {:ok, path}
-      end
-    else
-      _ -> :error
+        case Enum.find(candidates, &File.exists?/1) do
+          nil -> :error
+          path -> {:ok, path}
+        end
+
+      _ ->
+        :error
     end
   end
 
