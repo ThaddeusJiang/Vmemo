@@ -523,8 +523,8 @@ defmodule VmemoWeb.Api.V1.ImageController do
       |> inspect()
       |> String.downcase()
 
-    String.contains?(message, "openrouter_api_key") and
-      (String.contains?(message, "missing") or String.contains?(message, "empty"))
+    String.contains?(message, "openrouter_api_key") or
+      String.contains?(message, "invalid parameter: :api_key option")
   end
 
   defp image_response(image, conn) do
