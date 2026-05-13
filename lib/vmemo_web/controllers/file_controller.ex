@@ -141,7 +141,6 @@ defmodule VmemoWeb.FileController do
         String.slice(root, 0, byte_size(root) - 3)
       end
 
-<<<<<<< HEAD
     with fallback_root when is_binary(fallback_root) <- fallback_root do
       candidates =
         [fallback_root <> ext]
