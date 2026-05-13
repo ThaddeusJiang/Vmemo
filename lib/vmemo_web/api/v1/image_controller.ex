@@ -150,9 +150,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   defp image_binary_from_src("data:" <> _ = data_url) do
-    with {:ok, binary, mime_type} <- decode_base64_payload(data_url) do
-      {:ok, binary, mime_type}
-    end
+    decode_base64_payload(data_url)
   end
 
   defp image_binary_from_src("http://" <> _ = url), do: fetch_image_binary(url)
