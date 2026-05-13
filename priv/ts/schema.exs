@@ -58,14 +58,16 @@ defmodule Vmemo.Ts.Schema do
   end
 
   def applied_migration_versions(migrations_collection) do
-    load_applied_migration_versions(migrations_collection, 1, MapSet.new())
+    load_applied_migration_versions(migrations_collection, 1, 100, MapSet.new())
   end
 
-  defp load_applied_migration_versions(migrations_collection, page, acc) do
-    case Typesense.list_documents!(migrations_collection, 100, page) do
-      {:ok, docs} when is_list(docs) ->
+  defp load_applied_migration_versions(migrations_collection, page, per_page, acc) do
+    params = [q: "*", query_by: "version", per_page: per_page, page: page]
+
+    case Typesense.search_documents(migrations_collection, params) do
+      {:ok, %{documents: docs, found: found}} when is_list(docs) and is_integer(found) ->
         next_acc = Enum.reduce(docs, acc, &put_migration_version/2)
-        maybe_load_next_migration_page(migrations_collection, page, docs, next_acc)
+        maybe_load_next_migration_page(migrations_collection, page, per_page, found, next_acc)
 
       {:ok, _other} ->
         acc
@@ -74,7 +76,7 @@ defmodule Vmemo.Ts.Schema do
         acc
 
       {:error, reason} ->
-        raise("Typesense list migration versions failed: #{reason}")
+        raise("Typesense search migration versions failed: #{reason}")
     end
   end
 
@@ -85,11 +87,11 @@ defmodule Vmemo.Ts.Schema do
     end
   end
 
-  defp maybe_load_next_migration_page(migrations_collection, page, docs, acc) do
-    if length(docs) < 100 do
+  defp maybe_load_next_migration_page(migrations_collection, page, per_page, found, acc) do
+    if page * per_page >= found do
       acc
     else
-      load_applied_migration_versions(migrations_collection, page + 1, acc)
+      load_applied_migration_versions(migrations_collection, page + 1, per_page, acc)
     end
   end
 
