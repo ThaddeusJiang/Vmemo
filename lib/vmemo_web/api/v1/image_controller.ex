@@ -458,28 +458,73 @@ defmodule VmemoWeb.Api.V1.ImageController do
       {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
       note = Map.get(params, "note", "")
 
-      case Image.create_with_sync(
-             %{
-               note: note,
-               url: Path.join("/", dest),
-               file_id: filename,
-               user_id: user_id,
-               inner_purpose: nil
-             },
-             actor: current_user
-           ) do
-        {:ok, image} ->
-          json(conn, image_response(image, conn))
+      attrs = %{
+        note: note,
+        url: Path.join("/", dest),
+        file_id: filename,
+        user_id: user_id,
+        inner_purpose: nil
+      }
 
-        {:error, changeset} ->
-          Logger.error("Failed to create image: #{inspect(changeset.errors)}")
-          error_response(conn, 500, "Failed to create image")
-      end
+      create_image_with_fallback(conn, attrs, current_user)
     after
       if Map.get(upload_meta, :cleanup?, false) do
         _ = File.rm(path)
       end
     end
+  end
+
+  defp create_image_with_fallback(conn, attrs, current_user) do
+    try do
+      case Image.create_with_sync(attrs, actor: current_user) do
+        {:ok, image} ->
+          json(conn, image_response(image, conn))
+
+        {:error, error} ->
+          if is_missing_openrouter_key_error?(error) do
+            Logger.warning(
+              "create_with_sync failed due to missing OpenRouter key; fallback to import action"
+            )
+
+            create_image_with_import_fallback(conn, attrs, current_user)
+          else
+            Logger.error("Failed to create image: #{inspect(error)}")
+            error_response(conn, 500, "Failed to create image")
+          end
+      end
+    rescue
+      error ->
+        if is_missing_openrouter_key_error?(error) do
+          Logger.warning(
+            "create_with_sync raised missing OpenRouter key error; fallback to import action"
+          )
+
+          create_image_with_import_fallback(conn, attrs, current_user)
+        else
+          reraise(error, __STACKTRACE__)
+        end
+    end
+  end
+
+  defp create_image_with_import_fallback(conn, attrs, current_user) do
+    case Ash.create(Image, attrs, action: :import, actor: current_user) do
+      {:ok, image} ->
+        json(conn, image_response(image, conn))
+
+      {:error, error} ->
+        Logger.error("Failed to create image with import fallback: #{inspect(error)}")
+        error_response(conn, 500, "Failed to create image")
+    end
+  end
+
+  defp is_missing_openrouter_key_error?(error) do
+    message =
+      error
+      |> inspect()
+      |> String.downcase()
+
+    String.contains?(message, "openrouter_api_key") and
+      (String.contains?(message, "missing") or String.contains?(message, "empty"))
   end
 
   defp image_response(image, conn) do
