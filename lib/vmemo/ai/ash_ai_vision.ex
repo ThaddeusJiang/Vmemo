@@ -76,9 +76,6 @@ defmodule Vmemo.Ai.AshAiVision do
     else
       {:error, reason} ->
         {:error, reason}
-
-      _ ->
-        {:error, "Invalid structured object from AshAi vision pipeline"}
     end
   rescue
     e -> {:error, Exception.message(e)}

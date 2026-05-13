@@ -96,7 +96,6 @@ defmodule Vmemo.Ai.Caption do
       {:ok, payload}
     else
       {:error, reason} -> handle_caption_error(reason)
-      {:discard, reason} -> {:discard, reason}
     end
   rescue
     e -> handle_caption_error(e)
@@ -183,7 +182,6 @@ defmodule Vmemo.Ai.Caption do
     result =
       case result do
         %ReqLLM.Response{object: object} when is_map(object) -> object
-        %{"object" => object} when is_map(object) -> object
         %{object: object} when is_map(object) -> object
         other -> other
       end
