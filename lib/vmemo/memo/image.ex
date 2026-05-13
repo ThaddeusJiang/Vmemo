@@ -211,6 +211,10 @@ defmodule Vmemo.Memo.Image do
               _ = request_sync_typesense(record)
               {:ok, record}
 
+            {:discard, :file_not_found} ->
+              mark_image_missing_file(record)
+              {:ok, record}
+
             {:discard, _reason} ->
               set_moondream_status(record, "failed")
               _ = request_sync_typesense(record)
@@ -263,6 +267,10 @@ defmodule Vmemo.Memo.Image do
               _ = request_sync_typesense(record)
               {:ok, record}
 
+            {:discard, :file_not_found} ->
+              mark_image_missing_file(record)
+              {:ok, record}
+
             {:discard, _reason} ->
               set_moondream_status(record, "failed")
               _ = request_sync_typesense(record)
@@ -291,11 +299,8 @@ defmodule Vmemo.Memo.Image do
             :ok ->
               {:ok, record}
 
-            {:discard, reason} ->
-              Logger.warning(
-                "thumbnail job discarded image_id=#{record.id} user_id=#{record.user_id} reason=#{inspect(reason)}"
-              )
-
+            {:discard, :file_not_found} ->
+              mark_image_missing_file(record)
               {:ok, record}
 
             {:error, reason} ->
@@ -1348,6 +1353,16 @@ defmodule Vmemo.Memo.Image do
     error -> {:error, error}
   end
 
+  defp mark_image_missing_file(image) do
+    Logger.error(
+      "invalid image missing source file image_id=#{image.id} user_id=#{image.user_id} file_url=#{image.url}"
+    )
+
+    _ = set_job_status(image, :set_moondream_status, :moondream_status, "failed")
+    _ = set_job_status(image, :set_typesense_status, :typesense_status, "failed")
+    :ok
+  end
+
   defp do_generate_caption(image, opts) do
     sync_tags? = Keyword.get(opts, :sync_tags?, true)
     existing_tags = tags_from_image(Ash.load!(image, :tags, actor: nil, authorize?: false))
@@ -1368,7 +1383,7 @@ defmodule Vmemo.Memo.Image do
       :ok
     else
       {:error, :file_not_found} ->
-        :ok
+        {:discard, :file_not_found}
 
       error ->
         error

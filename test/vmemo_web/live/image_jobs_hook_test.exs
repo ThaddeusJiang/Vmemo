@@ -6,6 +6,7 @@ defmodule VmemoWeb.ImageJobsHookTest do
   alias VmemoWeb.Live.ImageJobsHook
 
   import Vmemo.AccountFixtures
+  @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
 
   describe "list_notifications/2" do
     test "maps uploaded images to one notification per job" do
@@ -78,6 +79,8 @@ defmodule VmemoWeb.ImageJobsHookTest do
   end
 
   defp create_image!(attrs) do
+    ensure_fixture_image!(attrs)
+
     {typesense_status, attrs} = Map.pop(attrs, :typesense_status, "completed")
     {moondream_status, attrs} = Map.pop(attrs, :moondream_status, "completed")
     attrs = Map.put_new(attrs, :inner_purpose, nil)
@@ -106,6 +109,19 @@ defmodule VmemoWeb.ImageJobsHookTest do
 
       {:error, error} ->
         raise "failed to create image: #{inspect(error)}"
+    end
+  end
+
+  defp ensure_fixture_image!(attrs) do
+    user_id = Map.fetch!(attrs, :user_id)
+    file_id = Map.fetch!(attrs, :file_id)
+    image_dir = Path.join(["storage", "v1", user_id, "images"])
+    image_path = Path.join(image_dir, file_id)
+
+    File.mkdir_p!(image_dir)
+
+    unless File.exists?(image_path) do
+      File.cp!(@fixture_image, image_path)
     end
   end
 end

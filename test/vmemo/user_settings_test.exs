@@ -21,6 +21,18 @@ defmodule Vmemo.UserSettingsTest do
       File.rm_rf(Path.join(["storage", "v1", target_user.id]))
     end)
 
+    write_user_file_from_fixture!(
+      source_user.id,
+      "source-image.png",
+      "test/support/fixtures/images/test-red-image.png"
+    )
+
+    write_user_file_from_fixture!(
+      other_user.id,
+      "other-image.png",
+      "test/support/fixtures/images/wall-e.png"
+    )
+
     source_image =
       create_image!(%{
         url: "/storage/v1/#{source_user.id}/images/source-image.png",
@@ -41,18 +53,6 @@ defmodule Vmemo.UserSettingsTest do
 
     source_note = create_note!(%{text: "source note", user_id: source_user.id})
     create_image_note!(source_image.id, source_note.id)
-
-    write_user_file_from_fixture!(
-      source_user.id,
-      "source-image.png",
-      "test/support/fixtures/images/test-red-image.png"
-    )
-
-    write_user_file_from_fixture!(
-      other_user.id,
-      "other-image.png",
-      "test/support/fixtures/images/wall-e.png"
-    )
 
     assert {:ok, export_result} = UserSettings.export_user_zip(source_user.id)
     assert export_result.files.copied == 1
@@ -100,6 +100,12 @@ defmodule Vmemo.UserSettingsTest do
       File.rm_rf(Path.join(["storage", "v1", target_user.id]))
     end)
 
+    write_user_file_from_fixture!(
+      source_user.id,
+      "source-image.png",
+      "test/support/fixtures/images/test-red-image.png"
+    )
+
     source_image =
       create_image!(%{
         url: "/storage/v1/#{source_user.id}/images/source-image.png",
@@ -111,12 +117,6 @@ defmodule Vmemo.UserSettingsTest do
 
     source_note = create_note!(%{text: "source note", user_id: source_user.id})
     create_image_note!(source_image.id, source_note.id)
-
-    write_user_file_from_fixture!(
-      source_user.id,
-      "source-image.png",
-      "test/support/fixtures/images/test-red-image.png"
-    )
 
     assert {:ok, export_result} = UserSettings.export_user_zip(source_user.id)
 
@@ -147,9 +147,7 @@ defmodule Vmemo.UserSettingsTest do
   end
 
   defp create_image!(attrs) do
-    attrs = Map.put_new(attrs, :inner_purpose, nil)
-
-    case Ash.create(Image, attrs, action: :import, actor: nil, authorize?: false) do
+    case Ash.create(Image, attrs, action: :create_immediate, actor: nil, authorize?: false) do
       {:ok, image} -> image
       {:error, error} -> raise "failed to create image: #{inspect(error)}"
     end
