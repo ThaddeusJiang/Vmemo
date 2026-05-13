@@ -66,6 +66,286 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
 
       assert conn.status == 400
     end
+
+    test "accepts clipboard-style upload without extension", %{conn: conn, raw_token: raw_token} do
+      test_image_path = create_test_image()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: test_image_path,
+            filename: "clipboard",
+            content_type: "application/octet-stream"
+          }
+        })
+
+      assert conn.status == 200
+      response = json_response(conn, 200)
+      assert is_binary(response["id"])
+      assert String.contains?(response["url"], "/images/")
+    end
+
+    test "accepts clipboard upload when temp path uses /private prefix", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      test_image_path = create_test_image()
+
+      private_prefixed_path =
+        case test_image_path do
+          "/var/" <> rest -> "/private/var/" <> rest
+          _ -> test_image_path
+        end
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: private_prefixed_path,
+            filename: "clipboard",
+            content_type: "application/octet-stream"
+          }
+        })
+
+      assert conn.status == 200
+      response = json_response(conn, 200)
+      assert is_binary(response["id"])
+    end
+
+    test "accepts image/jpg content_type from clipboard clients", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      test_image_path = create_test_image()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: test_image_path,
+            filename: "clipboard",
+            content_type: "image/jpg"
+          }
+        })
+
+      assert conn.status == 200
+    end
+
+    test "accepts content_type with parameters", %{conn: conn, raw_token: raw_token} do
+      test_image_path = create_test_image()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: test_image_path,
+            filename: "clipboard",
+            content_type: "image/jpeg; charset=binary"
+          }
+        })
+
+      assert conn.status == 200
+    end
+
+    test "returns 400 when declared content_type mismatches detected image type", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      test_image_path = create_test_image()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: test_image_path,
+            filename: "clipboard",
+            content_type: "text/plain"
+          }
+        })
+
+      assert conn.status == 400
+
+      assert json_response(conn, 400)["message"] ==
+               "Invalid file type. Only image files are allowed"
+    end
+
+    test "accepts raw binary body upload with image content-type", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      binary = File.read!(@fixture_image)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> put_req_header("content-type", "image/png")
+        |> post(~p"/api/v1/images", binary)
+
+      assert conn.status == 200
+    end
+
+    test "accepts data url payload in file field", %{conn: conn, raw_token: raw_token} do
+      base64 =
+        @fixture_image
+        |> File.read!()
+        |> Base.encode64()
+
+      payload = "data:image/png;base64," <> base64
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{"file" => payload})
+
+      assert conn.status == 200
+    end
+
+    test "accepts clipboard html file containing data-url image", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      base64 =
+        @fixture_image
+        |> File.read!()
+        |> Base.encode64()
+
+      html = "<html><body><img src=\"data:image/png;base64,#{base64}\"></body></html>"
+
+      html_path =
+        Path.join(System.tmp_dir!(), "clipboard-test-#{System.unique_integer([:positive])}.html")
+
+      File.write!(html_path, html)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: html_path,
+            filename: "Clipboard May 14, 2026 at 1.16.html",
+            content_type: "text/html"
+          }
+        })
+
+      assert conn.status == 200
+    end
+
+    test "accepts clipboard html file containing remote image url", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      html =
+        "<html><body><img src=\"https://upload.wikimedia.org/wikipedia/en/4/4c/WALL-E_poster.jpg\"></body></html>"
+
+      html_path =
+        Path.join(
+          System.tmp_dir!(),
+          "clipboard-test-remote-#{System.unique_integer([:positive])}.html"
+        )
+
+      File.write!(html_path, html)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: html_path,
+            filename: "Clipboard May 14, 2026 at 1.19.html",
+            content_type: "text/html"
+          }
+        })
+
+      assert conn.status == 200
+    end
+
+    test "returns 400 for clipboard html file without image src", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      html_path =
+        Path.join(
+          System.tmp_dir!(),
+          "clipboard-test-empty-#{System.unique_integer([:positive])}.html"
+        )
+
+      File.write!(html_path, "<html><body>no image</body></html>")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: html_path,
+            filename: "Clipboard May 14, 2026 at 1.16.html",
+            content_type: "text/html"
+          }
+        })
+
+      assert conn.status == 400
+    end
+
+    test "returns 400 for clipboard html file with localhost image url", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      html = "<html><body><img src=\"http://localhost:4000/images/logo.svg\"></body></html>"
+
+      html_path =
+        Path.join(
+          System.tmp_dir!(),
+          "clipboard-test-localhost-#{System.unique_integer([:positive])}.html"
+        )
+
+      File.write!(html_path, html)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: html_path,
+            filename: "Clipboard blocked localhost.html",
+            content_type: "text/html"
+          }
+        })
+
+      assert conn.status == 400
+    end
+
+    test "returns 400 for clipboard html file with private network image url", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      html = "<html><body><img src=\"http://192.168.1.2/example.jpg\"></body></html>"
+
+      html_path =
+        Path.join(
+          System.tmp_dir!(),
+          "clipboard-test-private-ip-#{System.unique_integer([:positive])}.html"
+        )
+
+      File.write!(html_path, html)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: html_path,
+            filename: "Clipboard blocked private-ip.html",
+            content_type: "text/html"
+          }
+        })
+
+      assert conn.status == 400
+    end
   end
 
   describe "GET /api/v1/images/:id - Show image" do
@@ -176,24 +456,8 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
   # Helper functions
 
   defp create_test_image do
-    # Create a simple 1x1 PNG image
-    # PNG header + minimal data
-    png_data =
-      <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44,
-        0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90,
-        0x77, 0x53, 0xDE, 0x00, 0x00, 0x00, 0x09, 0x70, 0x48, 0x59, 0x73, 0x00, 0x00, 0x0B, 0x13,
-        0x00, 0x00, 0x0B, 0x13, 0x01, 0x00, 0x9A, 0x9C, 0x18, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44,
-        0x41, 0x54, 0x08, 0xD7, 0x63, 0xF8, 0x0F, 0x04, 0x01, 0x01, 0x01, 0x00, 0x00, 0x05, 0x00,
-        0x01, 0x65, 0xA8, 0xE3, 0x25, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42,
-        0x60, 0x82>>
-
-    temp_file =
-      Path.join([
-        System.tmp_dir!(),
-        "test_image_#{:rand.uniform(100_000)}.png"
-      ])
-
-    File.write!(temp_file, png_data)
+    temp_file = Path.join(System.tmp_dir!(), "test_image_#{:rand.uniform(100_000)}.png")
+    File.cp!(@fixture_image, temp_file)
     temp_file
   end
 
