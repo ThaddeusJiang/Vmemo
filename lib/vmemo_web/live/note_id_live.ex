@@ -2,7 +2,6 @@ defmodule VmemoWeb.NoteIdLive do
   require Logger
   use VmemoWeb, :live_view
 
-  alias Ash
   alias Vmemo.Memo.Note
   alias VmemoWeb.LiveComponents.NoteUpdateForm
 
@@ -15,7 +14,7 @@ defmodule VmemoWeb.NoteIdLive do
   def handle_params(%{"id" => id}, _, socket) do
     actor = socket.assigns.current_user
 
-    case Ash.get(Note, id, actor: actor, load: [:images]) do
+    case Note.get(id, actor: actor, load: [:images]) do
       {:ok, note} ->
         {:noreply,
          socket

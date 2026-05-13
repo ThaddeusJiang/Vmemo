@@ -11,7 +11,12 @@ defmodule VmemoWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {VmemoWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" =>
+        "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    }
+
     plug :fetch_current_user
   end
 
@@ -139,7 +144,6 @@ defmodule VmemoWeb.Router do
 
     get "/settings/export", UserDataController, :export
     post "/users/update-password", UserSettingsController, :update
-    get "/profile/appearance", UserProfileController, :update_appearance
     post "/profile/appearance", UserProfileController, :update_appearance
   end
 

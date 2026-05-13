@@ -114,23 +114,53 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   defp validate_image_content(path) do
-    case File.read(path) do
-      {:ok, content} ->
-        # Check file header
-        case content do
-          # PNG
-          <<0x89, 0x50, 0x4E, 0x47, _::binary>> -> :ok
-          # JPEG
-          <<0xFF, 0xD8, 0xFF, _::binary>> -> :ok
-          # GIF
-          <<0x47, 0x49, 0x46, _::binary>> -> :ok
-          # WEBP
-          <<0x52, 0x49, 0x46, 0x46, _::binary>> -> :ok
-          _ -> {:error, "Invalid image format"}
-        end
+    with true <- safe_upload_path?(path),
+         {:ok, content} <- read_file_header(path, 12) do
+      # Check file header
+      case content do
+        # PNG
+        <<0x89, 0x50, 0x4E, 0x47, _::binary>> -> :ok
+        # JPEG
+        <<0xFF, 0xD8, 0xFF, _::binary>> -> :ok
+        # GIF
+        <<0x47, 0x49, 0x46, _::binary>> -> :ok
+        # WEBP
+        <<0x52, 0x49, 0x46, 0x46, _::binary>> -> :ok
+        _ -> {:error, "Invalid image format"}
+      end
+    else
+      false ->
+        {:error, "Invalid upload path"}
 
       {:error, reason} ->
         {:error, "Failed to read file: #{reason}"}
+    end
+  end
+
+  defp safe_upload_path?(path) when is_binary(path) do
+    expanded_path = Path.expand(path)
+    tmp_root = Path.expand(System.tmp_dir!())
+
+    String.starts_with?(expanded_path, tmp_root <> "/")
+  end
+
+  defp safe_upload_path?(_), do: false
+
+  defp read_file_header(path, bytes) when is_binary(path) and is_integer(bytes) and bytes > 0 do
+    case :file.open(String.to_charlist(path), [:read, :binary]) do
+      {:ok, io} ->
+        try do
+          case :file.read(io, bytes) do
+            {:ok, data} -> {:ok, data}
+            :eof -> {:error, :eof}
+            {:error, _} = error -> error
+          end
+        after
+          :file.close(io)
+        end
+
+      {:error, _} = error ->
+        error
     end
   end
 

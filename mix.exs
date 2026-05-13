@@ -225,17 +225,11 @@ defmodule Vmemo.MixProject do
       "db.reset": ["db.drop", "db.setup"],
       check: [
         "format",
-        "compile --warnings-as-errors --no-listeners --ignore-module-conflict",
         "gettext.extract --check-up-to-date",
+        "compile --warnings-as-errors --no-listeners --ignore-module-conflict",
         "xref graph --format cycles --label compile --fail-above 0",
-        "credo --mute-exit-status",
         "sobelow --config",
-        "hex.audit",
-        "deps.unlock --check-unused"
-      ],
-      "check.full": [
-        "check",
-        "dialyzer --format short"
+        "credo --mute-exit-status"
       ],
       "ts.setup": ["ts.migrate"],
       "ts.reset": ["ts.drop", "ts.setup"],

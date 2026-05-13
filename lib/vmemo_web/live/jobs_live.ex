@@ -41,7 +41,7 @@ defmodule VmemoWeb.JobsLive do
   def handle_event("retry-search-embedding", %{"image_id" => image_id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(Image, image_id, actor: user) do
+    case Image.get(image_id, actor: user) do
       {:ok, image} ->
         case Image.update_search_engine(image, %{}, actor: user) do
           {:ok, _updated_image} ->
@@ -64,7 +64,7 @@ defmodule VmemoWeb.JobsLive do
   def handle_event("retry-vision-embedding", %{"image_id" => image_id}, socket) do
     user = socket.assigns.current_user
 
-    case Ash.get(Image, image_id, actor: user) do
+    case Image.get(image_id, actor: user) do
       {:ok, image} ->
         case Image.request_generate_caption(image, %{}, actor: user) do
           {:ok, _updated_image} ->

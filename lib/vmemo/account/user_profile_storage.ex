@@ -9,12 +9,12 @@ defmodule Vmemo.Account.UserProfileStorage do
   end
 
   def avatar_path(user_id, filename) do
-    Path.join(["storage", "v1", user_id, "avatars", filename])
+    Path.join(["storage", "v1", user_id, "avatars", filename |> to_string() |> String.downcase()])
   end
 
   defp avatar_dest(user_id, filename) do
     timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
-    ext = Path.extname(filename)
+    ext = filename |> to_string() |> Path.extname() |> String.downcase()
 
     Path.join([user_id, "avatars", "#{timestamp}_avatar#{ext}"])
   end

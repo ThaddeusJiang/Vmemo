@@ -420,7 +420,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
   end
 
   defp add_image_thumbnail(acc, image_id, user) do
-    case Ash.get(Image, image_id, actor: user) do
+    case Image.get(image_id, actor: user) do
       {:ok, image} -> Map.put(acc, image.id, image.url)
       _ -> acc
     end
@@ -438,7 +438,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
     with true <- is_binary(image_id),
          %{} = conversation <- conversation,
          false <- latest_context_matches_image?(conversation, image_id, user),
-         {:ok, image} <- Ash.get(Image, image_id, actor: user),
+         {:ok, image} <- Image.get(image_id, actor: user),
          {:ok, seeded} <-
            Chat.create_system_message(
              %{
