@@ -6,3 +6,4 @@
 - [REST API](public-rest-api.md)
 - [API Token](api-tokens.md)
 - [MCP Server](mcp-server.md)
+- [Tag](tag.md)

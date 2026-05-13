@@ -3,6 +3,7 @@
 
 @import "tailwindcss" source(none);
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Work+Sans:wght@400;500;600&display=swap");
+@import "../vendor/choices.min.css";
 @source "../css";
 @source "../js";
 @source "../../lib/vmemo_web";
@@ -125,6 +126,54 @@
         --space-4: 1rem;
         --space-6: 1.5rem;
         --space-8: 2rem;
+
+        /* Choices.js global theme variables (v11.2+ CSS custom properties) */
+        --choices-darken: black;
+        --choices-lighten: white;
+        --choices-bg-color: var(--color-base-100);
+        --choices-bg-color-disabled: color-mix(in oklch, var(--color-base-100) 92%, var(--color-base-content) 8%);
+        --choices-bg-color-dropdown: var(--color-base-100);
+        --choices-text-color: color-mix(in oklch, var(--color-base-content) 92%, transparent);
+        --choices-keyline-color: color-mix(in oklch, var(--color-base-content) 16%, transparent);
+        --choices-primary-color: color-mix(in oklch, var(--color-base-content) 8%, var(--color-base-100));
+        --choices-disabled-color: color-mix(in oklch, var(--color-base-content) 14%, var(--color-base-100));
+        --choices-item-color: color-mix(in oklch, var(--color-base-content) 74%, var(--color-base-content) 26%);
+        --choices-item-disabled-color: color-mix(in oklch, var(--color-base-content) 54%, transparent);
+        --choices-highlighted-color: color-mix(in oklch, var(--color-base-content) 6%, var(--color-base-100));
+        --choices-highlight-color: color-mix(in oklch, var(--color-primary) 52%, var(--color-base-content) 48%);
+        --choices-invalid-color: var(--color-error);
+
+        --choices-font-size-lg: 0.95rem;
+        --choices-font-size-md: 0.95rem;
+        --choices-font-size-sm: 0.82rem;
+        --choices-guttering: 0;
+        --choices-width: 100%;
+        --choices-border-radius: 0.5rem;
+        --choices-border-radius-item: 0.5rem;
+        --choices-z-index: 30;
+        --choices-input-height: 2.75rem;
+        --choices-base-border: 1px solid;
+        --choices-multiple-item-margin: 0.25rem;
+        --choices-multiple-item-padding: 0.18rem 0.6rem;
+        --choices-dropdown-item-padding: 0.5rem 0.72rem;
+        --choices-input-margin-bottom: 0;
+        --choices-input-padding: 0.2rem 0 0.2rem 0.2rem;
+        --choices-inner-padding: 0.34rem 0.56rem;
+        --choices-button-offset: 0.36rem;
+        --choices-button-dimension: 0.58rem;
+        --choices-button-border-radius: 9999px;
+        --choices-button-opacity: 0.78;
+        --choices-button-opacity-hover: 1;
+        --choices-placeholder-opacity: 0.56;
+    }
+
+    [data-theme="dark"] {
+        --choices-bg-color: color-mix(in oklch, var(--color-base-100) 95%, var(--color-base-content) 5%);
+        --choices-bg-color-dropdown: color-mix(in oklch, var(--color-base-100) 96%, var(--color-base-content) 4%);
+        --choices-keyline-color: color-mix(in oklch, var(--color-base-content) 24%, transparent);
+        --choices-primary-color: color-mix(in oklch, var(--color-base-content) 10%, var(--color-base-100));
+        --choices-item-color: color-mix(in oklch, var(--color-base-content) 86%, var(--color-base-content) 14%);
+        --choices-highlighted-color: color-mix(in oklch, var(--color-base-content) 12%, var(--color-base-100));
     }
 
     textarea {

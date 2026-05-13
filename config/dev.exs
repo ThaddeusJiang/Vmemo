@@ -86,8 +86,10 @@ config :vmemo, VmemoWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :vmemo, dev_routes: true
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+# Keep development logs compact while allowing app-specific metadata keys.
+config :logger, :console,
+  format: "[$level] $message\n",
+  metadata: [:request_id, :user_id, :image_id, :job_id, :worker]
 
 config :os_mon,
   start_cpu_sup: false,

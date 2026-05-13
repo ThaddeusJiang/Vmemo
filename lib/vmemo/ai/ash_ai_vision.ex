@@ -52,6 +52,38 @@ defmodule Vmemo.Ai.AshAiVision do
     e -> {:error, Exception.message(e)}
   end
 
+  def generate_object(image_base64, prompt, schema, opts \\ [])
+      when is_binary(image_base64) and is_binary(prompt) and is_list(schema) do
+    mime_type = Keyword.get(opts, :mime_type, "image/jpeg")
+    max_tokens = normalize_max_tokens(Keyword.get(opts, :max_tokens, @default_query_max_tokens))
+
+    with {:ok, model} <- opts |> Keyword.get(:model) |> normalize_model(),
+         {:ok, image_binary} <- decode_base64_image(image_base64),
+         {:ok, object} <-
+           ReqLLM.generate_object(
+             model,
+             [
+               user([
+                 ContentPart.text(prompt),
+                 ContentPart.image(image_binary, mime_type)
+               ])
+             ],
+             schema,
+             temperature: 0.2,
+             max_tokens: max_tokens
+           ) do
+      {:ok, object}
+    else
+      {:error, reason} ->
+        {:error, reason}
+
+      _ ->
+        {:error, "Invalid structured object from AshAi vision pipeline"}
+    end
+  rescue
+    e -> {:error, Exception.message(e)}
+  end
+
   defp normalize_model(model) when is_binary(model) do
     model = String.trim(model)
 

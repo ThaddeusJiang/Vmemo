@@ -131,6 +131,35 @@ git config --local include.path "$(git rev-parse --show-toplevel)/.git-hooks.git
 - `mix ash.migrate`
 - `mix ash_postgres.rollback`
 
+### 5.1 Ash Migration Workflow (Required)
+
+Use Ash-first workflow for schema changes in this project.
+
+1. Update Ash resources (`lib/vmemo/**`).
+2. Generate migrations with AshPostgres:
+   - `mix ash_postgres.generate_migrations <name>`
+3. Apply migrations with Ash migrate command:
+   - `mix db.migrate` (preferred alias)
+   - or `mix ash.migrate`
+
+Do not use `mix ecto.migrate` as the primary team workflow.
+
+#### Incremental Migration Rules
+
+- Expect generated migrations to be incremental (only new/changed objects).
+- If generation unexpectedly produces full schema rebuild SQL (for example `create table memo_notes` on an existing DB), stop and do not run it directly.
+- In that case:
+  1. Keep resource definitions as the source of truth.
+  2. Remove the invalid generated migration files.
+  3. Create a focused incremental migration for only the intended delta.
+  4. Run `mix db.migrate`.
+
+#### Environment Notes
+
+- Ensure runtime env is loaded before migration commands (for example `DATABASE_URL`):
+  - `set -a && source .env && set +a`
+- If DB connection or runtime env is missing, migration generation/check may fail before diffing.
+
 ### 6. Search Index (Typesense)
 
 - `mix ts.migrate`

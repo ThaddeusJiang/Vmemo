@@ -2,6 +2,7 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
   @moduledoc false
   use Ash.Resource.Change
   alias Ash.Resource.Info
+  require Logger
 
   @impl true
   def change(changeset, opts, _context) do
@@ -13,7 +14,10 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
           update_status_if_supported(resource, record, "completed")
 
         {:ok, false} ->
-          _ = update_status_if_supported(resource, record, "failed")
+          Logger.warning("typesense sync retrying: sync_failed",
+            image_id: record.id,
+            user_id: record.user_id
+          )
 
           {:error, :sync_failed}
 
@@ -21,7 +25,10 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
           {:ok, record}
 
         {:error, reason} ->
-          _ = update_status_if_supported(resource, record, "failed")
+          Logger.warning("typesense sync retrying: #{inspect(reason)}",
+            image_id: record.id,
+            user_id: record.user_id
+          )
 
           {:error, reason}
       end

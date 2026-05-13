@@ -66,7 +66,7 @@ defmodule VmemoWeb.JobsLive do
 
     case Image.get(image_id, actor: user) do
       {:ok, image} ->
-        case Image.request_generate_caption(image, %{}, actor: user) do
+        case Image.request_generate_caption_only(image, %{}, actor: user) do
           {:ok, _updated_image} ->
             Process.send_after(self(), {:clear_retrying_caption, image_id}, 4_000)
             {:noreply, socket |> put_retrying_caption(image_id) |> refresh_jobs()}

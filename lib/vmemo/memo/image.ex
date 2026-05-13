@@ -23,6 +23,7 @@ defmodule Vmemo.Memo.Image do
   require Logger
 
   alias Vmemo.Ai.Caption
+  alias Vmemo.Memo.Changes.SyncImageTags
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.SearchEngine.TsImage
 
@@ -50,6 +51,12 @@ defmodule Vmemo.Memo.Image do
       trigger :sync_typesense do
         action :sync_typesense
         queue :sync_typesense
+        max_attempts 5
+        backoff 5
+        timeout 120_000
+        on_error :mark_typesense_failed
+        log_errors? false
+        log_final_error? false
         lock_for_update? false
         scheduler_cron false
         where expr(true)
@@ -61,12 +68,30 @@ defmodule Vmemo.Memo.Image do
         action :generate_caption
         queue :ai_vision
         max_attempts 5
-        backoff 30
+        backoff 5
         timeout 120_000
+        on_error :mark_caption_failed
+        log_errors? false
+        log_final_error? false
         scheduler_cron false
         where expr(true)
         worker_module_name Vmemo.Memo.Image.Workers.GenerateCaption
         scheduler_module_name Vmemo.Memo.Image.Schedulers.GenerateCaption
+      end
+
+      trigger :generate_caption_only do
+        action :generate_caption_only
+        queue :ai_vision
+        max_attempts 5
+        backoff 5
+        timeout 120_000
+        on_error :mark_caption_failed
+        log_errors? false
+        log_final_error? false
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Memo.Image.Workers.GenerateCaptionOnly
+        scheduler_module_name Vmemo.Memo.Image.Schedulers.GenerateCaptionOnly
       end
 
       trigger :generate_thumbnails do
@@ -100,6 +125,7 @@ defmodule Vmemo.Memo.Image do
     define :ingest_temp_file_for_similarity_search, args: [:temp_path, :storage_file_id]
     define :update_search_engine
     define :request_generate_caption
+    define :request_generate_caption_only
   end
 
   defp valid_uuid?(id) when is_binary(id) do
@@ -150,9 +176,8 @@ defmodule Vmemo.Memo.Image do
 
     create :create_with_sync do
       accept [:url, :note, :caption, :file_id, :user_id, :inner_purpose, :upload_batch_id]
-      change set_attribute(:typesense_status, "pending")
+      change set_attribute(:typesense_status, "processing")
       change set_attribute(:moondream_status, "pending")
-      change run_oban_trigger(:sync_typesense)
       change run_oban_trigger(:generate_caption)
       change run_oban_trigger(:generate_thumbnails)
     end
@@ -183,14 +208,20 @@ defmodule Vmemo.Memo.Image do
           case generate_caption_for_photo(record) do
             :ok ->
               set_moondream_status(record, "completed")
+              _ = request_sync_typesense(record)
               {:ok, record}
 
             {:discard, _reason} ->
               set_moondream_status(record, "failed")
+              _ = request_sync_typesense(record)
               {:ok, record}
 
             {:error, reason} ->
-              set_moondream_status(record, "failed")
+              Logger.warning("caption generation retrying: #{inspect(reason)}",
+                image_id: record.id,
+                user_id: record.user_id
+              )
+
               {:error, reason}
           end
         end)
@@ -209,6 +240,44 @@ defmodule Vmemo.Memo.Image do
       require_atomic? false
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:generate_caption)
+    end
+
+    update :request_generate_caption_only do
+      accept []
+      require_atomic? false
+      change set_attribute(:moondream_status, "pending")
+      change run_oban_trigger(:generate_caption_only)
+    end
+
+    update :generate_caption_only do
+      accept []
+      require_atomic? false
+      transaction? false
+      change set_attribute(:moondream_status, "processing")
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          case generate_caption_for_photo(record, sync_tags?: false) do
+            :ok ->
+              set_moondream_status(record, "completed")
+              _ = request_sync_typesense(record)
+              {:ok, record}
+
+            {:discard, _reason} ->
+              set_moondream_status(record, "failed")
+              _ = request_sync_typesense(record)
+              {:ok, record}
+
+            {:error, reason} ->
+              Logger.warning("caption generation retrying: #{inspect(reason)}",
+                image_id: record.id,
+                user_id: record.user_id
+              )
+
+              {:error, reason}
+          end
+        end)
+      end
     end
 
     update :generate_thumbnails do
@@ -245,9 +314,46 @@ defmodule Vmemo.Memo.Image do
       require_atomic? false
     end
 
+    update :mark_typesense_failed do
+      accept []
+      require_atomic? false
+      change set_attribute(:typesense_status, "failed")
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          Logger.warning("typesense sync failed", image_id: record.id, user_id: record.user_id)
+          {:ok, record}
+        end)
+      end
+    end
+
     update :set_moondream_status do
       accept [:moondream_status]
       require_atomic? false
+    end
+
+    update :set_caption_ai_result do
+      accept [:caption]
+      require_atomic? false
+    end
+
+    update :mark_caption_failed do
+      accept []
+      require_atomic? false
+      change set_attribute(:moondream_status, "failed")
+      change set_attribute(:typesense_status, "pending")
+      change run_oban_trigger(:sync_typesense)
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          Logger.warning("caption generation failed",
+            image_id: record.id,
+            user_id: record.user_id
+          )
+
+          {:ok, record}
+        end)
+      end
     end
 
     action :sync_typesense_by_id, :boolean do
@@ -257,8 +363,9 @@ defmodule Vmemo.Memo.Image do
         image_id = Ash.ActionInput.get_argument(input, :image_id)
 
         with {:ok, image} <- Ash.get(__MODULE__, image_id, actor: nil, authorize?: false),
-             {:ok, photo_with_notes} <- Ash.load(image, :notes, actor: nil, authorize?: false),
-             {:ok, _} <- upsert_typesense_photo(photo_with_notes) do
+             {:ok, photo_with_relations} <-
+               Ash.load(image, [:notes, :tags], actor: nil, authorize?: false),
+             {:ok, _} <- upsert_typesense_photo(photo_with_relations) do
           {:ok, true}
         end
       end
@@ -568,8 +675,12 @@ defmodule Vmemo.Memo.Image do
               |> Map.merge(asset_params)
 
             case Ash.create(__MODULE__, params, action: :create_with_sync, actor: actor) do
-              {:ok, image} -> {:ok, mcp_image_payload(image)}
-              {:error, reason} -> {:error, reason}
+              {:ok, image} ->
+                image = Ash.load!(image, :tags, actor: nil, authorize?: false)
+                {:ok, mcp_image_payload(image)}
+
+              {:error, reason} ->
+                {:error, reason}
             end
           end
         end
@@ -588,7 +699,8 @@ defmodule Vmemo.Memo.Image do
         actor = Map.get(context, :actor)
         id = Ash.ActionInput.get_argument(input, :id)
 
-        with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor) do
+        with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor),
+             {:ok, image} <- Ash.load(image, :tags, actor: nil, authorize?: false) do
           {:ok, mcp_image_payload(image)}
         end
       end
@@ -627,7 +739,8 @@ defmodule Vmemo.Memo.Image do
           {:error, "At least one of note or caption must be provided"}
         else
           with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor),
-               {:ok, updated} <- Ash.update(image, attrs, action: :update, actor: actor) do
+               {:ok, updated} <- Ash.update(image, attrs, action: :update, actor: actor),
+               {:ok, updated} <- Ash.load(updated, :tags, actor: nil, authorize?: false) do
             {:ok, mcp_image_payload(updated)}
           end
         end
@@ -894,16 +1007,24 @@ defmodule Vmemo.Memo.Image do
       source_attribute_on_join_resource :image_id
       destination_attribute_on_join_resource :note_id
     end
+
+    many_to_many :tags, Vmemo.Memo.Tag do
+      through Vmemo.Memo.ImageTag
+      source_attribute_on_join_resource :image_id
+      destination_attribute_on_join_resource :tag_id
+    end
   end
 
   defp mcp_image_payload(image) do
     image = normalize_image_url_for_api(image)
+    tags = tags_from_image(image)
 
     %{
       id: image.id,
       url: image.url,
       note: image.note,
       caption: image.caption,
+      tags: tags,
       inserted_at: image.inserted_at,
       updated_at: image.updated_at,
       resource_uri: "vmemo://image/image",
@@ -914,6 +1035,15 @@ defmodule Vmemo.Memo.Image do
       url_params: %{id: image.id}
     }
   end
+
+  defp tags_from_image(%{tags: tags}) when is_list(tags) do
+    tags
+    |> Enum.map(& &1.name)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp tags_from_image(_image), do: []
 
   defp build_mcp_create_asset_params(input, user_id) do
     file = Ash.ActionInput.get_argument(input, :file)
@@ -1135,6 +1265,7 @@ defmodule Vmemo.Memo.Image do
         id: image.id,
         note: image.note || "",
         caption: image.caption || "",
+        tags: tags_from_image(image),
         note_ids: Enum.map(image.notes || [], & &1.id),
         url: image.url,
         file_id: image.file_id,
@@ -1193,8 +1324,12 @@ defmodule Vmemo.Memo.Image do
 
   defp maybe_put_purpose(payload, _), do: payload
 
-  defp generate_caption_for_photo(image) do
-    if has_caption?(image.caption), do: :ok, else: do_generate_caption(image)
+  defp generate_caption_for_photo(image, opts \\ []) do
+    sync_tags? = Keyword.get(opts, :sync_tags?, true)
+
+    if has_caption?(image.caption),
+      do: :ok,
+      else: do_generate_caption(image, sync_tags?: sync_tags?)
   end
 
   defp generate_thumbnails_for_image(image) do
@@ -1213,12 +1348,23 @@ defmodule Vmemo.Memo.Image do
     error -> {:error, error}
   end
 
-  defp do_generate_caption(image) do
+  defp do_generate_caption(image, opts) do
+    sync_tags? = Keyword.get(opts, :sync_tags?, true)
+    existing_tags = tags_from_image(Ash.load!(image, :tags, actor: nil, authorize?: false))
+
     with {:ok, {image_base64, mime_type}} <- read_image_as_base64(image.url),
-         {:ok, caption} <-
-           Caption.generate_caption(image_base64, user_id: image.user_id, mime_type: mime_type),
-         {:ok, _updated_photo} <-
-           __MODULE__.update(image, %{caption: caption}, actor: nil, authorize?: false) do
+         {:ok, %{caption: caption, tags: ai_tags}} <-
+           Caption.generate_caption_and_tags(image_base64,
+             user_id: image.user_id,
+             mime_type: mime_type
+           ),
+         {:ok, updated_photo} <-
+           Ash.update(image, %{caption: caption},
+             action: :set_caption_ai_result,
+             actor: nil,
+             authorize?: false
+           ),
+         :ok <- maybe_sync_ai_tags(updated_photo, existing_tags, ai_tags, sync_tags?) do
       :ok
     else
       {:error, :file_not_found} ->
@@ -1229,10 +1375,22 @@ defmodule Vmemo.Memo.Image do
     end
   end
 
+  defp maybe_sync_ai_tags(_image, _existing_tags, _ai_tags, false), do: :ok
+
+  defp maybe_sync_ai_tags(image, existing_tags, ai_tags, true) do
+    SyncImageTags.sync_for_image(image, existing_tags ++ ai_tags)
+  end
+
   defp has_caption?(caption), do: is_binary(caption) and caption != ""
 
   defp set_moondream_status(image, status) do
     set_job_status(image, :set_moondream_status, :moondream_status, status)
+  end
+
+  defp request_sync_typesense(image) do
+    Ash.update(image, %{}, action: :update_search_engine, actor: nil, authorize?: false)
+  rescue
+    _ -> :ok
   end
 
   defp set_job_status(image, action, field, status) do
