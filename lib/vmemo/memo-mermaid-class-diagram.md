@@ -13,9 +13,14 @@ classDiagram
         generate_caption()
         update_search_engine()
         request_generate_caption()
+        request_generate_caption_only()
+        generate_caption_only()
         generate_thumbnails()
         set_typesense_status(String typesense_status)
+        mark_typesense_failed()
         set_moondream_status(String moondream_status)
+        set_caption_ai_result(String caption)
+        mark_caption_failed()
         sync_typesense_by_id(UUID image_id)
         ingest_temp_file_for_similarity_search(String temp_path, String storage_file_id)
         get_with_notes(String id, UUID user_id)
@@ -50,9 +55,25 @@ classDiagram
         read()
         import(UUID image_id, UUID note_id)
     }
+    class Tag {
+        UUID id
+        destroy()
+        read()
+        create(String name)
+    }
+    class ImageTag {
+        UUID id
+        destroy()
+        read()
+        create(UUID image_id, UUID tag_id)
+        import(UUID image_id, UUID tag_id)
+    }
 
     Image -- ImageNote
+    Image -- ImageTag
     Image -- Note
+    Image -- Tag
     ImageNote -- Note
+    ImageTag -- Tag
 
 ```
