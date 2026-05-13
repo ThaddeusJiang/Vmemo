@@ -23,9 +23,13 @@ classDiagram
         hybrid_search_count(String query, String similar_image_id, UUID user_id)
         library_images_count(UUID user_id)
         search_images(String query, String similar_image_id, Integer page)
-        get_image_url(String uri)
-        get_image_html(String uri)
-        get_image_data(String uri)
+        mcp_image_create(String file, String note, String caption)
+        mcp_image_read(UUID id)
+        mcp_image_update(UUID id, String note, String caption)
+        mcp_image_delete(UUID id)
+        get_image_url(String uri, UUID id)
+        get_image_html(String uri, UUID id)
+        get_image_data(String uri, UUID id)
         list_similar(UUID image_id, UUID user_id)
     }
     class Note {
