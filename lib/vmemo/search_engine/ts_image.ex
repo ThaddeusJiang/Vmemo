@@ -23,6 +23,7 @@ defmodule Vmemo.SearchEngine.TsImage do
     :inserted_at,
     :inserted_by,
     :caption,
+    :tags,
     :inner_purpose,
     :_vector_distance,
     :_text_match_info
@@ -43,6 +44,7 @@ defmodule Vmemo.SearchEngine.TsImage do
       inserted_at: image["inserted_at"],
       inserted_by: image["inserted_by"],
       caption: image["caption"],
+      tags: image["tags"],
       inner_purpose: purpose_from_ts_document(image),
       _vector_distance: image["_vector_distance"],
       _text_match_info: image["_text_match_info"]
@@ -141,7 +143,7 @@ defmodule Vmemo.SearchEngine.TsImage do
       Typesense.request(:get, req,
         params: [
           q: "",
-          query_by: "note,caption",
+          query_by: "note,caption,tags",
           exclude_fields: "image_embedding",
           filter_by: user_library_filter_by(user_id),
           page: 1,
@@ -163,7 +165,7 @@ defmodule Vmemo.SearchEngine.TsImage do
       Typesense.request(:get, req,
         params: [
           q: "*",
-          query_by: "note,caption",
+          query_by: "note,caption,tags",
           filter_by: user_library_filter_by(user_id),
           per_page: 0
         ]
@@ -219,7 +221,7 @@ defmodule Vmemo.SearchEngine.TsImage do
   defp search_text_images(q, user_id, page, per_page) do
     params = [
       q: q,
-      query_by: "note,caption",
+      query_by: "note,caption,tags",
       filter_by: user_library_filter_by(user_id),
       sort_by: "inserted_at:desc",
       exclude_fields: "image_embedding",

@@ -1,11 +1,14 @@
 defmodule VmemoWeb.ImageIdLive do
   require Logger
+  require Ash.Query
   use Gettext, backend: VmemoWeb.Gettext
 
   use VmemoWeb, :live_view
 
   alias Vmemo.Ai.VisionRequest
+  alias Vmemo.Memo.Tag
   alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageTag
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.Storage
 
@@ -117,6 +120,66 @@ defmodule VmemoWeb.ImageIdLive do
   end
 
   @impl true
+  def handle_event("update-tag-input", %{"tag_input" => tag_input}, socket) do
+    {:noreply, assign(socket, :tag_input, tag_input)}
+  end
+
+  @impl true
+  def handle_event("add-tag", %{"tag_input" => raw_input}, socket) do
+    user = socket.assigns.current_user
+    current_tags = socket.assigns.current_tags || []
+    parsed = parse_tag_input(raw_input)
+    existing_set = MapSet.new(current_tags)
+    added_tags = Enum.reject(parsed, &MapSet.member?(existing_set, &1))
+
+    new_tags = current_tags ++ added_tags
+
+    cond do
+      parsed == [] ->
+        {:noreply, put_flash(socket, :error, gettext("Please input at least one tag."))}
+
+      added_tags == [] ->
+        {:noreply, put_flash(socket, :info, gettext("Tag already exists."))}
+
+      true ->
+        case sync_image_tags(socket.assigns.image.id, new_tags, user.id) do
+          :ok ->
+            {:noreply,
+             socket
+             |> assign(:current_tags, new_tags)
+             |> assign(:tag_input, "")
+             |> assign(:all_tag_options, list_user_tag_options(user.id))
+             |> put_flash(:info, gettext("Saved"))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+        end
+    end
+  end
+
+  @impl true
+  def handle_event("remove-tag", %{"name" => name}, socket) do
+    user = socket.assigns.current_user
+
+    updated_tags =
+      socket.assigns.current_tags
+      |> List.wrap()
+      |> Enum.reject(&(&1 == name))
+
+    case sync_image_tags(socket.assigns.image.id, updated_tags, user.id) do
+      :ok ->
+        {:noreply,
+         socket
+         |> assign(:current_tags, updated_tags)
+         |> assign(:all_tag_options, list_user_tag_options(user.id))
+         |> put_flash(:info, gettext("Saved"))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Failed to save"))}
+    end
+  end
+
+  @impl true
   def handle_event("gen-description", _, socket) do
     user = socket.assigns.current_user
     image = socket.assigns.image
@@ -190,7 +253,7 @@ defmodule VmemoWeb.ImageIdLive do
     user = socket.assigns.current_user
     image = socket.assigns.image
 
-    case Image.request_generate_caption(image, %{}, actor: user) do
+    case Image.request_generate_caption_only(image, %{}, actor: user) do
       {:ok, updated_photo} ->
         {:noreply,
          socket
@@ -262,6 +325,8 @@ defmodule VmemoWeb.ImageIdLive do
                 "caption" => updated_photo.caption
               })
             )
+            |> assign(:current_tags, tags_for_image(updated_photo))
+            |> assign(:all_tag_options, list_user_tag_options(user.id))
             |> put_flash(:info, "Caption generated")
 
           _ ->
@@ -434,6 +499,28 @@ defmodule VmemoWeb.ImageIdLive do
                   </.error>
                 </div>
 
+                <div class="form-control w-full">
+                  <div class="space-y-2">
+                    <.label>{gettext("Tags")}</.label>
+                    <select
+                      id={"image-tag-input-#{@image.id}"}
+                      class="tag-choices"
+                      style="display:none"
+                      multiple
+                      phx-hook="TagInput"
+                      data-placeholder="English Grammar"
+                    >
+                      <option
+                        :for={tag <- @all_tag_options}
+                        value={tag}
+                        selected={tag in @current_tags}
+                      >
+                        {tag}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
                 <:actions>
                   <.button :if={@form_dirty}>
                     <span class="inline-flex items-center gap-2 phx-submit-loading:hidden">
@@ -583,6 +670,8 @@ defmodule VmemoWeb.ImageIdLive do
     vision_requests = list_vision_requests(image.id, user)
     caption_requests = caption_requests_from(vision_requests)
     latest_caption_request = latest_caption_request_from(caption_requests)
+    current_tags = tags_for_image(image)
+    all_tag_options = list_user_tag_options(user.id)
     original_form_values = %{"note" => image.note, "caption" => image.caption}
 
     socket
@@ -596,6 +685,9 @@ defmodule VmemoWeb.ImageIdLive do
     |> assign(latest_caption_request: latest_caption_request)
     |> assign(:image_rotation, 0)
     |> assign(:image_dom_version, 0)
+    |> assign(:tag_input, "")
+    |> assign(:current_tags, current_tags)
+    |> assign(:all_tag_options, all_tag_options)
     |> assign(save_error: nil)
     |> assign(form_dirty: false)
     |> assign(original_form_values: original_form_values)
@@ -686,5 +778,79 @@ defmodule VmemoWeb.ImageIdLive do
     :ok
   rescue
     _ -> {:error, :rotate_failed}
+  end
+
+  defp parse_tag_input(input) when is_binary(input) do
+    input
+    |> String.split([",", "\n"], trim: true)
+    |> Enum.map(&normalize_tag/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+  end
+
+  defp parse_tag_input(_), do: []
+
+  defp normalize_tag(tag) do
+    tag
+    |> String.trim()
+    |> String.replace(~r/\s+/u, " ")
+  end
+
+  defp sync_image_tags(image_id, names, _user_id) do
+    existing_links =
+      ImageTag
+      |> Ash.Query.filter(image_id: image_id)
+      |> Ash.Query.load(:tag)
+      |> Ash.read!(actor: nil, authorize?: false)
+
+    target_names = MapSet.new(names)
+
+    existing_links
+    |> Enum.filter(fn link ->
+      tag_name = link.tag && link.tag.name
+      not MapSet.member?(target_names, tag_name)
+    end)
+    |> Enum.each(fn link ->
+      _ = Ash.destroy(link, actor: nil, authorize?: false)
+    end)
+
+    Enum.reduce_while(names, :ok, fn name, _acc ->
+      with {:ok, tag} <-
+             Ash.create(Tag, %{name: name}, action: :create, actor: nil, authorize?: false),
+           {:ok, _link} <-
+             Ash.create(
+               ImageTag,
+               %{image_id: image_id, tag_id: tag.id},
+               action: :create,
+               actor: nil,
+               authorize?: false
+             ) do
+        {:cont, :ok}
+      else
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp tags_for_image(image) do
+    image
+    |> Ash.load!(:tags, actor: nil, authorize?: false)
+    |> Map.get(:tags, [])
+    |> Enum.map(& &1.name)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp list_user_tag_options(user_id) do
+    Tag
+    |> Ash.Query.load(:images)
+    |> Ash.read!(actor: nil, authorize?: false)
+    |> Enum.filter(fn tag ->
+      tag.images
+      |> List.wrap()
+      |> Enum.any?(&(&1.user_id == user_id))
+    end)
+    |> Enum.map(& &1.name)
+    |> Enum.sort()
   end
 end

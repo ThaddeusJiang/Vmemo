@@ -112,6 +112,8 @@ defmodule Vmemo.Memo do
     resource Vmemo.Memo.Image
     resource Vmemo.Memo.Note
     resource Vmemo.Memo.ImageNote
+    resource Vmemo.Memo.Tag
+    resource Vmemo.Memo.ImageTag
   end
 
   authorization do

@@ -293,6 +293,7 @@ msgid "expand"
 msgstr ""
 
 #: lib/vmemo_web/live/home_page_live.ex
+#: lib/vmemo_web/live/tags_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "images"
 msgstr ""
@@ -913,6 +914,7 @@ msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/index.ex
 #: lib/vmemo_web/live/api_token_live/show.ex
+#: lib/vmemo_web/live/tags_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Usage Count"
 msgstr ""
@@ -1105,4 +1107,45 @@ msgstr ""
 #: lib/vmemo_web/live/components/note_update_form.ex
 #, elixir-autogen, elixir-format
 msgid "Updated"
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Failed to save"
+msgstr ""
+
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No tags yet. Add tags from the image Tags input."
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Please input at least one tag."
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Saved"
+msgstr ""
+
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Tag"
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Tag already exists."
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Tags"
+msgstr ""
+
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "tags"
 msgstr ""

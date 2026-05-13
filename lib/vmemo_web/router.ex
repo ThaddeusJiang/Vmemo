@@ -127,6 +127,8 @@ defmodule VmemoWeb.Router do
       live "/jobs/:id", JobsLive, :show
 
       live "/notes/:id", NoteIdLive
+      live "/tags", TagsLive.Index, :index
+      live "/tags/:id", TagsLive.Show, :show
 
       live "/settings", UserSettingsLive, :edit
       live "/settings/confirm_email/:token", UserSettingsLive, :confirm_email
