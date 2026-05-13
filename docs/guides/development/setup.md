@@ -7,7 +7,7 @@ This guide focuses on local development workflows and project-available `mix` ta
 - macOS or Linux
 - Docker runtime
 - `mise` for Elixir/Erlang version management
-- ImageMagick (`magick`) for local verification of AI vision image preprocessing
+- ImageMagick (`magick`/`convert`) for local verification of AI vision image preprocessing
 
 ## Quickstart
 
@@ -21,6 +21,19 @@ Install ImageMagick if missing:
 
 ```bash
 brew install imagemagick
+```
+
+Linux (Debian/Ubuntu):
+
+```bash
+sudo apt-get update
+sudo apt-get install -y imagemagick
+```
+
+Verify installation:
+
+```bash
+magick -version || convert -version
 ```
 
 2. Start local dependencies:
@@ -101,6 +114,7 @@ git config --local include.path "$(git rev-parse --show-toplevel)/.git-hooks.git
 
 - `mix test`
   - Alias behavior: ensure DB and Typesense migration tasks run before tests
+  - If tests hit thumbnail generation paths, `ImageMagick` must be installed locally
 - `mix check`
   - Runs formatter check, compile warnings as errors, xref cycles, credo, sobelow, hex audit, deps unused check, test with warnings as errors, dialyzer
 - `mix format`
@@ -244,3 +258,7 @@ Before opening a pull request:
 - API Token: `docs/features/api-tokens.md`
 - Docker (entry): `docs/guides/docker/README.md`
 - Deployment: `docs/guides/deployment/docker.md`
+
+## CI Note
+
+- GitHub Actions `mix-test` job installs `ImageMagick` explicitly before `mix test` to support real thumbnail-generation test paths.

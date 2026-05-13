@@ -23,6 +23,13 @@ docker compose ps
 docker compose logs -f
 ```
 
+Check `ImageMagick` inside the app container:
+
+```bash
+docker compose exec vmemo which magick
+docker compose exec vmemo magick -version
+```
+
 App URL:
 
 ```text
@@ -32,3 +39,7 @@ http://localhost:4000
 ## Optional
 
 - [Cloudflare Tunnel CLI](cloudflare-tunnel-cli.md)
+
+## Notes
+
+- For this self-hosting mode, host-level `ImageMagick` is not required. The Vmemo app image already bundles `ImageMagick`.

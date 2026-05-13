@@ -7,6 +7,7 @@ defmodule VmemoWeb.TagsLiveTest do
   alias Vmemo.Memo.Changes.SyncImageTags
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.Tag
+  @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
 
   describe "tags pages" do
     setup %{conn: conn} do
@@ -74,7 +75,24 @@ defmodule VmemoWeb.TagsLiveTest do
   end
 
   defp create_image!(attrs) do
+    ensure_fixture_image!(attrs)
     {:ok, image} = Ash.create(Image, attrs, action: :import, actor: nil, authorize?: false)
     image
+  end
+
+  defp ensure_fixture_image!(attrs) do
+    user_id = Map.fetch!(attrs, :user_id)
+    url = Map.fetch!(attrs, :url)
+    storage_path = url |> String.trim_leading("/") |> Path.expand()
+
+    expected_prefix = Path.join(["storage", "v1", user_id, "images"]) |> Path.expand()
+
+    if String.starts_with?(storage_path, expected_prefix <> "/") do
+      File.mkdir_p!(Path.dirname(storage_path))
+
+      unless File.exists?(storage_path) do
+        File.cp!(@fixture_image, storage_path)
+      end
+    end
   end
 end

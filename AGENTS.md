@@ -1,4 +1,4 @@
-# AGENTS.md
+# Vmemo AGENTS.md
 
 ## Project overview
 - Vmemo is an Elixir Phoenix application built with Ash Framework.

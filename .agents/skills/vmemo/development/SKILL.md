@@ -13,21 +13,17 @@ Focus only on:
 - temporary port remap when conflicts exist
 
 ## Prepare
-- Run `mise trust && mise install`.
 - Copy `AGENTS.override.md` from the main checkout using `cp`.
 - Copy `.env` from the main checkout using `cp`.
 
 ## Start Docker Compose
 
-1. Before `docker compose up -d`, check host port conflicts.
-2. If conflict exists, create/update `docker-compose.override.yml` with temporary ports and sync `.env` URLs to those ports.
-3. Start services and continue workflow.
+1. Run `docker compose up -d`.
 
-## Setup
+## Setup mix
 
-Check setup state:
-- If deps missing or services unavailable, run `mix setup`.
-- If state is broken/corrupted, run `mix reset` then `mix setup`.
+- Run `mise trust && mise install`.
+- Run `mix setup`.
 
 ## Test 
 
@@ -38,6 +34,14 @@ Check setup state:
 ## Check
 
 - Run `mix check`.
+
+## Self-review
+
+- Run `mix format`.
+- Run `mix check`.
+- Run Dialyzer checks locally (for example `mix dialyzer` when configured).
+- Run ElixirLS diagnostics in local editor/workspace and review warnings/errors.
+- Fix all errors and warnings found by the checks above before finishing the task.
 
 ## Notes
 - Temporary port handling must be done via `docker-compose.override.yml`; do not modify `docker-compose.yml`.

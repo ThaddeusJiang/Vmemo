@@ -19,11 +19,11 @@ docs/guides/self-hosting/
 
 ## Dependency Matrix
 
-| Mode | Vmemo App | PostgreSQL | Typesense | Moondream |
-| --- | --- | --- | --- | --- |
-| Local machine | self-hosted | self-hosted | self-hosted | self-hosted (`moondream-station`) |
-| Zeabur | self-hosted | self-hosted (Zeabur service) | self-hosted (Zeabur service) | managed service (`moondream.ai`) |
-| Fly.io | self-hosted | managed service | managed service | managed service (`moondream.ai`) |
+| Mode | Vmemo App | PostgreSQL | Typesense | Moondream | ImageMagick |
+| --- | --- | --- | --- | --- | --- |
+| Local machine | self-hosted | self-hosted | self-hosted | self-hosted (`moondream-station`) | bundled in Vmemo container image |
+| Zeabur | self-hosted | self-hosted (Zeabur service) | self-hosted (Zeabur service) | managed service (`moondream.ai`) | bundled in Vmemo container image |
+| Fly.io | self-hosted | managed service | managed service | managed service (`moondream.ai`) | bundled in Vmemo container image |
 
 ## Mode Guides
 
