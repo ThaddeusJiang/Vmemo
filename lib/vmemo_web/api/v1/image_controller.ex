@@ -143,9 +143,20 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   defp extract_img_src_from_html(html) when is_binary(html) do
     case Regex.run(~r/<img[^>]+src=["']([^"']+)["']/i, html) do
-      [_, src] when is_binary(src) and src != "" -> {:ok, src}
+      [_, src] when is_binary(src) and src != "" ->
+        {:ok, html_unescape(src)}
+
       _ -> {:error, :missing_img_src}
     end
+  end
+
+  defp html_unescape(src) when is_binary(src) do
+    src
+    |> String.replace("&amp;", "&")
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&#39;", "'")
   end
 
   defp image_binary_from_src("data:" <> _ = data_url) do
@@ -158,7 +169,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   defp fetch_image_binary(url) do
     with :ok <- validate_remote_image_url(url),
-         {:ok, %Req.Response{status: status, body: body, headers: headers}} <-
+         {:ok, %Req.Response{} = response} <-
            Req.get(url,
              redirect: true,
              max_redirects: 2,
@@ -166,10 +177,12 @@ defmodule VmemoWeb.Api.V1.ImageController do
              receive_timeout: 5_000,
              connect_options: [timeout: 3_000]
            ),
+         status <- response.status,
+         body <- response.body,
          true <- status in 200..299,
          true <- is_binary(body),
          true <- byte_size(body) <= max_remote_image_bytes() do
-      header_content_type = extract_content_type_from_headers(headers)
+      header_content_type = extract_content_type_from_response(response)
 
       mime_type =
         if header_content_type == "", do: "application/octet-stream", else: header_content_type
@@ -244,9 +257,13 @@ defmodule VmemoWeb.Api.V1.ImageController do
   defp private_or_local_ip?({0xFD00, _, _, _, _, _, _, _}), do: true
   defp private_or_local_ip?(_), do: false
 
-  defp extract_content_type_from_headers(headers) when is_map(headers) do
-    headers
-    |> Map.get("content-type", ["application/octet-stream"])
+  defp extract_content_type_from_response(%Req.Response{} = response) do
+    response
+    |> Req.Response.get_header("content-type")
+    |> case do
+      [] -> ["application/octet-stream"]
+      values -> values
+    end
     |> List.first()
     |> to_string()
     |> normalize_content_type()
