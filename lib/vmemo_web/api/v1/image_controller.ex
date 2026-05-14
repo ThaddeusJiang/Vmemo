@@ -146,7 +146,8 @@ defmodule VmemoWeb.Api.V1.ImageController do
       [_, src] when is_binary(src) and src != "" ->
         {:ok, html_unescape(src)}
 
-      _ -> {:error, :missing_img_src}
+      _ ->
+        {:error, :missing_img_src}
     end
   end
 
