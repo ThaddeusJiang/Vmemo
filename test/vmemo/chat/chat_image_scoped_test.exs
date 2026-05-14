@@ -4,6 +4,8 @@ defmodule Vmemo.ChatImageScopedTest do
   import Mock
   import Vmemo.AccountFixtures
 
+  @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
+
   alias Vmemo.Account
   alias Vmemo.Chat
   alias Vmemo.Chat.AiRouter
@@ -79,37 +81,47 @@ defmodule Vmemo.ChatImageScopedTest do
       image = create_image!(user)
       conversation = %{kind: "image_scoped", image_id: image.id}
 
-      with_mock Vmemo.Ai.ImageData,
-        fetch_base64_from_url: fn _url -> {:ok, {Base.encode64("img"), "image/png"}} end do
-        with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
-          with_mock Vmemo.Ai.AshAiVision,
-            caption: fn _image_base64, opts ->
-              send(self(), {:caption_opts, opts})
-              {:ok, "中文说明"}
-            end do
-            assert {:ok, %{tool_name: "caption", provider: "openrouter", text: "中文说明"}} =
-                     AiRouter.route_image_tool(conversation, "/caption", user)
+      with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
+        with_mock Vmemo.Ai.AshAiVision, [:passthrough],
+          caption: fn _image_base64, opts ->
+            send(self(), {:caption_opts, opts})
+            {:ok, "中文说明"}
+          end do
+          assert {:ok, %{tool_name: "caption", provider: "openrouter", text: "中文说明"}} =
+                   AiRouter.route_image_tool(conversation, "/caption", user)
 
-            assert_receive {:caption_opts, opts}
-            assert opts[:language] == "zh"
-          end
+          assert_receive {:caption_opts, opts}
+          assert opts[:language] == "zh"
         end
       end
     end
   end
 
   defp create_image!(user) do
+    file_id = "test.jpg"
+    ensure_fixture_image!(user.id, file_id)
+
     attrs = %{
-      url: "/storage/v1/#{user.id}/images/test.jpg",
+      url: "/storage/v1/#{user.id}/images/#{file_id}",
       note: "note",
       caption: "caption",
       user_id: user.id,
-      file_id: "test.jpg"
+      file_id: file_id
     }
 
     case Image.create_immediate(attrs, actor: user) do
       {:ok, image} -> image
       {:error, error} -> raise "failed to create image: #{inspect(error)}"
+    end
+  end
+
+  defp ensure_fixture_image!(user_id, file_id) do
+    image_dir = Path.join(["storage", "v1", user_id, "images"])
+    image_path = Path.join(image_dir, file_id)
+    File.mkdir_p!(image_dir)
+
+    unless File.exists?(image_path) do
+      File.cp!(@fixture_image, image_path)
     end
   end
 end
