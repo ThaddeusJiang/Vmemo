@@ -61,7 +61,8 @@ defmodule Vmemo.Memo.ImageJobsTest do
             typesense_status: "completed",
             moondream_status: "completed"
           },
-          insert_default_jobs?: false
+          insert_default_jobs?: false,
+          update_statuses?: false
         )
 
       {:ok, notifications} = ImageJobs.list_notifications(user, limit: 20)
@@ -78,23 +79,30 @@ defmodule Vmemo.Memo.ImageJobsTest do
 
     case Ash.create(Image, attrs, action: :import, actor: nil, authorize?: false) do
       {:ok, image} ->
-        {:ok, image} =
-          Ash.update(
-            image,
-            %{typesense_status: typesense_status},
-            action: :set_typesense_status,
-            actor: nil,
-            authorize?: false
-          )
+        image =
+          if Keyword.get(opts, :update_statuses?, true) do
+            {:ok, image} =
+              Ash.update(
+                image,
+                %{typesense_status: typesense_status},
+                action: :set_typesense_status,
+                actor: nil,
+                authorize?: false
+              )
 
-        {:ok, image} =
-          Ash.update(
-            image,
-            %{moondream_status: moondream_status},
-            action: :set_moondream_status,
-            actor: nil,
-            authorize?: false
-          )
+            {:ok, image} =
+              Ash.update(
+                image,
+                %{moondream_status: moondream_status},
+                action: :set_moondream_status,
+                actor: nil,
+                authorize?: false
+              )
+
+            image
+          else
+            image
+          end
 
         if Keyword.get(opts, :insert_default_jobs?, true) do
           maybe_insert_default_jobs!(image, typesense_status, moondream_status)

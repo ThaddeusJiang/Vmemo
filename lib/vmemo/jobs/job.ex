@@ -4,7 +4,9 @@ defmodule Vmemo.Jobs.Job do
   use Ash.Resource,
     domain: Vmemo.Jobs,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource, AshOban]
+
+  alias Vmemo.Memo.Image
 
   postgres do
     table "jobs"
@@ -26,6 +28,42 @@ defmodule Vmemo.Jobs.Job do
     ])
   end
 
+  oban do
+    triggers do
+      trigger :run_caption do
+        action :perform_caption
+        queue :ai_vision
+        max_attempts 5
+        backoff 5
+        timeout 120_000
+        on_error :mark_failed
+        log_errors? false
+        log_final_error? false
+        lock_for_update? false
+        scheduler_cron false
+        where expr(kind == "caption" and status == "requested")
+        worker_module_name Vmemo.Jobs.Workers.RunCaption
+        scheduler_module_name Vmemo.Jobs.Schedulers.RunCaption
+      end
+
+      trigger :run_typesense do
+        action :perform_typesense
+        queue :sync_typesense
+        max_attempts 5
+        backoff 5
+        timeout 120_000
+        on_error :mark_failed
+        log_errors? false
+        log_final_error? false
+        lock_for_update? false
+        scheduler_cron false
+        where expr(kind == "typesense" and status == "requested")
+        worker_module_name Vmemo.Jobs.Workers.RunTypesense
+        scheduler_module_name Vmemo.Jobs.Schedulers.RunTypesense
+      end
+    end
+  end
+
   code_interface do
     define :get, action: :read, get_by: [:id]
     define :read
@@ -44,11 +82,15 @@ defmodule Vmemo.Jobs.Job do
 
     create :create_requested do
       accept [:image_id, :user_id, :kind, :worker, :oban_job_id, :status, :error]
+      change run_oban_trigger(:run_caption)
+      change run_oban_trigger(:run_typesense)
     end
 
     update :mark_requested do
       accept [:oban_job_id]
       change set_attribute(:status, "requested")
+      change run_oban_trigger(:run_caption)
+      change run_oban_trigger(:run_typesense)
     end
 
     update :mark_in_progress do
@@ -82,12 +124,95 @@ defmodule Vmemo.Jobs.Job do
       require_atomic? false
       change set_attribute(:status, "requested")
       change set_attribute(:error, nil)
+      change run_oban_trigger(:run_caption)
+      change run_oban_trigger(:run_typesense)
+    end
+
+    update :perform_caption do
+      accept []
+      require_atomic? false
+      transaction? false
+      change set_attribute(:status, "in_progress")
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, job ->
-          case retry_upstream_job(job) do
-            :ok -> {:ok, job}
-            {:error, reason} -> {:error, reason}
+          with {:ok, image} <- Image.get(job.image_id, actor: nil, authorize?: false),
+               true <- image.user_id == job.user_id,
+               {:ok, _image} <-
+                 Ash.update(image, %{},
+                   action: :generate_caption_only,
+                   actor: nil,
+                   authorize?: false
+                 ),
+               {:ok, _job} <-
+                 Ash.update(job, %{}, action: :mark_completed, actor: nil, authorize?: false) do
+            {:ok, job}
+          else
+            false ->
+              {:error, :forbidden}
+
+            {:error, reason} ->
+              _ =
+                Ash.update(job, %{error: inspect(reason)},
+                  action: :mark_failed,
+                  actor: nil,
+                  authorize?: false
+                )
+
+              {:error, reason}
+
+            other ->
+              _ =
+                Ash.update(job, %{error: inspect(other)},
+                  action: :mark_failed,
+                  actor: nil,
+                  authorize?: false
+                )
+
+              {:error, other}
+          end
+        end)
+      end
+    end
+
+    update :perform_typesense do
+      accept []
+      require_atomic? false
+      transaction? false
+      change set_attribute(:status, "in_progress")
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, job ->
+          with {:ok, image} <- Image.get(job.image_id, actor: nil, authorize?: false),
+               true <- image.user_id == job.user_id,
+               {:ok, _image} <-
+                 Ash.update(image, %{}, action: :sync_typesense, actor: nil, authorize?: false),
+               {:ok, _job} <-
+                 Ash.update(job, %{}, action: :mark_completed, actor: nil, authorize?: false) do
+            {:ok, job}
+          else
+            false ->
+              {:error, :forbidden}
+
+            {:error, reason} ->
+              _ =
+                Ash.update(job, %{error: inspect(reason)},
+                  action: :mark_failed,
+                  actor: nil,
+                  authorize?: false
+                )
+
+              {:error, reason}
+
+            other ->
+              _ =
+                Ash.update(job, %{error: inspect(other)},
+                  action: :mark_failed,
+                  actor: nil,
+                  authorize?: false
+                )
+
+              {:error, other}
           end
         end)
       end
@@ -129,7 +254,6 @@ defmodule Vmemo.Jobs.Job do
     attribute :status, :string do
       allow_nil? false
       default "requested"
-
       public? true
     end
 
@@ -155,35 +279,4 @@ defmodule Vmemo.Jobs.Job do
   identities do
     identity :unique_image_kind, [:image_id, :kind]
   end
-
-  defp retry_upstream_job(%{kind: "typesense", image_id: image_id, user_id: user_id}) do
-    with {:ok, image} <- Vmemo.Memo.Image.get(image_id, actor: nil, authorize?: false),
-         true <- image.user_id == user_id,
-         {:ok, _image} <-
-           Vmemo.Memo.Image.update_search_engine(image, %{}, actor: nil, authorize?: false) do
-      :ok
-    else
-      false -> {:error, :forbidden}
-      {:error, reason} -> {:error, reason}
-      other -> {:error, other}
-    end
-  end
-
-  defp retry_upstream_job(%{kind: "caption", image_id: image_id, user_id: user_id}) do
-    with {:ok, image} <- Vmemo.Memo.Image.get(image_id, actor: nil, authorize?: false),
-         true <- image.user_id == user_id,
-         {:ok, _image} <-
-           Vmemo.Memo.Image.request_generate_caption_only(image, %{},
-             actor: nil,
-             authorize?: false
-           ) do
-      :ok
-    else
-      false -> {:error, :forbidden}
-      {:error, reason} -> {:error, reason}
-      other -> {:error, other}
-    end
-  end
-
-  defp retry_upstream_job(_), do: {:error, :invalid_kind}
 end

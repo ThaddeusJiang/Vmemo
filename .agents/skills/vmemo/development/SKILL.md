@@ -1,5 +1,5 @@
 ---
-name: "vmemo-development-skill"
+name: "vmemo-development"
 description: "Unified Vmemo local development workflow: setup-state check, reset decision, and temporary port conflict handling."
 ---
 
@@ -24,6 +24,10 @@ Focus only on:
 
 - Run `mise trust && mise install`.
 - Run `mix setup`.
+
+## Reset
+
+- Run `mix reset`.
 
 ## Test 
 

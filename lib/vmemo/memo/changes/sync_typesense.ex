@@ -1,7 +1,9 @@
 defmodule Vmemo.Memo.Changes.SyncTypesense do
   @moduledoc false
   use Ash.Resource.Change
+  require Ash.Query
   alias Ash.Resource.Info
+  alias Vmemo.Jobs.Job
   require Logger
 
   @impl true
@@ -11,7 +13,10 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
       case resource.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
         {:ok, true} ->
-          update_status_if_supported(resource, record, "completed")
+          with {:ok, _} <- update_status_if_supported(resource, record, "completed") do
+            sync_typesense_job_completed(record)
+            {:ok, record}
+          end
 
         {:ok, false} ->
           Logger.warning("typesense sync retrying: sync_failed",
@@ -55,5 +60,38 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
       %{name: :set_typesense_status},
       Info.action(resource, :set_typesense_status)
     )
+  end
+
+  defp sync_typesense_job_completed(record) do
+    query =
+      Job
+      |> Ash.Query.filter(image_id: record.id, kind: "typesense")
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, actor: nil, authorize?: false) do
+      {:ok, [job | _]} ->
+        _ = Ash.update(job, %{}, action: :mark_completed, actor: nil, authorize?: false)
+        :ok
+
+      _ ->
+        _ =
+          Ash.create(
+            Job,
+            %{
+              image_id: record.id,
+              user_id: record.user_id,
+              kind: "typesense",
+              status: "completed",
+              worker: "Vmemo.Memo.Image.Workers.SyncTypesense"
+            },
+            action: :create_requested,
+            actor: nil,
+            authorize?: false
+          )
+
+        :ok
+    end
+  rescue
+    _ -> :ok
   end
 end

@@ -34,9 +34,8 @@
 - Fail fast on invalid or missing env values.
 
 ## Tooling
-- Prefer Tidewave tools for Phoenix-aware discovery and runtime checks.
-- `Tidewave`: during development, use available tools as documented in https://github.com/tidewave-ai/tidewave_phoenix#available-tools
-- `Playwright`: during UI debugging and testing, use the CLI workflow documented in https://github.com/microsoft/playwright-cli
+
+Always use Tidewave's tools for evaluating code, querying the database, and inspecting the runtime. Use `execute_sql_query` for database access, `project_eval` for code evaluation, `get_docs` to access documentation, `get_source_location` to find module/function definitions, `get_models` and `get_logs` for code discovery and debugging, and `search_package_docs` to explore dependencies and `get_ash_resources` to inspect Ash resource schemas.
 
 ## Project commands
 - Use `mix` for project tasks.
