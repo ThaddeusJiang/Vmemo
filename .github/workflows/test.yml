@@ -111,8 +111,10 @@ jobs:
       - name: Compile
         run: mix compile
 
-      - name: Reset
-        run: mix reset
+      - name: Prepare test database
+        run: |
+          mix ecto.create || true
+          mix ecto.migrate
 
       - name: Run tests with ExCoveralls
         run: mix coveralls.json
