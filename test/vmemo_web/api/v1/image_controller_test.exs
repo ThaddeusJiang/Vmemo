@@ -3,6 +3,7 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
   Image API tests
   """
 
+  # async: false — Oban :inline workers need shared DB sandbox (see Vmemo.DataCase.setup_sandbox/1).
   use VmemoWeb.ConnCase, async: false
 
   alias Ash

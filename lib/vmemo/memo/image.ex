@@ -49,6 +49,7 @@ defmodule Vmemo.Memo.Image do
 
   code_interface do
     define :get, action: :read, get_by: [:id]
+    define :import
     define :create_with_sync
     define :create_for_image_search
     define :create_immediate
@@ -61,6 +62,7 @@ defmodule Vmemo.Memo.Image do
     define :library_images_count, args: [:user_id]
     define :list_similar, args: [:image_id, :user_id]
     define :sync_typesense_by_id, args: [:image_id]
+    define :read_storage_base64, args: [:id]
     define :ingest_temp_file_for_similarity_search, args: [:temp_path, :storage_file_id]
     define :update_search_engine
     define :request_generate_caption
@@ -339,6 +341,28 @@ defmodule Vmemo.Memo.Image do
                Ash.load(image, [:notes, :tags], actor: nil, authorize?: false),
              {:ok, _} <- upsert_typesense_photo(photo_with_relations) do
           {:ok, true}
+        end
+      end
+    end
+
+    action :read_storage_base64, :map do
+      description "Load image bytes from app storage as base64 with a detected MIME type."
+
+      argument :id, :uuid, allow_nil?: false
+
+      run fn input, context ->
+        id = Ash.ActionInput.get_argument(input, :id)
+        actor = Map.get(context, :actor)
+
+        with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor),
+             {:ok, {base64_data, mime_type}} <- read_image_as_base64(image.url) do
+          {:ok, %{base64: base64_data, mime_type: mime_type}}
+        else
+          {:error, :file_not_found} ->
+            {:error, "Failed to read image: file not found"}
+
+          {:error, reason} ->
+            {:error, reason}
         end
       end
     end
@@ -855,21 +879,15 @@ defmodule Vmemo.Memo.Image do
         if is_nil(id) do
           {:error, "Image id is required"}
         else
-          case Ash.get(__MODULE__, id, actor: actor) do
-            {:ok, image} ->
-              normalized_photo = normalize_image_url_for_api(image)
+          case read_storage_base64(id, actor: actor) do
+            {:ok, %{base64: base64_data, mime_type: mime_type}} ->
+              {:ok, "data:#{mime_type};base64,#{base64_data}"}
 
-              case read_image_as_base64(normalized_photo.url) do
-                {:ok, {base64_data, mime_type}} ->
-                  # Return data URL format: data:image/jpeg;base64,<base64_data>
-                  {:ok, "data:#{mime_type};base64,#{base64_data}"}
-
-                {:error, reason} ->
-                  {:error, "Failed to read image: #{inspect(reason)}"}
-              end
+            {:error, reason} when is_binary(reason) ->
+              {:error, reason}
 
             {:error, reason} ->
-              {:error, reason}
+              {:error, "Failed to read image: #{inspect(reason)}"}
           end
         end
       end

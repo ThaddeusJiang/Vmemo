@@ -4,7 +4,6 @@ defmodule Vmemo.Chat.AiRouter do
   alias SmallSdk.Moondream
   alias Vmemo.Account
   alias Vmemo.Ai.AshAiVision
-  alias Vmemo.Ai.ImageData
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
 
@@ -112,8 +111,8 @@ defmodule Vmemo.Chat.AiRouter do
   end
 
   defp run_tool(image_id, tool, prompt, actor) do
-    with {:ok, image} <- Ash.get(Image, image_id, actor: actor),
-         {:ok, {image_base64, mime_type}} <- ImageData.fetch_base64_from_url(image.url),
+    with {:ok, %{base64: image_base64, mime_type: mime_type}} <-
+           Image.read_storage_base64(image_id, actor: actor),
          {:ok, result} <- call_tool(tool, image_base64, mime_type, prompt, actor) do
       {:ok, %{provider: provider_for(tool), tool_name: tool, text: normalize_result(result)}}
     else
