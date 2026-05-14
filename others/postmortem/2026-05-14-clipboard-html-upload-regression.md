@@ -1,3 +1,5 @@
+# Postmortem: Clipboard HTML Upload Regression (2026-05-14)
+
 ## What happened
 - Browser "Copy Image" uploads started failing again via `POST /api/v1/images`.
 - Requests came in as `text/html` clipboard files (for example `Clipboard ... .html`) containing an `<img src="...">` URL.
