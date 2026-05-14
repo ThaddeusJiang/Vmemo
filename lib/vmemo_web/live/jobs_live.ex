@@ -2,8 +2,8 @@ defmodule VmemoWeb.JobsLive do
   use VmemoWeb, :live_view
   use Gettext, backend: VmemoWeb.Gettext
 
-  alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageJobs
+  alias Vmemo.Jobs.Job
 
   @impl true
   def mount(_params, _session, socket) do
@@ -38,48 +38,44 @@ defmodule VmemoWeb.JobsLive do
   end
 
   @impl true
-  def handle_event("retry-search-embedding", %{"image_id" => image_id}, socket) do
+  def handle_event(
+        "retry-search-embedding",
+        %{"image_id" => image_id, "job_id" => job_id},
+        socket
+      ) do
     user = socket.assigns.current_user
 
-    case Image.get(image_id, actor: user) do
-      {:ok, image} ->
-        case Image.update_search_engine(image, %{}, actor: user) do
-          {:ok, _updated_image} ->
-            Process.send_after(self(), {:clear_retrying_search, image_id}, 4_000)
-            {:noreply, socket |> put_retrying_search(image_id) |> refresh_jobs()}
-
-          {:error, _reason} ->
-            {:noreply,
-             socket
-             |> clear_retrying_search(image_id)
-             |> put_flash(:error, gettext("Failed to retry search embedding"))}
-        end
-
+    with {:ok, job} <- Job.get(job_id, actor: user),
+         {:ok, _job} <- Ash.update(job, %{}, action: :retry, actor: user) do
+      Process.send_after(self(), {:clear_retrying_search, image_id}, 4_000)
+      {:noreply, socket |> put_retrying_search(image_id) |> refresh_jobs()}
+    else
       _ ->
-        {:noreply, put_flash(socket, :error, gettext("Image not found"))}
+        {:noreply,
+         socket
+         |> clear_retrying_search(image_id)
+         |> put_flash(:error, gettext("Failed to retry search embedding"))}
     end
   end
 
   @impl true
-  def handle_event("retry-vision-embedding", %{"image_id" => image_id}, socket) do
+  def handle_event(
+        "retry-vision-embedding",
+        %{"image_id" => image_id, "job_id" => job_id},
+        socket
+      ) do
     user = socket.assigns.current_user
 
-    case Image.get(image_id, actor: user) do
-      {:ok, image} ->
-        case Image.request_generate_caption_only(image, %{}, actor: user) do
-          {:ok, _updated_image} ->
-            Process.send_after(self(), {:clear_retrying_caption, image_id}, 4_000)
-            {:noreply, socket |> put_retrying_caption(image_id) |> refresh_jobs()}
-
-          {:error, _reason} ->
-            {:noreply,
-             socket
-             |> clear_retrying_caption(image_id)
-             |> put_flash(:error, gettext("Failed to retry vision embedding"))}
-        end
-
+    with {:ok, job} <- Job.get(job_id, actor: user),
+         {:ok, _job} <- Ash.update(job, %{}, action: :retry, actor: user) do
+      Process.send_after(self(), {:clear_retrying_caption, image_id}, 4_000)
+      {:noreply, socket |> put_retrying_caption(image_id) |> refresh_jobs()}
+    else
       _ ->
-        {:noreply, put_flash(socket, :error, gettext("Image not found"))}
+        {:noreply,
+         socket
+         |> clear_retrying_caption(image_id)
+         |> put_flash(:error, gettext("Failed to retry vision embedding"))}
     end
   end
 
@@ -175,6 +171,7 @@ defmodule VmemoWeb.JobsLive do
                         variant="outline"
                         phx-click="retry-search-embedding"
                         phx-value-image_id={job.image_id}
+                        phx-value-job_id={job.typesense_job_id}
                       >
                         {gettext("Retry")}
                       </.button>
@@ -221,6 +218,7 @@ defmodule VmemoWeb.JobsLive do
                         variant="outline"
                         phx-click="retry-vision-embedding"
                         phx-value-image_id={job.image_id}
+                        phx-value-job_id={job.caption_job_id}
                       >
                         {gettext("Retry")}
                       </.button>
@@ -272,6 +270,7 @@ defmodule VmemoWeb.JobsLive do
                         class="badge badge-error badge-outline min-h-0 h-auto px-2"
                         phx-click="retry-search-embedding"
                         phx-value-image_id={@job.image_id}
+                        phx-value-job_id={@job.typesense_job_id}
                       >
                         {service_status_label(@job.typesense_status)}
                       </.button>
@@ -328,6 +327,7 @@ defmodule VmemoWeb.JobsLive do
                           class="badge badge-error badge-outline min-h-0 h-auto px-2"
                           phx-click="retry-vision-embedding"
                           phx-value-image_id={@job.image_id}
+                          phx-value-job_id={@job.caption_job_id}
                         >
                           {service_status_label(@job.caption_status)}
                         </.button>
@@ -367,6 +367,7 @@ defmodule VmemoWeb.JobsLive do
                         class="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-base-content"
                         phx-click="retry-vision-embedding"
                         phx-value-image_id={@job.image_id}
+                        phx-value-job_id={@job.caption_job_id}
                         title={gettext("Retry Vision AI caption")}
                         aria-label={gettext("Retry Vision AI caption")}
                       >

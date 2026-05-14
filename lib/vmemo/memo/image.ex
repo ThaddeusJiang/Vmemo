@@ -24,6 +24,7 @@ defmodule Vmemo.Memo.Image do
 
   alias Vmemo.Ai.Caption
   alias Vmemo.Memo.Changes.SyncImageTags
+  alias Vmemo.Jobs.Job
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.SearchEngine.TsImage
 
@@ -180,6 +181,13 @@ defmodule Vmemo.Memo.Image do
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:generate_caption)
       change run_oban_trigger(:generate_thumbnails)
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, image ->
+          upsert_async_job(image, "caption", "requested")
+          {:ok, image}
+        end)
+      end
     end
 
     update :update do
@@ -195,6 +203,13 @@ defmodule Vmemo.Memo.Image do
       transaction? false
       change set_attribute(:typesense_status, "processing")
       change {Vmemo.Memo.Changes.SyncTypesense, resource: __MODULE__}
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, image ->
+          upsert_async_job(image, "typesense", "in_progress")
+          {:ok, image}
+        end)
+      end
     end
 
     update :generate_caption do
@@ -205,9 +220,12 @@ defmodule Vmemo.Memo.Image do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          upsert_async_job(record, "caption", "in_progress")
+
           case generate_caption_for_photo(record) do
             :ok ->
               set_moondream_status(record, "completed")
+              upsert_async_job(record, "caption", "completed")
               _ = request_sync_typesense(record)
               {:ok, record}
 
@@ -217,6 +235,7 @@ defmodule Vmemo.Memo.Image do
 
             {:discard, _reason} ->
               set_moondream_status(record, "failed")
+              upsert_async_job(record, "caption", "discarded")
               _ = request_sync_typesense(record)
               {:ok, record}
 
@@ -226,6 +245,7 @@ defmodule Vmemo.Memo.Image do
                 user_id: record.user_id
               )
 
+              upsert_async_job(record, "caption", "failed", error: inspect(reason))
               {:error, reason}
           end
         end)
@@ -237,6 +257,13 @@ defmodule Vmemo.Memo.Image do
       require_atomic? false
       change set_attribute(:typesense_status, "pending")
       change run_oban_trigger(:sync_typesense)
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, image ->
+          upsert_async_job(image, "typesense", "requested")
+          {:ok, image}
+        end)
+      end
     end
 
     update :request_generate_caption do
@@ -244,6 +271,13 @@ defmodule Vmemo.Memo.Image do
       require_atomic? false
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:generate_caption)
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, image ->
+          upsert_async_job(image, "caption", "requested")
+          {:ok, image}
+        end)
+      end
     end
 
     update :request_generate_caption_only do
@@ -251,6 +285,13 @@ defmodule Vmemo.Memo.Image do
       require_atomic? false
       change set_attribute(:moondream_status, "pending")
       change run_oban_trigger(:generate_caption_only)
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, image ->
+          upsert_async_job(image, "caption", "requested")
+          {:ok, image}
+        end)
+      end
     end
 
     update :generate_caption_only do
@@ -261,9 +302,12 @@ defmodule Vmemo.Memo.Image do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          upsert_async_job(record, "caption", "in_progress")
+
           case generate_caption_for_photo(record, sync_tags?: false) do
             :ok ->
               set_moondream_status(record, "completed")
+              upsert_async_job(record, "caption", "completed")
               _ = request_sync_typesense(record)
               {:ok, record}
 
@@ -273,6 +317,7 @@ defmodule Vmemo.Memo.Image do
 
             {:discard, _reason} ->
               set_moondream_status(record, "failed")
+              upsert_async_job(record, "caption", "discarded")
               _ = request_sync_typesense(record)
               {:ok, record}
 
@@ -282,6 +327,7 @@ defmodule Vmemo.Memo.Image do
                 user_id: record.user_id
               )
 
+              upsert_async_job(record, "caption", "failed", error: inspect(reason))
               {:error, reason}
           end
         end)
@@ -326,6 +372,7 @@ defmodule Vmemo.Memo.Image do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          upsert_async_job(record, "typesense", "failed")
           Logger.warning("typesense sync failed", image_id: record.id, user_id: record.user_id)
           {:ok, record}
         end)
@@ -351,6 +398,8 @@ defmodule Vmemo.Memo.Image do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, record ->
+          upsert_async_job(record, "caption", "failed")
+
           Logger.warning("caption generation failed",
             image_id: record.id,
             user_id: record.user_id
@@ -1423,4 +1472,71 @@ defmodule Vmemo.Memo.Image do
   rescue
     _ -> :ok
   end
+
+  defp upsert_async_job(image, kind, status, opts \\ []) do
+    error = Keyword.get(opts, :error)
+
+    with {:ok, existing} <- fetch_async_job(image.id, kind) do
+      attrs =
+        %{error: error}
+        |> maybe_put_nil_error(status)
+
+      _ =
+        Ash.update(existing, attrs,
+          action: map_job_update_action(status),
+          actor: nil,
+          authorize?: false
+        )
+
+      :ok
+    else
+      _ ->
+        _ =
+          Ash.create(
+            Job,
+            %{
+              image_id: image.id,
+              user_id: image.user_id,
+              kind: kind,
+              status: status,
+              worker: worker_for_kind(kind),
+              error: error
+            },
+            action: :create_requested,
+            actor: nil,
+            authorize?: false
+          )
+
+        :ok
+    end
+  rescue
+    _ -> :ok
+  end
+
+  defp fetch_async_job(image_id, kind) do
+    query =
+      Job
+      |> Ash.Query.filter(image_id == ^image_id and kind == ^kind)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, actor: nil, authorize?: false) do
+      {:ok, [job | _]} -> {:ok, job}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp map_job_update_action("requested"), do: :mark_requested
+  defp map_job_update_action("in_progress"), do: :mark_in_progress
+  defp map_job_update_action("completed"), do: :mark_completed
+  defp map_job_update_action("failed"), do: :mark_failed
+  defp map_job_update_action("cancelled"), do: :mark_cancelled
+  defp map_job_update_action("discarded"), do: :mark_discarded
+  defp map_job_update_action(_), do: :mark_failed
+
+  defp worker_for_kind("caption"), do: "Vmemo.Memo.Image.Workers.GenerateCaption"
+  defp worker_for_kind("typesense"), do: "Vmemo.Memo.Image.Workers.SyncTypesense"
+  defp worker_for_kind(_), do: nil
+
+  defp maybe_put_nil_error(attrs, "completed"), do: Map.put(attrs, :error, nil)
+  defp maybe_put_nil_error(attrs, _), do: attrs
 end

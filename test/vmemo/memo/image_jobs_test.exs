@@ -1,18 +1,18 @@
 defmodule Vmemo.Memo.ImageJobsTest do
   use Vmemo.DataCase, async: true
+  require Ash.Query
 
   alias Ash
-  alias Oban.Job
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageJobs
-  alias Vmemo.Repo
+  alias Vmemo.Jobs.Job
 
   import Vmemo.AccountFixtures
 
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
 
   describe "list_notifications/2" do
-    test "uses oban worker states as source of truth for success" do
+    test "uses async job resource states as source of truth for success" do
       user = user_fixture()
 
       image =
@@ -26,18 +26,18 @@ defmodule Vmemo.Memo.ImageJobsTest do
           moondream_status: "processing"
         })
 
-      insert_oban_job!(
+      insert_async_job!(
         image.id,
-        "Vmemo.Memo.Image.Workers.GenerateCaption",
-        "completed",
-        "ai_vision"
+        user.id,
+        "caption",
+        "completed"
       )
 
-      insert_oban_job!(
+      insert_async_job!(
         image.id,
-        "Vmemo.Memo.Image.Workers.SyncTypesense",
-        "completed",
-        "sync_typesense"
+        user.id,
+        "typesense",
+        "completed"
       )
 
       {:ok, notifications} = ImageJobs.list_notifications(user, limit: 20)
@@ -47,7 +47,7 @@ defmodule Vmemo.Memo.ImageJobsTest do
       assert notification.description == "caption-from-ai"
     end
 
-    test "does not return rows when no related oban job exists" do
+    test "does not return rows when no related async job exists" do
       user = user_fixture()
 
       image =
@@ -121,37 +121,66 @@ defmodule Vmemo.Memo.ImageJobsTest do
   end
 
   defp maybe_insert_default_jobs!(image, typesense_status, moondream_status) do
-    insert_oban_job!(
+    insert_async_job!(
       image.id,
-      "Vmemo.Memo.Image.Workers.SyncTypesense",
-      oban_state_from_status(typesense_status),
-      "sync_typesense"
+      image.user_id,
+      "typesense",
+      job_status_from_status(typesense_status)
     )
 
-    insert_oban_job!(
+    insert_async_job!(
       image.id,
-      "Vmemo.Memo.Image.Workers.GenerateCaption",
-      oban_state_from_status(moondream_status),
-      "ai_vision"
+      image.user_id,
+      "caption",
+      job_status_from_status(moondream_status)
     )
   end
 
-  defp insert_oban_job!(image_id, worker, state, queue) do
-    args = %{"primary_key" => %{"id" => image_id}}
+  defp insert_async_job!(image_id, user_id, kind, status) do
+    query =
+      Job
+      |> Ash.Query.filter(image_id: image_id, kind: kind)
+      |> Ash.Query.limit(1)
 
-    changeset =
-      Job.new(args,
-        worker: worker,
-        queue: queue
-      )
-      |> Ecto.Changeset.put_change(:state, state)
+    case Ash.read(query, actor: nil, authorize?: false) do
+      {:ok, [existing | _]} ->
+        {:ok, _job} =
+          Ash.update(
+            existing,
+            %{},
+            action: map_update_action(status),
+            actor: nil,
+            authorize?: false
+          )
 
-    Repo.insert!(changeset)
+      _ ->
+        {:ok, _job} =
+          Ash.create(
+            Job,
+            %{
+              image_id: image_id,
+              user_id: user_id,
+              kind: kind,
+              status: status
+            },
+            action: :create_requested,
+            actor: nil,
+            authorize?: false
+          )
+    end
   end
 
-  defp oban_state_from_status("completed"), do: "completed"
-  defp oban_state_from_status("failed"), do: "discarded"
-  defp oban_state_from_status("processing"), do: "executing"
-  defp oban_state_from_status("pending"), do: "available"
-  defp oban_state_from_status(_), do: "available"
+  defp job_status_from_status("completed"), do: "completed"
+  defp job_status_from_status("failed"), do: "failed"
+  defp job_status_from_status("processing"), do: "in_progress"
+  defp job_status_from_status("pending"), do: "requested"
+  defp job_status_from_status(_), do: "requested"
+
+  defp map_update_action("requested"), do: :mark_requested
+  defp map_update_action("in_progress"), do: :mark_in_progress
+  defp map_update_action("completed"), do: :mark_completed
+  defp map_update_action("failed"), do: :mark_failed
+  defp map_update_action("discarded"), do: :mark_discarded
+  defp map_update_action("cancelled"), do: :mark_cancelled
+  defp map_update_action(_), do: :mark_failed
 end

@@ -2,19 +2,12 @@ defmodule Vmemo.Memo.ImageJobs do
   @moduledoc false
 
   require Ash.Query
-  import Ecto.Query
 
-  alias Oban.Job
   alias Vmemo.Memo.Image
-  alias Vmemo.Repo
+  alias Vmemo.Jobs.Job
 
   @max_jobs 20
   @default_all_jobs_limit 80
-  @generate_caption_workers [
-    "Vmemo.Memo.Image.Workers.GenerateCaption",
-    "Vmemo.Memo.Image.Workers.GenerateCaptionOnly"
-  ]
-  @sync_typesense_worker "Vmemo.Memo.Image.Workers.SyncTypesense"
 
   def list_jobs(user, opts \\ [])
   def list_jobs(nil, _opts), do: {:ok, []}
@@ -30,19 +23,21 @@ defmodule Vmemo.Memo.ImageJobs do
         if(include_completed, do: max(limit, @default_all_jobs_limit), else: 80)
       )
 
-    query =
+    image_query =
       Image
       |> Ash.Query.filter(user_id: user.id)
       |> Ash.Query.sort(inserted_at: :desc)
       |> Ash.Query.limit(query_limit)
 
-    case Ash.read(query, actor: user) do
+    case Ash.read(image_query, actor: user) do
       {:ok, images} ->
-        caption_error_by_image_id = caption_error_by_image_id(images)
+        image_ids = Enum.map(images, & &1.id)
+
+        jobs_by_image_and_kind = load_jobs_by_image_and_kind(user, image_ids)
 
         jobs =
           images
-          |> Enum.map(&to_job(&1, caption_error_by_image_id))
+          |> Enum.map(&to_job(&1, jobs_by_image_and_kind))
           |> Enum.reject(&is_nil/1)
           |> maybe_filter_completed(include_completed)
           |> Enum.take(limit)
@@ -59,9 +54,9 @@ defmodule Vmemo.Memo.ImageJobs do
   def get_job(user, id) do
     case Image.get(id, actor: user) do
       {:ok, image} ->
-        caption_error_by_image_id = caption_error_by_image_id([image])
+        jobs_by_image_and_kind = load_jobs_by_image_and_kind(user, [image.id])
 
-        case to_job(image, caption_error_by_image_id) do
+        case to_job(image, jobs_by_image_and_kind) do
           nil -> {:error, :not_found}
           job -> {:ok, job}
         end
@@ -90,23 +85,45 @@ defmodule Vmemo.Memo.ImageJobs do
     end
   end
 
+  defp load_jobs_by_image_and_kind(_user, []), do: %{}
+
+  defp load_jobs_by_image_and_kind(user, image_ids) do
+    query =
+      Job
+      |> Ash.Query.filter(user_id == ^user.id and image_id in ^image_ids)
+      |> Ash.Query.sort(updated_at: :desc)
+
+    case Ash.read(query, actor: user) do
+      {:ok, jobs} ->
+        Enum.reduce(jobs, %{}, fn job, acc ->
+          key = {job.image_id, job.kind}
+          Map.put_new(acc, key, job)
+        end)
+
+      _ ->
+        %{}
+    end
+  end
+
   defp maybe_filter_completed(jobs, true), do: jobs
   defp maybe_filter_completed(jobs, false), do: Enum.reject(jobs, &(&1.status == "success"))
 
-  defp to_job(image, caption_error_by_image_id) do
-    caption_oban_state = caption_oban_state(image)
-    typesense_oban_state = typesense_oban_state(image)
+  defp to_job(image, jobs_by_image_and_kind) do
+    caption_job = Map.get(jobs_by_image_and_kind, {image.id, "caption"})
+    typesense_job = Map.get(jobs_by_image_and_kind, {image.id, "typesense"})
 
-    if is_nil(caption_oban_state) and is_nil(typesense_oban_state) do
+    if is_nil(caption_job) and is_nil(typesense_job) do
       nil
     else
-      caption_status = caption_status(image, caption_oban_state)
-      typesense_status = typesense_status(image, typesense_oban_state)
-      caption_failure_reason = caption_failure_reason(image, caption_error_by_image_id)
+      caption_status = normalize_job_status(caption_job)
+      typesense_status = normalize_job_status(typesense_job)
+      caption_failure_reason = caption_failure_reason(caption_job)
 
       job = %{
         id: image.id,
         image_id: image.id,
+        caption_job_id: caption_job && caption_job.id,
+        typesense_job_id: typesense_job && typesense_job.id,
         upload_batch_id: image.upload_batch_id,
         image_url: image.url,
         caption: image.caption,
@@ -119,24 +136,54 @@ defmodule Vmemo.Memo.ImageJobs do
         caption_failure_reason: caption_failure_reason,
         typesense_status: typesense_status,
         moondream_status: caption_status,
-        caption_oban_state: caption_oban_state,
-        typesense_oban_state: typesense_oban_state,
+        caption_oban_state: nil,
+        typesense_oban_state: nil,
         caption_status: caption_status,
         inserted_at: image.inserted_at,
-        updated_at: image.updated_at
+        updated_at: newest_updated_at([image.updated_at, caption_job, typesense_job])
       }
 
       failure_stage = failure_stage(job)
-      failure_reason = failure_reason(job, caption_error_by_image_id)
+      failure_reason = failure_reason(job)
 
       job
       |> Map.put(:status, job_status(job))
       |> Map.put(:failure_stage, failure_stage)
       |> Map.put(:failure_reason, failure_reason)
-      |> Map.put(:typesense_failure_reason, typesense_failure_reason(job))
+      |> Map.put(:typesense_failure_reason, typesense_failure_reason(job, typesense_job))
       |> Map.put(:reason, failure_summary(failure_stage, failure_reason))
     end
   end
+
+  defp newest_updated_at(values) do
+    values
+    |> Enum.map(fn
+      %Job{updated_at: updated_at} -> updated_at
+      value -> value
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max_by(&datetime_sort_value/1, fn -> nil end)
+  end
+
+  defp normalize_job_status(nil), do: "requested"
+
+  defp normalize_job_status(%Job{status: status}) when status in ["requested", "queue"],
+    do: "queue"
+
+  defp normalize_job_status(%Job{status: "in_progress"}), do: "in_progress"
+  defp normalize_job_status(%Job{status: "completed"}), do: "completed"
+
+  defp normalize_job_status(%Job{status: status})
+       when status in ["failed", "cancelled", "discarded"], do: "failed"
+
+  defp normalize_job_status(_), do: "requested"
+
+  defp caption_failure_reason(%Job{status: status, error: error})
+       when status in ["failed", "cancelled", "discarded"] do
+    blank_to_nil(error) || "Caption generation failed."
+  end
+
+  defp caption_failure_reason(_), do: nil
 
   defp to_notification(job) do
     %{
@@ -180,13 +227,14 @@ defmodule Vmemo.Memo.ImageJobs do
 
   defp datetime_sort_value(_), do: 0
 
-  defp job_status(%{typesense_status: typesense_status, moondream_status: caption_status}) do
+  defp job_status(%{typesense_status: typesense_status, moondream_status: caption_status} = job) do
+    caption_present? = not is_nil(blank_to_nil(job.caption))
+
     cond do
-      typesense_status in ["failed", "cancelled", "discarded"] or
-          caption_status in ["failed", "cancelled", "discarded"] ->
+      typesense_status == "failed" or caption_status == "failed" ->
         "failed"
 
-      typesense_status == "completed" and caption_status == "completed" ->
+      typesense_status == "completed" and caption_status == "completed" and caption_present? ->
         "success"
 
       true ->
@@ -204,14 +252,13 @@ defmodule Vmemo.Memo.ImageJobs do
 
   defp failure_stage(image) do
     cond do
-      image.typesense_status in ["failed", "cancelled", "discarded"] and
-          image.moondream_status in ["failed", "cancelled", "discarded"] ->
+      image.typesense_status == "failed" and image.moondream_status == "failed" ->
         "Search and caption failed"
 
-      image.typesense_status in ["failed", "cancelled", "discarded"] ->
+      image.typesense_status == "failed" ->
         "Search failed"
 
-      image.moondream_status in ["failed", "cancelled", "discarded"] ->
+      image.moondream_status == "failed" ->
         "Caption failed"
 
       true ->
@@ -219,12 +266,12 @@ defmodule Vmemo.Memo.ImageJobs do
     end
   end
 
-  defp failure_reason(image, caption_error_by_image_id) do
+  defp failure_reason(image) do
     cond do
-      image.moondream_status in ["failed", "cancelled", "discarded"] ->
-        caption_failure_reason(image, caption_error_by_image_id) || "Caption generation failed."
+      image.moondream_status == "failed" ->
+        image.caption_failure_reason || "Caption generation failed."
 
-      image.typesense_status in ["failed", "cancelled", "discarded"] ->
+      image.typesense_status == "failed" ->
         "Indexing error"
 
       true ->
@@ -232,136 +279,10 @@ defmodule Vmemo.Memo.ImageJobs do
     end
   end
 
-  defp typesense_failure_reason(image) do
-    if image.typesense_status in ["failed", "cancelled", "discarded"],
-      do: "Indexing error",
-      else: nil
-  end
-
-  defp moondream_failure_reason(image, caption_error_by_image_id) do
-    if image.moondream_status in ["failed", "cancelled", "discarded"] do
-      Map.get(caption_error_by_image_id, image.id) || "Caption generation failed."
-    else
-      nil
-    end
-  end
-
-  defp caption_status(image, caption_oban_state) do
-    cond do
-      caption_oban_state == "completed" -> "completed"
-      caption_oban_state in ["cancelled", "discarded", "failed"] -> "failed"
-      caption_oban_state in ["scheduled", "available", "retryable"] -> "queue"
-      caption_oban_state == "executing" -> "in_progress"
-      is_nil(caption_oban_state) -> "requested"
-      image.moondream_status == "processing" -> "in_progress"
-      image.moondream_status == "pending" -> "requested"
-      true -> "requested"
-    end
-  end
-
-  defp typesense_status(image, typesense_oban_state) do
-    cond do
-      typesense_oban_state == "completed" -> "completed"
-      typesense_oban_state in ["cancelled", "discarded", "failed"] -> "failed"
-      typesense_oban_state in ["scheduled", "available", "retryable"] -> "queue"
-      typesense_oban_state == "executing" -> "in_progress"
-      is_nil(typesense_oban_state) -> "requested"
-      image.typesense_status == "processing" -> "in_progress"
-      image.typesense_status == "pending" -> "requested"
-      true -> "requested"
-    end
-  end
-
-  defp caption_failure_reason(image, caption_error_by_image_id),
-    do: moondream_failure_reason(image, caption_error_by_image_id)
-
-  defp caption_oban_state(image) do
-    latest_job_state(image.id, @generate_caption_workers)
-  rescue
-    _ -> nil
-  end
-
-  defp typesense_oban_state(image) do
-    latest_job_state(image.id, [@sync_typesense_worker])
-  rescue
-    _ -> nil
-  end
-
-  defp latest_job_state(image_id, workers) do
-    Job
-    |> where([j], j.worker in ^workers)
-    |> where([j], fragment("?->'primary_key'->>'id'", j.args) == ^image_id)
-    |> order_by([j], desc: j.id)
-    |> limit(1)
-    |> Repo.one()
-    |> case do
-      %Job{state: state} when is_binary(state) -> state
+  defp typesense_failure_reason(image, typesense_job) do
+    case image.typesense_status do
+      "failed" -> blank_to_nil(typesense_job && typesense_job.error) || "Indexing error"
       _ -> nil
-    end
-  end
-
-  defp caption_error_by_image_id(images) do
-    failed_image_ids =
-      images
-      |> Enum.filter(&(&1.moondream_status == "failed"))
-      |> Enum.map(& &1.id)
-      |> Enum.uniq()
-
-    case failed_image_ids do
-      [] -> %{}
-      _ -> fetch_caption_errors(failed_image_ids)
-    end
-  rescue
-    _ -> %{}
-  end
-
-  defp fetch_caption_errors(failed_image_ids) do
-    Job
-    |> where([j], j.worker in ^@generate_caption_workers)
-    |> where([j], fragment("?->'primary_key'->>'id'", j.args) in ^failed_image_ids)
-    |> order_by([j], desc: j.id)
-    |> select([j], %{image_id: fragment("?->'primary_key'->>'id'", j.args), errors: j.errors})
-    |> Repo.all()
-    |> Enum.reduce(%{}, &put_caption_error_if_missing/2)
-  end
-
-  defp put_caption_error_if_missing(%{image_id: image_id, errors: errors}, acc) do
-    case {Map.has_key?(acc, image_id), normalize_caption_job_error(errors)} do
-      {true, _} -> acc
-      {false, nil} -> acc
-      {false, message} -> Map.put(acc, image_id, message)
-    end
-  end
-
-  defp normalize_caption_job_error(errors) when is_list(errors) do
-    errors
-    |> List.last()
-    |> case do
-      %{"error" => error} when is_binary(error) ->
-        if String.contains?(error, ":vision_service_unreachable") do
-          "Vision service is unreachable."
-        else
-          extract_unknown_error(error) || "Caption generation failed."
-        end
-
-      _ ->
-        nil
-    end
-  end
-
-  defp normalize_caption_job_error(_), do: nil
-
-  defp extract_unknown_error(error_blob) do
-    case Regex.run(~r/\* unknown error:\s*([^\n]+)/, error_blob) do
-      [_, reason] ->
-        reason
-        |> String.trim()
-        |> String.trim_leading(":")
-        |> String.replace("_", " ")
-        |> String.capitalize()
-
-      _ ->
-        nil
     end
   end
 end
