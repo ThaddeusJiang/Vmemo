@@ -28,8 +28,10 @@ Focus only on:
 ## Test 
 
 1. Run `docker compose --profile test up -d`.
-2. Run `mix test`.
-3. Run `docker compose --profile test down` to clean up.
+2. Default: run only modified test cases (for example `mix test test/path/to_case_test.exs:123` or targeted files).
+3. When test files are modified, rerun only failed tests first with `mix test --failed`.
+4. Run full test suite only when explicitly requested.
+5. Run `docker compose --profile test down` to clean up.
 
 ## Check
 
