@@ -697,7 +697,6 @@ msgid "Image job"
 msgstr ""
 
 #: lib/vmemo_web/live/images_index_live.ex
-#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Image not found"
 msgstr ""

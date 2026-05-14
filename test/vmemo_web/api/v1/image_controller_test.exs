@@ -3,7 +3,7 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
   Image API tests
   """
 
-  use VmemoWeb.ConnCase, async: true
+  use VmemoWeb.ConnCase, async: false
 
   alias Ash
   alias Vmemo.Memo.Image
