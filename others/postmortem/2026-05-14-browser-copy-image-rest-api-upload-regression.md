@@ -1,4 +1,4 @@
-# 2026-05-14 browser copy-image rest-api upload regression
+# 2026-05-14 browser copy-image REST API upload regression
 
 ## What happened
 - Browser "Copy Image" uploads started failing again via `POST /api/v1/images`.
