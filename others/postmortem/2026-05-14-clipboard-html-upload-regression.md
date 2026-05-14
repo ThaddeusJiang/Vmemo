@@ -1,4 +1,4 @@
-# Postmortem: Clipboard HTML Upload Regression (2026-05-14)
+# 2026-05-14 browser copy-image rest upload regression
 
 ## What happened
 - Browser "Copy Image" uploads started failing again via `POST /api/v1/images`.
