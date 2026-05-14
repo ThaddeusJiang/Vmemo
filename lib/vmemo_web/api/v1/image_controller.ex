@@ -138,7 +138,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
       {:ok, %{path: tmp_path, filename: filename, cleanup?: true}}
     else
       {:error, _reason} -> {:error, "Invalid image format"}
-      _ -> {:error, "Invalid image format"}
     end
   end
 
@@ -179,7 +178,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
     else
       false -> {:error, :invalid_remote_image}
       {:error, _reason} -> {:error, :fetch_failed}
-      _ -> {:error, :fetch_failed}
     end
   end
 
@@ -195,8 +193,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
       _ -> {:error, :invalid_remote_url}
     end
   end
-
-  defp validate_remote_image_url(_), do: {:error, :invalid_remote_url}
 
   defp validate_remote_host(host) do
     normalized = String.downcase(host)
@@ -248,14 +244,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
   defp private_or_local_ip?({0xFD00, _, _, _, _, _, _, _}), do: true
   defp private_or_local_ip?(_), do: false
 
-  defp extract_content_type_from_headers(headers) when is_list(headers) do
-    headers
-    |> List.keyfind("content-type", 0, {"content-type", "application/octet-stream"})
-    |> elem(1)
-    |> to_string()
-    |> normalize_content_type()
-  end
-
   defp extract_content_type_from_headers(headers) when is_map(headers) do
     headers
     |> Map.get("content-type", ["application/octet-stream"])
@@ -264,11 +252,9 @@ defmodule VmemoWeb.Api.V1.ImageController do
     |> normalize_content_type()
   end
 
-  defp extract_content_type_from_headers(_), do: "application/octet-stream"
-
   defp validate_and_process_base64_payload(data_url) do
     with {:ok, binary, mime_type} <- decode_base64_payload(data_url),
-         true <- mime_type in supported_mime_types(),
+         :ok <- validate_supported_mime_type(mime_type),
          :ok <- File.mkdir_p(System.tmp_dir!()),
          tmp_path <-
            Path.join(System.tmp_dir!(), "vmemo-upload-#{System.unique_integer([:positive])}"),
@@ -278,8 +264,6 @@ defmodule VmemoWeb.Api.V1.ImageController do
       filename = generate_filename("clipboard", mime_type_from_content)
       {:ok, %{path: tmp_path, filename: filename, cleanup?: true}}
     else
-      false -> {:error, "Invalid file type. Only image files are allowed"}
-      :error -> {:error, "Invalid file payload"}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -310,7 +294,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
     if content_type in supported_mime_types() or content_type == "application/octet-stream" do
       with {:ok, binary, _conn} <- Plug.Conn.read_body(conn),
-           true <- is_binary(binary) and byte_size(binary) > 0,
+           :ok <- validate_non_empty_binary(binary),
            :ok <- File.mkdir_p(System.tmp_dir!()),
            tmp_path <-
              Path.join(System.tmp_dir!(), "vmemo-upload-#{System.unique_integer([:positive])}"),
@@ -320,9 +304,8 @@ defmodule VmemoWeb.Api.V1.ImageController do
         filename = generate_filename("clipboard", detected_mime_type)
         {:ok, %{path: tmp_path, filename: filename, cleanup?: true}}
       else
-        false -> {:error, "No file provided"}
         {:error, _reason} -> {:error, "Invalid image format"}
-        _ -> {:error, "Invalid image format"}
+        {:more, _partial, _conn} -> {:error, "Invalid image format"}
       end
     else
       {:error, "No file provided"}
@@ -382,6 +365,17 @@ defmodule VmemoWeb.Api.V1.ImageController do
     |> String.trim()
     |> String.downcase()
   end
+
+  defp validate_supported_mime_type(mime_type) do
+    if mime_type in supported_mime_types() do
+      :ok
+    else
+      {:error, "Invalid file type. Only image files are allowed"}
+    end
+  end
+
+  defp validate_non_empty_binary(binary) when is_binary(binary) and byte_size(binary) > 0, do: :ok
+  defp validate_non_empty_binary(_), do: {:error, "No file provided"}
 
   defp safe_upload_path?(path) when is_binary(path) do
     normalized_upload_path = normalize_private_tmp_path(Path.expand(path))
@@ -466,7 +460,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
         inner_purpose: nil
       }
 
-      create_image_with_fallback(conn, attrs, current_user)
+      create_image(conn, attrs, current_user)
     after
       if Map.get(upload_meta, :cleanup?, false) do
         _ = File.rm(path)
@@ -474,57 +468,15 @@ defmodule VmemoWeb.Api.V1.ImageController do
     end
   end
 
-  defp create_image_with_fallback(conn, attrs, current_user) do
-    try do
-      case Image.create_with_sync(attrs, actor: current_user) do
-        {:ok, image} ->
-          json(conn, image_response(image, conn))
-
-        {:error, error} ->
-          if is_missing_openrouter_key_error?(error) do
-            Logger.warning(
-              "create_with_sync failed due to missing OpenRouter key; fallback to import action"
-            )
-
-            create_image_with_import_fallback(conn, attrs, current_user)
-          else
-            Logger.error("Failed to create image: #{inspect(error)}")
-            error_response(conn, 500, "Failed to create image")
-          end
-      end
-    rescue
-      error ->
-        if is_missing_openrouter_key_error?(error) do
-          Logger.warning(
-            "create_with_sync raised missing OpenRouter key error; fallback to import action"
-          )
-
-          create_image_with_import_fallback(conn, attrs, current_user)
-        else
-          reraise(error, __STACKTRACE__)
-        end
-    end
-  end
-
-  defp create_image_with_import_fallback(conn, attrs, current_user) do
-    case Ash.create(Image, attrs, action: :import, actor: current_user) do
+  defp create_image(conn, attrs, current_user) do
+    case Image.import(attrs, actor: current_user) do
       {:ok, image} ->
         json(conn, image_response(image, conn))
 
       {:error, error} ->
-        Logger.error("Failed to create image with import fallback: #{inspect(error)}")
+        Logger.error("Failed to create image: #{inspect(error)}")
         error_response(conn, 500, "Failed to create image")
     end
-  end
-
-  defp is_missing_openrouter_key_error?(error) do
-    message =
-      error
-      |> inspect()
-      |> String.downcase()
-
-    String.contains?(message, "openrouter_api_key") or
-      String.contains?(message, "invalid parameter: :api_key option")
   end
 
   defp image_response(image, conn) do

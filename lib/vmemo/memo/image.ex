@@ -110,6 +110,7 @@ defmodule Vmemo.Memo.Image do
 
   code_interface do
     define :get, action: :read, get_by: [:id]
+    define :import
     define :create_with_sync
     define :create_for_image_search
     define :create_immediate
