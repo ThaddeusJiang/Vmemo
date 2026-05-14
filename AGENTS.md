@@ -22,11 +22,7 @@
 - For JavaScript assets, use `assets/vendor/` vendoring patterns instead of assuming npm-style app tooling.
 
 ## Phoenix / LiveView implementation rules
-- Do not create standalone `.heex` files for LiveView; render in `render/1`.
-- Use kebab-case for `handle_event/3` event names and `phx-*` attributes.
-- Use built-in LiveView uploads.
-- Keep `handle_event/3` small; extract branch-specific helpers.
-- For long-running work, use Oban + PubSub async flow.
+- See detailed rules in `.agents/skills/vmemo-coding-guides/SKILL.md`.
 
 ## Error handling and UX behavior
 - On form/action failure, do not navigate away.
