@@ -195,6 +195,8 @@ Use this pattern for long-running work that must continue after page leave:
   - If naming migration is needed (for example `photo` -> `image`), do it as a planned refactor: canonical modules/resources/actions first, then call sites, without runtime compatibility wrappers.
 - Model business logic in resources/actions/policies, not in web templates.
 - Register resources in domains and expose clear interfaces through `code_interface`.
+- Inside the **same** Ash resource module, call `code_interface` helpers with an **unqualified** function name (for example `read_storage_base64(id, actor: actor)` inside an action `run` callback). Do not write `__MODULE__.read_storage_base64(...)` for that; it adds noise without changing behavior unless you hit name shadowing or a macro hygiene edge case.
+- Use `__MODULE__` when an API needs the **resource module atom** (for example `Ash.get(__MODULE__, id, ...)`, `Ash.create(__MODULE__, attrs, ...)`), not merely to prefix another function defined on the current module.
 - Keep action naming business-oriented and consistent.
 - Keep validation and lifecycle logic close to the resource.
 - Keep web layer as orchestrator for UI state and domain calls.

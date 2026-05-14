@@ -12,7 +12,7 @@ defmodule Vmemo.Ai.CaptionTest do
     {:ok, _profile} = Account.upsert_user_profile(user, %{name: "Tester", language: "zh"})
 
     with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
-      with_mock Vmemo.Ai.AshAiVision,
+      with_mock Vmemo.Ai.AshAiVision, [:passthrough],
         caption: fn _image_base64, opts ->
           send(self(), {:caption_opts, opts})
           {:ok, "中文描述"}
@@ -33,7 +33,7 @@ defmodule Vmemo.Ai.CaptionTest do
 
   test "generate_caption falls back to en when user_id is missing" do
     with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
-      with_mock Vmemo.Ai.AshAiVision,
+      with_mock Vmemo.Ai.AshAiVision, [:passthrough],
         caption: fn _image_base64, opts ->
           send(self(), {:caption_opts, opts})
           {:ok, "English description"}
@@ -51,7 +51,7 @@ defmodule Vmemo.Ai.CaptionTest do
 
   test "generate_caption returns plain caption text without appending tags" do
     with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
-      with_mock Vmemo.Ai.AshAiVision,
+      with_mock Vmemo.Ai.AshAiVision, [:passthrough],
         caption: fn _image_base64, _opts -> {:ok, "A cat on desk"} end do
         with_mock ReqLLM, generate_text: fn _model, _messages, _opts -> {:ok, :ok} end do
           with_mock ReqLLM.Response, text: fn :ok -> ~s(["Pets", "Indoor Scene"]) end do
@@ -74,7 +74,7 @@ defmodule Vmemo.Ai.CaptionTest do
 
   test "generate_caption_and_tags returns structured caption and tags" do
     with_mock Vmemo.Ai.VisionConfig, resolve: fn -> %{model: "openrouter:test"} end do
-      with_mock Vmemo.Ai.AshAiVision,
+      with_mock Vmemo.Ai.AshAiVision, [:passthrough],
         generate_object: fn _image_base64, _prompt, _schema, _opts ->
           {:ok, %{object: %{caption: "A cat on desk", tags: [" Pets ", "Indoor Scene", ""]}}}
         end do
