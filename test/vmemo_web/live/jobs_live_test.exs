@@ -2,7 +2,9 @@ defmodule VmemoWeb.JobsLiveTest do
   use VmemoWeb.ConnCase, async: true
 
   alias Ash
+  alias Oban.Job
   alias Vmemo.Memo.Image
+  alias Vmemo.Repo
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
@@ -172,6 +174,7 @@ defmodule VmemoWeb.JobsLiveTest do
             authorize?: false
           )
 
+        maybe_insert_default_jobs!(image, typesense_status, moondream_status)
         image
 
       {:error, error} ->
@@ -191,4 +194,39 @@ defmodule VmemoWeb.JobsLiveTest do
       File.cp!(@fixture_image, image_path)
     end
   end
+
+  defp maybe_insert_default_jobs!(image, typesense_status, moondream_status) do
+    insert_oban_job!(
+      image.id,
+      "Vmemo.Memo.Image.Workers.SyncTypesense",
+      oban_state_from_status(typesense_status),
+      "sync_typesense"
+    )
+
+    insert_oban_job!(
+      image.id,
+      "Vmemo.Memo.Image.Workers.GenerateCaption",
+      oban_state_from_status(moondream_status),
+      "ai_vision"
+    )
+  end
+
+  defp insert_oban_job!(image_id, worker, state, queue) do
+    args = %{"primary_key" => %{"id" => image_id}}
+
+    changeset =
+      Job.new(args,
+        worker: worker,
+        queue: queue
+      )
+      |> Ecto.Changeset.put_change(:state, state)
+
+    Repo.insert!(changeset)
+  end
+
+  defp oban_state_from_status("completed"), do: "completed"
+  defp oban_state_from_status("failed"), do: "discarded"
+  defp oban_state_from_status("processing"), do: "executing"
+  defp oban_state_from_status("pending"), do: "available"
+  defp oban_state_from_status(_), do: "available"
 end

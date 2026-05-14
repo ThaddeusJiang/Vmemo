@@ -1,4 +1,4 @@
-defmodule VmemoWeb.Live.ImageJobsHook do
+defmodule Vmemo.Memo.ImageJobs do
   @moduledoc false
 
   require Ash.Query
@@ -10,43 +10,13 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   @max_jobs 20
   @default_all_jobs_limit 80
-  @generate_caption_worker "Vmemo.Memo.Image.Workers.GenerateCaption"
-
-  def on_mount(:default, _params, _session, socket) do
-    {:cont, assign_image_jobs(socket)}
-  end
-
-  defp assign_image_jobs(socket) do
-    user = socket.assigns[:current_user]
-
-    jobs =
-      case list_jobs(user) do
-        {:ok, jobs} -> jobs
-        _ -> []
-      end
-
-    notifications =
-      case list_notifications(user) do
-        {:ok, notifications} -> notifications
-        _ -> []
-      end
-
-    socket
-    |> Phoenix.Component.assign(:global_image_jobs, jobs)
-    |> Phoenix.Component.assign(
-      :global_image_jobs_processing_count,
-      count_status(jobs, "processing")
-    )
-    |> Phoenix.Component.assign(:global_image_jobs_failed_count, count_status(jobs, "failed"))
-    |> Phoenix.Component.assign(:global_notifications, notifications)
-    |> Phoenix.Component.assign(
-      :global_notifications_unresolved_count,
-      count_unresolved_notifications(notifications)
-    )
-  end
+  @generate_caption_workers [
+    "Vmemo.Memo.Image.Workers.GenerateCaption",
+    "Vmemo.Memo.Image.Workers.GenerateCaptionOnly"
+  ]
+  @sync_typesense_worker "Vmemo.Memo.Image.Workers.SyncTypesense"
 
   def list_jobs(user, opts \\ [])
-
   def list_jobs(nil, _opts), do: {:ok, []}
 
   def list_jobs(user, opts) do
@@ -72,8 +42,9 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
         jobs =
           images
-          |> maybe_filter_completed(include_completed)
           |> Enum.map(&to_job(&1, caption_error_by_image_id))
+          |> Enum.reject(&is_nil/1)
+          |> maybe_filter_completed(include_completed)
           |> Enum.take(limit)
 
         {:ok, jobs}
@@ -89,7 +60,11 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     case Image.get(id, actor: user) do
       {:ok, image} ->
         caption_error_by_image_id = caption_error_by_image_id([image])
-        {:ok, to_job(image, caption_error_by_image_id)}
+
+        case to_job(image, caption_error_by_image_id) do
+          nil -> {:error, :not_found}
+          job -> {:ok, job}
+        end
 
       error ->
         error
@@ -97,7 +72,6 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   end
 
   def list_notifications(user, opts \\ [])
-
   def list_notifications(nil, _opts), do: {:ok, []}
 
   def list_notifications(user, opts) do
@@ -116,37 +90,52 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     end
   end
 
-  defp maybe_filter_completed(images, true), do: images
-  defp maybe_filter_completed(images, false), do: Enum.filter(images, &job_candidate?/1)
-
-  defp job_candidate?(image) do
-    image.typesense_status != "completed" or image.moondream_status != "completed"
-  end
+  defp maybe_filter_completed(jobs, true), do: jobs
+  defp maybe_filter_completed(jobs, false), do: Enum.reject(jobs, &(&1.status == "success"))
 
   defp to_job(image, caption_error_by_image_id) do
-    caption_status = caption_status(image)
-    caption_failure_reason = caption_failure_reason(image, caption_error_by_image_id)
+    caption_oban_state = caption_oban_state(image)
+    typesense_oban_state = typesense_oban_state(image)
 
-    %{
-      id: image.id,
-      image_id: image.id,
-      upload_batch_id: image.upload_batch_id,
-      image_url: image.url,
-      caption: image.caption,
-      file_name: image.file_id || image.id,
-      status: job_status(image),
-      reason: failure_summary(image, caption_error_by_image_id),
-      failure_stage: failure_stage(image),
-      failure_reason: failure_reason(image, caption_error_by_image_id),
-      typesense_failure_reason: typesense_failure_reason(image),
-      moondream_failure_reason: caption_failure_reason,
-      caption_failure_reason: caption_failure_reason,
-      typesense_status: image.typesense_status,
-      moondream_status: caption_status,
-      caption_status: caption_status,
-      inserted_at: image.inserted_at,
-      updated_at: image.updated_at
-    }
+    if is_nil(caption_oban_state) and is_nil(typesense_oban_state) do
+      nil
+    else
+      caption_status = caption_status(image, caption_oban_state)
+      typesense_status = typesense_status(image, typesense_oban_state)
+      caption_failure_reason = caption_failure_reason(image, caption_error_by_image_id)
+
+      job = %{
+        id: image.id,
+        image_id: image.id,
+        upload_batch_id: image.upload_batch_id,
+        image_url: image.url,
+        caption: image.caption,
+        file_name: image.file_id || image.id,
+        reason: nil,
+        failure_stage: nil,
+        failure_reason: nil,
+        typesense_failure_reason: nil,
+        moondream_failure_reason: caption_failure_reason,
+        caption_failure_reason: caption_failure_reason,
+        typesense_status: typesense_status,
+        moondream_status: caption_status,
+        caption_oban_state: caption_oban_state,
+        typesense_oban_state: typesense_oban_state,
+        caption_status: caption_status,
+        inserted_at: image.inserted_at,
+        updated_at: image.updated_at
+      }
+
+      failure_stage = failure_stage(job)
+      failure_reason = failure_reason(job, caption_error_by_image_id)
+
+      job
+      |> Map.put(:status, job_status(job))
+      |> Map.put(:failure_stage, failure_stage)
+      |> Map.put(:failure_reason, failure_reason)
+      |> Map.put(:typesense_failure_reason, typesense_failure_reason(job))
+      |> Map.put(:reason, failure_summary(failure_stage, failure_reason))
+    end
   end
 
   defp to_notification(job) do
@@ -177,10 +166,6 @@ defmodule VmemoWeb.Live.ImageJobsHook do
     end
   end
 
-  defp count_unresolved_notifications(notifications) do
-    Enum.count(notifications, &(&1.status in ["processing", "failed", "partial_failed"]))
-  end
-
   defp blank_to_nil(nil), do: nil
 
   defp blank_to_nil(value) when is_binary(value) do
@@ -195,16 +180,22 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   defp datetime_sort_value(_), do: 0
 
-  defp job_status(image) do
+  defp job_status(%{typesense_status: typesense_status, moondream_status: caption_status}) do
     cond do
-      image.typesense_status == "failed" or image.moondream_status == "failed" -> "failed"
-      image.typesense_status == "completed" and image.moondream_status == "completed" -> "success"
-      true -> "processing"
+      typesense_status in ["failed", "cancelled", "discarded"] or
+          caption_status in ["failed", "cancelled", "discarded"] ->
+        "failed"
+
+      typesense_status == "completed" and caption_status == "completed" ->
+        "success"
+
+      true ->
+        "processing"
     end
   end
 
-  defp failure_summary(image, caption_error_by_image_id) do
-    case {failure_stage(image), failure_reason(image, caption_error_by_image_id)} do
+  defp failure_summary(failure_stage, failure_reason) do
+    case {failure_stage, failure_reason} do
       {nil, _} -> nil
       {stage, nil} -> stage
       {stage, reason} -> "#{stage}. #{reason}."
@@ -213,13 +204,14 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   defp failure_stage(image) do
     cond do
-      image.typesense_status == "failed" and image.moondream_status == "failed" ->
+      image.typesense_status in ["failed", "cancelled", "discarded"] and
+          image.moondream_status in ["failed", "cancelled", "discarded"] ->
         "Search and caption failed"
 
-      image.typesense_status == "failed" ->
+      image.typesense_status in ["failed", "cancelled", "discarded"] ->
         "Search failed"
 
-      image.moondream_status == "failed" ->
+      image.moondream_status in ["failed", "cancelled", "discarded"] ->
         "Caption failed"
 
       true ->
@@ -229,10 +221,10 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   defp failure_reason(image, caption_error_by_image_id) do
     cond do
-      image.moondream_status == "failed" ->
+      image.moondream_status in ["failed", "cancelled", "discarded"] ->
         caption_failure_reason(image, caption_error_by_image_id) || "Caption generation failed."
 
-      image.typesense_status == "failed" ->
+      image.typesense_status in ["failed", "cancelled", "discarded"] ->
         "Indexing error"
 
       true ->
@@ -241,21 +233,72 @@ defmodule VmemoWeb.Live.ImageJobsHook do
   end
 
   defp typesense_failure_reason(image) do
-    if image.typesense_status == "failed", do: "Indexing error", else: nil
+    if image.typesense_status in ["failed", "cancelled", "discarded"],
+      do: "Indexing error",
+      else: nil
   end
 
   defp moondream_failure_reason(image, caption_error_by_image_id) do
-    if image.moondream_status == "failed" do
+    if image.moondream_status in ["failed", "cancelled", "discarded"] do
       Map.get(caption_error_by_image_id, image.id) || "Caption generation failed."
     else
       nil
     end
   end
 
-  defp caption_status(image), do: image.moondream_status
+  defp caption_status(image, caption_oban_state) do
+    cond do
+      caption_oban_state == "completed" -> "completed"
+      caption_oban_state in ["cancelled", "discarded", "failed"] -> "failed"
+      caption_oban_state in ["scheduled", "available", "retryable"] -> "queue"
+      caption_oban_state == "executing" -> "in_progress"
+      is_nil(caption_oban_state) -> "requested"
+      image.moondream_status == "processing" -> "in_progress"
+      image.moondream_status == "pending" -> "requested"
+      true -> "requested"
+    end
+  end
+
+  defp typesense_status(image, typesense_oban_state) do
+    cond do
+      typesense_oban_state == "completed" -> "completed"
+      typesense_oban_state in ["cancelled", "discarded", "failed"] -> "failed"
+      typesense_oban_state in ["scheduled", "available", "retryable"] -> "queue"
+      typesense_oban_state == "executing" -> "in_progress"
+      is_nil(typesense_oban_state) -> "requested"
+      image.typesense_status == "processing" -> "in_progress"
+      image.typesense_status == "pending" -> "requested"
+      true -> "requested"
+    end
+  end
 
   defp caption_failure_reason(image, caption_error_by_image_id),
     do: moondream_failure_reason(image, caption_error_by_image_id)
+
+  defp caption_oban_state(image) do
+    latest_job_state(image.id, @generate_caption_workers)
+  rescue
+    _ -> nil
+  end
+
+  defp typesense_oban_state(image) do
+    latest_job_state(image.id, [@sync_typesense_worker])
+  rescue
+    _ -> nil
+  end
+
+  defp latest_job_state(image_id, workers) do
+    Job
+    |> where([j], j.worker in ^workers)
+    |> where([j], fragment("?->'primary_key'->>'id'", j.args) == ^image_id)
+    |> order_by([j], desc: j.id)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      %Job{state: state} when is_binary(state) -> state
+      _ -> nil
+    end
+  end
 
   defp caption_error_by_image_id(images) do
     failed_image_ids =
@@ -274,7 +317,7 @@ defmodule VmemoWeb.Live.ImageJobsHook do
 
   defp fetch_caption_errors(failed_image_ids) do
     Job
-    |> where([j], j.worker == ^@generate_caption_worker)
+    |> where([j], j.worker in ^@generate_caption_workers)
     |> where([j], fragment("?->'primary_key'->>'id'", j.args) in ^failed_image_ids)
     |> order_by([j], desc: j.id)
     |> select([j], %{image_id: fragment("?->'primary_key'->>'id'", j.args), errors: j.errors})
@@ -320,9 +363,5 @@ defmodule VmemoWeb.Live.ImageJobsHook do
       _ ->
         nil
     end
-  end
-
-  defp count_status(jobs, status) do
-    Enum.count(jobs, &(&1.status == status))
   end
 end

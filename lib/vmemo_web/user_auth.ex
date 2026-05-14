@@ -8,6 +8,7 @@ defmodule VmemoWeb.UserAuth do
 
   alias Vmemo.Account
   alias Vmemo.Account.User
+  alias Vmemo.Memo.ImageJobs
   alias VmemoWeb.Locale
 
   @doc """
@@ -253,7 +254,26 @@ defmodule VmemoWeb.UserAuth do
         build_profile(socket.assigns.current_user)
       end)
 
-    Locale.put_locale(socket, socket.assigns.current_user_profile)
+    socket
+    |> Locale.put_locale(socket.assigns.current_user_profile)
+    |> assign_global_notifications_data()
+  end
+
+  defp assign_global_notifications_data(socket) do
+    user = socket.assigns[:current_user]
+
+    notifications =
+      case ImageJobs.list_notifications(user) do
+        {:ok, loaded_notifications} -> loaded_notifications
+        _ -> []
+      end
+
+    socket
+    |> Phoenix.Component.assign(:global_notifications, notifications)
+    |> Phoenix.Component.assign(
+      :global_notifications_unresolved_count,
+      Enum.count(notifications, &(&1.status in ["processing", "failed", "partial_failed"]))
+    )
   end
 
   defp signed_in_path(_conn), do: ~p"/home"

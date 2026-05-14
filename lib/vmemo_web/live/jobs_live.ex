@@ -3,7 +3,7 @@ defmodule VmemoWeb.JobsLive do
   use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Memo.Image
-  alias VmemoWeb.Live.ImageJobsHook
+  alias Vmemo.Memo.ImageJobs
 
   @impl true
   def mount(_params, _session, socket) do
@@ -20,7 +20,7 @@ defmodule VmemoWeb.JobsLive do
     user = socket.assigns.current_user
 
     socket =
-      case ImageJobsHook.get_job(user, id) do
+      case ImageJobs.get_job(user, id) do
         {:ok, job} ->
           assign(socket, :job, job)
 
@@ -399,7 +399,12 @@ defmodule VmemoWeb.JobsLive do
   defp service_status_badge_class(status) do
     case status do
       "completed" -> "badge badge-success badge-outline"
+      "cancelled" -> "badge badge-warning badge-outline"
+      "discarded" -> "badge badge-warning badge-outline"
       "failed" -> "badge badge-error badge-outline"
+      "queue" -> "badge badge-info badge-outline"
+      "in_progress" -> "badge badge-info badge-outline"
+      "requested" -> "badge badge-ghost badge-outline"
       "processing" -> "badge badge-info badge-outline"
       _ -> "badge badge-outline"
     end
@@ -408,7 +413,12 @@ defmodule VmemoWeb.JobsLive do
   defp service_status_label(status) do
     case status do
       "completed" -> gettext("Completed")
+      "cancelled" -> gettext("Cancelled")
+      "discarded" -> gettext("Discarded")
       "failed" -> gettext("Failed")
+      "queue" -> gettext("Queued")
+      "in_progress" -> gettext("In progress")
+      "requested" -> gettext("Requested")
       "processing" -> gettext("Processing")
       nil -> gettext("Pending")
       _ -> gettext("Pending")
@@ -433,6 +443,12 @@ defmodule VmemoWeb.JobsLive do
 
       job.caption_status == "failed" ->
         job.caption_failure_reason || job.failure_reason || gettext("Caption generation failed.")
+
+      job.caption_status in ["requested", "queue", "in_progress"] ->
+        gettext("Caption is being generated.")
+
+      job.caption_status in ["cancelled", "discarded"] ->
+        gettext("Caption task did not finish.")
 
       true ->
         gettext("Caption is being generated.")
@@ -464,7 +480,7 @@ defmodule VmemoWeb.JobsLive do
     user = socket.assigns.current_user
 
     jobs =
-      case ImageJobsHook.list_jobs(user, include_completed: true, limit: 80) do
+      case ImageJobs.list_jobs(user, include_completed: true, limit: 80) do
         {:ok, jobs} -> jobs
         _ -> []
       end
