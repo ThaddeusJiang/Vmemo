@@ -22,6 +22,7 @@ classDiagram
         set_caption_ai_result(String caption)
         mark_caption_failed()
         sync_typesense_by_id(UUID image_id)
+        read_storage_base64(UUID id)
         ingest_temp_file_for_similarity_search(String temp_path, String storage_file_id)
         get_with_notes(String id, UUID user_id)
         hybrid_search(String query, String similar_image_id, UUID user_id, Integer page)
