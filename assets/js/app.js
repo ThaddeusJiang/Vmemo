@@ -96,6 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
       applyImageFallback(img)
     }
   })
+
+  syncThemeColorMeta()
 })
 
 // Handle form reset events from LiveView
@@ -148,7 +150,7 @@ function copyToClipboardFallback(text) {
 
 window.updateAppearancePreference = async (isDark) => {
   const appearance = isDark ? "dark" : "light"
-  document.documentElement.setAttribute("data-theme", appearance)
+  applyAppearanceWithTransition(appearance)
 
   try {
     await fetch("/profile/appearance", {
@@ -164,6 +166,48 @@ window.updateAppearancePreference = async (isDark) => {
   } catch (error) {
     console.error("Failed to persist appearance preference:", error)
   }
+}
+
+const applyAppearanceWithTransition = (appearance) => {
+  const root = document.documentElement
+  if (root.getAttribute("data-theme") === appearance) return
+
+  updateThemeColorMeta(appearance)
+  root.classList.add("theme-transition-active")
+  root.classList.add(`theme-transition-to-${appearance}`)
+  const radius = Math.ceil(Math.hypot(window.innerWidth, window.innerHeight))
+  root.style.setProperty("--theme-transition-radius", `${radius}px`)
+
+  const transition = document.startViewTransition(() => {
+    root.setAttribute("data-theme", appearance)
+  })
+
+  transition.finished.finally(() => {
+    root.classList.remove("theme-transition-active")
+    root.classList.remove("theme-transition-to-light", "theme-transition-to-dark")
+    root.style.removeProperty("--theme-transition-radius")
+  })
+}
+
+const syncThemeColorMeta = () => {
+  const appearance = document.documentElement.getAttribute("data-theme")
+  if (appearance) updateThemeColorMeta(appearance)
+}
+
+const updateThemeColorMeta = (appearance) => {
+  let meta = document.querySelector("meta[name='theme-color']")
+  if (!meta) {
+    meta = document.createElement("meta")
+    meta.setAttribute("name", "theme-color")
+    document.head.appendChild(meta)
+  }
+
+  const themeColor = appearance === "dark" ? "#282A36" : "#f8f8f8"
+  meta.removeAttribute("media")
+  meta.setAttribute("content", themeColor)
+  document.querySelectorAll("meta[name='theme-color']").forEach((item) => {
+    if (item !== meta) item.remove()
+  })
 }
 
 // Smooth full-page navigation to reduce perceived flicker

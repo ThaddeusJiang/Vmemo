@@ -11,6 +11,9 @@ defmodule VmemoWeb.Layouts do
   use VmemoWeb, :html
   use Gettext, backend: VmemoWeb.Gettext
 
+  @theme_color_light "#f8f8f8"
+  @theme_color_dark "#282A36"
+
   def html_lang(assigns) do
     case profile_language(assigns) do
       "zh" -> "zh-CN"
@@ -26,6 +29,16 @@ defmodule VmemoWeb.Layouts do
       _ -> nil
     end
   end
+
+  def theme_color_value(assigns) do
+    case theme_data_value(assigns) do
+      "dark" -> theme_color_dark()
+      _ -> theme_color_light()
+    end
+  end
+
+  def theme_color_light, do: @theme_color_light
+  def theme_color_dark, do: @theme_color_dark
 
   attr :logo_href, :string, default: "/"
   attr :cta_href, :string, default: "/login"

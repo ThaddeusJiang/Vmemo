@@ -57,6 +57,7 @@ if (response.ok) {
 
 #### Fixed
 - Fixed delayed rotation feedback where images appeared unchanged until a full page refresh.
+- Fixed light/dark theme switching so the page and browser UI transition more consistently.
 
 ### Maintainers
 
