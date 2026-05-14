@@ -222,8 +222,7 @@
     width: 100%;
     max-width: 84rem;
     margin-inline: auto;
-    padding-inline: clamp(1rem, 2vw, 2rem);
-    padding-block: clamp(1rem, 2.5vw, 2rem);
+    @apply px-4 py-3 sm:px-6 lg:px-10;
 }
 
 .global-ask-ai-drawer {
@@ -241,7 +240,6 @@
 .content-shell {
     border-radius: 1rem;
     background: transparent;
-    padding: clamp(1rem, 2vw, 1.5rem);
     border: none;
     box-shadow: none;
 }

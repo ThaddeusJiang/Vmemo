@@ -748,11 +748,6 @@ msgstr ""
 msgid "Processing..."
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Retry"
-msgstr ""
-
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Save"
@@ -1049,6 +1044,7 @@ msgid "Failed to delete note, please try again later."
 msgstr ""
 
 #: lib/vmemo_web/live/components/note_update_form.ex
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Updated"
 msgstr ""
@@ -1116,11 +1112,6 @@ msgstr ""
 
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
-msgid "Error"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
 msgid "Failed to retry job"
 msgstr ""
 
@@ -1132,11 +1123,6 @@ msgstr ""
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Job"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Job ID"
 msgstr ""
 
 #: lib/vmemo_web/job_notifications.ex
@@ -1227,4 +1213,49 @@ msgstr ""
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Requested"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Async Job"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Image unavailable"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Source Image"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Error / Execution log"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job Kind"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "No errors recorded."
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Open image detail"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Recent Jobs"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Retry job"
 msgstr ""
