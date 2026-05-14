@@ -8,7 +8,7 @@ defmodule VmemoWeb.UserAuth do
 
   alias Vmemo.Account
   alias Vmemo.Account.User
-  alias Vmemo.Memo.ImageJobs
+  alias VmemoWeb.JobNotifications
   alias VmemoWeb.Locale
 
   @doc """
@@ -263,7 +263,7 @@ defmodule VmemoWeb.UserAuth do
     user = socket.assigns[:current_user]
 
     notifications =
-      case ImageJobs.list_notifications(user) do
+      case JobNotifications.list_for_user(user) do
         {:ok, loaded_notifications} -> loaded_notifications
         _ -> []
       end
@@ -272,7 +272,7 @@ defmodule VmemoWeb.UserAuth do
     |> Phoenix.Component.assign(:global_notifications, notifications)
     |> Phoenix.Component.assign(
       :global_notifications_unresolved_count,
-      Enum.count(notifications, &(&1.status in ["processing", "failed", "partial_failed"]))
+      JobNotifications.unresolved_count(notifications)
     )
   end
 

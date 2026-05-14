@@ -51,9 +51,9 @@ defmodule VmemoWeb.JobsLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/jobs")
 
       assert html =~ "Jobs"
-      assert html =~ "Search embedding"
-      assert html =~ "Vision embedding"
-      assert html =~ "Caption generation failed."
+      assert html =~ "Type"
+      assert html =~ "Status"
+      assert html =~ "Caption failed."
       refute html =~ "Timeout"
       assert html =~ "/storage/v1/"
       assert html =~ "Retry"
@@ -113,14 +113,16 @@ defmodule VmemoWeb.JobsLiveTest do
           moondream_status: "failed"
         })
 
-      {:ok, _lv, html} = live(conn, ~p"/jobs/#{failed_image.id}")
+      failed_job = get_job_by_image_and_kind!(failed_image.id, "caption")
+
+      {:ok, _lv, html} = live(conn, ~p"/jobs/#{failed_job.id}")
 
       assert html =~ "Jobs"
       assert html =~ failed_image.id
-      assert html =~ "Failure reason"
-      assert html =~ "Caption generation failed."
+      assert html =~ "Error"
+      assert html =~ "Caption failed."
       refute html =~ "Timeout"
-      assert html =~ "Retry Vision AI caption"
+      assert html =~ "Retry"
       assert html =~ ~s(href="/images/#{failed_image.id}")
     end
 
@@ -139,10 +141,12 @@ defmodule VmemoWeb.JobsLiveTest do
           moondream_status: "completed"
         })
 
-      {:ok, _lv, html} = live(conn, ~p"/jobs/#{completed_image.id}")
+      completed_job = get_job_by_image_and_kind!(completed_image.id, "caption")
 
-      assert html =~ "Caption result"
-      assert html =~ "detail-success-caption"
+      {:ok, _lv, html} = live(conn, ~p"/jobs/#{completed_job.id}")
+
+      assert html =~ "Status"
+      assert html =~ "Completed"
       assert html =~ ~s(href="/jobs")
     end
   end
@@ -258,4 +262,16 @@ defmodule VmemoWeb.JobsLiveTest do
   defp map_update_action("discarded"), do: :mark_discarded
   defp map_update_action("cancelled"), do: :mark_cancelled
   defp map_update_action(_), do: :mark_failed
+
+  defp get_job_by_image_and_kind!(image_id, kind) do
+    query =
+      Job
+      |> Ash.Query.filter(image_id: image_id, kind: kind)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, actor: nil, authorize?: false) do
+      {:ok, [job | _]} -> job
+      _ -> raise "missing job for image=#{image_id}, kind=#{kind}"
+    end
+  end
 end
