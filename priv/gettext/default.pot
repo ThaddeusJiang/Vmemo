@@ -569,11 +569,6 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Completed"
-msgstr ""
-
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Create API Token"
@@ -728,11 +723,6 @@ msgstr ""
 #: lib/vmemo_web/components/notifications_components.ex
 #, elixir-autogen, elixir-format
 msgid "Partial Failed"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Pending"
 msgstr ""
 
 #: lib/vmemo_web/live/api_token_live/form.ex
@@ -1104,31 +1094,6 @@ msgstr ""
 msgid "tags"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Cancelled"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Discarded"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "In progress"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Queued"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Requested"
-msgstr ""
-
 #: lib/vmemo_web/job_notifications.ex
 #, elixir-autogen, elixir-format
 msgid "Caption completed."
@@ -1227,4 +1192,39 @@ msgstr ""
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Updated at"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Cancelled"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Completed"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Discarded"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "In progress"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Pending"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Queued"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Requested"
 msgstr ""

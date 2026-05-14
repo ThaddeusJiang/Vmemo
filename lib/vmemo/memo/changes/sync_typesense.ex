@@ -11,33 +11,43 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
     resource = Keyword.fetch!(opts, :resource)
 
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      case resource.sync_typesense_by_id(record.id, actor: nil, authorize?: false) do
-        {:ok, true} ->
-          with {:ok, _} <- update_status_if_supported(resource, record, "completed") do
-            sync_typesense_job_completed(record)
-            {:ok, record}
-          end
-
-        {:ok, false} ->
-          Logger.warning("typesense sync retrying: sync_failed",
-            image_id: record.id,
-            user_id: record.user_id
-          )
-
-          {:error, :sync_failed}
-
-        {:error, %Ash.Error.Query.NotFound{}} ->
-          {:ok, record}
-
-        {:error, reason} ->
-          Logger.warning("typesense sync retrying: #{inspect(reason)}",
-            image_id: record.id,
-            user_id: record.user_id
-          )
-
-          {:error, reason}
-      end
+      resource
+      |> sync_typesense(record)
+      |> handle_sync_result(resource, record)
     end)
+  end
+
+  defp sync_typesense(resource, record) do
+    resource.sync_typesense_by_id(record.id, actor: nil, authorize?: false)
+  end
+
+  defp handle_sync_result({:ok, true}, resource, record) do
+    with {:ok, _} <- update_status_if_supported(resource, record, "completed") do
+      sync_typesense_job_completed(record)
+      {:ok, record}
+    end
+  end
+
+  defp handle_sync_result({:ok, false}, _resource, record) do
+    Logger.warning("typesense sync retrying: sync_failed",
+      image_id: record.id,
+      user_id: record.user_id
+    )
+
+    {:error, :sync_failed}
+  end
+
+  defp handle_sync_result({:error, %Ash.Error.Query.NotFound{}}, _resource, record) do
+    {:ok, record}
+  end
+
+  defp handle_sync_result({:error, reason}, _resource, record) do
+    Logger.warning("typesense sync retrying: #{inspect(reason)}",
+      image_id: record.id,
+      user_id: record.user_id
+    )
+
+    {:error, reason}
   end
 
   defp update_status_if_supported(resource, record, status) do

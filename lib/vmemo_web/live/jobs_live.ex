@@ -108,14 +108,27 @@ defmodule VmemoWeb.JobsLive do
                   </td>
                   <td>{job_kind_label(row.job.kind)}</td>
                   <td>
-                    <span class={
-                      service_status_badge_class(
-                        display_status(row.job.status, retrying_job?(@retrying_job_ids, row.job.id))
-                      )
-                    }>
-                      {service_status_label(
-                        display_status(row.job.status, retrying_job?(@retrying_job_ids, row.job.id))
-                      )}
+                    <% status =
+                      display_status(row.job.status, retrying_job?(@retrying_job_ids, row.job.id)) %>
+                    <span class={[
+                      "badge badge-outline",
+                      status == "completed" && "badge-success",
+                      status in ["cancelled", "discarded"] && "badge-warning",
+                      status == "failed" && "badge-error",
+                      status in ["queue", "in_progress", "processing"] && "badge-info",
+                      status == "requested" && "badge-ghost"
+                    ]}>
+                      {case status do
+                        "completed" -> gettext("Completed")
+                        "cancelled" -> gettext("Cancelled")
+                        "discarded" -> gettext("Discarded")
+                        "failed" -> gettext("Failed")
+                        "queue" -> gettext("Queued")
+                        "in_progress" -> gettext("In progress")
+                        "requested" -> gettext("Requested")
+                        "processing" -> gettext("Processing")
+                        _ -> gettext("Pending")
+                      end}
                     </span>
                   </td>
                   <td class="max-w-xs truncate">{row.job.error}</td>
@@ -173,14 +186,26 @@ defmodule VmemoWeb.JobsLive do
                 </div>
                 <div>
                   <span class="text-base-content/60">{gettext("Status")}: </span>
-                  <span class={
-                    service_status_badge_class(
-                      display_status(@job.status, retrying_job?(@retrying_job_ids, @job.id))
-                    )
-                  }>
-                    {service_status_label(
-                      display_status(@job.status, retrying_job?(@retrying_job_ids, @job.id))
-                    )}
+                  <% status = display_status(@job.status, retrying_job?(@retrying_job_ids, @job.id)) %>
+                  <span class={[
+                    "badge badge-outline",
+                    status == "completed" && "badge-success",
+                    status in ["cancelled", "discarded"] && "badge-warning",
+                    status == "failed" && "badge-error",
+                    status in ["queue", "in_progress", "processing"] && "badge-info",
+                    status == "requested" && "badge-ghost"
+                  ]}>
+                    {case status do
+                      "completed" -> gettext("Completed")
+                      "cancelled" -> gettext("Cancelled")
+                      "discarded" -> gettext("Discarded")
+                      "failed" -> gettext("Failed")
+                      "queue" -> gettext("Queued")
+                      "in_progress" -> gettext("In progress")
+                      "requested" -> gettext("Requested")
+                      "processing" -> gettext("Processing")
+                      _ -> gettext("Pending")
+                    end}
                   </span>
                 </div>
                 <div>
@@ -324,35 +349,6 @@ defmodule VmemoWeb.JobsLive do
   defp job_kind_label("caption"), do: gettext("Caption")
   defp job_kind_label("typesense"), do: gettext("Search")
   defp job_kind_label(_), do: gettext("Job")
-
-  defp service_status_badge_class(status) do
-    case status do
-      "completed" -> "badge badge-success badge-outline"
-      "cancelled" -> "badge badge-warning badge-outline"
-      "discarded" -> "badge badge-warning badge-outline"
-      "failed" -> "badge badge-error badge-outline"
-      "queue" -> "badge badge-info badge-outline"
-      "in_progress" -> "badge badge-info badge-outline"
-      "requested" -> "badge badge-ghost badge-outline"
-      "processing" -> "badge badge-info badge-outline"
-      _ -> "badge badge-outline"
-    end
-  end
-
-  defp service_status_label(status) do
-    case status do
-      "completed" -> gettext("Completed")
-      "cancelled" -> gettext("Cancelled")
-      "discarded" -> gettext("Discarded")
-      "failed" -> gettext("Failed")
-      "queue" -> gettext("Queued")
-      "in_progress" -> gettext("In progress")
-      "requested" -> gettext("Requested")
-      "processing" -> gettext("Processing")
-      nil -> gettext("Pending")
-      _ -> gettext("Pending")
-    end
-  end
 
   defp display_status(_status, true), do: "processing"
   defp display_status(status, false), do: status
