@@ -6,6 +6,34 @@
 - Backend domain code lives in `lib/vmemo/**`; web/UI code lives in `lib/vmemo_web/**`.
 - Keep module names aligned with file paths and use feature-cohesive placement.
 
+## Repository Layout
+```text
+vmemo/                          # Repository root
+├── .agents/                    # Agent-local instructions and skill wiring
+├── assets/                     # Frontend source assets (CSS/JS/vendor static inputs)
+├── config/                     # Phoenix/Elixir app configuration by environment
+├── docs/                       # Project documentation
+│   ├── decisions/              # Architecture decisions and ADR-style records
+│   ├── features/               # Feature-level design and behavior notes
+│   └── guides/                 # Contributor/development guides
+├── lib/                        # Application source code
+│   ├── mix/                    # Custom Mix tasks
+│   ├── small_sdk/              # Lightweight SDK wrappers/helpers for external services
+│   ├── vmemo/                  # Core domain/business logic (Ash resources/services)
+│   └── vmemo_web/              # Phoenix web layer (router/controllers/live views/components/plugs)
+├── others/                     # Auxiliary project artifacts outside main runtime app
+│   ├── apple-shortcuts/        # Apple Shortcuts related assets/exports
+│   ├── e2e-test/               # End-to-end testing related materials
+│   ├── postmortem/             # Postmortem notes for resolved issues/bugs
+│   └── scripts/                # Utility scripts for local workflows/maintenance
+├── priv/                       # Runtime private assets (repo migrations, gettext, static, etc.)
+├── rel/                        # Release configuration and startup scripts
+├── skills/                     # Project-owned Codex skills
+├── test/                       # ExUnit test suites and support helpers
+├── AGENTS.md                   # Agent operating conventions for this repository
+├── mise.toml                   # Toolchain/runtime version management
+```
+
 ## Build, test, and development commands
 - Use `mix` for project tasks.
 - Do not use Python for ad-hoc project automation.
@@ -58,6 +86,14 @@
   - `chore(scope): ...`
 - Keep each commit focused on one independent change.
 - If on a non-`main` branch and no PR exists, create one.
+
+## Postmortems
+
+When solving a non-trivial bug or issue, create `others/postmortem/YYYY-MM-DD-title.md` with:
+- What happened
+- Root cause
+- Fix applied
+- What we learned
 
 The following framework usage references are generated pointers; do not edit them manually.
 
