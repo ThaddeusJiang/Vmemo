@@ -12,6 +12,34 @@
 - For JavaScript assets, use `assets/vendor/` vendoring patterns instead of assuming npm-based app tooling.
 - Use Bun only where the project already expects it, such as e2e workflows.
 
+## Repository Layout
+```text
+vmemo/                          # Repository root
+├── .agents/                    # Agent-local instructions and skill wiring
+├── assets/                     # Frontend source assets (CSS/JS/vendor static inputs)
+├── config/                     # Phoenix/Elixir app configuration by environment
+├── docs/                       # Project documentation
+│   ├── decisions/              # Architecture decisions and ADR-style records
+│   ├── features/               # Feature-level design and behavior notes
+│   └── guides/                 # Contributor/development guides
+├── lib/                        # Application source code
+│   ├── mix/                    # Custom Mix tasks
+│   ├── small_sdk/              # Lightweight SDK wrappers/helpers for external services
+│   ├── vmemo/                  # Core domain/business logic (Ash resources/services)
+│   └── vmemo_web/              # Phoenix web layer (router/controllers/live views/components/plugs)
+├── others/                     # Auxiliary project artifacts outside main runtime app
+│   ├── apple-shortcuts/        # Apple Shortcuts related assets/exports
+│   ├── e2e-test/               # End-to-end testing related materials
+│   ├── postmortem/             # Postmortem notes for resolved issues/bugs
+│   └── scripts/                # Utility scripts for local workflows/maintenance
+├── priv/                       # Runtime private assets (repo migrations, gettext, static, etc.)
+├── rel/                        # Release configuration and startup scripts
+├── skills/                     # Project-owned Codex skills
+├── test/                       # ExUnit test suites and support helpers
+├── AGENTS.md                   # Agent operating conventions for this repository
+├── mise.toml                   # Toolchain/runtime version management
+```
+
 ## Phoenix / LiveView rules
 - Do not create standalone `.heex` files for LiveView; render in `render/1`.
 - Use kebab-case for `handle_event/3` event names and `phx-*`.
@@ -57,6 +85,14 @@
   - `chore(scope): ...`
 - Keep each commit focused on one independent change.
 - If on a non-`main` branch and no PR exists, create one.
+
+## Postmortems
+
+When solving a non-trivial bug or issue, create `others/postmortem/YYYY-MM-DD-title.md` with:
+- What happened
+- Root cause
+- Fix applied
+- What we learned
 
 The following framework usage references are generated pointers; do not edit them manually.
 
