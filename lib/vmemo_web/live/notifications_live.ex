@@ -2,14 +2,14 @@ defmodule VmemoWeb.NotificationsLive do
   use VmemoWeb, :live_view
   use Gettext, backend: VmemoWeb.Gettext
 
-  alias VmemoWeb.Live.ImageJobsHook
+  alias VmemoWeb.JobNotifications
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
     notifications =
-      case ImageJobsHook.list_notifications(user, limit: 80) do
+      case JobNotifications.list_for_user(user, limit: 80) do
         {:ok, notifications} -> notifications
         _ -> []
       end
