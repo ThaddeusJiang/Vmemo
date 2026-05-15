@@ -3,11 +3,6 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
   use VmemoWeb, :html
   alias Vmemo.Storage
 
-  attr :image, :map, default: nil
-  attr :navigate, :string, default: nil
-  slot :media, required: false
-  slot :overlay, required: false
-
   attr :rest, :global
 
   def card_delete_menu(assigns) do
@@ -34,6 +29,11 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
     </div>
     """
   end
+
+  attr :image, :map, default: nil
+  attr :navigate, :string, default: nil
+  slot :media, required: false
+  slot :overlay, required: false
 
   def image_card(assigns) do
     assigns =
