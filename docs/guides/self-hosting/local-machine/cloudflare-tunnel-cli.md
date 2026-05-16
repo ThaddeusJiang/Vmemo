@@ -4,24 +4,24 @@ This guide uses Cloudflare Tunnel with `cloudflared` CLI on macOS, without `~/.c
 
 Use your own values consistently:
 
-- `<tunnel-name>` example: `air`
-- `<public-hostname>` example: `preview.vmemo.app`
-- `<origin-url>` example: `http://localhost:4000`
+- `<tunnel-name>` example: `vmemo-dev`
+- `<public-hostname>` example: `dev.vmemo.app`
+- `<origin-url>` example: `http://localhost:14000`
 
 ## Quick Start (for this project)
 
 If you only need a working route to local Vmemo:
 
-1. Create tunnel: `cloudflared tunnel create air`
-2. Route host: `cloudflared tunnel route dns air preview.vmemo.app`
-3. Run in background with `--url`: `nohup cloudflared tunnel --no-autoupdate --url http://localhost:4000 run --token "$(cloudflared tunnel token air)" > /tmp/cloudflared-air.log 2>&1 &`
-4. Open `https://preview.vmemo.app`
+1. Create tunnel: `cloudflared tunnel create vmemo-dev`
+2. Route host: `cloudflared tunnel route dns vmemo-dev dev.vmemo.app`
+3. Run in background with `--url`: `nohup cloudflared tunnel --no-autoupdate --url http://localhost:14000 run --token "$(cloudflared tunnel token vmemo-dev)" > /tmp/cloudflared-vmemo-dev.log 2>&1 &`
+4. Open `https://dev.vmemo.app`
 
 ## Prerequisites
 
 - Cloudflare account with permission to manage the `vmemo.app` zone
 - Vmemo is reachable from the tunnel machine
-  - Local host example: `http://localhost:4000`
+  - Local host example: `http://localhost:14000`
   - Docker host port example: `http://localhost:14000`
 
 ## 1) Install cloudflared

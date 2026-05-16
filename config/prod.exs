@@ -7,7 +7,10 @@ import Config
 # before starting your production server.
 config :vmemo, VmemoWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  force_ssl: [hsts: true]
+  force_ssl: [
+    hsts: true,
+    rewrite_on: [:x_forwarded_proto, :x_forwarded_host, :x_forwarded_port]
+  ]
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Vmemo.Finch

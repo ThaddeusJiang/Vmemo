@@ -119,7 +119,7 @@ jobs:
             IS_PRERELEASE="$(jq -r '.release.prerelease // false' "${GITHUB_EVENT_PATH}")"
             if [ "${IS_PRERELEASE}" = "true" ]; then
               docker buildx imagetools create \
-                -t "${IMAGE_NAME}:pre-release" \
+                -t "${IMAGE_NAME}:stag" \
                 "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
                 "${IMAGE_NAME}:${TARGET_TAG}-arm64"
             else
@@ -145,7 +145,7 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             IS_PRERELEASE="$(jq -r '.release.prerelease // false' "${GITHUB_EVENT_PATH}")"
             if [ "${IS_PRERELEASE}" = "true" ]; then
-              docker buildx imagetools inspect "${IMAGE_NAME}:pre-release"
+              docker buildx imagetools inspect "${IMAGE_NAME}:stag"
             else
               LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
               if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
