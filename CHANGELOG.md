@@ -7,18 +7,39 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+## [Vmemo - 2026.5.16] - 2026-05-16
+
 ### End Users
 
 #### Added
 - Added Vmemo MCP image management tools for searching, creating, reading, updating, and deleting images from MCP-capable AI clients.
 - Added MCP image resources so clients can lazily read image URLs, HTML previews, or base64 image data after search results are returned.
-- Added README instructions for installing the Vmemo AI agent skill.
+- Added image tag management and tag-based classification support.
+- Added tag pages so users can browse and review images by tag.
+- Added image jobs page and notification integration for background job progress visibility.
 
 #### Changed
 - Changed MCP image search to return lightweight image details and resource references instead of embedding image data in every search result.
+- Changed image cards to use a unified dropdown action menu and support delete directly from list view.
+- Changed image base64 reading to a unified path for more consistent AI and API behavior.
+- Changed background async processing to a top-level Jobs domain/resource model.
 
 #### Fixed
 - Fixed Vmemo MCP image tools returning a server error when requests reached AshAi without an authenticated actor.
+- Fixed thumbnail and image file fallback behavior to improve load reliability when optimized variants are unavailable.
+- Fixed browser clipboard image upload compatibility across multiple payload formats.
+- Fixed REST API clipboard-image upload failures and reduced coupling between upload and AI flow.
+- Fixed upload fallback behavior when OpenRouter is unavailable or misconfigured.
+- Fixed image file validation and AI-unavailable warning paths to reduce silent failures.
+
+### Maintainers
+
+#### Added
+- Added database migrations for tags and jobs, plus a backfill migration to align historical image-processing states with job statuses.
+- Added Typesense migration for `memo_images.tags` to support tag faceting.
+
+#### Fixed
+- Fixed Typesense migration tracking behavior to avoid drift between expected and applied schema changes.
 
 ## [Vmemo - 2026.5.9] - 2026-05-09
 
