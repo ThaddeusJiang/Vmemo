@@ -70,4 +70,7 @@ services:
     restart: unless-stopped
     depends_on:
       - vmemo
+    environment:
+      NO_PROXY: vmemo,localhost,127.0.0.1
+      no_proxy: vmemo,localhost,127.0.0.1
     command: tunnel --no-autoupdate --url http://vmemo:4000 run --token ${CLOUDFLARED_TOKEN}
