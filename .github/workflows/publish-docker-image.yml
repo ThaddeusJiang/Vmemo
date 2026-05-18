@@ -18,43 +18,6 @@ env:
   CHECKOUT_REF: ${{ github.event_name == 'release' && format('refs/tags/{0}', github.event.release.tag_name) || github.ref }}
 
 jobs:
-  update-dockerhub-description:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-
-      - name: Allow manual trigger
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        id: manual_trigger
-        run: echo "should_update=true" >> "${GITHUB_OUTPUT}"
-
-      - name: Check whether current release is latest
-        if: ${{ github.event_name == 'release' }}
-        id: latest_release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
-          if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
-            echo "should_update=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "should_update=false" >> "${GITHUB_OUTPUT}"
-            echo "Skip Docker Hub description update: current release ${TARGET_TAG} is not repository latest release (${LATEST_RELEASE_TAG})."
-          fi
-
-      - name: Update Docker Hub description
-        if: ${{ steps.manual_trigger.outputs.should_update == 'true' || steps.latest_release.outputs.should_update == 'true' }}
-        uses: peter-evans/dockerhub-description@v5.0.0
-        with:
-          username: thaddeusjiang
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: thaddeusjiang/vmemo
-          readme-filepath: ./.github/workflows/dockerhub-description.md
-          short-description: ${{ github.event.repository.description }}
-
   build_by_arch:
     name: build ${{ matrix.arch }} image
     if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -83,7 +46,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
         run: |
           set -euo pipefail
-          if ! [[ "${TARGET_TAG}" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$ ]]; then
+          if ! [[ "${TARGET_TAG}" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]+(-fix\.[1-9][0-9]*)?$ ]]; then
             echo "Invalid release tag: ${TARGET_TAG}"
             exit 1
           fi
@@ -128,10 +91,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Create and push multi-platform manifest
+        id: create_manifest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          CREATE_STAG="false"
+          CREATE_LATEST="false"
+
           docker buildx imagetools create \
             -t "${IMAGE_NAME}:${TARGET_TAG}" \
             "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
@@ -140,6 +107,7 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             IS_PRERELEASE="$(jq -r '.release.prerelease // false' "${GITHUB_EVENT_PATH}")"
             if [ "${IS_PRERELEASE}" = "true" ]; then
+              CREATE_STAG="true"
               docker buildx imagetools create \
                 -t "${IMAGE_NAME}:stag" \
                 "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
@@ -147,6 +115,7 @@ jobs:
             else
               LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
               if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
+                CREATE_LATEST="true"
                 docker buildx imagetools create \
                   -t "${IMAGE_NAME}:latest" \
                   "${IMAGE_NAME}:${TARGET_TAG}-amd64" \
@@ -157,24 +126,25 @@ jobs:
             fi
           fi
 
+          echo "create_stag=${CREATE_STAG}" >> "${GITHUB_OUTPUT}"
+          echo "create_latest=${CREATE_LATEST}" >> "${GITHUB_OUTPUT}"
+
       - name: Verify multi-platform manifest
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           docker buildx imagetools inspect "${IMAGE_NAME}:${TARGET_TAG}"
 
-          if [ "${{ github.event_name }}" = "release" ]; then
-            IS_PRERELEASE="$(jq -r '.release.prerelease // false' "${GITHUB_EVENT_PATH}")"
-            if [ "${IS_PRERELEASE}" = "true" ]; then
-              docker buildx imagetools inspect "${IMAGE_NAME}:stag"
-            else
-              LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
-              if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
-                docker buildx imagetools inspect "${IMAGE_NAME}:latest"
-              fi
-            fi
-          fi
+      - name: Verify stag manifest
+        if: ${{ steps.create_manifest.outputs.create_stag == 'true' }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "${IMAGE_NAME}:stag"
+
+      - name: Verify latest manifest
+        if: ${{ steps.create_manifest.outputs.create_latest == 'true' }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "${IMAGE_NAME}:latest"
 
       - name: Remove temporary architecture tags
         env:
