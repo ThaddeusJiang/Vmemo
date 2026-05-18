@@ -2,7 +2,7 @@ name: Publish Docker Image
 
 on:
   release:
-    types: [published]
+    types: [published, edited]
   workflow_dispatch:
 
 permissions:
@@ -19,12 +19,34 @@ env:
 
 jobs:
   update-dockerhub-description:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.action == 'published' && !github.event.release.prerelease) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
 
+      - name: Allow manual trigger
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: manual_trigger
+        run: echo "should_update=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Check whether current release is latest
+        if: ${{ github.event_name == 'release' }}
+        id: latest_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LATEST_RELEASE_TAG="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')"
+          if [ "${LATEST_RELEASE_TAG}" = "${TARGET_TAG}" ]; then
+            echo "should_update=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "should_update=false" >> "${GITHUB_OUTPUT}"
+            echo "Skip Docker Hub description update: current release ${TARGET_TAG} is not repository latest release (${LATEST_RELEASE_TAG})."
+          fi
+
       - name: Update Docker Hub description
+        if: ${{ steps.manual_trigger.outputs.should_update == 'true' || steps.latest_release.outputs.should_update == 'true' }}
         uses: peter-evans/dockerhub-description@v5.0.0
         with:
           username: thaddeusjiang
