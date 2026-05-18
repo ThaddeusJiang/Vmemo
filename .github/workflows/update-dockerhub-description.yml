@@ -1,0 +1,27 @@
+name: Update DockerHub Description
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-dockerhub-description-workflow-dispatch
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v5.0.0
+        with:
+          username: thaddeusjiang
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: thaddeusjiang/vmemo
+          readme-filepath: ./others/docker/dockerhub-description.md
+          short-description: ${{ github.event.repository.description }}

@@ -29,7 +29,8 @@ defmodule Release.CheckConfigChanges do
   ]
 
   def main(args) do
-    with {:ok, base} <- resolve_base(args),
+    with :ok <- fetch_tags(),
+         {:ok, base} <- resolve_base(args),
          {:ok, target} <- resolve_target(args),
          :ok <- assert_ref(base),
          :ok <- assert_ref(target),
@@ -39,6 +40,14 @@ defmodule Release.CheckConfigChanges do
       {:error, reason} ->
         IO.puts(:stderr, reason)
         System.halt(1)
+    end
+  end
+
+  # Best effort: keep local tags in sync so BASE_REF selection is reliable.
+  defp fetch_tags do
+    case System.cmd("git", ["fetch", "--tags", "--prune"], stderr_to_stdout: true) do
+      {_output, 0} -> :ok
+      _ -> :ok
     end
   end
 
