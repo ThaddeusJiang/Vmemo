@@ -1,5 +1,5 @@
 ---
-name: "vmemo-github-pr-skill"
+name: "vmemo-github-Pull-Request-skill"
 description: "Run the full GitHub PR lifecycle: create, update, assign, and keep PR content in sync with new commits."
 ---
 
@@ -20,6 +20,18 @@ Execute the PR workflow end-to-end with consistent quality gates:
 - Keep PR in Draft while work is still in progress (WIP).
 - After pushing new commits to the PR branch, always sync PR title/body.
 
+## Repository delivery and PR rules
+
+- Prefer the smallest relevant validation set for the change.
+- Avoid full-project checks unless required by scope.
+- Run focused checks first, then confirm no obvious runtime regressions.
+- Commit prefix must be one of:
+  - `feat(scope): ...`
+  - `fix(scope): ...`
+  - `chore(scope): ...`
+- Keep each commit focused on one independent change.
+- If on a non-`main` branch and no PR exists, create one.
+
 ## Required Flow
 
 1. Run required local checks before commit.
@@ -36,10 +48,10 @@ Execute the PR workflow end-to-end with consistent quality gates:
 
 To avoid missing foundational checks, follow these gates strictly:
 
-1. Before `git commit`, you must actually run (not just claim):
+1. Before `git commit`, you must actually run (not just claim) the smallest relevant validation set for the current change:
    - `mix format`
    - `mix compile --warnings-as-errors`
-   - `mix test`
+   - focused `mix test` targets first (expand scope only when needed)
 2. Before `git push`, if any new code changes or commits were added, rerun the same checks (at least impacted scope; default is full run).
 3. Before `gh pr create` or `gh pr edit`, confirm the current branch state has passed checks.
 4. If any step fails, fix first; do not rely on CI as a fallback.
@@ -52,7 +64,7 @@ Run before any `git commit`:
 ```bash
 mix format
 mix compile --warnings-as-errors
-mix test
+mix test test/path/to_changed_test.exs
 ```
 
 If runtime env vars are required (for example `DATABASE_URL`), load env first:
@@ -61,7 +73,7 @@ If runtime env vars are required (for example `DATABASE_URL`), load env first:
 set -a; source .env; set +a
 mix format
 mix compile --warnings-as-errors
-mix test
+mix test test/path/to_changed_test.exs
 ```
 
 Rules:
@@ -69,6 +81,7 @@ Rules:
 - Do not commit if any check fails.
 - After fixes, rerun failed checks until all pass.
 - `mix compile` must use `--warnings-as-errors` to stay CI-equivalent.
+- Prefer focused tests first; run broader `mix test` only if scope/risk requires it.
 - If user-facing copy changed, also run:
 
 ```bash
@@ -83,13 +96,13 @@ Before any `git push`, ensure latest branch state has passed:
 ```bash
 mix format
 mix compile --warnings-as-errors
-mix test
+mix test test/path/to_changed_test.exs
 ```
 
 Rules:
 
 - Do not push if any check fails.
-- If new commits/changes were added after the previous run, rerun impacted checks.
+- If new commits/changes were added after the previous run, rerun impacted checks first, then expand only when required by scope.
 - If local tests cannot run due to missing env/dependencies, fix local prerequisites first.
 - If user-facing copy changed, also pass:
 

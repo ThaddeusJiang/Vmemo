@@ -38,6 +38,22 @@ Focus only on:
 4. Run full test suite only when explicitly requested.
 5. Run `docker compose --profile test down` to clean up.
 
+## Debug And Local UI Validation
+
+- Prefer real data and real UI interactions when debugging.
+- For upload-related tests, use files under `test/support/fixtures/images/`.
+- For Playwright e2e, keep one page per `*.spec.ts` when adding new page-level coverage.
+- Prefer visible text, roles, and labels selectors before CSS-detail selectors.
+- Use headed browser mode locally for UI debugging when available.
+- Use screenshot snapshot assertions for visual checks when visual behavior is under test.
+
+Local shared test account:
+
+```text
+email = "test@example.com"
+password = "pass123456"
+```
+
 ## Check
 
 - Run `mix check`.

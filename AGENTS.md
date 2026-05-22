@@ -52,48 +52,20 @@ vmemo/                          # Repository root
 ## Phoenix / LiveView implementation rules
 - See detailed rules in `.agents/skills/vmemo-coding-guides/SKILL.md`.
 
-## Error handling and UX behavior
-- On form/action failure, do not navigate away.
-- Never lose user input on validation failure.
-- For `phx-submit` failures, do not use toast; show inline errors near submit controls (prefer above submit button).
-- For submit-level failures (for example login credential mismatch), show one form-level error near submit and do not duplicate it under multiple fields.
-- For non-submit action failures (for example delete/retry), use toast.
-
-## Data, time, and environment rules
-- Prefer ISO8601 datetime strings for API/JSON/log exchange.
-- UI time display must follow user timezone.
-- Keep datetime formatting in top-level utils (for example `VmemoWeb.Utils.Datetime`).
-- OpenRouter API key is global-only: configure by environment variable; never store or override per-user keys in app data or UI.
-- Set env defaults in environment config files, not Docker Compose defaults.
-- Fail fast on invalid or missing env values.
-
 ## Tooling guidance
-- Use Tidewave tools for code evaluation, runtime inspection, docs lookup, and DB access.
-- Use `execute_sql_query` for database access.
-- Use `project_eval` for code evaluation.
-- Use `get_docs`, `get_source_location`, `get_models`, `get_logs`, `search_package_docs`, and `get_ash_resources` for discovery/debugging.
+- Prefer the `@tidewave` skill/interfaces for project code evaluation, runtime inspection, docs lookup, and database access.
 
 ## Code style and communication
 - UI user-facing copy must support i18n via Gettext with `en`, `zh`, and `ja`.
 
 ## Delivery and PR rules
-- Prefer the smallest relevant validation set for the change.
-- Avoid full-project checks unless required by scope.
-- Run focused checks first, then confirm no obvious runtime regressions.
-- Commit prefix must be one of:
-  - `feat(scope): ...`
-  - `fix(scope): ...`
-  - `chore(scope): ...`
-- Keep each commit focused on one independent change.
-- If on a non-`main` branch and no PR exists, create one.
+Use the `@vmemo-github-pull-request` skill for delivery validation and PR workflow rules.
 
 ## Postmortems
 
-When solving a non-trivial bug or issue, create `others/postmortem/YYYY-MM-DD-title.md` with:
-- What happened
-- Root cause
-- Fix applied
-- What we learned
+When solving a non-trivial bug or issue, use the `@postmortems` skill.
+
+## Usage rules
 
 The following framework usage references are generated pointers; do not edit them manually.
 

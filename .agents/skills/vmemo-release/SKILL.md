@@ -25,6 +25,14 @@ Prepare a release PR safely while making config changes explicit before merge.
 5. Open a release PR to `main`
 6. Post-release-PR summary
 
+## Operator checklist
+
+- [ ] Release version resolved
+- [ ] Config gate reviewed and explicitly confirmed (if needed)
+- [ ] `mix.exs` version updated
+- [ ] `CHANGELOG.md` release section updated
+- [ ] Release PR created to `main`
+
 ## Step 1: Preflight checks
 
 Run:
@@ -144,3 +152,8 @@ Return:
 - Never skip the release PR to `main` after version bump.
 - Never tag/release directly in this workflow.
 - If required tools (`git`, `gh`, `mix`) are missing, report and stop.
+
+## Related docs
+
+- Changelog: `CHANGELOG.md`
+- Development entry: `docs/guides/development/setup.md`

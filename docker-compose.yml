@@ -27,16 +27,15 @@ services:
   typelens:
     image: ghcr.io/copperline-ai/typelens:1.19.7
     ports:
-      - "1005:3000"
+      - "10003:3000"
     environment:
-      TYPESENSE_SERVER_NAME: Local
+      TYPESENSE_SERVER_NAME: local
       TYPESENSE_HOST: typesense
       TYPESENSE_PORT: 8108
       TYPESENSE_PROTOCOL: http
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz}
     depends_on:
       - typesense
-        # condition: service_healthy
 
   postgres-test:
     profiles:
@@ -45,7 +44,7 @@ services:
     hostname: postgres-test
     restart: on-failure
     ports:
-      - "10003:5432"
+      - "20001:5432"
     volumes:
       - pg-test-data:/var/lib/postgresql
     environment:
@@ -60,7 +59,7 @@ services:
     hostname: typesense-test
     restart: on-failure
     ports:
-      - "10004:8108"
+      - "20002:8108"
     volumes:
       - ts-test-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"

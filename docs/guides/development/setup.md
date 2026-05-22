@@ -1,234 +1,52 @@
 # Development
 
-This guide focuses on local development workflows and project-available `mix` tasks.
+This page is a lightweight entry for local development.
 
-## Prerequisites
+Primary source of truth for workflow decisions:
 
-- macOS or Linux
-- Docker runtime
-- `mise` for Elixir/Erlang version management
-- ImageMagick (`magick`/`convert`) for local verification of AI vision image preprocessing
+- `/.agents/skills/vmemo-development/SKILL.md`
 
-## Quickstart
+Use the skill for:
 
-1. Install toolchain versions from `mise.toml`:
+- setup state check
+- reset decision
+- temporary port conflict handling
+- Docker + Mix execution order
 
-```bash
-mise install
-```
+## Minimal Commands
 
-Install ImageMagick if missing:
+From repository root:
 
 ```bash
-brew install imagemagick
-```
-
-Linux (Debian/Ubuntu):
-
-```bash
-sudo apt-get update
-sudo apt-get install -y imagemagick
-```
-
-Verify installation:
-
-```bash
-magick -version || convert -version
-```
-
-2. Start local dependencies:
-
-The repository includes a root `docker-compose.yml` for Postgres, Typesense, and related services.
-
-By default, `docker compose up -d` starts dev Postgres and Typesense only. Test-scoped containers (`postgres-test`, `typesense-test`) use Compose profile `test` and are not started unless you opt in.
-
-```bash
+mise trust && mise install
 docker compose up -d
+mix setup
+iex -S mix phx.server
 ```
 
-To run `mix test` against local Docker dependencies, start the test profile as well:
+Test dependencies:
 
 ```bash
 docker compose --profile test up -d
 ```
 
-3. Install dependencies and initialize the app:
+Reset:
 
 ```bash
-mix setup
+mix reset
 ```
 
-4. Run the app locally:
+Quality gate:
 
 ```bash
-iex -S mix phx.server
+mix check
 ```
 
-5. Open the app:
+## Environment Notes
 
-```text
-http://localhost:4000
-```
+Runtime environment keys are defined in `config/runtime.exs`.
 
-## Mix Tasks By Scenario
-
-This section lists project-available tasks used in day-to-day development, grouped by usage scenario.
-
-### 1. Setup
-
-- `mix setup`
-  - Expands to: `mix deps.get`, `mix db.setup`, `mix ts.setup`, `mix assets.setup`, `mix assets.build`
-- `mix deps.get`
-- `mix db.setup`
-  - Expands to: `mix db.create`, `mix db.migrate`, `mix db.seed`
-- `mix db.create`
-  - Expands to: `mix ash_postgres.create`
-- `mix db.migrate`
-  - Expands to: `mix ash.migrate`
-- `mix db.seed`
-  - Expands to: `mix run priv/repo/seeds.exs`
-  - Shared local/e2e fixture SQL: `priv/repo/seeds/test.sql`
-- `mix ts.setup`
-  - Expands to: `mix ts.migrate`
-- `mix assets.setup`
-  - Expands to: `mix tailwind.install --if-missing`, `mix esbuild.install --if-missing`
-- `mix assets.build`
-  - Expands to: `mix tailwind vmemo`, `mix esbuild vmemo`
-
-### 2. Start Development
-
-- `mix phx.server`
-- `iex -S mix phx.server`
-- `mix phx.routes`
-- `mix compile`
-
-### 3. Install Git Hooks
-
-Configure Git 2.54+ to load the repository hook config:
-
-```bash
-git config --local include.path "$(git rev-parse --show-toplevel)/.git-hooks.gitconfig"
-```
-
-### 4. Test And Quality
-
-- `mix test`
-  - Alias behavior: ensure DB and Typesense migration tasks run before tests
-  - If tests hit thumbnail generation paths, `ImageMagick` must be installed locally
-- `mix check`
-  - Runs formatter check, compile warnings as errors, xref cycles, credo, sobelow, hex audit, deps unused check, test with warnings as errors, dialyzer
-- `mix format`
-- `mix format --check-formatted`
-- `mix credo --strict`
-- `mix sobelow --config`
-- `mix dialyzer --format short`
-- `mix xref graph --format cycles --label compile --fail-above 0`
-
-### 5. Reset And Recovery
-
-- `mix reset`
-  - Expands to: `mix db.reset`, `mix ts.reset`
-- `mix db.reset`
-  - Expands to: `mix db.drop`, `mix db.setup`
-- `mix db.drop`
-  - Expands to: `mix ash_postgres.drop`
-- `mix ts.reset`
-  - Expands to: internal Typesense drop step, then `mix ts.setup`
-- `mix ts.drop`
-  - Drops Typesense collections managed by the schema
-
-### 5. Database Migrate And Rollback
-
-- `mix db.migrate`
-- `mix db.rollback`
-  - Expands to: `mix ash_postgres.rollback`
-- `mix ash.migrate`
-- `mix ash_postgres.rollback`
-
-### 5.1 Ash Migration Workflow (Required)
-
-Use Ash-first workflow for schema changes in this project.
-
-1. Update Ash resources (`lib/vmemo/**`).
-2. Generate migrations with AshPostgres:
-   - `mix ash_postgres.generate_migrations <name>`
-3. Apply migrations with Ash migrate command:
-   - `mix db.migrate` (preferred alias)
-   - or `mix ash.migrate`
-
-Do not use `mix ecto.migrate` as the primary team workflow.
-
-#### Incremental Migration Rules
-
-- Expect generated migrations to be incremental (only new/changed objects).
-- If generation unexpectedly produces full schema rebuild SQL (for example `create table memo_notes` on an existing DB), stop and do not run it directly.
-- In that case:
-  1. Keep resource definitions as the source of truth.
-  2. Remove the invalid generated migration files.
-  3. Create a focused incremental migration for only the intended delta.
-  4. Run `mix db.migrate`.
-
-#### Environment Notes
-
-- Ensure runtime env is loaded before migration commands (for example `DATABASE_URL`):
-  - `set -a && source .env && set +a`
-- If DB connection or runtime env is missing, migration generation/check may fail before diffing.
-
-### 6. Search Index (Typesense)
-
-- `mix ts.migrate`
-- `mix ts.setup`
-- `mix ts.reset`
-  - Runs reset flow including an internal drop step
-- `mix ts.drop`
-- `mix ts.collections`
-  - List all Typesense collections
-- `mix ts.collection <collection_name>`
-  - Show one collection definition
-
-### 7. Assets
-
-- `mix assets.setup`
-- `mix assets.build`
-- `mix assets.deploy`
-  - Expands to: `mix tailwind vmemo --minify`, `mix esbuild vmemo --minify`, `mix phx.digest`
-
-## Common Workflows
-
-- First-time local setup:
-  1. `mise install`
-  2. `docker compose up -d`
-  3. `mix setup`
-  4. `iex -S mix phx.server`
-
-- Run tests locally with Docker test dependencies:
-  1. `docker compose --profile test up -d`
-  2. `mix test`
-
-- Full local reset:
-  1. `pkill -f "mix phx.server" || true`
-  2. `docker compose down -v`
-  3. `docker compose up -d`
-  4. `mix reset`
-
-- Verify AI vision image preprocessing output manually:
-  1. `mix test test/vmemo/ai/image_preprocessor_test.exs`
-  2. Open generated files:
-     - `${TMPDIR}/vmemo-vision-preprocess-manual/wall-e-original.png`
-     - `${TMPDIR}/vmemo-vision-preprocess-manual/wall-e-processed.png`
-  3. Confirm processed image is smaller and visually acceptable for your scenario.
-
-## Local Environment Variables
-
-If needed, set local overrides in `mise.local.toml`:
-
-```toml
-[env]
-OPENROUTER_API_KEY = "your-openrouter-api-key"
-OPENROUTER_VISION_MODEL = "openai/gpt-4o-mini"
-```
-
-Set runtime URLs via env:
+Typical local runtime values:
 
 ```toml
 [env]
@@ -237,28 +55,30 @@ TYPESENSE_URL = "http://localhost:10002"
 MOONDREAM_URL = "http://localhost:2020/v1/"
 ```
 
-For test/e2e in Docker Compose, set this env set to the test services (for example `10003` / `10004`) in the test runtime environment.
+For test/e2e in Docker Compose, use the test services (for example `10003` / `20002`) in the test runtime environment.
 
-If you use multiple worktrees in parallel, set a different env set in each worktree `.env`.
+If you use multiple worktrees in parallel, use a dedicated `.env` per worktree.
 
-Runtime environment keys are defined in `config/runtime.exs`.
+## Mix Task Reference
 
-## Contributor Checklist
+Common task groups (details remain in `mix.exs` aliases and task help):
 
-Before opening a pull request:
+- setup: `mix setup`, `mix deps.get`, `mix db.setup`, `mix ts.setup`, `mix assets.setup`
+- run: `mix phx.server`, `iex -S mix phx.server`, `mix phx.routes`
+- test/quality: `mix test`, `mix format`, `mix credo --strict`, `mix sobelow --config`, `mix dialyzer`, `mix check`
+- reset/migrate: `mix reset`, `mix db.migrate`, `mix db.rollback`, `mix ts.reset`, `mix ts.drop`
 
-1. Run `mix format`.
-2. Run `mix test`.
-3. Validate the feature path manually in the browser.
-4. Update docs for any user-facing or developer-facing behavior changes.
+For schema changes, use Ash-first migration workflow:
+
+```bash
+mix ash_postgres.generate_migrations <name>
+mix db.migrate
+```
 
 ## Related Docs
 
 - REST API: `docs/features/public-rest-api.md`
 - API Token: `docs/features/api-tokens.md`
-- Docker (entry): `docs/guides/docker/README.md`
+- Docker: `docs/guides/docker/README.md`
 - Deployment: `docs/guides/deployment/docker.md`
-
-## CI Note
-
-- GitHub Actions `mix-test` job installs `ImageMagick` explicitly before `mix test` to support real thumbnail-generation test paths.
+- E2E tests: `others/e2e-test/README.md`

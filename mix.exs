@@ -223,9 +223,10 @@ defmodule Vmemo.MixProject do
       "db.seed": ["run priv/repo/seeds.exs"],
       "db.setup": ["db.create", "db.migrate", "db.seed"],
       "db.reset": ["db.drop", "db.setup"],
+      i18n: ["gettext.extract --check-up-to-date"],
       check: [
         "format",
-        "gettext.extract --check-up-to-date",
+        "i18n",
         "compile --warnings-as-errors --no-listeners --ignore-module-conflict",
         "xref graph --format cycles --label compile --fail-above 0",
         "sobelow --config",
