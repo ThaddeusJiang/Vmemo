@@ -13,8 +13,10 @@ Focus only on:
 - temporary port remap when conflicts exist
 
 ## Prepare
-- Copy `AGENTS.override.md` from the main checkout using `cp`.
+
+- Run `mise trust && mise install`.
 - Copy `.env` from the main checkout using `cp`.
+- Copy `AGENTS.override.md` from the main checkout using `cp`.
 
 ## Start Docker Compose
 
@@ -22,7 +24,6 @@ Focus only on:
 
 ## Setup mix
 
-- Run `mise trust && mise install`.
 - Run `mix setup`.
 
 ## Reset

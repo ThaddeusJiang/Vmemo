@@ -24,6 +24,20 @@ services:
       - ts-data:/data
     command: "--data-dir /data --api-key=xyz --enable-cors"
 
+  typelens:
+    image: ghcr.io/copperline-ai/typelens:1.19.7
+    ports:
+      - "1005:3000"
+    environment:
+      TYPESENSE_SERVER_NAME: Local
+      TYPESENSE_HOST: typesense
+      TYPESENSE_PORT: 8108
+      TYPESENSE_PROTOCOL: http
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-xyz}
+    depends_on:
+      - typesense
+        # condition: service_healthy
+
   postgres-test:
     profiles:
       - test
