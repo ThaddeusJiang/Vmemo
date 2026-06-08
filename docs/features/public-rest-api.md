@@ -40,7 +40,7 @@ Request form fields:
 
 | Name | Type | Required | Description |
 |---|---|---|---|
-| `file` | File | Yes | Image file (`PNG`, `JPG`, `JPEG`, `GIF`, `WEBP`) |
+| `file` | File | Yes | Image file (`PNG`, `JPG`, `JPEG`, `GIF`, `WEBP`, `TIF`, `TIFF`) |
 | `note` | String | No | User note for the image |
 
 Example:
@@ -125,6 +125,17 @@ All API errors follow this shape:
 Notes:
 - `statusCode` is the HTTP status code.
 - `statusMessage` is the standard HTTP reason phrase.
+- `413` upload errors include the uploaded file or request body size, the app/API limit, and a retry suggestion.
+
+## API Logging
+
+API requests log a request summary and a response summary for `/api/*` routes.
+
+Logged fields include:
+- Request: method, path, content type, content length
+- Response: method, path, HTTP status, duration, response content type, user id when available
+
+Sensitive request data such as bearer tokens and file contents are not logged.
 
 ### Common Errors
 
@@ -132,14 +143,17 @@ Notes:
 |---|---|---|
 | `400` | `No file provided` / `Invalid image format` | Invalid upload payload or file content |
 | `401` | `Invalid or missing API token` | Missing, invalid, disabled, or expired token |
+| `413` | `Uploaded image is ...` / `Uploaded request body is ...` | Uploaded file or request body exceeds the API upload limit |
 | `404` | `Image not found` | Image not found or not owned by token user |
 | `500` | `Failed to create image` | Failed to create image record |
 | `500` | `Failed to delete image` | Failed to delete image |
 
 ## File Constraints
 
-- Allowed formats: `PNG`, `JPG`, `JPEG`, `GIF`, `WEBP`
+- Allowed formats: `PNG`, `JPG`, `JPEG`, `GIF`, `WEBP`, `TIF`, `TIFF`
+- Max file size: `50 MB`
 - Validation: both file extension and file header (magic bytes) are checked
+- TIFF uploads are converted to PNG before storage so image pages and thumbnails work in browsers.
 - Files with non-image content (e.g. a `.png` extension on a PDF) are rejected
 
 ## Usage Examples

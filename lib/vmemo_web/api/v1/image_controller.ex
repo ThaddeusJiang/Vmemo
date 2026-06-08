@@ -103,16 +103,26 @@ defmodule VmemoWeb.Api.V1.ImageController do
   end
 
   defp validate_and_process_upload(%Plug.Upload{} = upload) do
+    with :ok <- validate_upload_file_size(upload.path) do
+      process_sized_upload(upload)
+    end
+  end
+
+  defp process_sized_upload(%Plug.Upload{} = upload) do
     if clipboard_html_upload?(upload) do
       validate_and_process_clipboard_html(upload.path)
     else
-      with {:ok, mime_type} <- validate_image_content(upload.path),
-           :ok <- validate_upload_content_type(upload.content_type, mime_type) do
-        filename = generate_filename(upload.filename, mime_type)
-        {:ok, %{path: upload.path, filename: filename}}
-      else
-        {:error, reason} -> {:error, reason}
-      end
+      validate_and_process_image_upload(upload)
+    end
+  end
+
+  defp validate_and_process_image_upload(%Plug.Upload{} = upload) do
+    with {:ok, mime_type} <- validate_image_content(upload.path),
+         :ok <- validate_upload_content_type(upload.content_type, mime_type) do
+      filename = generate_filename(upload.filename, mime_type)
+      {:ok, %{path: upload.path, filename: filename}}
+    else
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -373,7 +383,8 @@ defmodule VmemoWeb.Api.V1.ImageController do
   defp validate_upload_content_type(_content_type, _detected_mime_type),
     do: {:error, "Invalid file type. Only image files are allowed"}
 
-  defp supported_mime_types, do: ~w(image/png image/jpeg image/jpg image/gif image/webp)
+  defp supported_mime_types,
+    do: ~w(image/png image/jpeg image/jpg image/gif image/webp image/tiff)
 
   defp normalize_content_type(content_type) when is_binary(content_type) do
     content_type
@@ -394,6 +405,20 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   defp validate_non_empty_binary(binary) when is_binary(binary) and byte_size(binary) > 0, do: :ok
   defp validate_non_empty_binary(_), do: {:error, "No file provided"}
+
+  defp validate_upload_file_size(path) do
+    case File.stat(path) do
+      {:ok, %{size: size}} ->
+        if size <= image_upload_max_file_size() do
+          :ok
+        else
+          {:error, {:image_too_large, size}}
+        end
+
+      {:error, reason} ->
+        {:error, "Failed to read file: #{reason}"}
+    end
+  end
 
   defp safe_upload_path?(path) when is_binary(path) do
     normalized_upload_path = normalize_private_tmp_path(Path.expand(path))
@@ -437,7 +462,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   defp pick_upload_extension(original_filename, mime_type) do
     case Path.extname(original_filename) |> String.downcase() do
-      ext when ext in ~w(.png .jpg .jpeg .gif .webp) -> ext
+      ext when ext in ~w(.png .jpg .jpeg .gif .webp .tif .tiff) -> ext
       _ -> mime_type_to_extension(mime_type)
     end
   end
@@ -446,6 +471,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   defp mime_type_to_extension("image/jpeg"), do: ".jpg"
   defp mime_type_to_extension("image/gif"), do: ".gif"
   defp mime_type_to_extension("image/webp"), do: ".webp"
+  defp mime_type_to_extension("image/tiff"), do: ".tiff"
   defp mime_type_to_extension(_), do: ".jpg"
 
   defp detect_mime_type_from_binary(<<0xFF, 0xD8, 0xFF, _::binary>>), do: "image/jpeg"
@@ -460,6 +486,9 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   defp detect_mime_type_from_binary(<<"RIFF", _::binary-size(4), "WEBP", _::binary>>),
     do: "image/webp"
+
+  defp detect_mime_type_from_binary(<<"II", 42, 0, _::binary>>), do: "image/tiff"
+  defp detect_mime_type_from_binary(<<"MM", 0, 42, _::binary>>), do: "image/tiff"
 
   defp detect_mime_type_from_binary(_), do: nil
 
@@ -506,7 +535,9 @@ defmodule VmemoWeb.Api.V1.ImageController do
     }
   end
 
-  defp error_response(conn, status_code, message) do
+  defp error_response(conn, status_code, reason) do
+    {status_code, message} = error_status_and_message(reason, status_code)
+
     conn
     |> put_status(status_code)
     |> json(%{
@@ -514,5 +545,38 @@ defmodule VmemoWeb.Api.V1.ImageController do
       statusMessage: Status.reason_phrase(status_code),
       message: message
     })
+  end
+
+  defp error_status_and_message({:image_too_large, size}, _status_code) do
+    {413, image_too_large_message(size)}
+  end
+
+  defp error_status_and_message(message, status_code), do: {status_code, message}
+
+  defp image_upload_max_file_size do
+    Application.fetch_env!(:vmemo, :image_upload_max_file_size)
+  end
+
+  defp image_too_large_message(size) do
+    "Uploaded image is #{format_size(size)}, which exceeds the app limit of #{format_size(image_upload_max_file_size())}. Compress the image or upload a smaller file, then try again."
+  end
+
+  defp format_size(bytes) do
+    mb =
+      bytes
+      |> Kernel./(1_000_000)
+      |> :erlang.float_to_binary(decimals: 2)
+
+    "#{format_integer(bytes)} bytes (#{mb} MB)"
+  end
+
+  defp format_integer(integer) do
+    integer
+    |> Integer.to_string()
+    |> String.graphemes()
+    |> Enum.reverse()
+    |> Enum.chunk_every(3)
+    |> Enum.map_join(",", &Enum.join/1)
+    |> String.reverse()
   end
 end

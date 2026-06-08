@@ -21,6 +21,19 @@ config :vmemo,
 
 config :vmemo, Vmemo.Repo, url: database_url
 
+if image_upload_max_file_size = System.get_env("IMAGE_UPLOAD_MAX_FILE_SIZE") do
+  case Integer.parse(image_upload_max_file_size) do
+    {value, ""} when value > 0 ->
+      config :vmemo, image_upload_max_file_size: value
+
+    _ ->
+      raise """
+      environment variable IMAGE_UPLOAD_MAX_FILE_SIZE is invalid.
+      It must be a positive integer.
+      """
+  end
+end
+
 if config_env() in [:dev, :test] do
   openrouter_api_key = System.get_env("OPENROUTER_API_KEY")
 

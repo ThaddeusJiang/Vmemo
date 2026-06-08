@@ -46,10 +46,30 @@ defmodule Vmemo.Memo.ImageStorageTest do
              ImageStorage.storage_path_from_url("https://cdn.example.com/demo.jpg", user_id)
   end
 
+  test "cp_file/3 converts tiff uploads to png for browser display" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    src = Path.join(System.tmp_dir!(), "vmemo-test-#{System.unique_integer([:positive])}.tiff")
+    File.write!(src, tiff_binary())
+
+    on_exit(fn ->
+      File.rm(src)
+      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+    end)
+
+    assert {:ok, dest} = ImageStorage.cp_file(src, user_id, "clipboard.tiff")
+    assert Path.extname(dest) == ".png"
+    assert <<0x89, 0x50, 0x4E, 0x47, _::binary>> = File.read!(dest)
+  end
+
   test "storage_path_from_url/2 returns invalid_url for invalid params" do
     assert {:error, :invalid_url} = ImageStorage.storage_path_from_url(nil, "u1")
 
     assert {:error, :invalid_url} =
              ImageStorage.storage_path_from_url("/storage/v1/u1/images/a.png", nil)
+  end
+
+  defp tiff_binary do
+    "SUkqAAoAAAD//w8AAAEDAAEAAAABAAAAAQEDAAEAAAABAAAAAgEDAAEAAAAQAAAAAwEDAAEAAAABAAAABgEDAAEAAAABAAAACgEDAAEAAAABAAAAEQEEAAEAAAAIAAAAEgEDAAEAAAABAAAAFQEDAAEAAAABAAAAFgEDAAEAAAABAAAAFwEEAAEAAAACAAAAHAEDAAEAAAABAAAAKQEDAAIAAAAAAAEAPgEFAAIAAAD0AAAAPwEFAAYAAADEAAAAAAAAAIXrUQAAAIAAw/WoAAAAAALNzEwAAAAAAc3MTAAAAIAAzcxMAAAAAAKPwvUAAAAAEDcaoAAAAAACK4cKAAAAIAA="
+    |> Base.decode64!()
   end
 end

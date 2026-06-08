@@ -13,9 +13,9 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
      |> assign(:q, "")
      |> assign(:submit_error, nil)
      |> allow_upload(:image,
-       accept: ~w(.png .jpg .jpeg .gif .webp),
+       accept: ~w(.png .jpg .jpeg .gif .webp .tif .tiff),
        max_entries: 100,
-       max_file_size: 12_000_000
+       max_file_size: Application.fetch_env!(:vmemo, :image_upload_max_file_size)
      )}
   end
 

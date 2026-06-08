@@ -2,7 +2,7 @@
 
 ## 概要
 用户通过 `UploadForm` 组件上传图片。每次提交生成一个 `upload_batch_id`，同批上传的图片共享该 ID。上传后图片进入 search embedding（Typesense）和 vision embedding（OpenRouter caption）异步处理流程。
-系统会保留上传原图到 storage；仅在调用外部 vision 服务前对大图执行一次预处理，以降低请求体积。
+系统会保留上传原图到 storage；TIFF 上传会先规范化保存为 PNG，以保证浏览器可展示。仅在调用外部 vision 服务前对大图执行一次预处理，以降低请求体积。
 
 ## 架构
 
@@ -13,7 +13,7 @@
 4. 创建成功的图片自动触发 Oban jobs：`sync_typesense` + `generate_caption`
 
 ### Vision 调用前图片预处理
-- 存储策略：`storage/v1/...` 始终保留原图，不写回压缩图。
+- 存储策略：`storage/v1/...` 保留上传图片；TIFF 会在入库前转换为 PNG，其他格式不写回压缩图。
 - 调用策略：仅在外部 vision 请求前处理图片，处理结果只用于本次请求。
 - 处理规则：
   - 小图（< 500KB）跳过预处理。
