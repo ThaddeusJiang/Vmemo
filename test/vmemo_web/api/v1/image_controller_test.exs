@@ -11,9 +11,12 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
 
+  import ExUnit.CaptureLog
   import Vmemo.AccountFixtures
   import VmemoWeb.ApiFixtures
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
+  @ui_image_max_file_size Application.compile_env!(:vmemo, :image_upload_max_file_size)
+  @api_multipart_body_limit @ui_image_max_file_size + 1_000_000
 
   describe "POST /api/v1/images - Create image" do
     setup %{conn: conn} do
@@ -136,6 +139,33 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
       assert conn.status == 200
     end
 
+    test "accepts tiff clipboard upload from API clients", %{
+      conn: conn,
+      raw_token: raw_token,
+      user: user
+    } do
+      test_image_path = create_test_tiff()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> post(~p"/api/v1/images", %{
+          "file" => %Plug.Upload{
+            path: test_image_path,
+            filename: "Clipboard Jun 8, 2026 at 20.07.tiff",
+            content_type: "image/tiff"
+          }
+        })
+
+      assert conn.status == 200
+      response = json_response(conn, 200)
+      assert is_binary(response["id"])
+
+      assert {:ok, image} = Image.get(response["id"], actor: user)
+      assert String.ends_with?(image.url, ".png")
+      refute String.ends_with?(image.url, ".tiff")
+    end
+
     test "accepts content_type with parameters", %{conn: conn, raw_token: raw_token} do
       test_image_path = create_test_image()
 
@@ -189,6 +219,110 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
         |> post(~p"/api/v1/images", binary)
 
       assert conn.status == 200
+    end
+
+    test "accepts multipart image within UI size limit above Plug parser default", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      file_binary = large_png_binary(20_000_000)
+      {body, boundary} = multipart_body(file_binary)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> put_req_header("accept", "application/json")
+        |> put_req_header("content-length", Integer.to_string(byte_size(body)))
+        |> put_req_header("content-type", "multipart/form-data; boundary=#{boundary}")
+        |> post(~p"/api/v1/images", body)
+
+      assert conn.status == 200
+      assert is_binary(json_response(conn, 200)["id"])
+    end
+
+    test "returns 413 standard JSON when multipart image exceeds UI size limit", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      file_binary = large_png_binary(@ui_image_max_file_size + 1)
+      {body, boundary} = multipart_body(file_binary)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> put_req_header("accept", "application/json")
+        |> put_req_header("content-length", Integer.to_string(byte_size(body)))
+        |> put_req_header("content-type", "multipart/form-data; boundary=#{boundary}")
+        |> post(~p"/api/v1/images", body)
+
+      assert json_response(conn, 413) == %{
+               "statusCode" => 413,
+               "statusMessage" => "Request Entity Too Large",
+               "message" =>
+                 "Uploaded image is #{format_test_size(@ui_image_max_file_size + 1)}, which exceeds the app limit of #{format_test_size(@ui_image_max_file_size)}. Compress the image or upload a smaller file, then try again."
+             }
+    end
+
+    test "returns 413 standard JSON when multipart request exceeds API body limit", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      file_binary = large_png_binary(@api_multipart_body_limit + 1)
+      {body, boundary} = multipart_body(file_binary)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{raw_token}")
+        |> put_req_header("accept", "application/json")
+        |> put_req_header("content-length", Integer.to_string(byte_size(body)))
+        |> put_req_header("content-type", "multipart/form-data; boundary=#{boundary}")
+        |> post(~p"/api/v1/images", body)
+
+      response = json_response(conn, 413)
+
+      assert response["statusCode"] == 413
+      assert response["statusMessage"] == "Request Entity Too Large"
+
+      assert response["message"] =~
+               "Uploaded request body is #{format_test_size(byte_size(body))}"
+
+      assert response["message"] =~
+               "API body limit of #{format_test_size(@api_multipart_body_limit)}"
+
+      assert response["message"] =~
+               "app image limit of #{format_test_size(@ui_image_max_file_size)}"
+
+      assert response["message"] =~ "Compress the image or upload a smaller file, then try again."
+    end
+
+    test "logs API request and response summaries without sensitive payload", %{
+      conn: conn,
+      raw_token: raw_token
+    } do
+      binary = File.read!(@fixture_image)
+
+      previous_level = Logger.level()
+
+      log =
+        try do
+          Logger.configure(level: :info)
+
+          capture_log([level: :info], fn ->
+            conn
+            |> put_req_header("authorization", "Bearer #{raw_token}")
+            |> put_req_header("content-length", Integer.to_string(byte_size(binary)))
+            |> put_req_header("content-type", "image/png")
+            |> post(~p"/api/v1/images", binary)
+          end)
+        after
+          Logger.configure(level: previous_level)
+        end
+
+      assert log =~ "api_request start method=POST path=/api/v1/images"
+      assert log =~ "api_response sent method=POST path=/api/v1/images status=200"
+      assert log =~ "request_content_length=#{byte_size(binary)}"
+      refute log =~ raw_token
+      refute log =~ binary
     end
 
     test "accepts data url payload in file field", %{conn: conn, raw_token: raw_token} do
@@ -460,6 +594,65 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
     temp_file = Path.join(System.tmp_dir!(), "test_image_#{:rand.uniform(100_000)}.png")
     File.cp!(@fixture_image, temp_file)
     temp_file
+  end
+
+  defp create_test_tiff do
+    temp_file = Path.join(System.tmp_dir!(), "test_image_#{:rand.uniform(100_000)}.tiff")
+    File.write!(temp_file, tiff_binary())
+    temp_file
+  end
+
+  defp tiff_binary do
+    "SUkqAAoAAAD//w8AAAEDAAEAAAABAAAAAQEDAAEAAAABAAAAAgEDAAEAAAAQAAAAAwEDAAEAAAABAAAABgEDAAEAAAABAAAACgEDAAEAAAABAAAAEQEEAAEAAAAIAAAAEgEDAAEAAAABAAAAFQEDAAEAAAABAAAAFgEDAAEAAAABAAAAFwEEAAEAAAACAAAAHAEDAAEAAAABAAAAKQEDAAIAAAAAAAEAPgEFAAIAAAD0AAAAPwEFAAYAAADEAAAAAAAAAIXrUQAAAIAAw/WoAAAAAALNzEwAAAAAAc3MTAAAAIAAzcxMAAAAAAKPwvUAAAAAEDcaoAAAAAACK4cKAAAAIAA="
+    |> Base.decode64!()
+  end
+
+  defp large_png_binary(size) when size >= 12 do
+    png_header = <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0>>
+    png_header <> :binary.copy(<<0>>, size - byte_size(png_header))
+  end
+
+  defp multipart_body(file_binary) do
+    boundary = "vmemo-test-boundary-#{System.unique_integer([:positive])}"
+
+    body =
+      IO.iodata_to_binary([
+        "--",
+        boundary,
+        "\r\n",
+        "Content-Disposition: form-data; name=\"file\"; filename=\"large.png\"\r\n",
+        "Content-Type: image/png\r\n\r\n",
+        file_binary,
+        "\r\n--",
+        boundary,
+        "\r\n",
+        "Content-Disposition: form-data; name=\"note\"\r\n\r\n",
+        "large image",
+        "\r\n--",
+        boundary,
+        "--\r\n"
+      ])
+
+    {body, boundary}
+  end
+
+  defp format_test_size(bytes) do
+    mb =
+      bytes
+      |> Kernel./(1_000_000)
+      |> :erlang.float_to_binary(decimals: 2)
+
+    "#{format_test_integer(bytes)} bytes (#{mb} MB)"
+  end
+
+  defp format_test_integer(integer) do
+    integer
+    |> Integer.to_string()
+    |> String.graphemes()
+    |> Enum.reverse()
+    |> Enum.chunk_every(3)
+    |> Enum.map_join(",", &Enum.join/1)
+    |> String.reverse()
   end
 
   defp create_image!(attrs) do

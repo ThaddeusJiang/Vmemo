@@ -7,7 +7,9 @@ defmodule VmemoWeb.FileController do
     ".jpg" => "image/jpeg",
     ".jpeg" => "image/jpeg",
     ".gif" => "image/gif",
-    ".webp" => "image/webp"
+    ".webp" => "image/webp",
+    ".tif" => "image/tiff",
+    ".tiff" => "image/tiff"
   }
 
   def show(conn, %{"user_id" => user_id, "filename" => filename}) do

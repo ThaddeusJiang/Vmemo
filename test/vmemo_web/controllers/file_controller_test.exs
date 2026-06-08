@@ -47,6 +47,20 @@ defmodule VmemoWeb.FileControllerTest do
     assert get_resp_header(conn, "content-type") == ["image/png"]
   end
 
+  test "serves tiff images with image/tiff content type", %{
+    conn: conn,
+    user_id: user_id,
+    image_dir: image_dir
+  } do
+    tiff = Path.join(image_dir, "sample.tiff")
+    File.write!(tiff, "tiff-data")
+
+    conn = get(conn, ~p"/storage/v1/#{user_id}/images/sample.tiff")
+
+    assert response(conn, 200) == "tiff-data"
+    assert get_resp_header(conn, "content-type") == ["image/tiff"]
+  end
+
   test "returns 404 with no-store when both thumbnail and original are missing", %{
     conn: conn,
     user_id: user_id

@@ -25,6 +25,7 @@ defmodule Vmemo.Memo.Image do
   alias Vmemo.Ai.Caption
   alias Vmemo.Memo.Changes.SyncImageTags
   alias Vmemo.Jobs.Job
+  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.SearchEngine.TsImage
 
@@ -386,14 +387,14 @@ defmodule Vmemo.Memo.Image do
           storage_file_id = Ash.ActionInput.get_argument(input, :storage_file_id)
           user_id = actor.id
 
-          case ImageStorage.cp_file(temp_path, user_id, storage_file_id) do
-            {:ok, dest} ->
+          case ImageUpload.store(temp_path, user_id, storage_file_id) do
+            {:ok, %{dest: dest, filename: stored_filename}} ->
               case Ash.create(
                      __MODULE__,
                      %{
                        note: "",
                        url: Path.join("/", dest),
-                       file_id: storage_file_id,
+                       file_id: stored_filename,
                        user_id: user_id,
                        inner_purpose: "search"
                      },
@@ -1053,9 +1054,10 @@ defmodule Vmemo.Memo.Image do
          tmp_path <-
            Path.join("tmp/mcp_uploads", "#{System.system_time(:microsecond)}-#{final_filename}"),
          :ok <- File.write(tmp_path, binary),
-         {:ok, dest} <- ImageStorage.cp_file(tmp_path, user_id, final_filename) do
+         {:ok, %{dest: dest, filename: stored_filename}} <-
+           ImageUpload.store(tmp_path, user_id, final_filename) do
       _ = File.rm(tmp_path)
-      {:ok, %{url: Path.join("/", dest), file_id: final_filename}}
+      {:ok, %{url: Path.join("/", dest), file_id: stored_filename}}
     else
       :error ->
         {:error, "Invalid file payload"}

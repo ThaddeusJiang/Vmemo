@@ -4,7 +4,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
   use Gettext, backend: VmemoWeb.Gettext
 
   alias Vmemo.Memo.Image
-  alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Memo.ImageUpload
 
   @impl true
   def mount(socket) do
@@ -13,9 +13,9 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
      |> assign(:q, "")
      |> assign(:submit_error, nil)
      |> allow_upload(:image,
-       accept: ~w(.png .jpg .jpeg .gif .webp),
+       accept: ~w(.png .jpg .jpeg .gif .webp .tif .tiff),
        max_entries: 100,
-       max_file_size: 12_000_000
+       max_file_size: Application.fetch_env!(:vmemo, :image_upload_max_file_size)
      )}
   end
 
@@ -158,13 +158,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         filename = entry.uuid <> Path.extname(entry.client_name)
 
-        with {:ok, dest} <- ImageStorage.cp_file(path, current_user.id, filename),
+        with {:ok, %{dest: dest, filename: stored_filename}} <-
+               ImageUpload.store(path, current_user.id, filename),
              {:ok, image} <-
                Image.create_with_sync(
                  %{
                    note: "",
                    url: Path.join("/", dest),
-                   file_id: filename,
+                   file_id: stored_filename,
                    user_id: current_user.id,
                    upload_batch_id: Ecto.UUID.generate(),
                    inner_purpose: nil
@@ -246,13 +247,14 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
       filename = entry.uuid <> Path.extname(entry.client_name)
 
-      with {:ok, dest} <- ImageStorage.cp_file(path, current_user.id, filename),
+      with {:ok, %{dest: dest, filename: stored_filename}} <-
+             ImageUpload.store(path, current_user.id, filename),
            {:ok, image} <-
              Image.create_with_sync(
                %{
                  note: "",
                  url: Path.join("/", dest),
-                 file_id: filename,
+                 file_id: stored_filename,
                  user_id: current_user.id,
                  upload_batch_id: Ecto.UUID.generate(),
                  inner_purpose: nil

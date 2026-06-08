@@ -67,6 +67,18 @@ defmodule SmallSdk.ImageMagick do
     end
   end
 
+  def convert_to_png!(input_path, output_path)
+      when is_binary(input_path) and is_binary(output_path) do
+    {tool, use_magick_entrypoint?} = pick_tool!()
+    args = build_convert_to_png_args(use_magick_entrypoint?, input_path, output_path)
+    {_output, status} = System.cmd(tool, args, stderr_to_stdout: true)
+
+    case status do
+      0 -> :ok
+      _ -> raise "ImageMagick PNG conversion failed with exit status #{status}."
+    end
+  end
+
   defp pick_tool! do
     cond do
       executable?("magick") -> {"magick", true}
@@ -109,6 +121,21 @@ defmodule SmallSdk.ImageMagick do
 
   defp build_resize_file_args(false, in_path, out_path, max_side) do
     [in_path, "-auto-orient", "-resize", "#{max_side}x#{max_side}>", "-strip", out_path]
+  end
+
+  defp build_convert_to_png_args(true, in_path, out_path) do
+    ["convert" | build_convert_to_png_args(false, in_path, out_path)]
+  end
+
+  defp build_convert_to_png_args(false, in_path, out_path) do
+    [
+      "#{in_path}[0]",
+      "-auto-orient",
+      "-strip",
+      "-define",
+      "png:compression-level=9",
+      out_path
+    ]
   end
 
   defp build_convert_args(in_path, out_path, mime_type, max_side, quality) do
