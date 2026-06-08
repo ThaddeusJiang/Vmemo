@@ -9,7 +9,7 @@
 ### 上传流程
 1. 用户选择图片 → LiveView `allow_upload(:images, ...)` 管理暂存
 2. 提交时生成 `upload_batch_id`（UUID）
-3. 逐个 `consume_uploaded_entry` → `ImageStorage.cp_file` → `Image.create_with_sync`
+3. 逐个 `consume_uploaded_entry` → `ImageUpload.store` → `Image.create_with_sync`
 4. 创建成功的图片自动触发 Oban jobs：`sync_typesense` + `generate_caption`
 
 ### Vision 调用前图片预处理

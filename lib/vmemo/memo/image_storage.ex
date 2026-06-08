@@ -6,13 +6,7 @@ defmodule Vmemo.Memo.ImageStorage do
   @thumb_sizes %{s: 320, m: 1280}
 
   def cp_file(src, user_id, filename) do
-    dest =
-      if tiff_upload?(src, filename) do
-        convert_tiff_to_png!(src, gen_dest(user_id, png_filename(filename)))
-      else
-        FileSystem.cp!(src, gen_dest(user_id, filename))
-      end
-
+    dest = FileSystem.cp!(src, gen_dest(user_id, filename))
     {:ok, dest}
   end
 
@@ -71,50 +65,4 @@ defmodule Vmemo.Memo.ImageStorage do
 
     Path.join([user_id, "images", timestamp <> "_" <> normalized_filename])
   end
-
-  defp convert_tiff_to_png!(src, dest) do
-    storage_dest = Path.join(["storage/v1", dest])
-    storage_dest |> Path.dirname() |> File.mkdir_p!()
-    ImageMagick.convert_to_png!(src, storage_dest)
-    storage_dest
-  end
-
-  defp png_filename(filename) do
-    filename
-    |> to_string()
-    |> Path.rootname()
-    |> Kernel.<>(".png")
-  end
-
-  defp tiff_upload?(src, filename) do
-    tiff_extension?(filename) or tiff_header?(src)
-  end
-
-  defp tiff_extension?(filename) do
-    filename
-    |> to_string()
-    |> Path.extname()
-    |> String.downcase()
-    |> then(&(&1 in [".tif", ".tiff"]))
-  end
-
-  defp tiff_header?(path) when is_binary(path) do
-    case File.open(path, [:read, :binary]) do
-      {:ok, io} ->
-        try do
-          case :file.read(io, 4) do
-            {:ok, <<"II", marker, 0>>} when marker in [42, 43] -> true
-            {:ok, <<"MM", 0, marker>>} when marker in [42, 43] -> true
-            _ -> false
-          end
-        after
-          File.close(io)
-        end
-
-      {:error, _reason} ->
-        false
-    end
-  end
-
-  defp tiff_header?(_path), do: false
 end

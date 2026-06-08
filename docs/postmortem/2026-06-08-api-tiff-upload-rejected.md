@@ -18,7 +18,7 @@ TIFF is also a poor web display format: most browsers do not support it natively
 
 - Added TIFF to the API image MIME allowlist.
 - Added TIFF magic-byte detection for little-endian and big-endian TIFF headers.
-- Converted TIFF uploads to PNG in `ImageStorage.cp_file/3` before storage.
+- Converted TIFF uploads to PNG in `ImageUpload.store/3` before copying into storage.
 - Updated UI upload accept lists and REST API docs to include TIFF and document PNG normalization.
 - Added a file response MIME mapping for stored `.tif` and `.tiff` files.
 - Added regression tests for API TIFF upload, TIFF-to-PNG storage, and TIFF file response content type.

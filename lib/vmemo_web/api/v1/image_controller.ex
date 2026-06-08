@@ -9,7 +9,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
   alias Plug.Conn.Status
   alias Vmemo.Memo.Image
-  alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Memo.ImageUpload
 
   require Logger
 
@@ -496,13 +496,13 @@ defmodule VmemoWeb.Api.V1.ImageController do
     user_id = to_string(current_user.id)
 
     try do
-      {:ok, dest} = ImageStorage.cp_file(path, user_id, filename)
+      {:ok, %{dest: dest, filename: stored_filename}} = ImageUpload.store(path, user_id, filename)
       note = Map.get(params, "note", "")
 
       attrs = %{
         note: note,
         url: Path.join("/", dest),
-        file_id: filename,
+        file_id: stored_filename,
         user_id: user_id,
         inner_purpose: nil
       }

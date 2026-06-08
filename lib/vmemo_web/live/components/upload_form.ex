@@ -10,8 +10,8 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias VmemoWeb.LiveComponents.Waterfall
 
   alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageNote
-  alias Vmemo.Memo.ImageStorage
   alias Vmemo.Memo.Note
 
   @impl true
@@ -373,13 +373,14 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
     user_id = current_user.id
     filename = entry.uuid <> Path.extname(entry.client_name)
 
-    with {:ok, dest} <- ImageStorage.cp_file(path, user_id, filename),
+    with {:ok, %{dest: dest, filename: stored_filename}} <-
+           ImageUpload.store(path, user_id, filename),
          {:ok, image} <-
            Image.create_with_sync(
              %{
                note: note_text,
                url: Path.join("/", dest),
-               file_id: filename,
+               file_id: stored_filename,
                user_id: user_id,
                upload_batch_id: upload_batch_id,
                inner_purpose: nil

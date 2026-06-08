@@ -1,6 +1,7 @@
 defmodule Vmemo.Memo.ImageStorageTest do
   use ExUnit.Case, async: true
 
+  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.Storage
 
@@ -46,7 +47,7 @@ defmodule Vmemo.Memo.ImageStorageTest do
              ImageStorage.storage_path_from_url("https://cdn.example.com/demo.jpg", user_id)
   end
 
-  test "cp_file/3 converts tiff uploads to png for browser display" do
+  test "cp_file/3 copies files without converting image format" do
     user_id = "u-#{System.unique_integer([:positive])}"
     src = Path.join(System.tmp_dir!(), "vmemo-test-#{System.unique_integer([:positive])}.tiff")
     File.write!(src, tiff_binary())
@@ -57,6 +58,24 @@ defmodule Vmemo.Memo.ImageStorageTest do
     end)
 
     assert {:ok, dest} = ImageStorage.cp_file(src, user_id, "clipboard.tiff")
+    assert Path.extname(dest) == ".tiff"
+    assert File.read!(dest) == tiff_binary()
+  end
+
+  test "ImageUpload.store/3 converts tiff uploads to png for browser display" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    src = Path.join(System.tmp_dir!(), "vmemo-test-#{System.unique_integer([:positive])}.tiff")
+    File.write!(src, tiff_binary())
+
+    on_exit(fn ->
+      File.rm(src)
+      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+    end)
+
+    assert {:ok, %{dest: dest, filename: filename}} =
+             ImageUpload.store(src, user_id, "clipboard.tiff")
+
+    assert filename == "clipboard.png"
     assert Path.extname(dest) == ".png"
     assert <<0x89, 0x50, 0x4E, 0x47, _::binary>> = File.read!(dest)
   end
