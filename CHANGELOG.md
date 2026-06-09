@@ -7,11 +7,10 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+## [2026.06.09] - 2026-06-09
+
 ### Changed
-- Image uploads now share the same 50 MB limit across the web UI and REST API, with clearer too-large error messages that explain the limit and retry path. ([#210](https://github.com/ThaddeusJiang/Vmemo/pull/210))
-- REST API image uploads now accept TIFF files and normalize them to browser-friendly PNG images, so clipboard and screenshot uploads display reliably after upload. ([#210](https://github.com/ThaddeusJiang/Vmemo/pull/210))
-- Image upload size is now controlled by a shared `IMAGE_UPLOAD_MAX_FILE_SIZE` runtime setting. Leave unset to use the default 50 MB limit, or set a byte value in deployment environments. ([#210](https://github.com/ThaddeusJiang/Vmemo/pull/210))
-- API upload failures at the parser layer now return the documented JSON error shape instead of a generic endpoint failure. ([#210](https://github.com/ThaddeusJiang/Vmemo/pull/210))
+- Image uploads now use a shared 50 MB limit across the web UI and REST API, accept `.tiff` files by normalizing them to PNG, and return clearer documented errors when uploads are too large or fail during parsing. The limit can be configured with `IMAGE_UPLOAD_MAX_FILE_SIZE`. ([#210](https://github.com/ThaddeusJiang/Vmemo/pull/210))
 - API request and response summaries are logged for `/api/*` routes without logging bearer tokens or file contents. ([#210](https://github.com/ThaddeusJiang/Vmemo/pull/210))
 
 ## [2026.05.17] - 2026-05-17
