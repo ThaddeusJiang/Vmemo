@@ -48,7 +48,8 @@ docker run --rm -p 4000:4000 \
 Release startup behavior:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo start`
+2. Start Nginx when `VMEMO_ENABLE_NGINX=true`
+3. `bin/vmemo start`
 
 Remote IEx:
 
@@ -93,6 +94,7 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 - `rel/entrypoint.sh` exists and is executable.
 - Entrypoint runs `bin/vmemo eval "Vmemo.Release.migrate()"`.
 - Dockerfile runner starts via `ENTRYPOINT + CMD ["start"]`.
+- Dockerfile runner starts Nginx before Phoenix when `VMEMO_ENABLE_NGINX=true`.
 - Dockerfile runner includes ImageMagick (`magick`) for AI vision request preprocessing.
 
 ### Required Environment Variables
@@ -108,6 +110,28 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 9. `SENTRY_DSN`
 
 Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
+
+Storage acceleration:
+
+- Browser-facing storage URLs stay under `/storage/v1`.
+- Phoenix performs the lightweight owner check, then returns `X-Accel-Redirect`
+  under `/storage/v1/_internal`.
+- Nginx sends the file bytes from the app's `storage/v1` directory. The production
+  Docker image enables this by default: Nginx listens on `4000`, while Phoenix
+  listens internally on `PHX_PORT=4001`.
+
+Example Nginx location:
+
+```nginx
+location /storage/v1/_internal/ {
+  internal;
+  alias /app/storage/v1/;
+}
+```
+
+Keep `/storage/v1/_internal/` internal-only. Browser-facing requests should continue to use
+`/storage/v1/:user_id/images/:filename` and `/storage/v1/:user_id/avatars/:filename`
+so they pass through Phoenix authorization before Nginx serves the file bytes.
 
 ### Troubleshooting
 

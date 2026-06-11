@@ -90,6 +90,13 @@ config :vmemo, VmemoWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :vmemo, Vmemo.Mailer, adapter: Swoosh.Adapters.Local
 
+deps_path =
+  case System.get_env("MIX_DEPS_PATH") do
+    nil -> Path.expand("../deps", __DIR__)
+    "" -> Path.expand("../deps", __DIR__)
+    path -> Path.expand(path)
+  end
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
@@ -97,7 +104,7 @@ config :esbuild,
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{"NODE_PATH" => deps_path}
   ]
 
 # Configure tailwind (the version is required)

@@ -1,6 +1,21 @@
-# Default `docker compose up` starts postgres + typesense only.
+# Default `docker compose up` starts local dependency services.
+# Use `docker compose --profile proxy up -d` to add the local Nginx proxy.
 # For test DB/search: `docker compose --profile test up` (or `COMPOSE_PROFILES=test`).
 services:
+  nginx:
+    profiles:
+      - proxy
+    image: nginx:1.27.5-alpine
+    hostname: nginx
+    restart: on-failure
+    ports:
+      - "4080:80"
+    volumes:
+      - ./config/nginx/dev.conf:/etc/nginx/nginx.conf:ro
+      - ./storage/v1:/app/storage/v1:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   postgres:
     image: postgres:18
     hostname: postgres

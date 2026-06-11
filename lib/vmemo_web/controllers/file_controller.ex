@@ -2,6 +2,7 @@ defmodule VmemoWeb.FileController do
   use VmemoWeb, :controller
 
   @storage_root Path.expand("storage/v1")
+  @storage_accel_redirect_prefix "/storage/v1/_internal"
   @allowed_mime_types %{
     ".png" => "image/png",
     ".jpg" => "image/jpeg",
@@ -14,6 +15,7 @@ defmodule VmemoWeb.FileController do
 
   def show(conn, %{"user_id" => user_id, "filename" => filename}) do
     with {:ok, safe_user_id} <- normalize_user_id(user_id),
+         :ok <- authorize_storage_user(conn, safe_user_id),
          {:ok, safe_filename} <- normalize_filename(filename),
          {:ok, file_path} <- image_path(safe_user_id, safe_filename),
          {:ok, resolved_path} <- resolve_image_path(file_path) do
@@ -25,6 +27,7 @@ defmodule VmemoWeb.FileController do
 
   def show_avatar(conn, %{"user_id" => user_id, "filename" => filename}) do
     with {:ok, safe_user_id} <- normalize_user_id(user_id),
+         :ok <- authorize_storage_user(conn, safe_user_id),
          {:ok, safe_filename} <- normalize_filename(filename),
          {:ok, file_path} <- avatar_path(safe_user_id, safe_filename) do
       if File.exists?(file_path) do
@@ -39,19 +42,12 @@ defmodule VmemoWeb.FileController do
 
   defp send_storage_file(conn, file_path) do
     with {:ok, stat} <- File.stat(file_path),
-         {:ok, file_bin} <- read_file_binary(file_path, stat.size),
          etag <- build_etag(file_path, stat),
          last_modified <- build_last_modified(stat),
          false <- fresh?(conn, etag, stat) do
-      conn =
-        conn
-        |> put_resp_header("content-type", detect_safe_mime(file_path))
-        |> put_resp_header("content-disposition", "inline")
-        |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
-        |> put_resp_header("etag", etag)
-        |> put_resp_header("last-modified", last_modified)
-
-      send_resp(conn, 200, file_bin)
+      conn
+      |> put_storage_headers(file_path, etag, last_modified)
+      |> send_storage_body(file_path)
     else
       true ->
         conn
@@ -65,6 +61,36 @@ defmodule VmemoWeb.FileController do
         |> put_status(404)
         |> text("File not found")
     end
+  end
+
+  defp authorize_storage_user(conn, user_id) do
+    case conn.assigns[:current_user] do
+      %{id: ^user_id} -> :ok
+      %{id: current_user_id} when is_binary(current_user_id) -> :error
+      _ -> :error
+    end
+  end
+
+  defp put_storage_headers(conn, file_path, etag, last_modified) do
+    conn
+    |> put_resp_header("content-type", detect_safe_mime(file_path))
+    |> put_resp_header("content-disposition", "inline")
+    |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
+    |> put_resp_header("etag", etag)
+    |> put_resp_header("last-modified", last_modified)
+  end
+
+  defp send_storage_body(conn, file_path) do
+    conn
+    |> put_resp_header("x-accel-redirect", storage_accel_redirect_path(file_path))
+    |> send_resp(200, "")
+  end
+
+  defp storage_accel_redirect_path(file_path) do
+    file_path
+    |> Path.expand()
+    |> Path.relative_to(@storage_root)
+    |> then(&Path.join(@storage_accel_redirect_prefix, &1))
   end
 
   defp fresh?(conn, etag, stat) do
@@ -211,24 +237,5 @@ defmodule VmemoWeb.FileController do
   defp detect_safe_mime(file_path) do
     extension = Path.extname(file_path) |> String.downcase()
     Map.get(@allowed_mime_types, extension, "application/octet-stream")
-  end
-
-  defp read_file_binary(file_path, size)
-       when is_binary(file_path) and is_integer(size) and size >= 0 do
-    case :file.open(String.to_charlist(file_path), [:read, :binary]) do
-      {:ok, io} ->
-        try do
-          case :file.read(io, size) do
-            {:ok, data} -> {:ok, data}
-            :eof -> {:ok, <<>>}
-            {:error, _} = error -> error
-          end
-        after
-          :file.close(io)
-        end
-
-      {:error, _} = error ->
-        error
-    end
   end
 end
