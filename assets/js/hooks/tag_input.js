@@ -1,4 +1,4 @@
-import Choices from "../../vendor/choices.min.js"
+import Choices from "choices.js"
 
 export const TagInput = {
   mounted() {

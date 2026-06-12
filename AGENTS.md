@@ -47,7 +47,8 @@ vmemo/                          # Repository root
 - If ownership is unclear, place logic in the backend.
 - Respect Ash conventions first; do not model new behavior Ecto-first.
 - Encapsulate external REST calls in dedicated SDK modules.
-- For JavaScript assets, use `assets/vendor/` vendoring patterns instead of assuming npm-style app tooling.
+- For CSS and JavaScript external dependencies, use `assets/package.json` and
+  `assets/package-lock.json`; do not copy package source into `assets/vendor/`.
 
 ## Phoenix / LiveView implementation rules
 - See detailed rules in `.agents/skills/vmemo-coding-guides/SKILL.md`.

@@ -90,6 +90,11 @@ config :vmemo, VmemoWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :vmemo, Vmemo.Mailer, adapter: Swoosh.Adapters.Local
 
+esbuild_node_path =
+  [System.get_env("MIX_DEPS_PATH"), Path.expand("../deps", __DIR__)]
+  |> Enum.reject(&is_nil/1)
+  |> Enum.join(":")
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
@@ -97,18 +102,7 @@ config :esbuild,
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
-
-# Configure tailwind (the version is required)
-config :tailwind,
-  version: "4.1.7",
-  vmemo: [
-    args: ~w(
-      --input=assets/css/app.css
-      --output=priv/static/assets/app.css
-    ),
-    cd: Path.expand("..", __DIR__)
+    env: %{"NODE_PATH" => esbuild_node_path}
   ]
 
 # Configures Elixir's Logger

@@ -20,6 +20,8 @@ This is the single Docker document under `docs/guides/deployment`.
 
 - Use the repository root `Dockerfile` as the only production image source.
 - Build and run with `MIX_ENV=prod`.
+- Build external frontend CSS packages with Node.js/npm from
+  `assets/package-lock.json`.
 - Do not maintain a separate development Dockerfile workflow.
 - Root `docker-compose.yml` is for local dependency services.
 
@@ -36,6 +38,12 @@ Build image:
 ```bash
 docker build -t vmemo:local .
 ```
+
+The Docker builder stage installs npm packages with `npm ci --prefix assets`
+before `mix assets.deploy`. Keep `assets/package.json` and
+`assets/package-lock.json` in sync when changing external CSS or JavaScript
+package dependencies. Phoenix JavaScript packages and `esbuild` are resolved
+from Mix deps, not npm.
 
 Run image:
 
@@ -93,6 +101,7 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 - `rel/entrypoint.sh` exists and is executable.
 - Entrypoint runs `bin/vmemo eval "Vmemo.Release.migrate()"`.
 - Dockerfile runner starts via `ENTRYPOINT + CMD ["start"]`.
+- Dockerfile builder uses the pinned `node:24.14.1-bookworm-slim` image for npm.
 - Dockerfile runner includes ImageMagick (`magick`) for AI vision request preprocessing.
 
 ### Required Environment Variables

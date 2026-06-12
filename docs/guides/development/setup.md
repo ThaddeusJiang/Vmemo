@@ -24,6 +24,10 @@ mix setup
 iex -S mix phx.server
 ```
 
+`mise install` installs the required Node.js runtime as well as Elixir/Erlang.
+`mix setup` installs external frontend packages with `npm ci --prefix assets`
+before building CSS and JavaScript.
+
 Test dependencies:
 
 ```bash
@@ -67,6 +71,32 @@ Common task groups (details remain in `mix.exs` aliases and task help):
 - run: `mix phx.server`, `iex -S mix phx.server`, `mix phx.routes`
 - test/quality: `mix test`, `mix format`, `mix credo --strict`, `mix sobelow --config`, `mix dialyzer`, `mix check`
 - reset/migrate: `mix reset`, `mix db.migrate`, `mix db.rollback`, `mix ts.reset`, `mix ts.drop`
+
+External frontend asset dependencies are managed by npm in `assets/package.json`
+and locked by `assets/package-lock.json`. Phoenix-provided JavaScript packages
+(`phoenix`, `phoenix_html`, `phoenix_live_view`) and the `esbuild` build tool
+remain managed by Mix deps. Do not copy external package source into
+`assets/vendor`.
+
+Common asset commands:
+
+```bash
+mix assets.setup
+mix assets.build
+mix assets.deploy
+```
+
+Direct npm equivalents:
+
+```bash
+npm ci --prefix assets
+npm run build --prefix assets
+npm run deploy --prefix assets
+```
+
+The npm build commands only compile CSS. `mix assets.build` and
+`mix assets.deploy` run the npm CSS build first and then bundle JavaScript with
+the Mix `esbuild` wrapper.
 
 For schema changes, use Ash-first migration workflow:
 

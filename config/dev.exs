@@ -45,8 +45,8 @@ config :vmemo, VmemoWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "m007g/tykiNHADOKiYRqEEHSTJpKMbBKzIkQMuDjyKLjVUlJA63WXda4DOeTfWNC",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:vmemo, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:vmemo, ~w(--watch)]}
+    npm: ["run", "watch:css", "--prefix", "assets"],
+    esbuild: {Esbuild, :install_and_run, [:vmemo, ~w(--sourcemap=inline --watch)]}
   ]
 
 # ## SSL Support

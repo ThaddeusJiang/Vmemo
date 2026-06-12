@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.6
 FROM elixir:1.19.5-otp-28 AS base
+FROM node:24.14.1-bookworm-slim AS node
 
 FROM base AS builder
 
@@ -9,15 +10,22 @@ RUN apt-get update -y && \
 
 WORKDIR /app
 
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
 ENV MIX_ENV=prod
 ENV HEX_HTTP_TIMEOUT=120
 ENV HEX_HTTP_CONCURRENCY=1
 ENV HEX_HTTP_RETRIES=3
 
 COPY mix.exs mix.lock ./
+COPY assets/package.json assets/package-lock.json ./assets/
 RUN mix local.hex --force && \
     mix local.rebar --force && \
-    mix deps.get --only prod
+    mix deps.get --only prod && \
+    npm ci --prefix assets
 
 COPY . .
 RUN mix compile
