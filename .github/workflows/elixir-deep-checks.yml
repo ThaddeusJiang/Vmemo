@@ -18,21 +18,13 @@ jobs:
         elixir: ["1.19.5"]
     name: Deep Checks / Elixir ${{matrix.elixir}} Erlang/OTP ${{matrix.otp}}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: erlef/setup-beam@v1.23.0
+      - uses: erlef/setup-beam@ee09b1e59bb240681c382eb1f0abc6a04af72764 # v1.23.0
         id: beam
         with:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
-
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ hashFiles('mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get

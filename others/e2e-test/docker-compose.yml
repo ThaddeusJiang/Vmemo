@@ -21,7 +21,7 @@ services:
     command: "--data-dir /data --api-key=xyz --enable-cors"
 
   vmemo-e2e:
-    image: thaddeusjiang/vmemo:e2e
+    image: vmemo:e2e
     hostname: vmemo-e2e
     command: ["start"]
     restart: on-failure

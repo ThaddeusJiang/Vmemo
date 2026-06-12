@@ -2,7 +2,7 @@
 
 Date: 2026-04-14
 
-Status: accepted
+Status: superseded by [007-publish-release-images-to-ghcr.md](007-publish-release-images-to-ghcr.md)
 
 ## Context
 
@@ -15,7 +15,8 @@ Status: accepted
 - This includes `actions/cache` and GitHub-hosted cache backends.
 - Do not use GitHub artifact storage in any GitHub Actions workflow in this repository.
 - This includes `actions/upload-artifact` and `actions/download-artifact`.
-- Keep release image publishing behavior unchanged: only one unified public release tag on Docker Hub.
+- Release image publishing target was later changed to GHCR by
+  [007-publish-release-images-to-ghcr](007-publish-release-images-to-ghcr.md).
 
 ## Consequences
 

@@ -26,23 +26,15 @@ jobs:
       TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/vmemo_test
       TEST_TYPESENSE_URL: http://localhost:8108
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
-      - uses: erlef/setup-beam@v1.23.0
+      - uses: erlef/setup-beam@ee09b1e59bb240681c382eb1f0abc6a04af72764 # v1.23.0
         id: beam
         with:
           otp-version: "28"
           elixir-version: "1.19.5"
-
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ hashFiles('mix.lock') }}
 
       - name: Install Elixir dependencies
         run: mix deps.get
@@ -54,7 +46,7 @@ jobs:
         run: mix ash.generate_resource_diagrams --format md
 
       - name: Commit and push if changed
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: "chore(resource): refresh Ash resource diagrams [skip ci]"
           file_pattern: "lib/vmemo/*-mermaid-class-diagram.md"

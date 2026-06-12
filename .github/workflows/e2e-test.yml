@@ -54,21 +54,21 @@ jobs:
       DNS_CLUSTER_QUERY: ""
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4.0.0
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Build app image (amd64, local only)
         working-directory: .
-        run: docker buildx build --platform linux/amd64 --file ./Dockerfile --tag thaddeusjiang/vmemo:e2e --load .
+        run: docker buildx build --platform linux/amd64 --file ./Dockerfile --tag vmemo:e2e --load .
 
       - name: Start app with compose
         run: |
           docker compose -f docker-compose.yml up -d
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
       - name: Install e2e dependencies
         run: bun install --frozen-lockfile
@@ -93,7 +93,7 @@ jobs:
 
       - name: Commit updated snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots }}
-        uses: stefanzweifel/git-auto-commit-action@v7
+        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
         with:
           commit_message: "chore(e2e): update visual snapshots"
           file_pattern: "others/e2e-test/tests"
@@ -101,15 +101,6 @@ jobs:
       - name: Run e2e tests
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.update_snapshots }}
         run: bun run e2e
-
-      - name: Upload Playwright HTML report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: e2e-playwright-report-${{ github.run_id }}
-          path: others/e2e-test/playwright-report
-          if-no-files-found: ignore
-          retention-days: 14
 
       - name: Print app logs
         if: failure()

@@ -17,7 +17,10 @@ defmodule Release.CheckConfigChanges do
     "Dockerfile",
     "docker-compose.yml",
     "mise.toml",
-    ".github/workflows/publish-docker-image.yml"
+    ".github/workflows/create-github-release.yml",
+    ".github/workflows/docker-publish.yml",
+    ".github/workflows/release-manual.yml",
+    ".github/workflows/release.yml"
   ]
 
   @env_scan_files [
