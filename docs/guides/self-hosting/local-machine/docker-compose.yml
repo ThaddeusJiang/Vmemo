@@ -1,6 +1,6 @@
 services:
   vmemo:
-    image: thaddeusjiang/vmemo
+    image: ghcr.io/thaddeusjiang/vmemo:latest
     restart: on-failure
     env_file:
       - .env

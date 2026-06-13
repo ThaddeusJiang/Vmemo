@@ -90,9 +90,16 @@ config :vmemo, VmemoWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :vmemo, Vmemo.Mailer, adapter: Swoosh.Adapters.Local
 
+deps_path =
+  case System.get_env("MIX_DEPS_PATH") do
+    nil -> Path.expand("../deps", __DIR__)
+    "" -> Path.expand("../deps", __DIR__)
+    path -> Path.expand(path)
+  end
+
 esbuild_node_path =
-  [System.get_env("MIX_DEPS_PATH"), Path.expand("../deps", __DIR__)]
-  |> Enum.reject(&is_nil/1)
+  [deps_path, Path.expand("../deps", __DIR__)]
+  |> Enum.uniq()
   |> Enum.join(":")
 
 # Configure esbuild (the version is required)

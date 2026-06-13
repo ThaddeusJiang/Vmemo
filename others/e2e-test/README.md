@@ -29,6 +29,9 @@ bun run e2e -- tests/home-page.spec.ts
 
 # UI mode (scoped)
 bun run e2e:ui -- tests/home-page.spec.ts
+
+# Image display performance probe
+E2E_BASE_URL=http://localhost:4000 bun run perf:images
 ```
 
 Do not run the full suite unless explicitly requested.
@@ -45,6 +48,26 @@ E2E_BASE_URL=http://localhost:4000 bun run e2e -- tests/home-page.spec.ts
 For local prerequisites and execution flow, follow:
 
 - `/.agents/skills/vmemo-e2e-testing/SKILL.md`
+
+## Image Performance Probe
+
+`bun run perf:images` verifies the `/images` page against a running Vmemo target and prints a JSON report with:
+
+- first image ready time
+- `/storage/v1` response status, duration, content type, server, and bytes
+- browser image resource timing and decoded dimensions
+
+The default budgets target the local Docker e2e environment:
+
+```bash
+PHOTOS_INDEX_READY_BUDGET_MS=3000 \
+STORAGE_IMAGE_RESPONSE_BUDGET_MS=1500 \
+PHOTOS_INDEX_MIN_IMAGES=1 \
+E2E_BASE_URL=http://localhost:4000 \
+bun run perf:images
+```
+
+The report is also attached to the Playwright output as `photos-index-image-performance.json`.
 
 ## CI Notes
 

@@ -20,11 +20,16 @@ export default async function globalSetup(config: FullConfig) {
       try {
         await page.goto("/login", { waitUntil: "domcontentloaded" });
 
-        const loginButton = page.getByRole("button", { name: /Login/i });
-        await expect(loginButton).toBeVisible({ timeout: 10_000 });
-        await page.getByLabel("Email").fill(email);
-        await page.getByLabel("Password").fill(password);
-        await loginButton.click();
+        const csrfToken = await page.locator('input[name="_csrf_token"]').inputValue();
+        await page.request.post("/login", {
+          form: {
+            _csrf_token: csrfToken,
+            "user[email]": email,
+            "user[password]": password,
+            "user[remember_me]": "false",
+          },
+        });
+        await page.goto("/home", { waitUntil: "domcontentloaded" });
         await expect(page).toHaveURL(/\/home/, { timeout: 10_000 });
         lastError = undefined;
         break;

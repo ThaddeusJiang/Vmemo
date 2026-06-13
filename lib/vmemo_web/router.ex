@@ -28,6 +28,11 @@ defmodule VmemoWeb.Router do
     plug VmemoWeb.ApiAuth
   end
 
+  pipeline :storage do
+    plug :fetch_session
+    plug :fetch_current_user
+  end
+
   # MCP pipeline - optional authentication for MCP server
   # Allows unauthenticated access for public tools, but sets actor if API token is provided
   # Only supports StreamableHttp (POST requests), not SSE (GET requests)
@@ -160,7 +165,7 @@ defmodule VmemoWeb.Router do
   end
 
   scope "/storage/v1/", VmemoWeb do
-    pipe_through :browser
+    pipe_through :storage
 
     get "/:user_id/images/:filename", FileController, :show
     get "/:user_id/avatars/:filename", FileController, :show_avatar

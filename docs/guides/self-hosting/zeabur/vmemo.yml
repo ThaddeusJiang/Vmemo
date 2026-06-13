@@ -21,7 +21,7 @@ spec:
       icon: https://i.gyazo.com/54a25cd93911174e573519c60d354880.png
       spec:
         source:
-          image: thaddeusjiang/vmemo:latest
+          image: ghcr.io/thaddeusjiang/vmemo:latest
         ports:
           - id: web
             port: 4000
@@ -48,6 +48,12 @@ spec:
             default: ${ZEABUR_WEB_DOMAIN}
             expose: false
           PHX_SERVER:
+            default: "true"
+            expose: false
+          PHX_PORT:
+            default: "4001"
+            expose: false
+          VMEMO_ENABLE_NGINX:
             default: "true"
             expose: false
           SECRET_KEY_BASE:

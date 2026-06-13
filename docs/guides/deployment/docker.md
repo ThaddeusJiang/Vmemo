@@ -56,7 +56,8 @@ docker run --rm -p 4000:4000 \
 Release startup behavior:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. `bin/vmemo start`
+2. Start Nginx when `VMEMO_ENABLE_NGINX=true`
+3. `bin/vmemo start`
 
 Remote IEx:
 
@@ -70,28 +71,29 @@ docker exec -it <container_name> /app/bin/vmemo remote
 Build tag:
 
 ```bash
-docker build -t thaddeusjiang/vmemo:2026.4.14 .
+docker build -t ghcr.io/thaddeusjiang/vmemo:2026.6.12 .
 ```
 
 Smoke test:
 
 ```bash
-docker run --rm -p 4000:4000 --env-file .env thaddeusjiang/vmemo:2026.4.14
+docker run --rm -p 4000:4000 --env-file .env ghcr.io/thaddeusjiang/vmemo:2026.6.12
 ```
 
 Push:
 
 ```bash
-docker push thaddeusjiang/vmemo:2026.4.14
-docker tag thaddeusjiang/vmemo:2026.4.14 thaddeusjiang/vmemo:latest
-docker push thaddeusjiang/vmemo:latest
+echo "${GITHUB_TOKEN}" | docker login ghcr.io -u <github-username> --password-stdin
+docker push ghcr.io/thaddeusjiang/vmemo:2026.6.12
+docker tag ghcr.io/thaddeusjiang/vmemo:2026.6.12 ghcr.io/thaddeusjiang/vmemo:latest
+docker push ghcr.io/thaddeusjiang/vmemo:latest
 ```
 
 Verify:
 
 ```bash
-docker manifest inspect thaddeusjiang/vmemo:2026.4.14 >/dev/null && echo ok
-docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
+docker manifest inspect ghcr.io/thaddeusjiang/vmemo:2026.6.12 >/dev/null && echo ok
+docker manifest inspect ghcr.io/thaddeusjiang/vmemo:latest >/dev/null && echo ok
 ```
 
 ## Startup Checklist
@@ -102,6 +104,7 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 - Entrypoint runs `bin/vmemo eval "Vmemo.Release.migrate()"`.
 - Dockerfile runner starts via `ENTRYPOINT + CMD ["start"]`.
 - Dockerfile builder uses the pinned `node:24.14.1-bookworm-slim` image for npm.
+- Dockerfile runner starts Nginx before Phoenix when `VMEMO_ENABLE_NGINX=true`.
 - Dockerfile runner includes ImageMagick (`magick`) for AI vision request preprocessing.
 
 ### Required Environment Variables
@@ -117,6 +120,28 @@ docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
 9. `SENTRY_DSN`
 
 Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
+
+Storage acceleration:
+
+- Browser-facing storage URLs stay under `/storage/v1`.
+- Phoenix performs the lightweight owner check, then returns `X-Accel-Redirect`
+  under `/storage/v1/_internal`.
+- Nginx sends the file bytes from the app's `storage/v1` directory. The production
+  Docker image enables this by default: Nginx listens on `4000`, while Phoenix
+  listens internally on `PHX_PORT=4001`.
+
+Example Nginx location:
+
+```nginx
+location /storage/v1/_internal/ {
+  internal;
+  alias /app/storage/v1/;
+}
+```
+
+Keep `/storage/v1/_internal/` internal-only. Browser-facing requests should continue to use
+`/storage/v1/:user_id/images/:filename` and `/storage/v1/:user_id/avatars/:filename`
+so they pass through Phoenix authorization before Nginx serves the file bytes.
 
 ### Troubleshooting
 

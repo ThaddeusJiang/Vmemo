@@ -19,7 +19,7 @@ From repository root:
 
 ```bash
 mise trust && mise install
-docker compose up -d
+docker compose --profile proxy up -d
 mix setup
 iex -S mix phx.server
 ```
@@ -27,6 +27,16 @@ iex -S mix phx.server
 `mise install` installs the required Node.js runtime as well as Elixir/Erlang.
 `mix setup` installs external frontend packages with `npm ci --prefix assets`
 before building CSS and JavaScript.
+
+Open the app through the local reverse proxy:
+
+```text
+http://localhost:4080
+```
+
+Phoenix still runs on `http://localhost:4000`, but storage image responses use
+`X-Accel-Redirect`. Use the Nginx proxy on port `4080` when validating image
+loading performance or `/storage/v1` image URLs locally.
 
 Test dependencies:
 
