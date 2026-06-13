@@ -10,11 +10,7 @@ Run Vmemo and all core dependencies on your own machine.
 
 ## Quick Start
 
-```bash
-cd docs/guides/self-hosting/local-machine
-cp .env.example .env
-docker compose up -d
-```
+Use the Docker Compose quick start in the root [README](../../../../README.md#install-vmemo).
 
 ## Recommended: Verify via `dev.vmemo.app`
 
@@ -31,10 +27,6 @@ cloudflared tunnel route dns vmemo-dev dev.vmemo.app
 2) Get token and set local env:
 
 ```bash
-cd docs/guides/self-hosting/local-machine
-cp .env.example .env
-
-# Required for cloudflared service in docker compose
 export CLOUDFLARED_TOKEN="$(cloudflared tunnel token vmemo-dev)"
 ```
 
@@ -42,11 +34,7 @@ Set these in `.env`:
 - `PHX_HOST="dev.vmemo.app"`
 - `CLOUDFLARED_TOKEN="<your token>"`
 
-3) Start stack:
-
-```bash
-docker compose up -d
-```
+3) Start the stack with the Docker Compose quick start in the root [README](../../../../README.md#install-vmemo).
 
 4) Verify:
 
@@ -66,11 +54,7 @@ Use this mode:
 
 1) Complete one-time Cloudflare setup (login, tunnel create, DNS route).
 2) Put tunnel token into `.env` as `CLOUDFLARED_TOKEN`.
-3) Start everything with compose:
-
-```bash
-docker compose up -d
-```
+3) Start everything with the Docker Compose quick start in the root [README](../../../../README.md#install-vmemo).
 
 4) Check tunnel container health/logs:
 
