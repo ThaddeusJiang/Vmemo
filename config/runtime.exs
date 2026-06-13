@@ -165,7 +165,7 @@ if config_env() == :prod do
     root_source_code_paths: [File.cwd!()]
 
   host = System.get_env("PHX_HOST") || "vmemo.app"
-  port = String.to_integer(System.get_env("PORT") || "4000")
+  port = String.to_integer(System.get_env("PHX_PORT") || System.get_env("PORT") || "4000")
 
   config :vmemo, VmemoWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],

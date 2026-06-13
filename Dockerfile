@@ -28,7 +28,7 @@ RUN mix release
 FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates imagemagick && \
+  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates imagemagick nginx && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the locale
@@ -41,10 +41,13 @@ ENV LC_ALL=en_US.UTF-8
 WORKDIR /app
 COPY --from=builder /app/_build/prod/rel/vmemo /app
 
+COPY config/nginx/prod.conf /etc/nginx/nginx.conf
 COPY rel/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENV HOME=/app
+ENV VMEMO_ENABLE_NGINX=true
+ENV PHX_PORT=4001
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["start"]

@@ -2,8 +2,19 @@ const plugin = require("tailwindcss/plugin")
 const fs = require("fs")
 const path = require("path")
 
+function resolveDepsRoot() {
+  let envDepsRoot = process.env.MIX_DEPS_PATH && path.resolve(process.env.MIX_DEPS_PATH)
+  let localDepsRoot = path.join(__dirname, "../../deps")
+
+  if (envDepsRoot && fs.existsSync(path.join(envDepsRoot, "heroicons"))) {
+    return envDepsRoot
+  }
+
+  return localDepsRoot
+}
+
 module.exports = plugin(function({matchComponents, theme}) {
-  let iconsDir = path.join(__dirname, "../../deps/heroicons/optimized")
+  let iconsDir = path.join(resolveDepsRoot(), "heroicons/optimized")
   let values = {}
   let icons = [
     ["", "/24/outline"],
