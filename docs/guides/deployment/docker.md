@@ -4,15 +4,13 @@ This is the single Docker document under `docs/guides/deployment`.
 
 ## Scope
 
-- Local production-like run
-- Docker image publishing
+- Maintainer-oriented Docker image policy
 - Release startup checks
 - Runtime best practices
 
 ## Quick Navigation
 
-- Local production-like run: [Run Locally](#run-locally-production-like)
-- Publish image: [Publish Images](#publish-images)
+- User-facing Docker start commands: [README](../../../README.md#install-vmemo)
 - Startup checks: [Startup Checklist](#startup-checklist)
 - Runtime conventions: [Best Practices](#best-practices)
 
@@ -22,28 +20,6 @@ This is the single Docker document under `docs/guides/deployment`.
 - Build and run with `MIX_ENV=prod`.
 - Do not maintain a separate development Dockerfile workflow.
 - Root `docker-compose.yml` is for local dependency services.
-
-## Run Locally (Production-like)
-
-Use root compose for dependency services (Postgres + Typesense):
-
-```bash
-docker compose up -d postgres typesense
-```
-
-Build image:
-
-```bash
-docker build -t vmemo:local .
-```
-
-Run image:
-
-```bash
-docker run --rm -p 4000:4000 \
-  --env-file .env \
-  vmemo:local
-```
 
 Release startup behavior:
 
@@ -55,36 +31,6 @@ Remote IEx:
 ```bash
 docker ps --format '{{.Names}}'
 docker exec -it <container_name> /app/bin/vmemo remote
-```
-
-## Publish Images
-
-Build tag:
-
-```bash
-docker build -t ghcr.io/thaddeusjiang/vmemo:2026.6.12 .
-```
-
-Smoke test:
-
-```bash
-docker run --rm -p 4000:4000 --env-file .env ghcr.io/thaddeusjiang/vmemo:2026.6.12
-```
-
-Push:
-
-```bash
-echo "${GITHUB_TOKEN}" | docker login ghcr.io -u <github-username> --password-stdin
-docker push ghcr.io/thaddeusjiang/vmemo:2026.6.12
-docker tag ghcr.io/thaddeusjiang/vmemo:2026.6.12 ghcr.io/thaddeusjiang/vmemo:latest
-docker push ghcr.io/thaddeusjiang/vmemo:latest
-```
-
-Verify:
-
-```bash
-docker manifest inspect ghcr.io/thaddeusjiang/vmemo:2026.6.12 >/dev/null && echo ok
-docker manifest inspect ghcr.io/thaddeusjiang/vmemo:latest >/dev/null && echo ok
 ```
 
 ## Startup Checklist
