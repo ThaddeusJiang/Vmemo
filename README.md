@@ -21,19 +21,60 @@ For people who think and remember visually, image notes can be much more effecti
 - REST API for external integrations.
 - Responsive web UI for desktop and mobile.
 
+## Install Vmemo
+
+### Option 1: One-Click Self-Hosting on Zeabur
+
+[![Deploy on zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/H3EL85)
+
+### Option 2: Local Machine / Self-Hosting
+
+#### Docker Compose
+
+```bash
+cd docs/guides/self-hosting/local-machine
+cp .env.example .env
+docker compose up -d
+```
+
+Open:
+
+```text
+http://localhost:14000
+```
+
+Check Typesense health:
+
+```bash
+curl http://localhost:18108/health
+```
+
+#### Docker
+
+Use the published GHCR image when you already have PostgreSQL, Typesense, and required environment variables configured:
+
+```bash
+docker run --rm -p 4000:4000 \
+  --env-file .env \
+  ghcr.io/thaddeusjiang/vmemo:latest
+```
+
+Image tags:
+
+```text
+ghcr.io/thaddeusjiang/vmemo:latest
+ghcr.io/thaddeusjiang/vmemo:stag
+ghcr.io/thaddeusjiang/vmemo:<version>
+```
+
 ## Integrations
 
 - Apple Shortcuts: [Setup guide](others/apple-shortcuts/README.md)
 - AI agent skill: [Setup guide](skills/README.md)
 
-## One-Click Self-Hosting on Zeabur 
-
-[![Deploy on zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/H3EL85)
-
-More self-hosting [docs](docs/guides/self-hosting/README.md)
-
 ## Documentation
 
+- [Self-hosting docs](docs/guides/self-hosting/README.md)
 - [Contributor guides](docs/guides/development/README.md)
 
 ## Author
