@@ -29,22 +29,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.head_ref || github.ref_name }}
-      - uses: erlef/setup-beam@v1.23.0
+      - uses: erlef/setup-beam@ee09b1e59bb240681c382eb1f0abc6a04af72764 # v1.23.0
         id: beam
         with:
           otp-version: "28"
           elixir-version: "1.19.5"
-
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ hashFiles('mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get
@@ -54,7 +46,7 @@ jobs:
 
       - name: Commit formatted files
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: stefanzweifel/git-auto-commit-action@v7
+        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7
         with:
           commit_message: "chore(ci): auto format"
 
@@ -84,20 +76,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.2
-      - uses: erlef/setup-beam@v1.23.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: erlef/setup-beam@ee09b1e59bb240681c382eb1f0abc6a04af72764 # v1.23.0
         id: beam
         with:
           otp-version: "28"
           elixir-version: "1.19.5"
-
-      - name: Cache deps and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ hashFiles('mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get
@@ -120,7 +104,7 @@ jobs:
         run: mix coveralls.json
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
         with:
           files: ./cover/excoveralls.json
           fail_ci_if_error: false

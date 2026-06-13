@@ -62,28 +62,29 @@ docker exec -it <container_name> /app/bin/vmemo remote
 Build tag:
 
 ```bash
-docker build -t thaddeusjiang/vmemo:2026.4.14 .
+docker build -t ghcr.io/thaddeusjiang/vmemo:2026.6.12 .
 ```
 
 Smoke test:
 
 ```bash
-docker run --rm -p 4000:4000 --env-file .env thaddeusjiang/vmemo:2026.4.14
+docker run --rm -p 4000:4000 --env-file .env ghcr.io/thaddeusjiang/vmemo:2026.6.12
 ```
 
 Push:
 
 ```bash
-docker push thaddeusjiang/vmemo:2026.4.14
-docker tag thaddeusjiang/vmemo:2026.4.14 thaddeusjiang/vmemo:latest
-docker push thaddeusjiang/vmemo:latest
+echo "${GITHUB_TOKEN}" | docker login ghcr.io -u <github-username> --password-stdin
+docker push ghcr.io/thaddeusjiang/vmemo:2026.6.12
+docker tag ghcr.io/thaddeusjiang/vmemo:2026.6.12 ghcr.io/thaddeusjiang/vmemo:latest
+docker push ghcr.io/thaddeusjiang/vmemo:latest
 ```
 
 Verify:
 
 ```bash
-docker manifest inspect thaddeusjiang/vmemo:2026.4.14 >/dev/null && echo ok
-docker manifest inspect thaddeusjiang/vmemo:latest >/dev/null && echo ok
+docker manifest inspect ghcr.io/thaddeusjiang/vmemo:2026.6.12 >/dev/null && echo ok
+docker manifest inspect ghcr.io/thaddeusjiang/vmemo:latest >/dev/null && echo ok
 ```
 
 ## Startup Checklist
