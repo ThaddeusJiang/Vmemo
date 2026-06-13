@@ -2,18 +2,8 @@
 // to get started and then uncomment the line below.
 // import "./user_socket.js"
 
-// You can include dependencies in two ways.
-//
-// The simplest option is to put them in assets/vendor and
-// import them using relative paths:
-//
-//     import "../vendor/some-package.js"
-//
-// Alternatively, you can `npm install some-package --prefix assets` and import
-// them using a path starting with the package name:
-//
-//     import "some-package"
-//
+// External JavaScript and CSS dependencies are installed from assets/package.json.
+// Phoenix packages are resolved from Mix deps through NODE_PATH in npm scripts.
 
 import { Resizer } from "./hooks/resizer"
 import { InfiniteScroll } from "./hooks/infinite_scroll"

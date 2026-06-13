@@ -97,6 +97,11 @@ deps_path =
     path -> Path.expand(path)
   end
 
+esbuild_node_path =
+  [deps_path, Path.expand("../deps", __DIR__)]
+  |> Enum.uniq()
+  |> Enum.join(":")
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
@@ -104,18 +109,7 @@ config :esbuild,
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => deps_path}
-  ]
-
-# Configure tailwind (the version is required)
-config :tailwind,
-  version: "4.1.7",
-  vmemo: [
-    args: ~w(
-      --input=assets/css/app.css
-      --output=priv/static/assets/app.css
-    ),
-    cd: Path.expand("..", __DIR__)
+    env: %{"NODE_PATH" => esbuild_node_path}
   ]
 
 # Configures Elixir's Logger
