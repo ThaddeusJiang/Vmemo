@@ -11,6 +11,10 @@ defmodule Vmemo.Jobs.Job do
   postgres do
     table "jobs"
     repo Vmemo.Repo
+
+    references do
+      reference :image, on_delete: :delete
+    end
   end
 
   admin do
@@ -67,6 +71,7 @@ defmodule Vmemo.Jobs.Job do
   code_interface do
     define :get, action: :read, get_by: [:id]
     define :read
+    define :destroy
     define :create_requested
     define :mark_in_progress
     define :mark_completed
@@ -78,7 +83,7 @@ defmodule Vmemo.Jobs.Job do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
 
     create :create_requested do
       accept [:image_id, :user_id, :kind, :worker, :oban_job_id, :status, :error]
@@ -274,6 +279,14 @@ defmodule Vmemo.Jobs.Job do
 
     create_timestamp :inserted_at
     update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :image, Vmemo.Memo.Image do
+      allow_nil? false
+      attribute_writable? true
+      source_attribute :image_id
+    end
   end
 
   identities do

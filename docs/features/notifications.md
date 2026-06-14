@@ -10,6 +10,11 @@
 2. `list_notifications/2` 将每张图片映射为一条 notification（不做 batch 聚合）
 3. notification 通过 `global_notifications` assign 传到 layout
 
+### 生命周期
+- notification 没有独立持久化表；它由 `jobs` 记录实时派生。
+- `jobs.image_id` 使用 PostgreSQL `ON DELETE CASCADE`，删除图片时同步删除该图片关联的 `jobs` 记录。
+- 因此图片删除后，关联 job detail 与 notification item 都不再展示。
+
 ### UI 组件
 - `VmemoWeb.NotificationsComponents.notifications_dropdown/1` — bell + dropdown 容器
 - `VmemoWeb.NotificationsComponents.notification_item/1` — 单条通知（图片缩略图 + 状态 badge + description + 时间）
@@ -29,6 +34,8 @@
 ## 相关文件
 - `lib/vmemo_web/components/notifications_components.ex`
 - `lib/vmemo_web/live/image_jobs_hook.ex`（`list_notifications/2`, `to_notification/1`）
+- `lib/vmemo_web/job_notifications.ex`
+- `lib/vmemo/jobs/job.ex`
 - `lib/vmemo_web/components/layouts/app.html.heex`
 - `assets/js/hooks/notification_navigation.js`
 - `assets/css/app.css`（view-transition）

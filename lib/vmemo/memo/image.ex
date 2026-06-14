@@ -757,7 +757,7 @@ defmodule Vmemo.Memo.Image do
         id = Ash.ActionInput.get_argument(input, :id)
 
         with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor) do
-          case Ash.destroy(image, actor: actor) do
+          case Ash.destroy(image, action: :destroy, actor: actor) do
             :ok -> {:ok, %{id: id}}
             {:ok, _deleted} -> {:ok, %{id: id}}
             {:error, reason} -> {:error, reason}
@@ -1291,7 +1291,7 @@ defmodule Vmemo.Memo.Image do
   defp rollback_ingest_search_anchor(image, actor) do
     _ = TsImage.delete_image(image.id)
 
-    case Ash.destroy(image, actor: actor) do
+    case Ash.destroy(image, action: :destroy, actor: actor) do
       {:ok, _} ->
         :ok
 

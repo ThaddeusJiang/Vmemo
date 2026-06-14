@@ -47,6 +47,38 @@ defmodule VmemoWeb.JobNotificationsTest do
     assert Enum.any?(notifications2, &(&1.description == "Search indexing in progress."))
   end
 
+  test "deleting an image removes related jobs and notifications" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-delete.jpg",
+        note: "notify-delete",
+        caption: "notify-delete",
+        file_id: "notify-delete.jpg",
+        user_id: user.id
+      })
+
+    caption_job = insert_job!(image.id, user.id, "caption", "failed", "caption failed")
+    typesense_job = insert_job!(image.id, user.id, "typesense", "in_progress", nil)
+
+    {:ok, notifications} = JobNotifications.list_for_user(user, limit: 20)
+    assert Enum.any?(notifications, &(&1.id == caption_job.id))
+    assert Enum.any?(notifications, &(&1.id == typesense_job.id))
+
+    Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+    remaining_jobs =
+      Job
+      |> Ash.Query.filter(image_id == ^image.id)
+      |> Ash.read!(actor: nil, authorize?: false)
+
+    assert remaining_jobs == []
+
+    {:ok, remaining_notifications} = JobNotifications.list_for_user(user, limit: 20)
+    refute Enum.any?(remaining_notifications, &(&1.id in [caption_job.id, typesense_job.id]))
+  end
+
   defp create_image!(attrs) do
     ensure_fixture_image!(attrs)
     attrs = Map.put_new(attrs, :inner_purpose, nil)
