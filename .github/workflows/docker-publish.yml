@@ -12,6 +12,16 @@ on:
         description: "Vmemo version to tag, for example 2026.6.12 or 2026.6.12-rc.1"
         type: string
         required: true
+      platforms:
+        description: "Comma-separated Docker platforms to build"
+        type: string
+        required: false
+        default: "linux/amd64,linux/arm64"
+      cache_scope:
+        description: "GitHub Actions Docker cache scope"
+        type: string
+        required: false
+        default: "vmemo-release"
 
 permissions:
   contents: read
@@ -39,6 +49,7 @@ jobs:
             type=raw,value=${{ inputs.version }}
 
       - name: Set up QEMU
+        if: ${{ contains(inputs.platforms, 'arm') }}
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 
       - name: Set up Docker Buildx
@@ -57,10 +68,12 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ inputs.platforms }}
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ inputs.cache_scope }}
+          cache-to: type=gha,scope=${{ inputs.cache_scope }},mode=max
 
       - name: Verify published manifests
         env:

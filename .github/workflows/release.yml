@@ -44,6 +44,7 @@ jobs:
     with:
       is_prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
       version: ${{ needs.prepare.outputs.version }}
+      cache_scope: vmemo-release-multi
     permissions:
       contents: read
       packages: write
