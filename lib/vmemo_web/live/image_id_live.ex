@@ -30,9 +30,8 @@ defmodule VmemoWeb.ImageIdLive do
 
     case user do
       %{id: user_id} ->
-        with {:ok, image} <- Image.get_with_notes(id, user_id, actor: user),
-             {:ok, images} <- Image.list_similar(image.id, user_id, actor: user) do
-          {:ok, assign_loaded_photo(socket, user, image, images)}
+        with {:ok, image} <- Image.get_with_notes(id, user_id, actor: user) do
+          {:ok, assign_loaded_photo(socket, user, image)}
         else
           _ -> {:ok, assign_photo_not_found(socket)}
         end
@@ -40,6 +39,21 @@ defmodule VmemoWeb.ImageIdLive do
       _ ->
         {:ok, assign_photo_not_found(socket)}
     end
+  end
+
+  @impl true
+  def handle_async(:load_similar_images, {:ok, {:ok, images}}, socket) do
+    {:noreply, assign(socket, images: images, similar_images_loading: false)}
+  end
+
+  def handle_async(:load_similar_images, {:ok, {:error, reason}}, socket) do
+    Logger.warning("Failed to load similar images: #{inspect(reason)}")
+    {:noreply, assign(socket, images: [], similar_images_loading: false)}
+  end
+
+  def handle_async(:load_similar_images, {:exit, reason}, socket) do
+    Logger.warning("Failed to load similar images: #{inspect(reason)}")
+    {:noreply, assign(socket, images: [], similar_images_loading: false)}
   end
 
   @impl true
@@ -668,7 +682,7 @@ defmodule VmemoWeb.ImageIdLive do
     end
   end
 
-  defp assign_loaded_photo(socket, user, image, images) do
+  defp assign_loaded_photo(socket, user, image) do
     vision_requests = list_vision_requests(image.id, user)
     caption_requests = caption_requests_from(vision_requests)
     latest_caption_request = latest_caption_request_from(caption_requests)
@@ -681,7 +695,8 @@ defmodule VmemoWeb.ImageIdLive do
     |> assign(image: image)
     |> assign(notes: image.notes || [])
     |> assign(show_expanded: false)
-    |> assign(images: images)
+    |> assign(images: [])
+    |> assign(similar_images_loading: connected?(socket))
     |> assign(caption_requests: caption_requests)
     |> assign(caption_loading_requests: MapSet.new())
     |> assign(latest_caption_request: latest_caption_request)
@@ -697,6 +712,7 @@ defmodule VmemoWeb.ImageIdLive do
       to_form(original_form_values)
     end)
     |> maybe_subscribe_vision_request(image.id)
+    |> maybe_start_similar_images_task(user, image)
   end
 
   defp assign_photo_not_found(socket) do
@@ -719,6 +735,16 @@ defmodule VmemoWeb.ImageIdLive do
     end
 
     socket
+  end
+
+  defp maybe_start_similar_images_task(socket, user, image) do
+    if connected?(socket) do
+      start_async(socket, :load_similar_images, fn ->
+        Image.list_similar(image.id, user.id, actor: user)
+      end)
+    else
+      socket
+    end
   end
 
   defp latest_caption_request_from(caption_requests) do

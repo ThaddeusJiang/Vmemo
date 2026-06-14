@@ -178,6 +178,8 @@ defmodule Vmemo.SearchEngine.TsImage do
   end
 
   @min_similarity_threshold 0.75
+  @similar_search_connect_timeout_ms 1_000
+  @similar_search_receive_timeout_ms 2_000
   @semantic_fallback_distance_threshold 0.95
   @multi_search_retry_attempts 1
 
@@ -313,7 +315,11 @@ defmodule Vmemo.SearchEngine.TsImage do
       ]
     }
 
-    res = post_multi_search(req, payload)
+    res =
+      post_multi_search(req, payload,
+        connect_options: [timeout: @similar_search_connect_timeout_ms],
+        receive_timeout: @similar_search_receive_timeout_ms
+      )
 
     case Typesense.handle_multi_search_res(res) do
       {:ok, {images, found, current_page}} ->
@@ -350,12 +356,14 @@ defmodule Vmemo.SearchEngine.TsImage do
     images |> Enum.map(&parse/1)
   end
 
-  defp post_multi_search(req, payload, attempt \\ 0) do
-    case Typesense.request(:post, req, json: payload) do
+  defp post_multi_search(req, payload, request_opts \\ [], attempt \\ 0) do
+    opts = Keyword.merge([json: payload], request_opts)
+
+    case Typesense.request(:post, req, opts) do
       {:error, %Req.TransportError{reason: :closed} = reason}
       when attempt < @multi_search_retry_attempts ->
         _ = reason
-        post_multi_search(req, payload, attempt + 1)
+        post_multi_search(req, payload, request_opts, attempt + 1)
 
       other ->
         other
