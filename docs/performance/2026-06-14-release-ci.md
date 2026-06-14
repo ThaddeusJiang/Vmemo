@@ -23,8 +23,11 @@ Recent Vmemo manual release runs show the slow step is stable, not a one-off rel
 | `27486255029` | `2026.6.14-rc.1` | about 42m23s |
 | `27456991550` | `2026.6.12-rc.1` | about 46m10s |
 | `27488815425` | `2026.6.14-rc.2` | about 42m33s |
+| `27489756442` | `2026.6.14-rc.3` | about 5m14s |
 
 For comparison, `ThaddeusJiang/save_it` release run `27485655441` finished its Docker `Build and push` step in about 5m51s.
+
+After the fix, Vmemo `2026.6.14-rc.3` finished the full Docker job in 5m31s, and the `Build and push` step itself took about 5m14s.
 
 ## Root Cause
 
@@ -70,5 +73,8 @@ Stable release publishing still supports multi-architecture images through `rele
 - `git diff --check` passed.
 - Docker builder stage completed successfully, including `mix compile`, `mix assets.deploy`, and `mix release`.
 - Final Docker image build completed successfully as `vmemo-release-ci-check:latest`.
+- `2026.6.14-rc.3` release workflow completed successfully.
+- `2026.6.14-rc.3` skipped QEMU, built and pushed in about 5m14s, and published `ghcr.io/thaddeusjiang/vmemo:2026.6.14-rc.3`.
+- `ghcr.io/thaddeusjiang/vmemo:stag` now points at the same digest as `2026.6.14-rc.3`.
 
 Local `linux/amd64` Docker build was not used as final evidence because the local macOS/OrbStack emulation path failed before project code ran, during Erlang startup in `mix local.hex`. The native build verified the Dockerfile changes themselves.
