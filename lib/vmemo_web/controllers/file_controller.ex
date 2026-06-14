@@ -1,6 +1,8 @@
 defmodule VmemoWeb.FileController do
   use VmemoWeb, :controller
 
+  alias Vmemo.Memo.ImageStorage
+
   @storage_root Path.expand("storage/v1")
   @storage_accel_redirect_prefix "/storage/v1/_internal"
   @allowed_mime_types %{
@@ -194,15 +196,20 @@ defmodule VmemoWeb.FileController do
     if File.exists?(file_path) do
       {:ok, file_path}
     else
-      fallback_original_image_path(file_path)
+      maybe_generate_thumbnail(file_path)
+    end
+  end
+
+  defp maybe_generate_thumbnail(file_path) do
+    case fallback_original_image_path(file_path) do
+      {:ok, original_path} -> ImageStorage.ensure_thumbnail_for_request(original_path, file_path)
+      :error -> :error
     end
   end
 
   defp normalize_filename(filename) when is_binary(filename) do
-    normalized_filename = String.downcase(filename)
-
-    if String.match?(normalized_filename, ~r/^[a-z0-9._-]+$/) do
-      {:ok, normalized_filename}
+    if String.match?(filename, ~r/^[A-Za-z0-9._-]+$/) do
+      {:ok, filename}
     else
       {:error, :invalid_filename}
     end

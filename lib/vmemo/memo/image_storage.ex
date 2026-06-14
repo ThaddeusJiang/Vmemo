@@ -16,8 +16,18 @@ defmodule Vmemo.Memo.ImageStorage do
 
     Enum.each(@thumb_sizes, fn {size, max_side} ->
       thumb_path = "#{root}--#{size}#{ext}"
-      ImageMagick.resize_to_fit!(storage_path, thumb_path, max_side)
+      resize_to_fit_atomic!(storage_path, thumb_path, max_side)
     end)
+  end
+
+  def ensure_thumbnail_for_request(original_path, requested_path)
+      when is_binary(original_path) and is_binary(requested_path) do
+    with {:ok, max_side} <- thumbnail_max_side(requested_path) do
+      resize_to_fit_atomic!(original_path, requested_path, max_side)
+      {:ok, requested_path}
+    end
+  rescue
+    error -> {:error, error}
   end
 
   def thumbnail_url(url, size) when size in [:s, :m] and is_binary(url) do
@@ -58,6 +68,35 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   def storage_path_from_url(_, _), do: {:error, :invalid_url}
+
+  defp thumbnail_max_side(path) do
+    ext = Path.extname(path)
+    root = Path.rootname(path, ext)
+
+    cond do
+      String.ends_with?(root, "--s") -> {:ok, Map.fetch!(@thumb_sizes, :s)}
+      String.ends_with?(root, "--m") -> {:ok, Map.fetch!(@thumb_sizes, :m)}
+      true -> {:error, :not_thumbnail}
+    end
+  end
+
+  defp resize_to_fit_atomic!(input_path, output_path, max_side) do
+    tmp_path = temporary_output_path(output_path)
+
+    try do
+      ImageMagick.resize_to_fit!(input_path, tmp_path, max_side)
+      File.rename!(tmp_path, output_path)
+    after
+      _ = File.rm(tmp_path)
+    end
+  end
+
+  defp temporary_output_path(output_path) do
+    ext = Path.extname(output_path)
+    root = Path.rootname(output_path, ext)
+    unique = System.unique_integer([:positive, :monotonic])
+    "#{root}.tmp-#{unique}#{ext}"
+  end
 
   defp gen_dest(user_id, filename) do
     timestamp = DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
