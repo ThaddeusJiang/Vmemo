@@ -6,6 +6,7 @@ defmodule VmemoWeb.JobsLive do
 
   alias Vmemo.Memo.Image
   alias Vmemo.Jobs.Job
+  alias Vmemo.Storage
 
   @impl true
   def mount(_params, _session, socket) do
@@ -91,8 +92,9 @@ defmodule VmemoWeb.JobsLive do
               <div class="flex items-start gap-3">
                 <.link href={~p"/jobs/#{row.job.id}"} class="block shrink-0">
                   <.img
-                    src={(row.image && row.image.url) || "/images/logo.svg"}
+                    src={(row.image && Storage.img(row.image.url, 160)) || "/images/logo.svg"}
                     alt={row.job.image_id}
+                    image_variant={:thumb}
                     wrapper_class="h-12 w-12 rounded-lg overflow-hidden"
                     class="h-full w-full rounded-lg object-cover border border-base-300 !shadow-none hover:scale-[1.02] transition-transform duration-200"
                     loading="lazy"
@@ -343,7 +345,7 @@ defmodule VmemoWeb.JobsLive do
     %{
       id: job.id,
       image_id: job.image_id,
-      image_url: (image && image.url) || "/images/logo.svg",
+      image_url: (image && Storage.img(image.url, 160)) || "/images/logo.svg",
       description: notification_message(job),
       status: notification_status(job.status),
       inserted_at: job.inserted_at,

@@ -77,7 +77,7 @@ defmodule VmemoWeb.FileController do
     conn
     |> put_resp_header("content-type", detect_safe_mime(file_path))
     |> put_resp_header("content-disposition", "inline")
-    |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
+    |> put_resp_header("cache-control", "public, max-age=0, must-revalidate")
     |> put_resp_header("etag", etag)
     |> put_resp_header("last-modified", last_modified)
   end
@@ -166,10 +166,7 @@ defmodule VmemoWeb.FileController do
     ext = Path.extname(file_path)
     root = Path.rootname(file_path, ext)
 
-    fallback_root =
-      if String.ends_with?(root, "--s") or String.ends_with?(root, "--m") do
-        String.slice(root, 0, byte_size(root) - 3)
-      end
+    fallback_root = thumbnail_source_root(root)
 
     case fallback_root do
       root when is_binary(root) ->
@@ -189,6 +186,19 @@ defmodule VmemoWeb.FileController do
 
       _ ->
         :error
+    end
+  end
+
+  defp thumbnail_source_root(root) do
+    cond do
+      String.ends_with?(root, "--s") or String.ends_with?(root, "--m") ->
+        String.slice(root, 0, byte_size(root) - 3)
+
+      Regex.match?(~r/--\d+w$/, root) ->
+        Regex.replace(~r/--\d+w$/, root, "")
+
+      true ->
+        nil
     end
   end
 

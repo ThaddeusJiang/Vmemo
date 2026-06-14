@@ -78,6 +78,7 @@ defmodule VmemoWeb.NotificationsComponents do
       <.img
         src={@notification.image_url}
         alt={@notification.id}
+        image_variant={:thumb}
         wrapper_class="notification-item-thumb mt-0.5 h-10 w-10 shrink-0 rounded-md"
         class="h-full w-full rounded-md object-cover !shadow-none hover:!shadow-none"
         loading="lazy"

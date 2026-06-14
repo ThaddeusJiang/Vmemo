@@ -108,19 +108,17 @@ defmodule SmallSdk.ImageMagick do
   end
 
   defp build_resize_file_args(true, in_path, out_path, max_side) do
-    [
-      "convert",
-      in_path,
-      "-auto-orient",
-      "-resize",
-      "#{max_side}x#{max_side}>",
-      "-strip",
-      out_path
-    ]
+    ["convert" | build_resize_file_args(false, in_path, out_path, max_side)]
   end
 
   defp build_resize_file_args(false, in_path, out_path, max_side) do
-    [in_path, "-auto-orient", "-resize", "#{max_side}x#{max_side}>", "-strip", out_path]
+    output_args =
+      out_path
+      |> Path.extname()
+      |> String.downcase()
+      |> resize_output_args(out_path)
+
+    [in_path, "-auto-orient", "-resize", "#{max_side}x#{max_side}>", "-strip"] ++ output_args
   end
 
   defp build_convert_to_png_args(true, in_path, out_path) do
@@ -164,6 +162,16 @@ defmodule SmallSdk.ImageMagick do
         common ++ [out_path]
     end
   end
+
+  defp resize_output_args(".webp", out_path), do: ["-quality", "80", out_path]
+  defp resize_output_args(".jpg", out_path), do: ["-quality", "82", out_path]
+  defp resize_output_args(".jpeg", out_path), do: ["-quality", "82", out_path]
+
+  defp resize_output_args(".png", out_path) do
+    ["-define", "png:compression-level=3", out_path]
+  end
+
+  defp resize_output_args(_, out_path), do: [out_path]
 
   defp extension_for_mime("image/png"), do: "png"
   defp extension_for_mime("image/gif"), do: "gif"

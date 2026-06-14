@@ -950,8 +950,11 @@ defmodule VmemoWeb.CoreComponents do
   attr :class, :string, default: nil
   attr :wrapper_class, :string, default: nil
   attr :id, :string, default: nil
+  attr :image_variant, :atom, default: :grid, values: [:thumb, :grid, :detail, :full]
+  attr :srcset, :string, default: nil
+  attr :sizes, :string, default: nil
   # arbitrary HTML attributes
-  attr :rest, :global, include: ~w(loading decoding fetchpriority referrerpolicy)
+  attr :rest, :global, include: ~w(loading decoding fetchpriority referrerpolicy style)
 
   @doc """
   Renders an image tag.
@@ -961,16 +964,21 @@ defmodule VmemoWeb.CoreComponents do
       <.img src="/images/image.jpg" alt="A image of a mountain" />
   """
   def img(assigns) do
+    assigns = assign_responsive_image(assigns)
+
     ~H"""
     <span class={["img-fallback-wrap block relative rounded-lg overflow-hidden", @wrapper_class]}>
       <img
-        src={@src}
+        src={@resolved_src}
+        srcset={@resolved_srcset}
+        sizes={@resolved_sizes}
         alt={@alt}
         class={[
           "w-full h-auto object-cover rounded-lg shadow hover:shadow-lg hover:transition-transform",
           @class
         ]}
         id={@id || generate_id()}
+        decoding={@decoding}
         phx-hook="ImageLoader"
         {@rest}
       />
@@ -979,6 +987,35 @@ defmodule VmemoWeb.CoreComponents do
       </span>
     </span>
     """
+  end
+
+  defp assign_responsive_image(assigns) do
+    rest = Map.get(assigns, :rest, %{})
+    decoding = Map.get(rest, :decoding) || Map.get(rest, "decoding") || "async"
+    rest = Map.drop(rest, [:decoding, "decoding"])
+
+    assigns
+    |> assign(:resolved_src, responsive_image_src(assigns.src, assigns.image_variant))
+    |> assign(
+      :resolved_srcset,
+      assigns.srcset || Vmemo.Storage.srcset(assigns.src, assigns.image_variant)
+    )
+    |> assign(
+      :resolved_sizes,
+      assigns.sizes || responsive_image_sizes(assigns.src, assigns.image_variant)
+    )
+    |> assign(:decoding, decoding)
+    |> assign(:rest, rest)
+  end
+
+  defp responsive_image_src(src, :thumb), do: Vmemo.Storage.img(src, 160)
+  defp responsive_image_src(src, :grid), do: Vmemo.Storage.img(src, 640)
+  defp responsive_image_src(src, :detail), do: Vmemo.Storage.img(src, 1280)
+  defp responsive_image_src(src, :full), do: Vmemo.Storage.img(src, 1920)
+  defp responsive_image_src(src, _), do: src
+
+  defp responsive_image_sizes(src, image_variant) do
+    if Vmemo.Storage.srcset(src), do: Vmemo.Storage.img_sizes(image_variant)
   end
 
   @doc """
