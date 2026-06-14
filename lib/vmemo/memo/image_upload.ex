@@ -3,13 +3,14 @@ defmodule Vmemo.Memo.ImageUpload do
 
   alias SmallSdk.ImageMagick
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Storage
 
   def store(src, user_id, filename) do
     prepared = prepare_for_storage!(src, filename)
 
     try do
       with {:ok, dest} <- ImageStorage.cp_file(prepared.path, user_id, prepared.filename) do
-        {:ok, %{dest: dest, filename: prepared.filename}}
+        {:ok, %{dest: dest, url: Storage.url_path_from_path!(dest), filename: prepared.filename}}
       end
     after
       if prepared.cleanup? do

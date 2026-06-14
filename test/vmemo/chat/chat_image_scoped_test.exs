@@ -11,6 +11,7 @@ defmodule Vmemo.ChatImageScopedTest do
   alias Vmemo.Chat.AiRouter
   alias Vmemo.Chat.Commands
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
 
   describe "image scoped conversation" do
     test "allows multiple conversations for one image and supports filter by initial image" do
@@ -116,7 +117,7 @@ defmodule Vmemo.ChatImageScopedTest do
   end
 
   defp ensure_fixture_image!(user_id, file_id) do
-    image_dir = Path.join(["storage", "v1", user_id, "images"])
+    image_dir = Storage.path(["v1", user_id, "images"])
     image_path = Path.join(image_dir, file_id)
     File.mkdir_p!(image_dir)
 

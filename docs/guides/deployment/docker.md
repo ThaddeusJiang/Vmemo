@@ -59,23 +59,27 @@ docker exec -it <container_name> /app/bin/vmemo remote
 8. `OPENROUTER_API_KEY`
 9. `SENTRY_DSN`
 
-Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
+Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`, `VMEMO_STORAGE_DIR`
 
 Storage acceleration:
 
 - Browser-facing storage URLs stay under `/storage/v1`.
+- Physical file storage uses `VMEMO_STORAGE_DIR`; the app stores versioned files under
+  `$VMEMO_STORAGE_DIR/v1`.
+- Local `mix` defaults to `./data/storage`. The production Docker image defaults to
+  `/data/storage`.
 - Phoenix performs the lightweight owner check, then returns `X-Accel-Redirect`
   under `/storage/v1/_internal`.
-- Nginx sends the file bytes from the app's `storage/v1` directory. The production
-  Docker image enables this by default: Nginx listens on `4000`, while Phoenix
-  listens internally on `PHX_PORT=4001`.
+- Nginx sends the file bytes from `$VMEMO_STORAGE_DIR/v1`. The production Docker
+  image enables this by default: Nginx listens on `4000`, while Phoenix listens
+  internally on `PHX_PORT=4001`.
 
-Example Nginx location:
+Default rendered Nginx location in the production image:
 
 ```nginx
 location /storage/v1/_internal/ {
   internal;
-  alias /app/storage/v1/;
+  alias /data/storage/v1/;
 }
 ```
 

@@ -2,6 +2,7 @@ defmodule Vmemo.Account.UserProfileStorage do
   @moduledoc false
 
   alias SmallSdk.FileSystem
+  alias Vmemo.Storage
 
   def cp_avatar(src, user_id, filename) do
     dest = FileSystem.cp!(src, avatar_dest(user_id, filename))
@@ -9,7 +10,7 @@ defmodule Vmemo.Account.UserProfileStorage do
   end
 
   def avatar_path(user_id, filename) do
-    Path.join(["storage", "v1", user_id, "avatars", filename |> to_string() |> String.downcase()])
+    Storage.path(["v1", user_id, "avatars", filename |> to_string() |> String.downcase()])
   end
 
   defp avatar_dest(user_id, filename) do

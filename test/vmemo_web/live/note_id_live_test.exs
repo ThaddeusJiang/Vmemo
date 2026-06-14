@@ -5,6 +5,7 @@ defmodule VmemoWeb.NoteIdLiveTest do
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
+  alias Vmemo.Storage
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
@@ -76,9 +77,9 @@ defmodule VmemoWeb.NoteIdLiveTest do
   defp ensure_fixture_image!(attrs) do
     user_id = Map.fetch!(attrs, :user_id)
     url = Map.fetch!(attrs, :url)
-    storage_path = url |> String.trim_leading("/") |> Path.expand()
+    {:ok, storage_path} = Storage.path_from_url(url)
 
-    expected_prefix = Path.join(["storage", "v1", user_id, "images"]) |> Path.expand()
+    expected_prefix = Storage.path(["v1", user_id, "images"])
 
     if String.starts_with?(storage_path, expected_prefix <> "/") do
       File.mkdir_p!(Path.dirname(storage_path))

@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Storage.Drop do
 
   @impl Mix.Task
   def run(_args) do
-    storage_root = Path.join(["storage", "v1"])
+    storage_root = Vmemo.Storage.v1_path()
 
     File.rm_rf!(storage_root)
     File.mkdir_p!(storage_root)

@@ -5,8 +5,6 @@ defmodule Vmemo.Memo.ImageStorageTest do
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.Storage
 
-  @storage_prefix Path.join(["storage", "v1"]) |> Path.expand()
-
   test "Storage.img/2 appends thumbnail suffix for supported sizes" do
     url = "/storage/v1/u1/images/123_photo.png"
 
@@ -16,13 +14,13 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
   test "storage_path_from_url/2 resolves absolute storage path from URL path" do
     user_id = "u-#{System.unique_integer([:positive])}"
-    image_dir = Path.join([@storage_prefix, user_id, "images"])
+    image_dir = Storage.path(["v1", user_id, "images"])
     File.mkdir_p!(image_dir)
     image_path = Path.join(image_dir, "demo.png")
     File.write!(image_path, "demo")
 
     on_exit(fn ->
-      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+      File.rm_rf!(Storage.path(["v1", user_id]))
     end)
 
     assert {:ok, ^image_path} =
@@ -34,13 +32,13 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
   test "storage_path_from_url/2 resolves fallback by basename when URL path is external" do
     user_id = "u-#{System.unique_integer([:positive])}"
-    image_dir = Path.join([@storage_prefix, user_id, "images"])
+    image_dir = Storage.path(["v1", user_id, "images"])
     File.mkdir_p!(image_dir)
     image_path = Path.join(image_dir, "demo.jpg")
     File.write!(image_path, "demo")
 
     on_exit(fn ->
-      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+      File.rm_rf!(Storage.path(["v1", user_id]))
     end)
 
     assert {:ok, ^image_path} =
@@ -54,7 +52,7 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
     on_exit(fn ->
       File.rm(src)
-      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+      File.rm_rf!(Storage.path(["v1", user_id]))
     end)
 
     assert {:ok, dest} = ImageStorage.cp_file(src, user_id, "clipboard.tiff")
@@ -69,14 +67,16 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
     on_exit(fn ->
       File.rm(src)
-      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+      File.rm_rf!(Storage.path(["v1", user_id]))
     end)
 
-    assert {:ok, %{dest: dest, filename: filename}} =
+    assert {:ok, %{dest: dest, url: url, filename: filename}} =
              ImageUpload.store(src, user_id, "clipboard.tiff")
 
     assert filename == "clipboard.png"
+    assert url =~ ~r"^/storage/v1/#{user_id}/images/\d+_clipboard\.png$"
     assert Path.extname(dest) == ".png"
+    assert String.starts_with?(dest, Storage.path(["v1", user_id, "images"]) <> "/")
     assert <<0x89, 0x50, 0x4E, 0x47, _::binary>> = File.read!(dest)
   end
 

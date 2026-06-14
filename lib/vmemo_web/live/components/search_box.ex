@@ -158,13 +158,13 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         filename = entry.uuid <> Path.extname(entry.client_name)
 
-        with {:ok, %{dest: dest, filename: stored_filename}} <-
+        with {:ok, %{url: url, filename: stored_filename}} <-
                ImageUpload.store(path, current_user.id, filename),
              {:ok, image} <-
                Image.create_with_sync(
                  %{
                    note: "",
-                   url: Path.join("/", dest),
+                   url: url,
                    file_id: stored_filename,
                    user_id: current_user.id,
                    upload_batch_id: Ecto.UUID.generate(),
@@ -247,13 +247,13 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
       filename = entry.uuid <> Path.extname(entry.client_name)
 
-      with {:ok, %{dest: dest, filename: stored_filename}} <-
+      with {:ok, %{url: url, filename: stored_filename}} <-
              ImageUpload.store(path, current_user.id, filename),
            {:ok, image} <-
              Image.create_with_sync(
                %{
                  note: "",
-                 url: Path.join("/", dest),
+                 url: url,
                  file_id: stored_filename,
                  user_id: current_user.id,
                  upload_batch_id: Ecto.UUID.generate(),

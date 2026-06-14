@@ -2,8 +2,8 @@ defmodule VmemoWeb.FileController do
   use VmemoWeb, :controller
 
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Storage
 
-  @storage_root Path.expand("storage/v1")
   @storage_accel_redirect_prefix "/storage/v1/_internal"
   @allowed_mime_types %{
     ".png" => "image/png",
@@ -91,7 +91,7 @@ defmodule VmemoWeb.FileController do
   defp storage_accel_redirect_path(file_path) do
     file_path
     |> Path.expand()
-    |> Path.relative_to(@storage_root)
+    |> Path.relative_to(Storage.v1_path())
     |> then(&Path.join(@storage_accel_redirect_prefix, &1))
   end
 
@@ -232,9 +232,9 @@ defmodule VmemoWeb.FileController do
   defp avatar_path(user_id, filename), do: safe_storage_path([user_id, "avatars", filename])
 
   defp safe_storage_path(parts) do
-    path = Path.join(["storage/v1" | parts]) |> Path.expand()
+    path = Storage.path(["v1" | parts])
 
-    if String.starts_with?(path, @storage_root <> "/") do
+    if String.starts_with?(path, Storage.v1_path() <> "/") do
       {:ok, path}
     else
       {:error, :invalid_path}

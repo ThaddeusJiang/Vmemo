@@ -408,15 +408,10 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   defp read_image_binary(url) do
-    relative_path =
-      url
-      |> String.trim_leading("/")
-      |> String.trim_leading("storage/v1/")
-
-    file_path = Path.join(["storage", "v1", relative_path])
-
-    case File.read(file_path) do
-      {:ok, binary} -> {:ok, binary}
+    with {:ok, file_path} <- Storage.path_from_url(url),
+         {:ok, binary} <- File.read(file_path) do
+      {:ok, binary}
+    else
       {:error, :enoent} -> {:error, :file_not_found}
       {:error, reason} -> {:error, reason}
     end

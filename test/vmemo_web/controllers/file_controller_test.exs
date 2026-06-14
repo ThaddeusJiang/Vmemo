@@ -3,19 +3,27 @@ defmodule VmemoWeb.FileControllerTest do
 
   import Vmemo.AccountFixtures
 
-  @base_dir Path.join(["storage", "v1"])
+  alias Vmemo.Storage
 
   setup %{conn: conn} do
+    storage_root = Path.join(System.tmp_dir!(), "vmemo-file-controller-test")
+    original_storage_root = Application.get_env(:vmemo, :storage_root)
+    Application.put_env(:vmemo, :storage_root, storage_root)
+
     user = user_fixture()
     other_user = user_fixture()
     conn = log_in_user(conn, user)
 
-    image_dir = Path.join([@base_dir, user.id, "images"])
+    image_dir = Storage.path(["v1", user.id, "images"])
     File.mkdir_p!(image_dir)
 
     on_exit(fn ->
-      File.rm_rf!(Path.join([@base_dir, user.id]))
-      File.rm_rf!(Path.join([@base_dir, other_user.id]))
+      File.rm_rf!(storage_root)
+
+      case original_storage_root do
+        nil -> Application.delete_env(:vmemo, :storage_root)
+        value -> Application.put_env(:vmemo, :storage_root, value)
+      end
     end)
 
     {:ok, conn: conn, user: user, other_user: other_user, image_dir: image_dir}
@@ -172,7 +180,7 @@ defmodule VmemoWeb.FileControllerTest do
   end
 
   test "accelerates avatar when file exists", %{conn: conn, user: user} do
-    avatar_dir = Path.join([@base_dir, user.id, "avatars"])
+    avatar_dir = Storage.path(["v1", user.id, "avatars"])
     File.mkdir_p!(avatar_dir)
     avatar = Path.join(avatar_dir, "me.jpg")
     File.write!(avatar, "jpg-data")

@@ -9,6 +9,7 @@ defmodule Vmemo.Admin.Import do
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
+  alias Vmemo.Storage
 
   @error_limit 50
 
@@ -420,14 +421,20 @@ defmodule Vmemo.Admin.Import do
 
   defp copy_import_storage_file(source, tmp_dir, acc) do
     rel_path = Path.relative_to(source, tmp_dir)
-    dest = Path.expand(rel_path, File.cwd!())
-    File.mkdir_p!(Path.dirname(dest))
 
-    if File.exists?(dest) do
-      %{acc | skipped: acc.skipped + 1}
-    else
-      File.cp!(source, dest)
-      %{acc | copied: acc.copied + 1}
+    case Storage.path_from_url(rel_path) do
+      {:ok, dest} ->
+        File.mkdir_p!(Path.dirname(dest))
+
+        if File.exists?(dest) do
+          %{acc | skipped: acc.skipped + 1}
+        else
+          File.cp!(source, dest)
+          %{acc | copied: acc.copied + 1}
+        end
+
+      {:error, _reason} ->
+        %{acc | skipped: acc.skipped + 1}
     end
   end
 

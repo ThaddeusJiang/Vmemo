@@ -496,12 +496,12 @@ defmodule VmemoWeb.Api.V1.ImageController do
     user_id = to_string(current_user.id)
 
     try do
-      {:ok, %{dest: dest, filename: stored_filename}} = ImageUpload.store(path, user_id, filename)
+      {:ok, %{url: url, filename: stored_filename}} = ImageUpload.store(path, user_id, filename)
       note = Map.get(params, "note", "")
 
       attrs = %{
         note: note,
-        url: Path.join("/", dest),
+        url: url,
         file_id: stored_filename,
         user_id: user_id,
         inner_purpose: nil

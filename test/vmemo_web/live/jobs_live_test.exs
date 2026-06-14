@@ -5,6 +5,7 @@ defmodule VmemoWeb.JobsLiveTest do
   alias Ash
   alias Vmemo.Memo.Image
   alias Vmemo.Jobs.Job
+  alias Vmemo.Storage
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
@@ -189,7 +190,7 @@ defmodule VmemoWeb.JobsLiveTest do
   defp ensure_fixture_image!(attrs) do
     user_id = Map.fetch!(attrs, :user_id)
     file_id = Map.fetch!(attrs, :file_id)
-    image_dir = Path.join(["storage", "v1", user_id, "images"])
+    image_dir = Storage.path(["v1", user_id, "images"])
     image_path = Path.join(image_dir, file_id)
 
     File.mkdir_p!(image_dir)

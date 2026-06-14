@@ -28,6 +28,7 @@ defmodule Vmemo.Memo.Image do
   alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.SearchEngine.TsImage
+  alias Vmemo.Storage
 
   postgres do
     table "memo_images"
@@ -388,12 +389,12 @@ defmodule Vmemo.Memo.Image do
           user_id = actor.id
 
           case ImageUpload.store(temp_path, user_id, storage_file_id) do
-            {:ok, %{dest: dest, filename: stored_filename}} ->
+            {:ok, %{url: url, filename: stored_filename}} ->
               case Ash.create(
                      __MODULE__,
                      %{
                        note: "",
-                       url: Path.join("/", dest),
+                       url: url,
                        file_id: stored_filename,
                        user_id: user_id,
                        inner_purpose: "search"
@@ -1054,10 +1055,10 @@ defmodule Vmemo.Memo.Image do
          tmp_path <-
            Path.join("tmp/mcp_uploads", "#{System.system_time(:microsecond)}-#{final_filename}"),
          :ok <- File.write(tmp_path, binary),
-         {:ok, %{dest: dest, filename: stored_filename}} <-
+         {:ok, %{url: url, filename: stored_filename}} <-
            ImageUpload.store(tmp_path, user_id, final_filename) do
       _ = File.rm(tmp_path)
-      {:ok, %{url: Path.join("/", dest), file_id: stored_filename}}
+      {:ok, %{url: url, file_id: stored_filename}}
     else
       :error ->
         {:error, "Invalid file payload"}
@@ -1101,19 +1102,12 @@ defmodule Vmemo.Memo.Image do
 
   # Helper function to read image file as base64 with MIME type detection
   defp read_image_as_base64(url) do
-    relative_path =
-      url
-      |> String.trim_leading("/")
-      |> String.trim_leading("storage/v1/")
-
-    file_path = Path.join(["storage", "v1", relative_path])
-
-    case File.read(file_path) do
-      {:ok, binary} ->
-        mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
-        base64_data = Base.encode64(binary)
-        {:ok, {base64_data, mime_type}}
-
+    with {:ok, file_path} <- Storage.path_from_url(url),
+         {:ok, binary} <- File.read(file_path) do
+      mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"
+      base64_data = Base.encode64(binary)
+      {:ok, {base64_data, mime_type}}
+    else
       {:error, :enoent} ->
         {:error, :file_not_found}
 

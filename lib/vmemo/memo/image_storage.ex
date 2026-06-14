@@ -2,6 +2,7 @@ defmodule Vmemo.Memo.ImageStorage do
   @moduledoc false
   alias SmallSdk.FileSystem
   alias SmallSdk.ImageMagick
+  alias Vmemo.Storage
 
   @thumb_sizes %{s: 320, m: 1280}
 
@@ -39,27 +40,17 @@ defmodule Vmemo.Memo.ImageStorage do
   def thumbnail_url(url, _size), do: url
 
   def storage_path_from_url(url, user_id) when is_binary(url) and not is_nil(user_id) do
-    storage_prefix = Path.join(["storage", "v1"]) |> Path.expand()
     parsed = URI.parse(url)
     raw_path = parsed.path || url
 
-    primary =
-      raw_path
-      |> String.trim_leading("/")
-      |> Path.expand()
-
-    fallback =
-      raw_path
-      |> Path.basename()
-      |> then(&Path.join(["storage", "v1", to_string(user_id), "images", &1]))
-      |> Path.expand()
+    primary = storage_path_from_raw_url_path(raw_path)
+    fallback = fallback_image_path(raw_path, user_id)
 
     cond do
-      String.starts_with?(primary, storage_prefix <> "/") and
-        String.contains?(primary, "/images/") and File.exists?(primary) ->
+      existing_image_path?(primary) ->
         {:ok, primary}
 
-      String.starts_with?(fallback, storage_prefix <> "/") and File.exists?(fallback) ->
+      File.exists?(fallback) ->
         {:ok, fallback}
 
       true ->
@@ -68,6 +59,25 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   def storage_path_from_url(_, _), do: {:error, :invalid_url}
+
+  defp storage_path_from_raw_url_path(raw_path) do
+    case Storage.path_from_url(raw_path) do
+      {:ok, path} -> path
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp fallback_image_path(raw_path, user_id) do
+    raw_path
+    |> Path.basename()
+    |> then(&Storage.path(["v1", to_string(user_id), "images", &1]))
+  end
+
+  defp existing_image_path?(path) when is_binary(path) do
+    String.contains?(path, "/images/") and File.exists?(path)
+  end
+
+  defp existing_image_path?(_path), do: false
 
   defp thumbnail_max_side(path) do
     ext = Path.extname(path)

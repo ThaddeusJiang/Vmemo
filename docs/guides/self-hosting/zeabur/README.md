@@ -20,3 +20,7 @@ The template exposes the Vmemo service on port `4000`. The production image star
 Nginx on that public port and runs Phoenix internally on `4001`, so `/storage/v1`
 image requests keep the normal browser URL while Nginx handles the internal
 `X-Accel-Redirect` file response.
+
+The template mounts the Vmemo service volume at `/data` and sets
+`VMEMO_STORAGE_DIR=/data/storage`, so uploaded files are stored under
+`/data/storage/v1`.

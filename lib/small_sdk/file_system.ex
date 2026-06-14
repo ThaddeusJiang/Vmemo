@@ -5,9 +5,10 @@ defmodule SmallSdk.FileSystem do
   naming reference: Expo.dev FileSystem
   """
 
-  @v1 "storage/v1"
+  alias Vmemo.Storage
+
   def cp!(src, dest) do
-    dest = Path.join([@v1, dest])
+    dest = Storage.path(["v1", dest])
 
     dest_dir = Path.dirname(dest)
 

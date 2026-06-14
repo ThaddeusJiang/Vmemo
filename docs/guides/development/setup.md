@@ -38,6 +38,10 @@ Phoenix still runs on `http://localhost:4000`, but storage image responses use
 `X-Accel-Redirect`. Use the Nginx proxy on port `4080` when validating image
 loading performance or `/storage/v1` image URLs locally.
 
+Local `mix` stores uploaded files under `./data/storage` by default. Override the
+physical storage root with `VMEMO_STORAGE_DIR` when a worktree needs a separate
+data location. Browser-facing URLs remain under `/storage/v1`.
+
 Test dependencies:
 
 ```bash
@@ -67,6 +71,7 @@ Typical local runtime values:
 DATABASE_URL = "postgres://postgres:postgres@localhost:10001/vmemo_dev"
 TYPESENSE_URL = "http://localhost:10002"
 MOONDREAM_URL = "http://localhost:2020/v1/"
+# VMEMO_STORAGE_DIR = "./data/storage"
 ```
 
 For test/e2e in Docker Compose, use the test services (for example `10003` / `20002`) in the test runtime environment.

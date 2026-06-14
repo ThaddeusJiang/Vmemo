@@ -132,7 +132,9 @@
 
 - Web uses built-in LiveView upload (`allow_upload`)
 - API uses multipart with extension and magic-byte validation
-- Storage path: `storage/v1/<user_id>/photos/<timestamp>_<filename>`
+- Browser-facing storage URL path: `/storage/v1/<user_id>/images/<timestamp>_<filename>`
+- Physical storage root: `VMEMO_STORAGE_DIR`; local `mix` defaults to
+  `./data/storage`, and the Docker image defaults to `/data/storage`
 - `Photo.create_with_sync` auto-enqueues Typesense sync
 
 ### 4.3 Search

@@ -112,4 +112,5 @@ http://localhost:14000
 ## Notes
 
 - For this self-hosting mode, host-level `ImageMagick` is not required. The Vmemo app image already bundles `ImageMagick`.
+- Docker Compose mounts `./vmemo_data` to `/data`; the Vmemo image stores files under `/data/storage/v1` by default.
 - For detailed tunnel operations and troubleshooting, see [Cloudflare Tunnel CLI](cloudflare-tunnel-cli.md).
