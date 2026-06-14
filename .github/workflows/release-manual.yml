@@ -75,6 +75,8 @@ jobs:
     with:
       is_prerelease: true
       version: ${{ needs.release.outputs.version }}
+      platforms: linux/amd64
+      cache_scope: vmemo-release-amd64
     permissions:
       contents: read
       packages: write
