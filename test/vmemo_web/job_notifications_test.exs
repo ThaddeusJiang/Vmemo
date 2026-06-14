@@ -30,6 +30,10 @@ defmodule VmemoWeb.JobNotificationsTest do
 
     caption_notification = Enum.find(notifications, &(&1.id == failed_caption.id))
     assert caption_notification.description == "Caption generation failed."
+
+    assert caption_notification.image_url ==
+             "/storage/v1/#{user.id}/images/notify-message--160w.jpg"
+
     assert caption_notification.status == "failed"
 
     completed_caption =

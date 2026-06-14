@@ -47,9 +47,11 @@ defmodule VmemoWeb.TagsLive.Show do
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             <.link :for={image <- @images} navigate={~p"/images/#{image.id}"} class="group">
               <div class="aspect-square rounded-lg overflow-hidden border border-base-300 bg-base-200">
-                <img
+                <.img
                   src={Storage.img(image.url, :s)}
                   alt={image.caption || image.note || "image"}
+                  image_variant={:grid}
+                  wrapper_class="w-full h-full rounded-lg"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
               </div>

@@ -6,7 +6,7 @@ Date: 2026-06-14
 
 The `/images?q=` page was loading original-size files through thumbnail URLs when thumbnails were missing. This made the image grid request multi-megabyte files for small cards and could leave cards visually half-loaded while the browser waited on large image transfers.
 
-The fix changes storage image serving so missing `--s` and `--m` thumbnails are generated on demand and served through `X-Accel-Redirect` as thumbnail files. Thumbnail writes are now atomic, so a browser cannot read a partially-written thumbnail.
+The fix changes storage image serving so missing `--s`, `--m`, and width-based responsive variants such as `--640w` are generated on demand and served through `X-Accel-Redirect` as thumbnail files. Thumbnail writes are now atomic, so a browser cannot read a partially-written thumbnail.
 
 ## Production Baseline
 
@@ -41,14 +41,17 @@ One `--s.JPG` URL returned `404`, which matched the code path that lowercased sa
 - The response kept the requested thumbnail URL in the browser but redirected Nginx to the original storage file, so the UI appeared to request `--s` while actually transferring original-size content.
 - Safe filename normalization lowercased the filename, which broke stored files with uppercase extensions such as `.JPG`.
 - Thumbnail generation wrote directly to final thumbnail paths, which could expose partially-written files if a request arrived while generation was still in progress.
+- Storage image responses used immutable caching even though image files and thumbnails can be rewritten by user actions such as rotation.
 
 ## Fix
 
 - `Vmemo.Memo.ImageStorage.ensure_thumbnail_for_request/2` generates the requested thumbnail size from the original file.
+- `Vmemo.Storage.srcset/1` and the shared `<.img>` component expose width-based `srcset` candidates (`160w`, `320w`, `640w`, `1280w`, `1920w`) with usage-specific `sizes` hints so the browser can choose the right image before requesting it.
 - Thumbnail generation writes to a temporary path and atomically renames it into place.
 - `VmemoWeb.FileController` now generates missing thumbnail requests instead of serving the original file for `--s` or `--m` URLs.
 - Filename validation preserves original case while still allowing only safe path characters.
 - Failed thumbnail generation returns the normal missing-image 404 path instead of crashing the request.
+- Storage image responses now use ETag/Last-Modified revalidation instead of `immutable` caching because thumbnails are path-stable but content-mutable.
 
 ## Fixed-Code Local Benchmark
 
@@ -73,3 +76,4 @@ Result: targeted controller tests passed with 12 tests, 0 failures. `mix check` 
 
 - Deploying the fix prevents missing thumbnails from silently serving originals.
 - Existing missing thumbnails are generated lazily on first request. If the develop/prod dataset has many old images, run a one-time backfill or warm the `/images` grid after deployment to avoid first-user generation cost.
+- New UI image rendering should prefer the shared `<.img>` component with an `image_variant` (`:thumb`, `:grid`, `:detail`, or `:full`) instead of hand-writing `--s` or `--m` URLs.

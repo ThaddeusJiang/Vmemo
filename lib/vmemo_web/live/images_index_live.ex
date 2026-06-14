@@ -131,9 +131,11 @@ defmodule VmemoWeb.ImagesIndexLive do
               {gettext("Search")}:
             </div>
             <div class="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/60 shadow-md">
-              <img
+              <.img
                 src={Storage.img(@similar_photo.url, :s)}
                 alt={@similar_photo.note}
+                image_variant={:thumb}
+                wrapper_class="w-full h-full rounded-lg"
                 class="w-full h-full object-cover"
               />
             </div>

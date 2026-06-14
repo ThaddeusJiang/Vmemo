@@ -44,7 +44,7 @@ defmodule VmemoWeb.FileControllerTest do
 
     assert get_resp_header(conn, "content-type") == ["image/png"]
     assert get_resp_header(conn, "content-disposition") == ["inline"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
+    assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
     assert [etag] = get_resp_header(conn, "etag")
     assert String.starts_with?(etag, "\"vmemo-")
   end
@@ -71,6 +71,46 @@ defmodule VmemoWeb.FileControllerTest do
            ]
 
     assert get_resp_header(conn, "content-type") == ["image/png"]
+  end
+
+  test "generates width-based responsive image variant when missing", %{
+    conn: conn,
+    user: user,
+    image_dir: image_dir
+  } do
+    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
+    original = Path.join(image_dir, "responsive.png")
+    variant = Path.join(image_dir, "responsive--640w.png")
+    File.cp!(fixture, original)
+    refute File.exists?(variant)
+
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--640w.png")
+
+    assert response(conn, 200) == ""
+    assert File.exists?(variant)
+    assert File.stat!(variant).size < File.stat!(original).size
+
+    assert get_resp_header(conn, "x-accel-redirect") == [
+             "/storage/v1/_internal/#{user.id}/images/responsive--640w.png"
+           ]
+
+    assert get_resp_header(conn, "content-type") == ["image/png"]
+  end
+
+  test "rejects unsupported responsive image width variants", %{
+    conn: conn,
+    user: user,
+    image_dir: image_dir
+  } do
+    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
+    original = Path.join(image_dir, "responsive.png")
+    variant = Path.join(image_dir, "responsive--777w.png")
+    File.cp!(fixture, original)
+
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--777w.png")
+
+    assert response(conn, 404) == "File not found"
+    refute File.exists?(variant)
   end
 
   test "falls back to another extension when exact original does not exist", %{
@@ -186,7 +226,7 @@ defmodule VmemoWeb.FileControllerTest do
            ]
 
     assert get_resp_header(conn, "content-type") == ["image/jpeg"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
+    assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
 
   test "does not serve image files to anonymous users", %{
@@ -239,6 +279,6 @@ defmodule VmemoWeb.FileControllerTest do
 
     assert get_resp_header(conn, "content-type") == ["image/png"]
     assert get_resp_header(conn, "content-disposition") == ["inline"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
+    assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
 end

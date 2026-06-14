@@ -6,6 +6,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
   alias Vmemo.Chat
   alias Vmemo.Chat.Commands
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
   alias VmemoWeb.Components.ChatPanel
   alias VmemoWeb.LiveComponents.ConversationTitleEditor
 
@@ -421,7 +422,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
   defp add_image_thumbnail(acc, image_id, user) do
     case Image.get(image_id, actor: user) do
-      {:ok, image} -> Map.put(acc, image.id, image.url)
+      {:ok, image} -> Map.put(acc, image.id, Storage.img(image.url, 160))
       _ -> acc
     end
   end

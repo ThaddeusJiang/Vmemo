@@ -611,6 +611,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         <.img
           src={Storage.img(@image.url, :m)}
           alt={@image.note || "Image"}
+          image_variant={:detail}
           class="w-full h-auto rounded-lg"
         />
         <%= for {x, y} <- @points do %>
@@ -651,6 +652,7 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         <.img
           src={Storage.img(@image.url, :m)}
           alt={@image.note || "Image"}
+          image_variant={:detail}
           class="w-full h-auto rounded-lg"
         />
         <svg

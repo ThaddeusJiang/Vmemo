@@ -362,6 +362,7 @@ defmodule VmemoWeb.ImageIdLive do
                   src={Storage.img(@image.url, :m)}
                   id={"image-main-#{@image_dom_version}"}
                   alt={@image.note}
+                  image_variant={:detail}
                   wrapper_class="w-full h-full rounded-lg"
                   class="block !w-full !h-full !max-w-none !max-h-none !object-contain rounded-lg shadow hover:shadow-lg transition-shadow duration-200"
                   style={"transform: rotate(#{@image_rotation}deg); transform-origin: center;"}
@@ -617,6 +618,7 @@ defmodule VmemoWeb.ImageIdLive do
                     src={@image.url}
                     id={"expanded_photo-image-#{@image_dom_version}"}
                     alt={@image.note}
+                    image_variant={:full}
                     class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block transition-transform duration-200"
                     style={"transform: rotate(#{@image_rotation}deg); transform-origin: center;"}
                   />

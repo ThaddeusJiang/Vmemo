@@ -12,6 +12,27 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
     assert Storage.img(url, :s) == "/storage/v1/u1/images/123_photo--s.png"
     assert Storage.img(url, :m) == "/storage/v1/u1/images/123_photo--m.png"
+    assert Storage.img(url, 640) == "/storage/v1/u1/images/123_photo--640w.png"
+  end
+
+  test "Storage.srcset/1 exposes width-based responsive image candidates" do
+    url = "/storage/v1/u1/images/123_photo.png"
+
+    assert Storage.srcset(url) ==
+             "/storage/v1/u1/images/123_photo--160w.png 160w, " <>
+               "/storage/v1/u1/images/123_photo--320w.png 320w, " <>
+               "/storage/v1/u1/images/123_photo--640w.png 640w, " <>
+               "/storage/v1/u1/images/123_photo--1280w.png 1280w, " <>
+               "/storage/v1/u1/images/123_photo--1920w.png 1920w"
+
+    assert Storage.srcset("/images/logo.svg") == nil
+  end
+
+  test "Storage.img_sizes/1 maps image usage to browser sizes hints" do
+    assert Storage.img_sizes(:thumb) == "96px"
+    assert Storage.img_sizes(:grid) == "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+    assert Storage.img_sizes(:detail) == "(max-width: 768px) 100vw, 640px"
+    assert Storage.img_sizes(:full) == "100vw"
   end
 
   test "storage_path_from_url/2 resolves absolute storage path from URL path" do

@@ -6,6 +6,7 @@ defmodule VmemoWeb.JobNotifications do
 
   alias Vmemo.Jobs.Job
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
 
   def list_for_user(user, opts \\ [])
   def list_for_user(nil, _opts), do: {:ok, []}
@@ -33,7 +34,7 @@ defmodule VmemoWeb.JobNotifications do
         %{
           id: job.id,
           image_id: job.image_id,
-          image_url: (image && image.url) || "/images/logo.svg",
+          image_url: (image && Storage.img(image.url, 160)) || "/images/logo.svg",
           description: message(job, image),
           status: status(job.status),
           inserted_at: job.inserted_at,

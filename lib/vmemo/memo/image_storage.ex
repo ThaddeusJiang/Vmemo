@@ -3,7 +3,14 @@ defmodule Vmemo.Memo.ImageStorage do
   alias SmallSdk.FileSystem
   alias SmallSdk.ImageMagick
 
-  @thumb_sizes %{s: 320, m: 1280}
+  @legacy_thumb_sizes %{s: 320, m: 1280}
+  @responsive_widths [160, 320, 640, 1280, 1920]
+  @sizes %{
+    thumb: "96px",
+    grid: "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
+    detail: "(max-width: 768px) 100vw, 640px",
+    full: "100vw"
+  }
 
   def cp_file(src, user_id, filename) do
     dest = FileSystem.cp!(src, gen_dest(user_id, filename))
@@ -14,9 +21,14 @@ defmodule Vmemo.Memo.ImageStorage do
     ext = Path.extname(storage_path)
     root = Path.rootname(storage_path, ext)
 
-    Enum.each(@thumb_sizes, fn {size, max_side} ->
+    Enum.each(@legacy_thumb_sizes, fn {size, max_side} ->
       thumb_path = "#{root}--#{size}#{ext}"
       resize_to_fit_atomic!(storage_path, thumb_path, max_side)
+    end)
+
+    Enum.each(@responsive_widths, fn width ->
+      variant_path = "#{root}--#{width}w#{ext}"
+      resize_to_fit_atomic!(storage_path, variant_path, width)
     end)
   end
 
@@ -36,7 +48,23 @@ defmodule Vmemo.Memo.ImageStorage do
     "#{root}--#{size}#{ext}"
   end
 
+  def thumbnail_url(url, width) when width in @responsive_widths and is_binary(url) do
+    if storage_image_url?(url), do: variant_url(url, width), else: url
+  end
+
   def thumbnail_url(url, _size), do: url
+
+  def srcset(url) when is_binary(url) do
+    if storage_image_url?(url) do
+      @responsive_widths
+      |> Enum.map_join(", ", fn width -> "#{variant_url(url, width)} #{width}w" end)
+    end
+  end
+
+  def srcset(_), do: nil
+
+  def sizes(usage) when is_map_key(@sizes, usage), do: Map.fetch!(@sizes, usage)
+  def sizes(_), do: Map.fetch!(@sizes, :grid)
 
   def storage_path_from_url(url, user_id) when is_binary(url) and not is_nil(user_id) do
     storage_prefix = Path.join(["storage", "v1"]) |> Path.expand()
@@ -74,9 +102,45 @@ defmodule Vmemo.Memo.ImageStorage do
     root = Path.rootname(path, ext)
 
     cond do
-      String.ends_with?(root, "--s") -> {:ok, Map.fetch!(@thumb_sizes, :s)}
-      String.ends_with?(root, "--m") -> {:ok, Map.fetch!(@thumb_sizes, :m)}
+      String.ends_with?(root, "--s") -> {:ok, Map.fetch!(@legacy_thumb_sizes, :s)}
+      String.ends_with?(root, "--m") -> {:ok, Map.fetch!(@legacy_thumb_sizes, :m)}
+      width = responsive_width(root) -> {:ok, width}
       true -> {:error, :not_thumbnail}
+    end
+  end
+
+  defp variant_url(url, width) do
+    ext = Path.extname(url)
+    root = Path.rootname(url, ext)
+    "#{source_root(root)}--#{width}w#{ext}"
+  end
+
+  defp source_root(root) do
+    cond do
+      String.ends_with?(root, "--s") or String.ends_with?(root, "--m") ->
+        String.slice(root, 0, byte_size(root) - 3)
+
+      Regex.match?(~r/--\d+w$/, root) ->
+        Regex.replace(~r/--\d+w$/, root, "")
+
+      true ->
+        root
+    end
+  end
+
+  defp storage_image_url?(url) do
+    path = URI.parse(url).path || url
+    String.contains?(path, "/storage/v1/") and String.contains?(path, "/images/")
+  end
+
+  defp responsive_width(root) do
+    case Regex.run(~r/--(\d+)w$/, root) do
+      [_, width] ->
+        width = String.to_integer(width)
+        if width in @responsive_widths, do: width, else: nil
+
+      _ ->
+        nil
     end
   end
 
