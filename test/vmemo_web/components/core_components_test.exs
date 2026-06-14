@@ -17,9 +17,10 @@ defmodule VmemoWeb.CoreComponentsTest do
       />
       """)
 
-    assert html =~ ~s(src="/storage/v1/u1/images/photo--1280w.png")
-    assert html =~ ~s(srcset="/storage/v1/u1/images/photo--160w.png 160w,)
-    assert html =~ ~s(/storage/v1/u1/images/photo--1920w.png 1920w")
+    assert html =~ ~s(src="/storage/v1/u1/images/photo--1280w.webp")
+    assert html =~ ~s(srcset="/storage/v1/u1/images/photo--320w.webp 320w,)
+    assert html =~ ~s(/storage/v1/u1/images/photo--1280w.webp 1280w")
+    refute html =~ "1920w"
     assert html =~ ~s|sizes="(max-width: 768px) 100vw, 640px"|
     assert html =~ ~s(decoding="async")
   end

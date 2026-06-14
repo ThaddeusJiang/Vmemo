@@ -12,6 +12,7 @@ type BrowserImageMetric = {
 };
 
 type ResponseMetric = {
+  phase: "list" | "detail";
   url: string;
   status: number;
   durationMs: number;
@@ -21,12 +22,13 @@ type ResponseMetric = {
 };
 
 const pageReadyBudgetMs = readNumberEnv("PHOTOS_INDEX_READY_BUDGET_MS", 3_000);
-const imageResponseBudgetMs = readNumberEnv("STORAGE_IMAGE_RESPONSE_BUDGET_MS", 1_500);
+const imageResponseBudgetMs = readNumberEnv("STORAGE_IMAGE_RESPONSE_BUDGET_MS", 1_000);
 const minExpectedImages = readNumberEnv("PHOTOS_INDEX_MIN_IMAGES", 1);
 
-test("photos index image display performance", async ({ page }, testInfo) => {
+test("photos index and detail image display performance", async ({ page }, testInfo) => {
   const storageResponses: ResponseMetric[] = [];
   const storageRequestStartMs = new Map<Request, number>();
+  let currentPhase: ResponseMetric["phase"] = "list";
 
   page.on("request", (request) => {
     if (isStorageImageUrl(request.url())) {
@@ -47,6 +49,7 @@ test("photos index image display performance", async ({ page }, testInfo) => {
     storageRequestStartMs.delete(request);
 
     storageResponses.push({
+      phase: currentPhase,
       url: new URL(url).pathname,
       status: response.status(),
       durationMs: startedAt ? Date.now() - startedAt : 0,
@@ -61,20 +64,47 @@ test("photos index image display performance", async ({ page }, testInfo) => {
   await page.goto("/images", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#infinite-scroll")).toHaveCount(1, { timeout: 20_000 });
 
-  const firstImage = page.locator("#waterfall-images img").first();
-  await expect(firstImage).toBeVisible({ timeout: 20_000 });
+  const listImages = page.locator("#waterfall-images img");
+  await expect(listImages.first()).toBeVisible({ timeout: 20_000 });
+
+  await expect.poll(() => firstLoadedImageIndexOnPage(page), { timeout: 20_000 }).not.toBe(-1);
+  const firstLoadedImageIndex = await firstLoadedImageIndexOnPage(page);
+
+  const firstImageReadyMs = Date.now() - startMs;
+  const listBrowserImages = await collectBrowserImageMetrics(page, "#waterfall-images img");
+  const loadedListImages = listBrowserImages.filter(
+    (image) => image.complete && image.naturalWidth > 0,
+  );
+
+  currentPhase = "detail";
+  const detailStartMs = Date.now();
+  await page.locator('#waterfall-images a[href^="/images/"]').nth(firstLoadedImageIndex).click();
+  await expect(page).toHaveURL(/\/images\/.+/);
+
+  const detailImage = page.locator("figure.group img").first();
+  await expect(detailImage).toBeVisible({ timeout: 20_000 });
   await expect
     .poll(() =>
-      firstImage.evaluate(
-        (image) => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0,
+      detailImage.evaluate(
+        (image) =>
+          (image as HTMLImageElement).complete &&
+          (image as HTMLImageElement).naturalWidth > 0,
       ),
     )
     .toBe(true);
 
-  const firstImageReadyMs = Date.now() - startMs;
-  const browserImages = await collectBrowserImageMetrics(page);
-  const loadedImages = browserImages.filter((image) => image.complete && image.naturalWidth > 0);
-  const report = buildReport(firstImageReadyMs, browserImages, storageResponses);
+  const detailImageReadyMs = Date.now() - detailStartMs;
+  const detailBrowserImages = await collectBrowserImageMetrics(page, 'img[src*="/storage/v1/"]');
+  const loadedDetailImages = detailBrowserImages.filter(
+    (image) => image.complete && image.naturalWidth > 0,
+  );
+  const report = buildReport(
+    firstImageReadyMs,
+    detailImageReadyMs,
+    listBrowserImages,
+    detailBrowserImages,
+    storageResponses,
+  );
 
   console.log(JSON.stringify(report, null, 2));
 
@@ -83,26 +113,37 @@ test("photos index image display performance", async ({ page }, testInfo) => {
     contentType: "application/json",
   });
 
-  expect(loadedImages.length).toBeGreaterThanOrEqual(minExpectedImages);
-  expect(storageResponses.length).toBeGreaterThanOrEqual(minExpectedImages);
-  expect(storageResponses.map((response) => response.status)).toEqual(
-    expect.arrayContaining([200]),
-  );
-  expect(storageResponses.every((response) => response.status < 400)).toBe(true);
+  const listResponses = storageResponses.filter((response) => response.phase === "list");
+  const detailResponses = storageResponses.filter((response) => response.phase === "detail");
+  const successfulListResponses = listResponses.filter(isSuccessfulImageResponse);
+  const successfulDetailResponses = detailResponses.filter(isSuccessfulImageResponse);
+
+  expect(loadedListImages.length).toBeGreaterThanOrEqual(minExpectedImages);
+  expect(loadedDetailImages.length).toBeGreaterThanOrEqual(1);
+  expect(successfulListResponses.length).toBeGreaterThanOrEqual(minExpectedImages);
+  expect(successfulDetailResponses.length).toBeGreaterThanOrEqual(1);
   expect(firstImageReadyMs).toBeLessThanOrEqual(pageReadyBudgetMs);
-  expect(maxDuration(storageResponses)).toBeLessThanOrEqual(imageResponseBudgetMs);
+  expect(detailImageReadyMs).toBeLessThanOrEqual(pageReadyBudgetMs);
+  expect(maxDuration(successfulListResponses)).toBeLessThanOrEqual(imageResponseBudgetMs);
+  expect(maxDuration(successfulDetailResponses)).toBeLessThanOrEqual(imageResponseBudgetMs);
 });
 
-async function collectBrowserImageMetrics(page: import("@playwright/test").Page) {
-  return page.locator("#waterfall-images img").evaluateAll((images) =>
-    images.map((image) => {
+async function collectBrowserImageMetrics(page: import("@playwright/test").Page, selector: string) {
+  return page.locator(selector).evaluateAll((images) =>
+    images.flatMap((image) => {
       const htmlImage = image as HTMLImageElement;
+      const currentSrc = htmlImage.currentSrc;
+
+      if (!currentSrc) {
+        return [];
+      }
+
       const entry = performance
-        .getEntriesByName(htmlImage.currentSrc)
+        .getEntriesByName(currentSrc)
         .at(-1) as PerformanceResourceTiming | undefined;
 
-      return {
-        url: new URL(htmlImage.currentSrc).pathname,
+      return [{
+        url: new URL(currentSrc, window.location.href).pathname,
         naturalWidth: htmlImage.naturalWidth,
         naturalHeight: htmlImage.naturalHeight,
         complete: htmlImage.complete,
@@ -110,19 +151,35 @@ async function collectBrowserImageMetrics(page: import("@playwright/test").Page)
         transferSize: entry?.transferSize ?? 0,
         encodedBodySize: entry?.encodedBodySize ?? 0,
         decodedBodySize: entry?.decodedBodySize ?? 0,
-      } satisfies BrowserImageMetric;
+      } satisfies BrowserImageMetric];
+    }),
+  );
+}
+
+async function firstLoadedImageIndexOnPage(page: import("@playwright/test").Page) {
+  return page.locator("#waterfall-images img").evaluateAll((images) =>
+    images.findIndex((image) => {
+      const htmlImage = image as HTMLImageElement;
+      return htmlImage.complete && htmlImage.naturalWidth > 0;
     }),
   );
 }
 
 function buildReport(
   firstImageReadyMs: number,
-  browserImages: BrowserImageMetric[],
+  detailImageReadyMs: number,
+  listBrowserImages: BrowserImageMetric[],
+  detailBrowserImages: BrowserImageMetric[],
   storageResponses: ResponseMetric[],
 ) {
-  const totalEncodedBytes = browserImages.reduce(
+  const totalEncodedBytes = [...listBrowserImages, ...detailBrowserImages].reduce(
     (sum, image) => sum + image.encodedBodySize,
     0,
+  );
+  const listResponses = storageResponses.filter((response) => response.phase === "list");
+  const detailResponses = storageResponses.filter((response) => response.phase === "detail");
+  const failedStorageResponses = storageResponses.filter(
+    (response) => !isSuccessfulImageResponse(response),
   );
 
   return {
@@ -133,14 +190,23 @@ function buildReport(
     },
     summary: {
       firstImageReadyMs,
-      imageCount: browserImages.length,
+      detailImageReadyMs,
+      listImageCount: listBrowserImages.length,
+      detailImageCount: detailBrowserImages.length,
       storageRequestCount: storageResponses.length,
-      maxBrowserImageDurationMs: maxDuration(browserImages),
-      maxStorageResponseDurationMs: maxDuration(storageResponses),
+      maxListBrowserImageDurationMs: maxDuration(listBrowserImages),
+      maxDetailBrowserImageDurationMs: maxDuration(detailBrowserImages),
+      maxListStorageResponseDurationMs: maxDuration(listResponses.filter(isSuccessfulImageResponse)),
+      maxDetailStorageResponseDurationMs: maxDuration(
+        detailResponses.filter(isSuccessfulImageResponse),
+      ),
+      failedStorageResponseCount: failedStorageResponses.length,
       totalEncodedBytes,
     },
-    browserImages,
+    listBrowserImages,
+    detailBrowserImages,
     storageResponses,
+    failedStorageResponses,
   };
 }
 
@@ -170,4 +236,8 @@ function parseNullableInteger(value: string | undefined) {
 
 function isStorageImageUrl(url: string) {
   return url.includes("/storage/v1/") && !url.includes("/storage/v1/_internal/");
+}
+
+function isSuccessfulImageResponse(response: ResponseMetric) {
+  return response.status >= 200 && response.status < 300 && response.contentType?.startsWith("image/");
 }

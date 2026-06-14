@@ -56,7 +56,7 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Caption failed."
       refute html =~ "Timeout"
       assert html =~ "/storage/v1/"
-      assert html =~ "--160w.jpg"
+      assert html =~ "--160w.webp"
       assert html =~ "Retry"
     end
 
@@ -100,7 +100,7 @@ defmodule VmemoWeb.JobsLiveTest do
 
       assert Regex.match?(~r/href="\/jobs\/[^"]+"/, html)
       assert html =~ "notification-item-thumb"
-      assert html =~ "--160w.jpg"
+      assert html =~ "--160w.webp"
     end
 
     test "renders caption failure reason in job detail page", %{conn: conn, user: user} do

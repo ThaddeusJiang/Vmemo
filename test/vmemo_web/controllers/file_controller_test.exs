@@ -80,21 +80,21 @@ defmodule VmemoWeb.FileControllerTest do
   } do
     fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
     original = Path.join(image_dir, "responsive.png")
-    variant = Path.join(image_dir, "responsive--640w.png")
+    variant = Path.join(image_dir, "responsive--640w.webp")
     File.cp!(fixture, original)
     refute File.exists?(variant)
 
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--640w.png")
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--640w.webp")
 
     assert response(conn, 200) == ""
     assert File.exists?(variant)
     assert File.stat!(variant).size < File.stat!(original).size
 
     assert get_resp_header(conn, "x-accel-redirect") == [
-             "/storage/v1/_internal/#{user.id}/images/responsive--640w.png"
+             "/storage/v1/_internal/#{user.id}/images/responsive--640w.webp"
            ]
 
-    assert get_resp_header(conn, "content-type") == ["image/png"]
+    assert get_resp_header(conn, "content-type") == ["image/webp"]
   end
 
   test "rejects unsupported responsive image width variants", %{

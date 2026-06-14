@@ -32,7 +32,7 @@ defmodule VmemoWeb.JobNotificationsTest do
     assert caption_notification.description == "Caption generation failed."
 
     assert caption_notification.image_url ==
-             "/storage/v1/#{user.id}/images/notify-message--160w.jpg"
+             "/storage/v1/#{user.id}/images/notify-message--160w.webp"
 
     assert caption_notification.status == "failed"
 

@@ -996,7 +996,10 @@ defmodule VmemoWeb.CoreComponents do
 
     assigns
     |> assign(:resolved_src, responsive_image_src(assigns.src, assigns.image_variant))
-    |> assign(:resolved_srcset, assigns.srcset || Vmemo.Storage.srcset(assigns.src))
+    |> assign(
+      :resolved_srcset,
+      assigns.srcset || Vmemo.Storage.srcset(assigns.src, assigns.image_variant)
+    )
     |> assign(
       :resolved_sizes,
       assigns.sizes || responsive_image_sizes(assigns.src, assigns.image_variant)

@@ -3,8 +3,16 @@ defmodule Vmemo.Memo.ImageStorage do
   alias SmallSdk.FileSystem
   alias SmallSdk.ImageMagick
 
+  @image_extensions [".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff"]
   @legacy_thumb_sizes %{s: 320, m: 1280}
   @responsive_widths [160, 320, 640, 1280, 1920]
+  @responsive_widths_by_usage %{
+    thumb: [160, 320],
+    grid: [160, 320, 640],
+    detail: [320, 640, 1280],
+    full: [640, 1280, 1920]
+  }
+  @responsive_extension ".webp"
   @sizes %{
     thumb: "96px",
     grid: "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
@@ -17,6 +25,20 @@ defmodule Vmemo.Memo.ImageStorage do
     {:ok, dest}
   end
 
+  def warm_variants!(storage_root \\ Path.join(["storage", "v1"]), opts \\ []) do
+    storage_root
+    |> storage_image_paths()
+    |> maybe_take_limit(Keyword.get(opts, :limit))
+    |> Enum.reduce(%{processed: 0, failed: 0}, fn path, stats ->
+      try do
+        thumbs!(path)
+        Map.update!(stats, :processed, &(&1 + 1))
+      rescue
+        _ -> Map.update!(stats, :failed, &(&1 + 1))
+      end
+    end)
+  end
+
   def thumbs!(storage_path) when is_binary(storage_path) do
     ext = Path.extname(storage_path)
     root = Path.rootname(storage_path, ext)
@@ -27,7 +49,7 @@ defmodule Vmemo.Memo.ImageStorage do
     end)
 
     Enum.each(@responsive_widths, fn width ->
-      variant_path = "#{root}--#{width}w#{ext}"
+      variant_path = "#{root}--#{width}w#{@responsive_extension}"
       resize_to_fit_atomic!(storage_path, variant_path, width)
     end)
   end
@@ -55,13 +77,24 @@ defmodule Vmemo.Memo.ImageStorage do
   def thumbnail_url(url, _size), do: url
 
   def srcset(url) when is_binary(url) do
-    if storage_image_url?(url) do
-      @responsive_widths
-      |> Enum.map_join(", ", fn width -> "#{variant_url(url, width)} #{width}w" end)
-    end
+    build_srcset(url, @responsive_widths)
   end
 
   def srcset(_), do: nil
+
+  def srcset(url, usage) when is_binary(url) do
+    widths = Map.get(@responsive_widths_by_usage, usage, @responsive_widths)
+    build_srcset(url, widths)
+  end
+
+  def srcset(_, _), do: nil
+
+  defp build_srcset(url, widths) do
+    if storage_image_url?(url) do
+      widths
+      |> Enum.map_join(", ", fn width -> "#{variant_url(url, width)} #{width}w" end)
+    end
+  end
 
   def sizes(usage) when is_map_key(@sizes, usage), do: Map.fetch!(@sizes, usage)
   def sizes(_), do: Map.fetch!(@sizes, :grid)
@@ -110,9 +143,8 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   defp variant_url(url, width) do
-    ext = Path.extname(url)
-    root = Path.rootname(url, ext)
-    "#{source_root(root)}--#{width}w#{ext}"
+    root = Path.rootname(url, Path.extname(url))
+    "#{source_root(root)}--#{width}w#{@responsive_extension}"
   end
 
   defp source_root(root) do
@@ -153,6 +185,37 @@ defmodule Vmemo.Memo.ImageStorage do
     after
       _ = File.rm(tmp_path)
     end
+  end
+
+  defp storage_image_paths(storage_root) do
+    [storage_root, "*", "images", "*"]
+    |> Path.join()
+    |> Path.wildcard()
+    |> Enum.filter(&original_image_file?/1)
+  end
+
+  defp maybe_take_limit(paths, limit) when is_integer(limit) and limit > 0 do
+    Enum.take(paths, limit)
+  end
+
+  defp maybe_take_limit(paths, _), do: paths
+
+  defp original_image_file?(path) do
+    File.regular?(path) and supported_image_extension?(path) and not generated_variant?(path)
+  end
+
+  defp supported_image_extension?(path) do
+    path
+    |> Path.extname()
+    |> String.downcase()
+    |> then(&(&1 in @image_extensions))
+  end
+
+  defp generated_variant?(path) do
+    root = Path.rootname(path, Path.extname(path))
+
+    String.ends_with?(root, "--s") or String.ends_with?(root, "--m") or
+      Regex.match?(~r/--\d+w$/, root)
   end
 
   defp temporary_output_path(output_path) do
