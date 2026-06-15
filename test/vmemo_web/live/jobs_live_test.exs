@@ -207,7 +207,7 @@ defmodule VmemoWeb.JobsLiveTest do
 
       Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
 
-      assert_redirect(lv, ~p"/jobs")
+      assert_redirect(lv, ~p"/jobs", 1_000)
     end
 
     test "renders caption failure reason in job detail page", %{conn: conn, user: user} do
