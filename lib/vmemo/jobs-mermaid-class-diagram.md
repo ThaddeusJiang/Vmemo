@@ -10,6 +10,7 @@ classDiagram
         Integer oban_job_id
         String error
         read()
+        destroy()
         create_requested(UUID image_id, UUID user_id, String kind, String worker, ...)
         mark_requested(Integer oban_job_id)
         mark_in_progress(Integer oban_job_id)
@@ -22,6 +23,6 @@ classDiagram
         perform_typesense()
     }
 
-
+    Job -- Image
 
 ```
