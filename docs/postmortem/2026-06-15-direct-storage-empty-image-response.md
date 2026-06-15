@@ -14,15 +14,14 @@
 
 ## Fix applied
 
-- `FileController` now uses `send_file/3` by default and only returns `X-Accel-Redirect` when the request comes through a storage-aware Nginx proxy.
+- `FileController` now performs the owner check and always returns `X-Accel-Redirect` for storage files.
 - The release entrypoint auto-starts Nginx in the production image, sets
-  `PHX_PORT=4001`, and relies on Nginx to mark storage-accelerated requests.
-- Local `docker compose up -d` starts the development Nginx proxy by default,
-  and the proxy marks requests as storage-accelerated.
-- Updated storage controller tests to cover both direct Phoenix file responses and proxy-accelerated responses.
+  `PHX_PORT=4001`, so Nginx serves storage bytes on the public port.
+- Local `docker compose up -d` starts the development Nginx proxy by default.
+- Updated storage controller tests to cover the Phoenix authorization plus `X-Accel-Redirect` response contract.
 
 ## What we learned
 
-- `X-Accel-Redirect` must be treated as a deployment capability, not a universal response strategy.
-- Storage tests need to prove that a browser can receive bytes without assuming a proxy exists.
-- Local development docs should separate "image display works" from "Nginx acceleration is enabled".
+- `X-Accel-Redirect` should be a single storage response strategy, with Nginx always present at the browser-facing entrypoint.
+- Storage tests should prove the Phoenix authorization plus redirect contract, while runtime checks cover Nginx serving bytes.
+- Local development docs should steer image validation through the Nginx entrypoint.

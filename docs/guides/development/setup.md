@@ -34,9 +34,10 @@ Open the app through the local Nginx proxy:
 http://localhost:4080
 ```
 
-`docker compose up -d` starts the local Nginx proxy by default. Phoenix still
-runs on `http://localhost:4000` for direct debugging, and direct Phoenix storage
-requests return image bytes without requiring the proxy.
+`docker compose up -d` starts the local Nginx proxy by default. Use `4080` when
+validating image rendering or `/storage/v1` URLs, because Phoenix only performs
+authorization and returns `X-Accel-Redirect`; Nginx sends the actual file bytes.
+Phoenix still runs on `http://localhost:4000` for non-storage debugging.
 
 Test dependencies:
 

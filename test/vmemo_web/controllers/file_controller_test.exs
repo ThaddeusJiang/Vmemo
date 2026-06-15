@@ -34,11 +34,10 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample--m.png")
 
-    assert response(conn, 200) == File.read!(thumbnail)
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/sample--m.png")
     assert File.exists?(thumbnail)
     assert File.stat!(thumbnail).size < File.stat!(original).size
 
-    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/png"]
     assert get_resp_header(conn, "content-disposition") == ["inline"]
     assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
@@ -59,11 +58,10 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/large--s.png")
 
-    assert response(conn, 200) == File.read!(thumbnail)
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/large--s.png")
     assert File.exists?(thumbnail)
     assert File.stat!(thumbnail).size < File.stat!(original).size
 
-    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/png"]
   end
 
@@ -80,11 +78,14 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--640w.webp")
 
-    assert response(conn, 200) == File.read!(variant)
+    assert_accelerated_response(
+      conn,
+      "/storage/v1/_internal/#{user.id}/images/responsive--640w.webp"
+    )
+
     assert File.exists?(variant)
     assert File.stat!(variant).size < File.stat!(original).size
 
-    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/webp"]
   end
 
@@ -117,10 +118,9 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample--m.webp")
 
-    assert response(conn, 200) == File.read!(webp_thumbnail)
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/sample--m.webp")
     assert File.exists?(webp_thumbnail)
 
-    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/webp"]
   end
 
@@ -134,8 +134,7 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample.tiff")
 
-    assert response(conn, 200) == "tiff-data"
-    assert get_resp_header(conn, "x-accel-redirect") == []
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/sample.tiff")
     assert get_resp_header(conn, "content-type") == ["image/tiff"]
   end
 
@@ -149,8 +148,7 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/Camera.JPG")
 
-    assert response(conn, 200) == "jpg-data"
-    assert get_resp_header(conn, "x-accel-redirect") == []
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/Camera.JPG")
     assert get_resp_header(conn, "content-type") == ["image/jpeg"]
   end
 
@@ -174,7 +172,7 @@ defmodule VmemoWeb.FileControllerTest do
     File.write!(original, "etag-data")
 
     first = get(conn, ~p"/storage/v1/#{user.id}/images/etag.png")
-    assert response(first, 200) == "etag-data"
+    assert_accelerated_response(first, "/storage/v1/_internal/#{user.id}/images/etag.png")
     [etag] = get_resp_header(first, "etag")
 
     second =
@@ -199,8 +197,7 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/avatars/me.jpg")
 
-    assert response(conn, 200) == "jpg-data"
-    assert get_resp_header(conn, "x-accel-redirect") == []
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/avatars/me.jpg")
     assert get_resp_header(conn, "content-type") == ["image/jpeg"]
     assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
@@ -237,7 +234,7 @@ defmodule VmemoWeb.FileControllerTest do
     assert get_resp_header(conn, "cache-control") == ["no-store"]
   end
 
-  test "serves file bytes by default for direct Phoenix storage requests", %{
+  test "uses x-accel-redirect by default for storage requests", %{
     conn: conn,
     user: user,
     image_dir: image_dir
@@ -247,30 +244,12 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/direct.png")
 
-    assert response(conn, 200) == "direct-data"
-    assert get_resp_header(conn, "x-accel-redirect") == []
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/direct.png")
     assert get_resp_header(conn, "content-type") == ["image/png"]
   end
 
-  test "uses x-accel-redirect when request comes through storage proxy", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    original = Path.join(image_dir, "proxied.png")
-    File.write!(original, "proxied-data")
-
-    conn =
-      conn
-      |> put_req_header("x-vmemo-storage-accel", "true")
-      |> get(~p"/storage/v1/#{user.id}/images/proxied.png")
-
+  defp assert_accelerated_response(conn, path) do
     assert response(conn, 200) == ""
-
-    assert get_resp_header(conn, "x-accel-redirect") == [
-             "/storage/v1/_internal/#{user.id}/images/proxied.png"
-           ]
-
-    assert get_resp_header(conn, "content-type") == ["image/png"]
+    assert get_resp_header(conn, "x-accel-redirect") == [path]
   end
 end

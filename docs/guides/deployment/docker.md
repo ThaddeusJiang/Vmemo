@@ -64,14 +64,12 @@ Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
 Storage acceleration:
 
 - Browser-facing storage URLs stay under `/storage/v1`.
-- By default, Phoenix performs the lightweight owner check and sends the file
-  bytes itself.
 - In the production Docker image, `rel/entrypoint.sh` automatically starts Nginx,
-  sets Phoenix to listen internally on `4001`, and enables
-  `X-Accel-Redirect`.
-- In the accelerated mode, Phoenix performs the owner check, then returns
-  `X-Accel-Redirect` under `/storage/v1/_internal`. Nginx sends the file bytes
-  from the app's `storage/v1` directory while listening publicly on `4000`.
+  sets Phoenix to listen internally on `4001`, and keeps Nginx listening
+  publicly on `4000`.
+- Phoenix performs the owner check, then always returns `X-Accel-Redirect`
+  under `/storage/v1/_internal`. Nginx sends the file bytes from the app's
+  `storage/v1` directory.
 
 Example Nginx location:
 

@@ -4,7 +4,7 @@ defmodule VmemoWeb.FileController do
   alias Vmemo.Memo.ImageStorage
 
   @storage_root Path.expand("storage/v1")
-  @storage_accel_redirect_prefix "/storage/v1/_internal"
+  @internal_storage_prefix "/storage/v1/_internal"
   @allowed_mime_types %{
     ".png" => "image/png",
     ".jpg" => "image/jpeg",
@@ -82,28 +82,17 @@ defmodule VmemoWeb.FileController do
     |> put_resp_header("last-modified", last_modified)
   end
 
-  # sobelow_skip ["Traversal.SendFile"]
   defp send_storage_body(conn, file_path) do
-    if storage_proxy_request?(conn) do
-      conn
-      |> put_resp_header("x-accel-redirect", storage_accel_redirect_path(file_path))
-      |> send_resp(200, "")
-    else
-      send_file(conn, 200, file_path)
-    end
+    conn
+    |> put_resp_header("x-accel-redirect", internal_storage_path(file_path))
+    |> send_resp(200, "")
   end
 
-  defp storage_accel_redirect_path(file_path) do
+  defp internal_storage_path(file_path) do
     file_path
     |> Path.expand()
     |> Path.relative_to(@storage_root)
-    |> then(&Path.join(@storage_accel_redirect_prefix, &1))
-  end
-
-  defp storage_proxy_request?(conn) do
-    conn
-    |> get_req_header("x-vmemo-storage-accel")
-    |> Enum.any?(&(&1 == "true" or &1 == "1"))
+    |> then(&Path.join(@internal_storage_prefix, &1))
   end
 
   defp fresh?(conn, etag, stat) do
