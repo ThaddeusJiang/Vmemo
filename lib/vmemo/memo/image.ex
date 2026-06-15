@@ -23,6 +23,7 @@ defmodule Vmemo.Memo.Image do
   require Logger
 
   alias Vmemo.Ai.Caption
+  alias Vmemo.Jobs.Notifications
   alias Vmemo.Memo.Changes.SyncImageTags
   alias Vmemo.Jobs.Job
   alias Vmemo.Memo.ImageUpload
@@ -91,6 +92,12 @@ defmodule Vmemo.Memo.Image do
         Ash.Changeset.after_action(changeset, fn _changeset, image ->
           # Keep Typesense in sync with Postgres on hard delete.
           _ = TsImage.delete_image(image.id)
+
+          Notifications.broadcast_refresh(image.user_id, %{
+            reason: :image_deleted,
+            image_id: image.id
+          })
+
           {:ok, image}
         end)
       end

@@ -79,6 +79,62 @@ defmodule VmemoWeb.JobNotificationsTest do
     refute Enum.any?(remaining_notifications, &(&1.id in [caption_job.id, typesense_job.id]))
   end
 
+  test "deleting an image broadcasts a user notification refresh" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-delete-broadcast.jpg",
+        note: "notify-delete-broadcast",
+        caption: "notify-delete-broadcast",
+        file_id: "notify-delete-broadcast.jpg",
+        user_id: user.id
+      })
+
+    _caption_job = insert_job!(image.id, user.id, "caption", "failed", "caption failed")
+
+    Phoenix.PubSub.subscribe(Vmemo.PubSub, "user_notification:#{user.id}")
+
+    Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+    user_id = user.id
+    image_id = image.id
+
+    assert_receive {:user_notifications_changed,
+                    %{user_id: ^user_id, image_id: ^image_id, reason: :image_deleted}}
+  end
+
+  test "updating a job broadcasts a user notification refresh" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-job-update.jpg",
+        note: "notify-job-update",
+        caption: "notify-job-update",
+        file_id: "notify-job-update.jpg",
+        user_id: user.id
+      })
+
+    job = insert_job!(image.id, user.id, "caption", "in_progress", nil)
+
+    Phoenix.PubSub.subscribe(Vmemo.PubSub, "user_notification:#{user.id}")
+
+    Ash.update!(job, %{}, action: :mark_completed, actor: nil, authorize?: false)
+
+    user_id = user.id
+    image_id = image.id
+    job_id = job.id
+
+    assert_receive {:user_notifications_changed,
+                    %{
+                      user_id: ^user_id,
+                      image_id: ^image_id,
+                      job_id: ^job_id,
+                      reason: :job_changed
+                    }}
+  end
+
   defp create_image!(attrs) do
     ensure_fixture_image!(attrs)
     attrs = Map.put_new(attrs, :inner_purpose, nil)

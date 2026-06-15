@@ -6,6 +6,7 @@ defmodule Vmemo.Jobs.Job do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAdmin.Resource, AshOban]
 
+  alias Vmemo.Jobs.Changes.BroadcastNotificationRefresh
   alias Vmemo.Memo.Image
 
   postgres do
@@ -83,45 +84,63 @@ defmodule Vmemo.Jobs.Job do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      require_atomic? false
+      change {BroadcastNotificationRefresh, reason: :job_deleted}
+    end
 
     create :create_requested do
       accept [:image_id, :user_id, :kind, :worker, :oban_job_id, :status, :error]
       change run_oban_trigger(:run_caption)
       change run_oban_trigger(:run_typesense)
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :mark_requested do
       accept [:oban_job_id]
+      require_atomic? false
       change set_attribute(:status, "requested")
       change run_oban_trigger(:run_caption)
       change run_oban_trigger(:run_typesense)
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :mark_in_progress do
       accept [:oban_job_id]
+      require_atomic? false
       change set_attribute(:status, "in_progress")
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :mark_completed do
       accept [:oban_job_id]
+      require_atomic? false
       change set_attribute(:status, "completed")
       change set_attribute(:error, nil)
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :mark_failed do
       accept [:oban_job_id, :error]
+      require_atomic? false
       change set_attribute(:status, "failed")
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :mark_cancelled do
       accept [:oban_job_id, :error]
+      require_atomic? false
       change set_attribute(:status, "cancelled")
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :mark_discarded do
       accept [:oban_job_id, :error]
+      require_atomic? false
       change set_attribute(:status, "discarded")
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :retry do
@@ -131,6 +150,7 @@ defmodule Vmemo.Jobs.Job do
       change set_attribute(:error, nil)
       change run_oban_trigger(:run_caption)
       change run_oban_trigger(:run_typesense)
+      change {BroadcastNotificationRefresh, reason: :job_changed}
     end
 
     update :perform_caption do
@@ -138,6 +158,7 @@ defmodule Vmemo.Jobs.Job do
       require_atomic? false
       transaction? false
       change set_attribute(:status, "in_progress")
+      change {BroadcastNotificationRefresh, reason: :job_changed}
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, job ->
@@ -185,6 +206,7 @@ defmodule Vmemo.Jobs.Job do
       require_atomic? false
       transaction? false
       change set_attribute(:status, "in_progress")
+      change {BroadcastNotificationRefresh, reason: :job_changed}
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, job ->

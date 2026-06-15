@@ -42,6 +42,7 @@
 - 删除图片必须通过 `Image.destroy` action。
 - `jobs.image_id` 使用 PostgreSQL `ON DELETE CASCADE`，图片删除时由数据库同步清理关联 `jobs` 记录。
 - notifications 由 `jobs` 派生，因此相关 job 清理后，对应 notification 不再展示。
+- 图片删除成功后广播 user notification refresh 事件，已挂载的 authenticated UI 必须重读 `jobs` 并同步移除相关 job / notification UI。
 - 删除图片时仍同步清理 `ImageNote` 关联，并删除 Typesense 中对应图片文档。
 
 ## 相关文件
