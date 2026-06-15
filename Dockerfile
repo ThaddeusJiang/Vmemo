@@ -60,8 +60,6 @@ COPY rel/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENV HOME=/app
-ENV VMEMO_ENABLE_NGINX=true
-ENV PHX_PORT=4001
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["start"]

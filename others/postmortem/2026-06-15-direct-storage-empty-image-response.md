@@ -16,7 +16,8 @@
 
 - Added `:storage_accel_redirect?` app config, defaulting to `false`.
 - `FileController` now uses `send_file/3` by default and only returns `X-Accel-Redirect` when acceleration is explicitly enabled.
-- Runtime config enables acceleration when `VMEMO_ENABLE_NGINX=true` or `VMEMO_STORAGE_ACCEL_REDIRECT=true`.
+- The release entrypoint auto-starts Nginx in the production image, sets
+  `PHX_PORT=4001`, and enables `VMEMO_STORAGE_ACCEL_REDIRECT=true`.
 - Updated storage controller tests to cover both direct Phoenix file responses and explicit accelerated responses.
 
 ## What we learned

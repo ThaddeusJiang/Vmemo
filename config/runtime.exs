@@ -14,7 +14,7 @@ typesense_url =
     """
 
 storage_accel_redirect? =
-  case System.get_env("VMEMO_STORAGE_ACCEL_REDIRECT") || System.get_env("VMEMO_ENABLE_NGINX") do
+  case System.get_env("VMEMO_STORAGE_ACCEL_REDIRECT") do
     value when value in ["true", "1"] ->
       true
 

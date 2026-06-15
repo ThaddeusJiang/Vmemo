@@ -26,7 +26,7 @@ This is the single Docker document under `docs/guides/deployment`.
 Release startup behavior:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. Start Nginx when `VMEMO_ENABLE_NGINX=true`
+2. Auto-start Nginx when the production image starts with `CMD ["start"]`
 3. `bin/vmemo start`
 
 Remote IEx:
@@ -44,7 +44,7 @@ docker exec -it <container_name> /app/bin/vmemo remote
 - Entrypoint runs `bin/vmemo eval "Vmemo.Release.migrate()"`.
 - Dockerfile runner starts via `ENTRYPOINT + CMD ["start"]`.
 - Dockerfile builder uses the pinned `node:24.14.1-bookworm-slim` image for npm.
-- Dockerfile runner starts Nginx before Phoenix when `VMEMO_ENABLE_NGINX=true`.
+- Dockerfile runner auto-starts Nginx before Phoenix.
 - Dockerfile runner includes ImageMagick (`magick`) for AI vision request preprocessing.
 
 ### Required Environment Variables
@@ -66,12 +66,12 @@ Storage acceleration:
 - Browser-facing storage URLs stay under `/storage/v1`.
 - By default, Phoenix performs the lightweight owner check and sends the file
   bytes itself.
-- When `VMEMO_ENABLE_NGINX=true` or `VMEMO_STORAGE_ACCEL_REDIRECT=true`, Phoenix
-  performs the owner check, then returns `X-Accel-Redirect` under
-  `/storage/v1/_internal`.
-- In the accelerated mode, Nginx sends the file bytes from the app's
-  `storage/v1` directory. The production Docker image enables this by default:
-  Nginx listens on `4000`, while Phoenix listens internally on `PHX_PORT=4001`.
+- In the production Docker image, `rel/entrypoint.sh` automatically starts Nginx,
+  sets Phoenix to listen internally on `4001`, and enables
+  `X-Accel-Redirect`.
+- In the accelerated mode, Phoenix performs the owner check, then returns
+  `X-Accel-Redirect` under `/storage/v1/_internal`. Nginx sends the file bytes
+  from the app's `storage/v1` directory while listening publicly on `4000`.
 
 Example Nginx location:
 
