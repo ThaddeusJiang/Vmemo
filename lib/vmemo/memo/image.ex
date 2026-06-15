@@ -23,6 +23,7 @@ defmodule Vmemo.Memo.Image do
   require Logger
 
   alias Vmemo.Ai.Caption
+  alias Vmemo.Jobs.Notifications
   alias Vmemo.Memo.Changes.SyncImageTags
   alias Vmemo.Jobs.Job
   alias Vmemo.Memo.ImageUpload
@@ -91,6 +92,12 @@ defmodule Vmemo.Memo.Image do
         Ash.Changeset.after_action(changeset, fn _changeset, image ->
           # Keep Typesense in sync with Postgres on hard delete.
           _ = TsImage.delete_image(image.id)
+
+          Notifications.broadcast_refresh(image.user_id, %{
+            reason: :image_deleted,
+            image_id: image.id
+          })
+
           {:ok, image}
         end)
       end
@@ -757,7 +764,7 @@ defmodule Vmemo.Memo.Image do
         id = Ash.ActionInput.get_argument(input, :id)
 
         with {:ok, image} <- Ash.get(__MODULE__, id, actor: actor) do
-          case Ash.destroy(image, actor: actor) do
+          case Ash.destroy(image, action: :destroy, actor: actor) do
             :ok -> {:ok, %{id: id}}
             {:ok, _deleted} -> {:ok, %{id: id}}
             {:error, reason} -> {:error, reason}
@@ -1291,7 +1298,7 @@ defmodule Vmemo.Memo.Image do
   defp rollback_ingest_search_anchor(image, actor) do
     _ = TsImage.delete_image(image.id)
 
-    case Ash.destroy(image, actor: actor) do
+    case Ash.destroy(image, action: :destroy, actor: actor) do
       {:ok, _} ->
         :ok
 

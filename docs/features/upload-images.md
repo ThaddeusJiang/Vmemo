@@ -38,9 +38,17 @@
 ### Note 关联
 上传时若有关联 note，会为每张成功上传的图片创建 `ImageNote` 关联。单张关联失败不阻塞整批上传。
 
+### 图片删除
+- 删除图片必须通过 `Image.destroy` action。
+- `jobs.image_id` 使用 PostgreSQL `ON DELETE CASCADE`，图片删除时由数据库同步清理关联 `jobs` 记录。
+- notifications 由 `jobs` 派生，因此相关 job 清理后，对应 notification 不再展示。
+- 图片删除成功后广播 user notification refresh 事件，已挂载的 authenticated UI 必须重读 `jobs` 并同步移除相关 job / notification UI。
+- 删除图片时仍同步清理 `ImageNote` 关联，并删除 Typesense 中对应图片文档。
+
 ## 相关文件
 - `lib/vmemo_web/live/components/upload_form.ex`
 - `lib/vmemo/memo/image.ex`（`create_with_sync` action）
+- `lib/vmemo/jobs/job.ex`
 - `lib/vmemo/memo/changes/sync_typesense.ex`
 - `lib/vmemo/ai/vision_request.ex`
 - `lib/vmemo/ai/image_preprocessor.ex`

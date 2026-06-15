@@ -134,6 +134,7 @@
 - API uses multipart with extension and magic-byte validation
 - Storage path: `storage/v1/<user_id>/photos/<timestamp>_<filename>`
 - `Photo.create_with_sync` auto-enqueues Typesense sync
+- `Photo/Image.destroy` relies on PostgreSQL `ON DELETE CASCADE` from `jobs.image_id` to remove related job records; notifications are derived from jobs and disappear with those records.
 
 ### 4.3 Search
 

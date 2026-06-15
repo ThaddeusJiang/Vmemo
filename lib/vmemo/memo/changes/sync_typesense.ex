@@ -4,6 +4,7 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
   require Ash.Query
   alias Ash.Resource.Info
   alias Vmemo.Jobs.Job
+  alias Vmemo.Memo.Image
   require Logger
 
   @impl true
@@ -23,7 +24,7 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
 
   defp handle_sync_result({:ok, true}, resource, record) do
     with {:ok, _} <- update_status_if_supported(resource, record, "completed") do
-      sync_typesense_job_completed(record)
+      maybe_sync_typesense_job_completed(resource, record)
       {:ok, record}
     end
   end
@@ -71,6 +72,9 @@ defmodule Vmemo.Memo.Changes.SyncTypesense do
       Info.action(resource, :set_typesense_status)
     )
   end
+
+  defp maybe_sync_typesense_job_completed(Image, record), do: sync_typesense_job_completed(record)
+  defp maybe_sync_typesense_job_completed(_resource, _record), do: :ok
 
   defp sync_typesense_job_completed(record) do
     query =

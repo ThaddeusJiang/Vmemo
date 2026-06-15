@@ -47,6 +47,94 @@ defmodule VmemoWeb.JobNotificationsTest do
     assert Enum.any?(notifications2, &(&1.description == "Search indexing in progress."))
   end
 
+  test "deleting an image removes related jobs and notifications" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-delete.jpg",
+        note: "notify-delete",
+        caption: "notify-delete",
+        file_id: "notify-delete.jpg",
+        user_id: user.id
+      })
+
+    caption_job = insert_job!(image.id, user.id, "caption", "failed", "caption failed")
+    typesense_job = insert_job!(image.id, user.id, "typesense", "in_progress", nil)
+
+    {:ok, notifications} = JobNotifications.list_for_user(user, limit: 20)
+    assert Enum.any?(notifications, &(&1.id == caption_job.id))
+    assert Enum.any?(notifications, &(&1.id == typesense_job.id))
+
+    Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+    remaining_jobs =
+      Job
+      |> Ash.Query.filter(image_id == ^image.id)
+      |> Ash.read!(actor: nil, authorize?: false)
+
+    assert remaining_jobs == []
+
+    {:ok, remaining_notifications} = JobNotifications.list_for_user(user, limit: 20)
+    refute Enum.any?(remaining_notifications, &(&1.id in [caption_job.id, typesense_job.id]))
+  end
+
+  test "deleting an image broadcasts a user notification refresh" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-delete-broadcast.jpg",
+        note: "notify-delete-broadcast",
+        caption: "notify-delete-broadcast",
+        file_id: "notify-delete-broadcast.jpg",
+        user_id: user.id
+      })
+
+    _caption_job = insert_job!(image.id, user.id, "caption", "failed", "caption failed")
+
+    Phoenix.PubSub.subscribe(Vmemo.PubSub, "user_notification:#{user.id}")
+
+    Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+    user_id = user.id
+    image_id = image.id
+
+    assert_receive {:user_notifications_changed,
+                    %{user_id: ^user_id, image_id: ^image_id, reason: :image_deleted}}
+  end
+
+  test "updating a job broadcasts a user notification refresh" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-job-update.jpg",
+        note: "notify-job-update",
+        caption: "notify-job-update",
+        file_id: "notify-job-update.jpg",
+        user_id: user.id
+      })
+
+    job = insert_job!(image.id, user.id, "caption", "in_progress", nil)
+
+    Phoenix.PubSub.subscribe(Vmemo.PubSub, "user_notification:#{user.id}")
+
+    Ash.update!(job, %{}, action: :mark_completed, actor: nil, authorize?: false)
+
+    user_id = user.id
+    image_id = image.id
+    job_id = job.id
+
+    assert_receive {:user_notifications_changed,
+                    %{
+                      user_id: ^user_id,
+                      image_id: ^image_id,
+                      job_id: ^job_id,
+                      reason: :job_changed
+                    }}
+  end
+
   defp create_image!(attrs) do
     ensure_fixture_image!(attrs)
     attrs = Map.put_new(attrs, :inner_purpose, nil)

@@ -103,6 +103,113 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "--160w.webp"
     end
 
+    test "removes deleted image job notifications from a mounted page", %{
+      conn: conn,
+      user: user
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/live-notification-delete.jpg",
+          note: "live-notification-delete",
+          caption: "live-notification-delete",
+          file_id: "live-notification-delete.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "failed"
+        })
+
+      job = get_job_by_image_and_kind!(image.id, "caption")
+
+      {:ok, lv, html} = live(conn, ~p"/home")
+
+      assert html =~ ~s(href="/jobs/#{job.id}")
+
+      Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+      refute eventually_render_without(lv, ~s(href="/jobs/#{job.id}")) =~
+               ~s(href="/jobs/#{job.id}")
+    end
+
+    test "removes deleted image jobs from a mounted jobs page", %{
+      conn: conn,
+      user: user
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/live-jobs-delete.jpg",
+          note: "live-jobs-delete",
+          caption: "live-jobs-delete",
+          file_id: "live-jobs-delete.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "failed"
+        })
+
+      job = get_job_by_image_and_kind!(image.id, "caption")
+
+      {:ok, lv, html} = live(conn, ~p"/jobs")
+
+      assert html =~ ~s(href="/jobs/#{job.id}")
+
+      Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+      refute eventually_render_without(lv, ~s(href="/jobs/#{job.id}")) =~
+               ~s(href="/jobs/#{job.id}")
+    end
+
+    test "removes deleted image jobs from a mounted notifications page", %{
+      conn: conn,
+      user: user
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/live-notifications-delete.jpg",
+          note: "live-notifications-delete",
+          caption: "live-notifications-delete",
+          file_id: "live-notifications-delete.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "failed"
+        })
+
+      job = get_job_by_image_and_kind!(image.id, "caption")
+
+      {:ok, lv, html} = live(conn, ~p"/notifications")
+
+      assert html =~ ~s(href="/jobs/#{job.id}")
+
+      Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+      refute eventually_render_without(lv, ~s(href="/jobs/#{job.id}")) =~
+               ~s(href="/jobs/#{job.id}")
+    end
+
+    test "navigates away from a mounted deleted job detail page", %{
+      conn: conn,
+      user: user
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/live-job-detail-delete.jpg",
+          note: "live-job-detail-delete",
+          caption: "live-job-detail-delete",
+          file_id: "live-job-detail-delete.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "failed"
+        })
+
+      job = get_job_by_image_and_kind!(image.id, "caption")
+
+      {:ok, lv, html} = live(conn, ~p"/jobs/#{job.id}")
+
+      assert html =~ job.id
+
+      Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+      assert_redirect(lv, ~p"/jobs", 1_000)
+    end
+
     test "renders caption failure reason in job detail page", %{conn: conn, user: user} do
       failed_image =
         create_image!(%{
@@ -274,6 +381,20 @@ defmodule VmemoWeb.JobsLiveTest do
     case Ash.read(query, actor: nil, authorize?: false) do
       {:ok, [job | _]} -> job
       _ -> raise "missing job for image=#{image_id}, kind=#{kind}"
+    end
+  end
+
+  defp eventually_render_without(lv, text, attempts \\ 10)
+  defp eventually_render_without(lv, _text, 1), do: render(lv)
+
+  defp eventually_render_without(lv, text, attempts) do
+    html = render(lv)
+
+    if html =~ text do
+      Process.sleep(20)
+      eventually_render_without(lv, text, attempts - 1)
+    else
+      html
     end
   end
 end

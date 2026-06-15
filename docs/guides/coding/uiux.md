@@ -61,6 +61,14 @@ Do not put framework-specific implementation details here.
 - Use toast for global feedback or failures that are not clearly visible near the action.
 - For non-submit actions (for example `delete`, `retry`, `archive`), toast remains the default failure feedback channel.
 
+## Data refresh behavior
+
+- UI that displays persisted or derived data must automatically follow canonical data changes while mounted.
+- For server-side changes that can happen outside the current LiveView event, use PubSub or another event-driven server-push mechanism.
+- PubSub handlers should re-read canonical state before assigning UI data; do not patch stale assigns as the source of truth.
+- Deleting data must remove or refresh all visible derived UI surfaces that depend on it, including layout badges, dropdown items, index rows, and detail pages.
+- Avoid polling for data freshness in LiveView.
+
 ## Images and fallback behavior
 
 - Use shared `<.img>` as the default image primitive so fallback behavior stays consistent.

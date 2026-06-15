@@ -8,6 +8,7 @@ defmodule VmemoWeb.UserAuth do
 
   alias Vmemo.Account
   alias Vmemo.Account.User
+  alias Vmemo.Jobs.Notifications
   alias VmemoWeb.JobNotifications
   alias VmemoWeb.Locale
 
@@ -257,6 +258,7 @@ defmodule VmemoWeb.UserAuth do
     socket
     |> Locale.put_locale(socket.assigns.current_user_profile)
     |> assign_global_notifications_data()
+    |> maybe_subscribe_to_user_notifications()
   end
 
   defp assign_global_notifications_data(socket) do
@@ -274,6 +276,52 @@ defmodule VmemoWeb.UserAuth do
       :global_notifications_unresolved_count,
       JobNotifications.unresolved_count(notifications)
     )
+  end
+
+  defp maybe_subscribe_to_user_notifications(socket) do
+    user = socket.assigns[:current_user]
+
+    if user && Phoenix.LiveView.connected?(socket) do
+      Phoenix.PubSub.subscribe(Vmemo.PubSub, Notifications.topic(user.id))
+
+      Phoenix.LiveView.attach_hook(
+        socket,
+        :global_notifications_refresh,
+        :handle_info,
+        &handle_global_notifications_info/2
+      )
+    else
+      socket
+    end
+  end
+
+  defp handle_global_notifications_info({:user_notifications_changed, _payload}, socket) do
+    socket =
+      socket
+      |> assign_global_notifications_data()
+      |> maybe_assign_notifications_page_data()
+
+    if socket.view == VmemoWeb.JobsLive do
+      {:cont, socket}
+    else
+      {:halt, socket}
+    end
+  end
+
+  defp handle_global_notifications_info(_message, socket), do: {:cont, socket}
+
+  defp maybe_assign_notifications_page_data(socket) do
+    if Map.has_key?(socket.assigns, :notifications) do
+      notifications =
+        case JobNotifications.list_for_user(socket.assigns[:current_user], limit: 80) do
+          {:ok, loaded_notifications} -> loaded_notifications
+          _ -> []
+        end
+
+      Phoenix.Component.assign(socket, :notifications, notifications)
+    else
+      socket
+    end
   end
 
   defp signed_in_path(_conn), do: ~p"/home"

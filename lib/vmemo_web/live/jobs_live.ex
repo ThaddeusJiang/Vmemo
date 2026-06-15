@@ -59,6 +59,18 @@ defmodule VmemoWeb.JobsLive do
   end
 
   @impl true
+  def handle_info({:user_notifications_changed, _payload}, socket) do
+    socket = refresh_jobs(socket)
+
+    if socket.assigns.live_action == :show && is_nil(socket.assigns.job) do
+      {:noreply,
+       socket |> put_flash(:error, gettext("Job not found")) |> push_navigate(to: ~p"/jobs")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_info({:clear_retrying_job, job_id}, socket) do
     {:noreply, clear_retrying_job(socket, job_id)}
   end
@@ -297,7 +309,7 @@ defmodule VmemoWeb.JobsLive do
 
     updated_current_job =
       case current_job do
-        %{id: id} -> Enum.find(jobs, &(&1.id == id)) || current_job
+        %{id: id} -> Enum.find(jobs, &(&1.id == id))
         _ -> current_job
       end
 
