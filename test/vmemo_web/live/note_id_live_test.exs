@@ -2,9 +2,11 @@ defmodule VmemoWeb.NoteIdLiveTest do
   use VmemoWeb.ConnCase, async: true
 
   alias Ash
+  alias Vmemo.Jobs.Job
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
+  require Ash.Query
   import Phoenix.LiveViewTest
   import Vmemo.AccountFixtures
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
@@ -42,6 +44,11 @@ defmodule VmemoWeb.NoteIdLiveTest do
 
       {:ok, updated_note} = Ash.get(Note, note.id, actor: user)
       assert updated_note.text == "Updated note text"
+
+      assert {:ok, []} =
+               Job
+               |> Ash.Query.filter(image_id == ^note.id)
+               |> Ash.read(actor: nil, authorize?: false)
     end
 
     test "destroys note successfully when note has linked images", %{note: note, user: user} do
