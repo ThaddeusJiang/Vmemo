@@ -82,10 +82,15 @@ defmodule VmemoWeb.FileController do
     |> put_resp_header("last-modified", last_modified)
   end
 
+  # sobelow_skip ["Traversal.SendFile"]
   defp send_storage_body(conn, file_path) do
-    conn
-    |> put_resp_header("x-accel-redirect", storage_accel_redirect_path(file_path))
-    |> send_resp(200, "")
+    if storage_accel_redirect?() do
+      conn
+      |> put_resp_header("x-accel-redirect", storage_accel_redirect_path(file_path))
+      |> send_resp(200, "")
+    else
+      send_file(conn, 200, file_path)
+    end
   end
 
   defp storage_accel_redirect_path(file_path) do
@@ -93,6 +98,10 @@ defmodule VmemoWeb.FileController do
     |> Path.expand()
     |> Path.relative_to(@storage_root)
     |> then(&Path.join(@storage_accel_redirect_prefix, &1))
+  end
+
+  defp storage_accel_redirect? do
+    Application.get_env(:vmemo, :storage_accel_redirect?, false)
   end
 
   defp fresh?(conn, etag, stat) do

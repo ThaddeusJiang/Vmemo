@@ -28,15 +28,15 @@ iex -S mix phx.server
 `mix setup` installs external frontend packages with `npm ci --prefix assets`
 before building CSS and JavaScript.
 
-Open the app through the local reverse proxy:
+Open the app directly:
 
 ```text
-http://localhost:4080
+http://localhost:4000
 ```
 
-Phoenix still runs on `http://localhost:4000`, but storage image responses use
-`X-Accel-Redirect`. Use the Nginx proxy on port `4080` when validating image
-loading performance or `/storage/v1` image URLs locally.
+Storage image responses work when the browser connects directly to Phoenix.
+Use the optional Nginx proxy on port `4080` only when validating
+`X-Accel-Redirect` storage acceleration or proxy-specific behavior locally.
 
 Test dependencies:
 

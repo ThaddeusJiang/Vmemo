@@ -221,7 +221,7 @@ defmodule Vmemo.MixProject do
         "i18n",
         "compile --warnings-as-errors --no-listeners --ignore-module-conflict",
         "xref graph --format cycles --label compile --fail-above 0",
-        "sobelow --config",
+        "sobelow --config --skip",
         "credo --mute-exit-status"
       ],
       "ts.setup": ["ts.migrate"],

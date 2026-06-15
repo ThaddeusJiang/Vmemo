@@ -13,11 +13,27 @@ typesense_url =
     environment variable TYPESENSE_URL is missing.
     """
 
+storage_accel_redirect? =
+  case System.get_env("VMEMO_STORAGE_ACCEL_REDIRECT") || System.get_env("VMEMO_ENABLE_NGINX") do
+    value when value in ["true", "1"] ->
+      true
+
+    value when value in ["false", "0", nil, ""] ->
+      false
+
+    _ ->
+      raise """
+      environment variable VMEMO_STORAGE_ACCEL_REDIRECT is invalid.
+      It must be true, false, 1, or 0.
+      """
+  end
+
 config :vmemo,
   openrouter_chat_model: System.get_env("OPENROUTER_CHAT_MODEL", "openrouter:openai/gpt-4o-mini"),
   openrouter_vision_model:
     System.get_env("OPENROUTER_VISION_MODEL", "openrouter:google/gemma-4-26b-a4b-it"),
-  typesense_url: typesense_url
+  typesense_url: typesense_url,
+  storage_accel_redirect?: storage_accel_redirect?
 
 config :vmemo, Vmemo.Repo, url: database_url
 

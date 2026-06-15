@@ -64,11 +64,14 @@ Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
 Storage acceleration:
 
 - Browser-facing storage URLs stay under `/storage/v1`.
-- Phoenix performs the lightweight owner check, then returns `X-Accel-Redirect`
-  under `/storage/v1/_internal`.
-- Nginx sends the file bytes from the app's `storage/v1` directory. The production
-  Docker image enables this by default: Nginx listens on `4000`, while Phoenix
-  listens internally on `PHX_PORT=4001`.
+- By default, Phoenix performs the lightweight owner check and sends the file
+  bytes itself.
+- When `VMEMO_ENABLE_NGINX=true` or `VMEMO_STORAGE_ACCEL_REDIRECT=true`, Phoenix
+  performs the owner check, then returns `X-Accel-Redirect` under
+  `/storage/v1/_internal`.
+- In the accelerated mode, Nginx sends the file bytes from the app's
+  `storage/v1` directory. The production Docker image enables this by default:
+  Nginx listens on `4000`, while Phoenix listens internally on `PHX_PORT=4001`.
 
 Example Nginx location:
 
