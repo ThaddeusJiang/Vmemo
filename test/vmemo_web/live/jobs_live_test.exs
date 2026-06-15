@@ -184,6 +184,32 @@ defmodule VmemoWeb.JobsLiveTest do
                ~s(href="/jobs/#{job.id}")
     end
 
+    test "navigates away from a mounted deleted job detail page", %{
+      conn: conn,
+      user: user
+    } do
+      image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/live-job-detail-delete.jpg",
+          note: "live-job-detail-delete",
+          caption: "live-job-detail-delete",
+          file_id: "live-job-detail-delete.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "failed"
+        })
+
+      job = get_job_by_image_and_kind!(image.id, "caption")
+
+      {:ok, lv, html} = live(conn, ~p"/jobs/#{job.id}")
+
+      assert html =~ job.id
+
+      Ash.destroy!(image, action: :destroy, actor: nil, authorize?: false)
+
+      assert_redirect(lv, ~p"/jobs")
+    end
+
     test "renders caption failure reason in job detail page", %{conn: conn, user: user} do
       failed_image =
         create_image!(%{
