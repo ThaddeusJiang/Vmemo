@@ -19,7 +19,7 @@ From repository root:
 
 ```bash
 mise trust && mise install
-docker compose --profile proxy up -d
+docker compose up -d
 mix setup
 iex -S mix phx.server
 ```
@@ -28,15 +28,15 @@ iex -S mix phx.server
 `mix setup` installs external frontend packages with `npm ci --prefix assets`
 before building CSS and JavaScript.
 
-Open the app directly:
+Open the app through the local Nginx proxy:
 
 ```text
-http://localhost:4000
+http://localhost:4080
 ```
 
-Storage image responses work when the browser connects directly to Phoenix.
-Use the optional Nginx proxy on port `4080` only when validating
-`X-Accel-Redirect` storage acceleration or proxy-specific behavior locally.
+`docker compose up -d` starts the local Nginx proxy by default. Phoenix still
+runs on `http://localhost:4000` for direct debugging, and direct Phoenix storage
+requests return image bytes without requiring the proxy.
 
 Test dependencies:
 

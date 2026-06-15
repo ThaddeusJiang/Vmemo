@@ -278,6 +278,28 @@ defmodule VmemoWeb.FileControllerTest do
     assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
 
+  test "uses x-accel-redirect when request comes through storage proxy", %{
+    conn: conn,
+    user: user,
+    image_dir: image_dir
+  } do
+    original = Path.join(image_dir, "proxied.png")
+    File.write!(original, "proxied-data")
+
+    conn =
+      conn
+      |> put_req_header("x-vmemo-storage-accel", "true")
+      |> get(~p"/storage/v1/#{user.id}/images/proxied.png")
+
+    assert response(conn, 200) == ""
+
+    assert get_resp_header(conn, "x-accel-redirect") == [
+             "/storage/v1/_internal/#{user.id}/images/proxied.png"
+           ]
+
+    assert get_resp_header(conn, "content-type") == ["image/png"]
+  end
+
   defp restore_storage_accel_redirect(nil) do
     Application.delete_env(:vmemo, :storage_accel_redirect?)
   end
