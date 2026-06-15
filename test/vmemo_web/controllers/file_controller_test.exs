@@ -9,14 +9,11 @@ defmodule VmemoWeb.FileControllerTest do
     user = user_fixture()
     other_user = user_fixture()
     conn = log_in_user(conn, user)
-    previous_storage_accel_redirect = Application.get_env(:vmemo, :storage_accel_redirect?)
-    Application.put_env(:vmemo, :storage_accel_redirect?, false)
 
     image_dir = Path.join([@base_dir, user.id, "images"])
     File.mkdir_p!(image_dir)
 
     on_exit(fn ->
-      restore_storage_accel_redirect(previous_storage_accel_redirect)
       File.rm_rf!(Path.join([@base_dir, user.id]))
       File.rm_rf!(Path.join([@base_dir, other_user.id]))
     end)
@@ -255,29 +252,6 @@ defmodule VmemoWeb.FileControllerTest do
     assert get_resp_header(conn, "content-type") == ["image/png"]
   end
 
-  test "uses x-accel-redirect when storage acceleration is enabled", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    Application.put_env(:vmemo, :storage_accel_redirect?, true)
-
-    original = Path.join(image_dir, "accelerated.png")
-    File.write!(original, "accelerated-data")
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/accelerated.png")
-
-    assert response(conn, 200) == ""
-
-    assert get_resp_header(conn, "x-accel-redirect") == [
-             "/storage/v1/_internal/#{user.id}/images/accelerated.png"
-           ]
-
-    assert get_resp_header(conn, "content-type") == ["image/png"]
-    assert get_resp_header(conn, "content-disposition") == ["inline"]
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
-  end
-
   test "uses x-accel-redirect when request comes through storage proxy", %{
     conn: conn,
     user: user,
@@ -298,13 +272,5 @@ defmodule VmemoWeb.FileControllerTest do
            ]
 
     assert get_resp_header(conn, "content-type") == ["image/png"]
-  end
-
-  defp restore_storage_accel_redirect(nil) do
-    Application.delete_env(:vmemo, :storage_accel_redirect?)
-  end
-
-  defp restore_storage_accel_redirect(value) do
-    Application.put_env(:vmemo, :storage_accel_redirect?, value)
   end
 end

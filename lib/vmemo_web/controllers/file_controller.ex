@@ -84,7 +84,7 @@ defmodule VmemoWeb.FileController do
 
   # sobelow_skip ["Traversal.SendFile"]
   defp send_storage_body(conn, file_path) do
-    if storage_accel_redirect?(conn) do
+    if storage_proxy_request?(conn) do
       conn
       |> put_resp_header("x-accel-redirect", storage_accel_redirect_path(file_path))
       |> send_resp(200, "")
@@ -98,10 +98,6 @@ defmodule VmemoWeb.FileController do
     |> Path.expand()
     |> Path.relative_to(@storage_root)
     |> then(&Path.join(@storage_accel_redirect_prefix, &1))
-  end
-
-  defp storage_accel_redirect?(conn) do
-    Application.get_env(:vmemo, :storage_accel_redirect?, false) or storage_proxy_request?(conn)
   end
 
   defp storage_proxy_request?(conn) do

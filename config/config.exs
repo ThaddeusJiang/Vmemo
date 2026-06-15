@@ -58,7 +58,6 @@ config :vmemo,
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [Vmemo.Admin, Vmemo.Account, Vmemo.Memo, Vmemo.Ai, Vmemo.Chat, Vmemo.Jobs],
   image_upload_max_file_size: 50_000_000,
-  storage_accel_redirect?: false,
   user_data_import_typesense_chunk_size: 50,
   user_data_import_typesense_chunk_pause_ms: 50
 

@@ -14,13 +14,12 @@
 
 ## Fix applied
 
-- Added `:storage_accel_redirect?` app config, defaulting to `false`.
-- `FileController` now uses `send_file/3` by default and only returns `X-Accel-Redirect` when acceleration is explicitly enabled.
+- `FileController` now uses `send_file/3` by default and only returns `X-Accel-Redirect` when the request comes through a storage-aware Nginx proxy.
 - The release entrypoint auto-starts Nginx in the production image, sets
-  `PHX_PORT=4001`, and enables `VMEMO_STORAGE_ACCEL_REDIRECT=true`.
+  `PHX_PORT=4001`, and relies on Nginx to mark storage-accelerated requests.
 - Local `docker compose up -d` starts the development Nginx proxy by default,
   and the proxy marks requests as storage-accelerated.
-- Updated storage controller tests to cover both direct Phoenix file responses and explicit accelerated responses.
+- Updated storage controller tests to cover both direct Phoenix file responses and proxy-accelerated responses.
 
 ## What we learned
 
