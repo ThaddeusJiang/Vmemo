@@ -29,9 +29,9 @@ defmodule VmemoWeb.JobNotificationsTest do
     {:ok, notifications} = JobNotifications.list_for_user(user, limit: 20)
 
     caption_notification = Enum.find(notifications, &(&1.id == failed_caption.id))
-    assert caption_notification.description == "Caption generation failed."
+    assert caption_notification.description == "Caption generation failed. Please retry later."
 
-    assert caption_notification.image_url ==
+    assert caption_notification.image_url =~
              "/storage/v1/#{user.id}/images/notify-message--160w.webp"
 
     assert caption_notification.status == "failed"
@@ -45,6 +45,31 @@ defmodule VmemoWeb.JobNotificationsTest do
     assert completed_caption_notification.status == "success"
 
     assert Enum.any?(notifications2, &(&1.description == "Search indexing in progress."))
+  end
+
+  test "hides internal job error details in notification messages" do
+    user = user_fixture()
+
+    image =
+      create_image!(%{
+        url: "/storage/v1/#{user.id}/images/notify-internal-error.jpg",
+        note: "notify-internal-error",
+        caption: "notify-internal-error",
+        file_id: "notify-internal-error.jpg",
+        user_id: user.id
+      })
+
+    internal_error =
+      "%Ash.Error.Unknown{errors: [%ReqLLM.Error.API.Request{reason: \"Provider response error (401): Openrouter API error: User not found.\", status: 401}]}"
+
+    failed_caption = insert_job!(image.id, user.id, "caption", "failed", internal_error)
+
+    {:ok, notifications} = JobNotifications.list_for_user(user, limit: 20)
+    notification = Enum.find(notifications, &(&1.id == failed_caption.id))
+
+    assert notification.description == "Caption generation failed. Please retry later."
+    refute notification.description =~ "%Ash.Error"
+    refute notification.description =~ "Provider response error"
   end
 
   test "deleting an image removes related jobs and notifications" do
