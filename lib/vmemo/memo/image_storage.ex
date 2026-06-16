@@ -4,6 +4,8 @@ defmodule Vmemo.Memo.ImageStorage do
   alias SmallSdk.ImageMagick
 
   @image_extensions [".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff"]
+  @storage_root Path.expand("storage/v1")
+  @cache_version_param "v"
   @legacy_thumb_sizes %{s: 320, m: 1280}
   @responsive_widths [160, 320, 640, 1280, 1920]
   @responsive_widths_by_usage %{
@@ -65,13 +67,22 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   def thumbnail_url(url, size) when size in [:s, :m] and is_binary(url) do
-    ext = Path.extname(url)
-    root = Path.rootname(url, ext)
+    path = url_path(url)
+    ext = Path.extname(path)
+    root = Path.rootname(path, ext)
+
     "#{root}--#{size}#{ext}"
+    |> put_cache_version(cache_version(url))
   end
 
   def thumbnail_url(url, width) when width in @responsive_widths and is_binary(url) do
-    if storage_image_url?(url), do: variant_url(url, width), else: url
+    if storage_image_url?(url) do
+      url
+      |> variant_url(width)
+      |> put_cache_version(cache_version(url))
+    else
+      url
+    end
   end
 
   def thumbnail_url(url, _size), do: url
@@ -91,8 +102,17 @@ defmodule Vmemo.Memo.ImageStorage do
 
   defp build_srcset(url, widths) do
     if storage_image_url?(url) do
+      version = cache_version(url)
+
       widths
-      |> Enum.map_join(", ", fn width -> "#{variant_url(url, width)} #{width}w" end)
+      |> Enum.map_join(", ", fn width ->
+        candidate =
+          url
+          |> variant_url(width)
+          |> put_cache_version(version)
+
+        "#{candidate} #{width}w"
+      end)
     end
   end
 
@@ -143,7 +163,8 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   defp variant_url(url, width) do
-    root = Path.rootname(url, Path.extname(url))
+    path = url_path(url)
+    root = Path.rootname(path, Path.extname(path))
     "#{source_root(root)}--#{width}w#{@responsive_extension}"
   end
 
@@ -161,8 +182,68 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   defp storage_image_url?(url) do
-    path = URI.parse(url).path || url
+    path = url_path(url)
     String.contains?(path, "/storage/v1/") and String.contains?(path, "/images/")
+  end
+
+  defp cache_version(url) do
+    with path when is_binary(path) <- source_storage_path(url),
+         {:ok, stat} <- File.stat(path) do
+      mtime = :calendar.datetime_to_gregorian_seconds(stat.mtime)
+      inode = Map.get(stat, :inode, 0)
+      "#{inode}-#{stat.size}-#{mtime}"
+    else
+      _ -> nil
+    end
+  end
+
+  defp source_storage_path(url) do
+    path =
+      url
+      |> url_path()
+      |> String.trim_leading("/")
+      |> Path.expand()
+
+    if String.starts_with?(path, @storage_root <> "/") do
+      path
+      |> source_path_candidates()
+      |> Enum.find(&File.exists?/1)
+    end
+  end
+
+  defp source_path_candidates(path) do
+    ext = Path.extname(path)
+    root = Path.rootname(path, ext)
+    source_root = source_root(root)
+
+    if source_root == root do
+      [path]
+    else
+      ([source_root <> ext] ++ Enum.map(@image_extensions, &(source_root <> &1)))
+      |> Enum.uniq()
+    end
+  end
+
+  defp put_cache_version(url, nil), do: url
+
+  defp put_cache_version(url, version) do
+    uri = URI.parse(url)
+
+    query =
+      uri.query
+      |> decode_query()
+      |> Map.put(@cache_version_param, version)
+      |> URI.encode_query()
+
+    %{uri | query: query}
+    |> URI.to_string()
+  end
+
+  defp decode_query(nil), do: %{}
+  defp decode_query(query), do: URI.decode_query(query)
+
+  defp url_path(url) do
+    URI.parse(url).path || url
   end
 
   defp responsive_width(root) do

@@ -43,7 +43,7 @@ One `--s.JPG` URL returned `404`, which matched the code path that lowercased sa
 - The response kept the requested thumbnail URL in the browser but redirected Nginx to the original storage file, so the UI appeared to request `--s` while actually transferring original-size content.
 - Safe filename normalization lowercased the filename, which broke stored files with uppercase extensions such as `.JPG`.
 - Thumbnail generation wrote directly to final thumbnail paths, which could expose partially-written files if a request arrived while generation was still in progress.
-- Storage image responses used immutable caching even though image files and thumbnails can be rewritten by user actions such as rotation.
+- Storage image responses either used immutable caching for path-stable mutable files, or later forced revalidation on every page load. The latter avoided stale rotated images but made unchanged images show as repeated `304` browser requests.
 - Width-based responsive variants initially kept the original file extension. For PNG uploads this could still create relatively large PNG derivatives and make cold requests spend browser-visible time in ImageMagick.
 - List/detail `srcset` initially exposed every width up to `1920w`, so high-DPR devices could request images larger than the rendered UI needed.
 
@@ -61,7 +61,7 @@ One `--s.JPG` URL returned `404`, which matched the code path that lowercased sa
 - `VmemoWeb.FileController` now generates missing thumbnail requests instead of serving the original file for `--s` or `--m` URLs.
 - Filename validation preserves original case while still allowing only safe path characters.
 - Failed thumbnail generation returns the normal missing-image 404 path instead of crashing the request.
-- Storage image responses now use ETag/Last-Modified revalidation instead of `immutable` caching because thumbnails are path-stable but content-mutable.
+- Storage image responses now use ETag/Last-Modified revalidation for unversioned URLs and long-lived immutable caching for versioned URLs. Application-rendered storage image URLs include a `v` query parameter derived from the source file metadata, so unchanged images can be served from browser cache without revalidation while rewritten files get a new cache key.
 - `mix storage.warm_images` pre-generates variants for existing files under `storage/v1/<user_id>/images`.
 
 ## Fixed-Code Local Benchmark

@@ -25,6 +25,29 @@ defmodule VmemoWeb.CoreComponentsTest do
     assert html =~ ~s(decoding="async")
   end
 
+  test "img renders cache-versioned storage URLs when the source file exists" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    image_dir = Path.join(["storage", "v1", user_id, "images"])
+    File.mkdir_p!(image_dir)
+    File.write!(Path.join(image_dir, "versioned.png"), "versioned")
+
+    on_exit(fn ->
+      File.rm_rf!(Path.join(["storage", "v1", user_id]))
+    end)
+
+    assigns = %{src: "/storage/v1/#{user_id}/images/versioned.png"}
+
+    html =
+      rendered_to_string(~H"""
+      <.img src={@src} alt="Versioned photo" image_variant={:thumb} />
+      """)
+
+    assert html =~ ~r|src="/storage/v1/#{user_id}/images/versioned--160w\.webp\?v=[A-Za-z0-9_-]+"|
+
+    assert html =~
+             ~r|srcset="/storage/v1/#{user_id}/images/versioned--160w\.webp\?v=[A-Za-z0-9_-]+ 160w,|
+  end
+
   test "img does not add responsive attributes for non-storage images" do
     assigns = %{}
 

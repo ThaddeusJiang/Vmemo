@@ -184,6 +184,20 @@ defmodule VmemoWeb.FileControllerTest do
     assert get_resp_header(second, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
 
+  test "uses immutable browser caching for versioned storage requests", %{
+    conn: conn,
+    user: user,
+    image_dir: image_dir
+  } do
+    original = Path.join(image_dir, "versioned.png")
+    File.write!(original, "versioned-data")
+
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/versioned.png?v=file-version")
+
+    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/versioned.png")
+    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
+  end
+
   test "returns 404 for invalid filename pattern", %{conn: conn, user: user} do
     conn = get(conn, "/storage/v1/#{user.id}/images/evil file.png")
     assert response(conn, 404) == "File not found"

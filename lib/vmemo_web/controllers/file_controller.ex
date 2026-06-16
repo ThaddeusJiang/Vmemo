@@ -5,6 +5,8 @@ defmodule VmemoWeb.FileController do
 
   @storage_root Path.expand("storage/v1")
   @internal_storage_prefix "/storage/v1/_internal"
+  @revalidation_cache_control "public, max-age=0, must-revalidate"
+  @immutable_cache_control "public, max-age=31536000, immutable"
   @allowed_mime_types %{
     ".png" => "image/png",
     ".jpg" => "image/jpeg",
@@ -53,7 +55,7 @@ defmodule VmemoWeb.FileController do
     else
       true ->
         conn
-        |> put_resp_header("cache-control", "public, max-age=0, must-revalidate")
+        |> put_resp_header("cache-control", storage_cache_control(conn))
         |> put_resp_header("etag", build_etag!(file_path))
         |> put_resp_header("last-modified", build_last_modified!(file_path))
         |> send_resp(304, "")
@@ -77,9 +79,16 @@ defmodule VmemoWeb.FileController do
     conn
     |> put_resp_header("content-type", detect_safe_mime(file_path))
     |> put_resp_header("content-disposition", "inline")
-    |> put_resp_header("cache-control", "public, max-age=0, must-revalidate")
+    |> put_resp_header("cache-control", storage_cache_control(conn))
     |> put_resp_header("etag", etag)
     |> put_resp_header("last-modified", last_modified)
+  end
+
+  defp storage_cache_control(conn) do
+    case conn.query_params["v"] do
+      version when is_binary(version) and version != "" -> @immutable_cache_control
+      _ -> @revalidation_cache_control
+    end
   end
 
   defp send_storage_body(conn, file_path) do
