@@ -42,6 +42,39 @@ defmodule Vmemo.Memo.ImageStorageTest do
     refute Storage.srcset(url, :detail) =~ "1920w"
   end
 
+  test "Storage.img/2 appends a browser cache version when the storage file exists" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    image_dir = Path.join([@storage_prefix, user_id, "images"])
+    File.mkdir_p!(image_dir)
+    image_path = Path.join(image_dir, "cache.png")
+    File.write!(image_path, "cache-data")
+
+    on_exit(fn ->
+      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+    end)
+
+    assert Storage.img("/storage/v1/#{user_id}/images/cache.png", 640) =~
+             ~r|^/storage/v1/#{user_id}/images/cache--640w\.webp\?v=[A-Za-z0-9_-]+$|
+  end
+
+  test "Storage.srcset/2 appends the same browser cache version to each candidate" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    image_dir = Path.join([@storage_prefix, user_id, "images"])
+    File.mkdir_p!(image_dir)
+    image_path = Path.join(image_dir, "srcset.png")
+    File.write!(image_path, "srcset-data")
+
+    on_exit(fn ->
+      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+    end)
+
+    srcset = Storage.srcset("/storage/v1/#{user_id}/images/srcset.png", :thumb)
+
+    assert [first, second] = String.split(srcset, ", ")
+    assert [_, version] = Regex.run(~r/\?v=([A-Za-z0-9_-]+) 160w$/, first)
+    assert String.ends_with?(second, "?v=#{version} 320w")
+  end
+
   test "Storage.img_sizes/1 maps image usage to browser sizes hints" do
     assert Storage.img_sizes(:thumb) == "96px"
     assert Storage.img_sizes(:grid) == "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

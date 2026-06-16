@@ -1,15 +1,12 @@
-# Default `docker compose up` starts local dependency services.
-# Use `docker compose --profile proxy up -d` to add the local Nginx proxy.
+# Default `docker compose up` starts local dependency services and the local Nginx proxy.
 # For test DB/search: `docker compose --profile test up` (or `COMPOSE_PROFILES=test`).
 services:
   nginx:
-    profiles:
-      - proxy
     image: nginx:1.27.5-alpine
     hostname: nginx
     restart: on-failure
     ports:
-      - "4080:80"
+      - "4000:80"
     volumes:
       - ./config/nginx/dev.conf:/etc/nginx/nginx.conf:ro
       - ./storage/v1:/app/storage/v1:ro

@@ -50,12 +50,6 @@ spec:
           PHX_SERVER:
             default: "true"
             expose: false
-          PHX_PORT:
-            default: "4001"
-            expose: false
-          VMEMO_ENABLE_NGINX:
-            default: "true"
-            expose: false
           SECRET_KEY_BASE:
             default: ${TYPESENSE_SERVICE_API_KEY}_${TYPESENSE_SERVICE_API_KEY}
             expose: false
