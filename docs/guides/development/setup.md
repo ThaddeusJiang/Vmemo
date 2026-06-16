@@ -31,13 +31,14 @@ before building CSS and JavaScript.
 Open the app through the local Nginx proxy:
 
 ```text
-http://localhost:4080
+http://localhost:4000
 ```
 
-`docker compose up -d` starts the local Nginx proxy by default. Use `4080` when
-validating image rendering or `/storage/v1` URLs, because Phoenix only performs
-authorization and returns `X-Accel-Redirect`; Nginx sends the actual file bytes.
-Phoenix still runs on `http://localhost:4000` for non-storage debugging.
+`docker compose up -d` starts the local Nginx proxy on `http://localhost:4000`
+by default. Phoenix runs internally on `http://localhost:4001` for non-storage
+debugging. Use `4000` when validating image rendering or `/storage/v1` URLs,
+because Phoenix only performs authorization and returns `X-Accel-Redirect`;
+Nginx sends the actual file bytes.
 
 Test dependencies:
 

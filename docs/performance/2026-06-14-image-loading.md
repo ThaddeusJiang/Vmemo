@@ -106,7 +106,7 @@ X/Twitter-style feeds use generated media variants instead of making the feed re
   - `DATABASE_URL='postgres://postgres:postgres@localhost:20001/vmemo_test' TYPESENSE_URL='http://localhost:20002' TYPESENSE_API_KEY='xyz' MIX_ENV=test mise exec -- mix storage.warm_images --root storage/v1`
   - Add `--limit 100` for batched warmup on large local or production storage.
 - Browser performance probe through local Nginx:
-  - `E2E_BASE_URL=http://localhost:4080 PHOTOS_INDEX_READY_BUDGET_MS=3000 STORAGE_IMAGE_RESPONSE_BUDGET_MS=1000 PHOTOS_INDEX_MIN_IMAGES=1 bun run perf:images`
+  - `E2E_BASE_URL=http://localhost:4000 PHOTOS_INDEX_READY_BUDGET_MS=3000 STORAGE_IMAGE_RESPONSE_BUDGET_MS=1000 PHOTOS_INDEX_MIN_IMAGES=1 bun run perf:images`
 
 Result: targeted controller/storage/component/performance tests passed with 28 tests, 0 failures. `mix check` exited successfully.
 
