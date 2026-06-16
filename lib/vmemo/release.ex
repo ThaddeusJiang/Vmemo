@@ -3,7 +3,11 @@ defmodule Vmemo.Release do
   Release tasks for database and Typesense migrations.
   """
 
+  require Logger
+
   @app :vmemo
+  @ts_migration_max_attempts 30
+  @ts_migration_retry_delay_ms 1_000
 
   @doc """
   Run all release migrations.
@@ -47,7 +51,15 @@ defmodule Vmemo.Release do
 
     load_ts_schema_modules()
     migrator = ts_schema_migrator_module()
-    migrator.migrate()
+    ts_migrate_with_retry(fn -> migrator.migrate() end)
+  end
+
+  @doc false
+  def ts_migrate_with_retry(migrate_fun, opts \\ []) when is_function(migrate_fun, 0) do
+    max_attempts = opts |> Keyword.get(:max_attempts, @ts_migration_max_attempts) |> max(1)
+    retry_delay_ms = Keyword.get(opts, :retry_delay_ms, @ts_migration_retry_delay_ms)
+
+    do_ts_migrate_with_retry(migrate_fun, 1, max_attempts, retry_delay_ms)
   end
 
   defp repos do
@@ -72,6 +84,31 @@ defmodule Vmemo.Release do
   end
 
   defp ts_schema_migrator_module, do: Module.concat([Vmemo, Ts, SchemaMigrator])
+
+  defp do_ts_migrate_with_retry(migrate_fun, attempt, max_attempts, retry_delay_ms) do
+    migrate_fun.()
+  rescue
+    error in RuntimeError ->
+      if transient_typesense_migration_error?(error) and attempt < max_attempts do
+        Logger.warning(
+          "Typesense migration failed before service readiness; retrying attempt=#{attempt + 1} max_attempts=#{max_attempts} reason=#{Exception.message(error)}"
+        )
+
+        if retry_delay_ms > 0, do: Process.sleep(retry_delay_ms)
+
+        do_ts_migrate_with_retry(migrate_fun, attempt + 1, max_attempts, retry_delay_ms)
+      else
+        reraise error, __STACKTRACE__
+      end
+  end
+
+  defp transient_typesense_migration_error?(error) do
+    message = Exception.message(error)
+
+    String.contains?(message, "Req.TransportError") or
+      String.contains?(message, ":econnrefused") or
+      String.contains?(message, "connection refused")
+  end
 
   defp migration_paths(repo) do
     path = Application.app_dir(@app, "priv/#{repo_migrations_path(repo)}/migrations")

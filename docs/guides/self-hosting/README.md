@@ -4,6 +4,7 @@
 
 ```text
 docs/guides/self-hosting/
+├── operations.md
 ├── local-machine/
 │   ├── README.md
 │   ├── .env.example
@@ -30,6 +31,7 @@ docs/guides/self-hosting/
 - [Local Machine](local-machine/README.md)
 - [Zeabur](zeabur/README.md)
 - [Fly.io](fly/README.md)
+- [Operations](operations.md)
 
 ## Shared Docker Reference
 
