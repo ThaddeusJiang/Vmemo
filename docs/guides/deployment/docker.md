@@ -26,7 +26,7 @@ This is the single Docker document under `docs/guides/deployment`.
 Release startup behavior:
 
 1. `bin/vmemo eval "Vmemo.Release.migrate()"`
-2. Start Nginx when `VMEMO_ENABLE_NGINX=true`
+2. Auto-start Nginx when the production image starts with `CMD ["start"]`
 3. `bin/vmemo start`
 
 Remote IEx:
@@ -44,7 +44,7 @@ docker exec -it <container_name> /app/bin/vmemo remote
 - Entrypoint runs `bin/vmemo eval "Vmemo.Release.migrate()"`.
 - Dockerfile runner starts via `ENTRYPOINT + CMD ["start"]`.
 - Dockerfile builder uses the pinned `node:24.14.1-bookworm-slim` image for npm.
-- Dockerfile runner starts Nginx before Phoenix when `VMEMO_ENABLE_NGINX=true`.
+- Dockerfile runner auto-starts Nginx before Phoenix.
 - Dockerfile runner includes ImageMagick (`magick`) for AI vision request preprocessing.
 
 ### Required Environment Variables
@@ -67,9 +67,11 @@ Image storage:
 - Browser-facing image display uses `/media/images/:id/thumb`,
   `/media/images/:id/detail`, and `/media/images/:id/original`.
 - Phoenix performs the owner check and sends the file bytes directly.
-- Nginx may still run as a reverse proxy in the production image when
-  `VMEMO_ENABLE_NGINX=true`, but image display does not depend on
-  `X-Accel-Redirect`.
+- In the production Docker image, `rel/entrypoint.sh` automatically starts Nginx,
+  sets Phoenix to listen internally on `4001`, and keeps Nginx listening
+  publicly on `4000`.
+- Nginx is only a reverse proxy for image display; it does not serve storage
+  bytes through `X-Accel-Redirect`.
 
 Existing images can be warmed with `mix storage.warm_images` to generate the
 fixed `thumb` and `detail` WebP variants before users browse them.

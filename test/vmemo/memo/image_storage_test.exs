@@ -1,8 +1,8 @@
 defmodule Vmemo.Memo.ImageStorageTest do
   use ExUnit.Case, async: true
 
-  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Storage
 
   @storage_prefix Path.join(["storage", "v1"]) |> Path.expand()

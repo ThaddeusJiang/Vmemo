@@ -5,6 +5,7 @@ defmodule VmemoWeb.FileController do
   alias Vmemo.Memo.ImageStorage
 
   @storage_root Path.expand("storage/v1")
+  @cache_control "public, max-age=0, must-revalidate"
   @allowed_mime_types %{
     ".png" => "image/png",
     ".jpg" => "image/jpeg",
@@ -67,7 +68,7 @@ defmodule VmemoWeb.FileController do
     else
       true ->
         conn
-        |> put_resp_header("cache-control", "public, max-age=0, must-revalidate")
+        |> put_resp_header("cache-control", @cache_control)
         |> put_resp_header("etag", build_etag!(file_path))
         |> put_resp_header("last-modified", build_last_modified!(file_path))
         |> send_resp(304, "")
@@ -91,7 +92,7 @@ defmodule VmemoWeb.FileController do
     conn
     |> put_resp_header("content-type", detect_safe_mime(file_path))
     |> put_resp_header("content-disposition", "inline")
-    |> put_resp_header("cache-control", "public, max-age=0, must-revalidate")
+    |> put_resp_header("cache-control", @cache_control)
     |> put_resp_header("etag", etag)
     |> put_resp_header("last-modified", last_modified)
   end
@@ -147,7 +148,6 @@ defmodule VmemoWeb.FileController do
   end
 
   defp build_etag(_file_path, stat) do
-    # Avoid reading whole file on every request; use stable metadata-based ETag instead.
     mtime = :calendar.datetime_to_gregorian_seconds(stat.mtime)
     size = stat.size
     inode = Map.get(stat, :inode, 0)
