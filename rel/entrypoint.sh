@@ -1,16 +1,13 @@
 #!/bin/sh
 set -eu
 
-if [ "${1:-}" = "start" ] && command -v nginx >/dev/null 2>&1 && [ -f /etc/nginx/nginx.conf ]; then
+if [ "${1:-}" = "start" ]; then
   export PHX_PORT="${PHX_PORT:-4001}"
-  START_NGINX=true
-else
-  START_NGINX=false
 fi
 
 /app/bin/vmemo eval "Vmemo.Release.migrate()"
 
-if [ "$START_NGINX" = "true" ]; then
+if [ "${1:-}" = "start" ]; then
   nginx -t
   nginx
 fi
