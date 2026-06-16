@@ -61,27 +61,18 @@ docker exec -it <container_name> /app/bin/vmemo remote
 
 Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
 
-Storage acceleration:
+Image storage:
 
-- Browser-facing storage URLs stay under `/storage/v1`.
-- Phoenix performs the lightweight owner check, then returns `X-Accel-Redirect`
-  under `/storage/v1/_internal`.
-- Nginx sends the file bytes from the app's `storage/v1` directory. The production
-  Docker image enables this by default: Nginx listens on `4000`, while Phoenix
-  listens internally on `PHX_PORT=4001`.
+- Original files stay under `/storage/v1`.
+- Browser-facing image display uses `/media/images/:id/thumb`,
+  `/media/images/:id/detail`, and `/media/images/:id/original`.
+- Phoenix performs the owner check and sends the file bytes directly.
+- Nginx may still run as a reverse proxy in the production image when
+  `VMEMO_ENABLE_NGINX=true`, but image display does not depend on
+  `X-Accel-Redirect`.
 
-Example Nginx location:
-
-```nginx
-location /storage/v1/_internal/ {
-  internal;
-  alias /app/storage/v1/;
-}
-```
-
-Keep `/storage/v1/_internal/` internal-only. Browser-facing requests should continue to use
-`/storage/v1/:user_id/images/:filename` and `/storage/v1/:user_id/avatars/:filename`
-so they pass through Phoenix authorization before Nginx serves the file bytes.
+Existing images can be warmed with `mix storage.warm_images` to generate the
+fixed `thumb` and `detail` WebP variants before users browse them.
 
 ### Troubleshooting
 

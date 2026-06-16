@@ -422,7 +422,7 @@ defmodule VmemoWeb.GlobalAskAiLive do
 
   defp add_image_thumbnail(acc, image_id, user) do
     case Image.get(image_id, actor: user) do
-      {:ok, image} -> Map.put(acc, image.id, Storage.img(image.url, 160))
+      {:ok, image} -> Map.put(acc, image.id, Storage.img(image, :thumb))
       _ -> acc
     end
   end

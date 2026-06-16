@@ -94,7 +94,7 @@ test("photos index and detail image display performance", async ({ page }, testI
     .toBe(true);
 
   const detailImageReadyMs = Date.now() - detailStartMs;
-  const detailBrowserImages = await collectBrowserImageMetrics(page, 'img[src*="/storage/v1/"]');
+  const detailBrowserImages = await collectBrowserImageMetrics(page, 'img[src*="/media/images/"]');
   const loadedDetailImages = detailBrowserImages.filter(
     (image) => image.complete && image.naturalWidth > 0,
   );
@@ -235,7 +235,7 @@ function parseNullableInteger(value: string | undefined) {
 }
 
 function isStorageImageUrl(url: string) {
-  return url.includes("/storage/v1/") && !url.includes("/storage/v1/_internal/");
+  return url.includes("/media/images/");
 }
 
 function isSuccessfulImageResponse(response: ResponseMetric) {

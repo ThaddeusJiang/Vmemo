@@ -1,10 +1,12 @@
 defmodule Vmemo.Storage do
   @moduledoc false
 
-  alias Vmemo.Memo.ImageStorage
+  @image_variants [:thumb, :detail, :original]
 
-  def img(url, size), do: ImageStorage.thumbnail_url(url, size)
-  def srcset(url), do: ImageStorage.srcset(url)
-  def srcset(url, usage), do: ImageStorage.srcset(url, usage)
-  def img_sizes(usage), do: ImageStorage.sizes(usage)
+  def img(%{id: id}, variant) when is_binary(id) and variant in @image_variants do
+    "/media/images/#{id}/#{variant}"
+  end
+
+  def img(url, _variant) when is_binary(url), do: url
+  def img(nil, _variant), do: nil
 end

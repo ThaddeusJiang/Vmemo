@@ -34,9 +34,9 @@ Open the app through the local reverse proxy:
 http://localhost:4080
 ```
 
-Phoenix still runs on `http://localhost:4000`, but storage image responses use
-`X-Accel-Redirect`. Use the Nginx proxy on port `4080` when validating image
-loading performance or `/storage/v1` image URLs locally.
+Phoenix still runs on `http://localhost:4000`. The local Nginx proxy on port
+`4080` is optional for validating proxy behavior; browser image display works
+through Phoenix directly via `/media/images/:id/:variant`.
 
 Test dependencies:
 

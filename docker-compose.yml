@@ -12,7 +12,6 @@ services:
       - "4080:80"
     volumes:
       - ./config/nginx/dev.conf:/etc/nginx/nginx.conf:ro
-      - ./storage/v1:/app/storage/v1:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

@@ -5,23 +5,17 @@ defmodule VmemoWeb.CoreComponentsTest do
   import Phoenix.LiveViewTest
   import VmemoWeb.CoreComponents
 
-  test "img renders width-based srcset and usage sizes for storage images" do
+  test "img renders the given src without responsive srcset or sizes" do
     assigns = %{}
 
     html =
       rendered_to_string(~H"""
-      <.img
-        src="/storage/v1/u1/images/photo.png"
-        alt="Photo"
-        image_variant={:detail}
-      />
+      <.img src="/media/images/123e4567-e89b-12d3-a456-426614174000/detail" alt="Photo" />
       """)
 
-    assert html =~ ~s(src="/storage/v1/u1/images/photo--1280w.webp")
-    assert html =~ ~s(srcset="/storage/v1/u1/images/photo--320w.webp 320w,)
-    assert html =~ ~s(/storage/v1/u1/images/photo--1280w.webp 1280w")
-    refute html =~ "1920w"
-    assert html =~ ~s|sizes="(max-width: 768px) 100vw, 640px"|
+    assert html =~ ~s(src="/media/images/123e4567-e89b-12d3-a456-426614174000/detail")
+    refute html =~ "srcset="
+    refute html =~ "sizes="
     assert html =~ ~s(decoding="async")
   end
 
