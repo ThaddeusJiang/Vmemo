@@ -21,23 +21,18 @@ defmodule VmemoWeb.FileControllerTest do
     {:ok, conn: conn, user: user, other_user: other_user, image_dir: image_dir}
   end
 
-  test "generates medium thumbnail when thumbnail is missing", %{
+  test "serves stored image bytes directly", %{
     conn: conn,
     user: user,
     image_dir: image_dir
   } do
-    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
-    original = Path.join(image_dir, "sample.png")
-    thumbnail = Path.join(image_dir, "sample--m.png")
-    File.cp!(fixture, original)
-    refute File.exists?(thumbnail)
+    image = Path.join(image_dir, "sample.png")
+    File.write!(image, "png-data")
 
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample--m.png")
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample.png")
 
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/sample--m.png")
-    assert File.exists?(thumbnail)
-    assert File.stat!(thumbnail).size < File.stat!(original).size
-
+    assert response(conn, 200) == "png-data"
+    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/png"]
     assert get_resp_header(conn, "content-disposition") == ["inline"]
     assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
@@ -45,97 +40,22 @@ defmodule VmemoWeb.FileControllerTest do
     assert String.starts_with?(etag, "\"vmemo-")
   end
 
-  test "generates and accelerates missing thumbnail instead of serving original", %{
+  test "does not generate a missing storage image variant", %{
     conn: conn,
     user: user,
     image_dir: image_dir
   } do
     fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
-    original = Path.join(image_dir, "large.png")
-    thumbnail = Path.join(image_dir, "large--s.png")
-    File.cp!(fixture, original)
-    refute File.exists?(thumbnail)
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/large--s.png")
-
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/large--s.png")
-    assert File.exists?(thumbnail)
-    assert File.stat!(thumbnail).size < File.stat!(original).size
-
-    assert get_resp_header(conn, "content-type") == ["image/png"]
-  end
-
-  test "generates width-based responsive image variant when missing", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
-    original = Path.join(image_dir, "responsive.png")
-    variant = Path.join(image_dir, "responsive--640w.webp")
+    original = Path.join(image_dir, "sample.png")
+    variant = Path.join(image_dir, "sample.thumb.webp")
     File.cp!(fixture, original)
     refute File.exists?(variant)
 
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--640w.webp")
-
-    assert_accelerated_response(
-      conn,
-      "/storage/v1/_internal/#{user.id}/images/responsive--640w.webp"
-    )
-
-    assert File.exists?(variant)
-    assert File.stat!(variant).size < File.stat!(original).size
-
-    assert get_resp_header(conn, "content-type") == ["image/webp"]
-  end
-
-  test "rejects unsupported responsive image width variants", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
-    original = Path.join(image_dir, "responsive.png")
-    variant = Path.join(image_dir, "responsive--777w.png")
-    File.cp!(fixture, original)
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/responsive--777w.png")
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample.thumb.webp")
 
     assert response(conn, 404) == "File not found"
     refute File.exists?(variant)
-  end
-
-  test "falls back to another extension when exact original does not exist", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
-    png = Path.join(image_dir, "sample.png")
-    webp_thumbnail = Path.join(image_dir, "sample--m.webp")
-    File.cp!(fixture, png)
-    refute File.exists?(webp_thumbnail)
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample--m.webp")
-
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/sample--m.webp")
-    assert File.exists?(webp_thumbnail)
-
-    assert get_resp_header(conn, "content-type") == ["image/webp"]
-  end
-
-  test "accelerates tiff images with image/tiff content type", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    tiff = Path.join(image_dir, "sample.tiff")
-    File.write!(tiff, "tiff-data")
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/sample.tiff")
-
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/sample.tiff")
-    assert get_resp_header(conn, "content-type") == ["image/tiff"]
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
   end
 
   test "preserves uppercase extension when serving stored image files", %{
@@ -148,15 +68,13 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/images/Camera.JPG")
 
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/Camera.JPG")
+    assert response(conn, 200) == "jpg-data"
+    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/jpeg"]
   end
 
-  test "returns 404 with no-store when both thumbnail and original are missing", %{
-    conn: conn,
-    user: user
-  } do
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/not-found--s.png")
+  test "returns 404 with no-store when image is missing", %{conn: conn, user: user} do
+    conn = get(conn, ~p"/storage/v1/#{user.id}/images/not-found.png")
 
     assert response(conn, 404) == "File not found"
     assert get_resp_header(conn, "cache-control") == ["no-store"]
@@ -172,7 +90,7 @@ defmodule VmemoWeb.FileControllerTest do
     File.write!(original, "etag-data")
 
     first = get(conn, ~p"/storage/v1/#{user.id}/images/etag.png")
-    assert_accelerated_response(first, "/storage/v1/_internal/#{user.id}/images/etag.png")
+    assert response(first, 200) == "etag-data"
     [etag] = get_resp_header(first, "etag")
 
     second =
@@ -184,26 +102,12 @@ defmodule VmemoWeb.FileControllerTest do
     assert get_resp_header(second, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
 
-  test "uses immutable browser caching for versioned storage requests", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    original = Path.join(image_dir, "versioned.png")
-    File.write!(original, "versioned-data")
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/versioned.png?v=file-version")
-
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/versioned.png")
-    assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
-  end
-
   test "returns 404 for invalid filename pattern", %{conn: conn, user: user} do
     conn = get(conn, "/storage/v1/#{user.id}/images/evil file.png")
     assert response(conn, 404) == "File not found"
   end
 
-  test "accelerates avatar when file exists", %{conn: conn, user: user} do
+  test "serves avatar bytes directly", %{conn: conn, user: user} do
     avatar_dir = Path.join([@base_dir, user.id, "avatars"])
     File.mkdir_p!(avatar_dir)
     avatar = Path.join(avatar_dir, "me.jpg")
@@ -211,7 +115,8 @@ defmodule VmemoWeb.FileControllerTest do
 
     conn = get(conn, ~p"/storage/v1/#{user.id}/avatars/me.jpg")
 
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/avatars/me.jpg")
+    assert response(conn, 200) == "jpg-data"
+    assert get_resp_header(conn, "x-accel-redirect") == []
     assert get_resp_header(conn, "content-type") == ["image/jpeg"]
     assert get_resp_header(conn, "cache-control") == ["public, max-age=0, must-revalidate"]
   end
@@ -246,24 +151,5 @@ defmodule VmemoWeb.FileControllerTest do
 
     assert response(conn, 404) == "File not found"
     assert get_resp_header(conn, "cache-control") == ["no-store"]
-  end
-
-  test "uses x-accel-redirect by default for storage requests", %{
-    conn: conn,
-    user: user,
-    image_dir: image_dir
-  } do
-    original = Path.join(image_dir, "direct.png")
-    File.write!(original, "direct-data")
-
-    conn = get(conn, ~p"/storage/v1/#{user.id}/images/direct.png")
-
-    assert_accelerated_response(conn, "/storage/v1/_internal/#{user.id}/images/direct.png")
-    assert get_resp_header(conn, "content-type") == ["image/png"]
-  end
-
-  defp assert_accelerated_response(conn, path) do
-    assert response(conn, 200) == ""
-    assert get_resp_header(conn, "x-accel-redirect") == [path]
   end
 end

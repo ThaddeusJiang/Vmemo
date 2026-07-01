@@ -41,7 +41,12 @@ defmodule VmemoWeb.TagsLiveTest do
         |> Ash.read!(actor: nil, authorize?: false)
         |> Enum.find(&(&1.name == "English Grammar"))
 
-      %{conn: conn, user: user, other_user: other_user, english_tag: english_tag}
+      %{
+        conn: conn,
+        image: image,
+        other_image: other_image,
+        english_tag: english_tag
+      }
     end
 
     test "index shows only current user tags and usage counts", %{conn: conn} do
@@ -56,8 +61,8 @@ defmodule VmemoWeb.TagsLiveTest do
 
     test "show page renders tag images for current user only", %{
       conn: conn,
-      user: user,
-      other_user: other_user,
+      image: image,
+      other_image: other_image,
       english_tag: english_tag
     } do
       {:ok, _lv, html} = live(conn, ~p"/tags/#{english_tag.id}")
@@ -65,9 +70,8 @@ defmodule VmemoWeb.TagsLiveTest do
       assert html =~ "#English Grammar"
       assert html =~ "images"
       assert html =~ "/images/"
-      assert html =~ "/storage/v1/"
-      assert html =~ "/storage/v1/#{user.id}/images/"
-      refute html =~ "/storage/v1/#{other_user.id}/images/"
+      assert html =~ "/media/images/#{image.id}/thumb"
+      refute html =~ "/media/images/#{other_image.id}/thumb"
     end
 
     test "show page renders not found for unknown tag id", %{conn: conn} do

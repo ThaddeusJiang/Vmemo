@@ -609,9 +609,8 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         phx-hook="MoondreamOverlay"
       >
         <.img
-          src={Storage.img(@image.url, :m)}
+          src={Storage.img(@image, :detail)}
           alt={@image.note || "Image"}
-          image_variant={:detail}
           class="w-full h-auto rounded-lg"
         />
         <%= for {x, y} <- @points do %>
@@ -650,9 +649,8 @@ defmodule VmemoWeb.LiveComponents.MoondreamPanel do
         phx-hook="MoondreamOverlay"
       >
         <.img
-          src={Storage.img(@image.url, :m)}
+          src={Storage.img(@image, :detail)}
           alt={@image.note || "Image"}
-          image_variant={:detail}
           class="w-full h-auto rounded-lg"
         />
         <svg

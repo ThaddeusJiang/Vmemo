@@ -197,10 +197,64 @@ spec:
           TYPESENSE_SERVICE_API_KEY:
             default: ${PASSWORD}
             expose: true
+          TYPESENSE_SERVICE_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+          TYPESENSE_SERVICE_PORT:
+            default: ${WEB_PORT}
+            expose: true
           TYPESENSE_API_KEY:
             default: ${PASSWORD}
             expose: true
           TYPESENSE_DATA_DIR:
             default: /data
+            expose: false
+        configs: []
+
+    - name: typelens
+      icon: https://avatars.githubusercontent.com/u/271790467?v=4
+      template: PREBUILT_V2
+      dependencies:
+        - typesense
+      spec:
+        source:
+          image: ghcr.io/copperline-ai/typelens:latest
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        instructions:
+          - type: TEXT
+            title: Typelens Dashboard
+            content: ${ZEABUR_WEB_URL}
+          - type: TEXT
+            title: Typelens username
+            content: ${AUTH_USERNAME}
+            category: Credentials
+          - type: PASSWORD
+            title: Typelens password
+            content: ${AUTH_PASSWORD}
+            category: Credentials
+        env:
+          TYPESENSE_SERVER_NAME:
+            default: Vmemo Typesense
+            expose: false
+          TYPESENSE_HOST:
+            default: ${TYPESENSE_SERVICE_HOST}
+            expose: false
+          TYPESENSE_PORT:
+            default: ${TYPESENSE_SERVICE_PORT}
+            expose: false
+          TYPESENSE_PROTOCOL:
+            default: http
+            expose: false
+          TYPESENSE_API_KEY:
+            default: ${TYPESENSE_SERVICE_API_KEY}
+            expose: false
+          AUTH_USERNAME:
+            default: admin
+            expose: false
+          AUTH_PASSWORD:
+            default: ${PASSWORD}
             expose: false
         configs: []

@@ -34,7 +34,7 @@ defmodule VmemoWeb.JobNotifications do
         %{
           id: job.id,
           image_id: job.image_id,
-          image_url: (image && Storage.img(image.url, 160)) || "/images/logo.svg",
+          image_url: (image && Storage.img(image, :thumb)) || "/images/logo.svg",
           description: message(job, image),
           status: status(job.status),
           inserted_at: job.inserted_at,

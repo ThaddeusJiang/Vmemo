@@ -35,10 +35,9 @@ http://localhost:4000
 ```
 
 `docker compose up -d` starts the local Nginx proxy on `http://localhost:4000`
-by default. Phoenix runs internally on `http://localhost:4001` for non-storage
-debugging. Use `4000` when validating image rendering or `/storage/v1` URLs,
-because Phoenix only performs authorization and returns `X-Accel-Redirect`;
-Nginx sends the actual file bytes.
+by default. Phoenix runs internally on `http://localhost:4001` for debugging.
+Browser image display uses `/media/images/:id/:variant`; the proxy forwards the
+request to Phoenix and does not serve storage bytes through `X-Accel-Redirect`.
 
 Test dependencies:
 

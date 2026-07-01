@@ -171,6 +171,12 @@ defmodule VmemoWeb.Router do
     get "/:user_id/avatars/:filename", FileController, :show_avatar
   end
 
+  scope "/media", VmemoWeb do
+    pipe_through :storage
+
+    get "/images/:id/:variant", FileController, :show_image_variant
+  end
+
   # Admin authentication routes
   scope "/admin" do
     pipe_through [:browser, :redirect_if_admin_is_authenticated]

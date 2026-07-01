@@ -1,12 +1,11 @@
 defmodule VmemoWeb.FileController do
   use VmemoWeb, :controller
 
+  alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageStorage
 
   @storage_root Path.expand("storage/v1")
-  @internal_storage_prefix "/storage/v1/_internal"
-  @revalidation_cache_control "public, max-age=0, must-revalidate"
-  @immutable_cache_control "public, max-age=31536000, immutable"
+  @cache_control "public, max-age=0, must-revalidate"
   @allowed_mime_types %{
     ".png" => "image/png",
     ".jpg" => "image/jpeg",
@@ -22,8 +21,8 @@ defmodule VmemoWeb.FileController do
          :ok <- authorize_storage_user(conn, safe_user_id),
          {:ok, safe_filename} <- normalize_filename(filename),
          {:ok, file_path} <- image_path(safe_user_id, safe_filename),
-         {:ok, resolved_path} <- resolve_image_path(file_path) do
-      send_storage_file(conn, resolved_path)
+         true <- File.exists?(file_path) do
+      send_storage_file(conn, file_path)
     else
       _ -> send_missing_image_not_found(conn)
     end
@@ -44,6 +43,20 @@ defmodule VmemoWeb.FileController do
     end
   end
 
+  def show_image_variant(conn, %{"id" => id, "variant" => variant}) do
+    with {:ok, variant} <- normalize_image_variant(variant),
+         %{id: user_id} = current_user <- conn.assigns[:current_user],
+         {:ok, image} <- Image.get(id, actor: current_user),
+         ^user_id <- image.user_id,
+         {:ok, original_path} <- ImageStorage.storage_path_from_url(image.url, user_id),
+         file_path <- ImageStorage.variant_path(original_path, variant),
+         true <- File.exists?(file_path) do
+      send_storage_file(conn, file_path)
+    else
+      _ -> send_missing_image_not_found(conn)
+    end
+  end
+
   defp send_storage_file(conn, file_path) do
     with {:ok, stat} <- File.stat(file_path),
          etag <- build_etag(file_path, stat),
@@ -55,7 +68,7 @@ defmodule VmemoWeb.FileController do
     else
       true ->
         conn
-        |> put_resp_header("cache-control", storage_cache_control(conn))
+        |> put_resp_header("cache-control", @cache_control)
         |> put_resp_header("etag", build_etag!(file_path))
         |> put_resp_header("last-modified", build_last_modified!(file_path))
         |> send_resp(304, "")
@@ -79,29 +92,13 @@ defmodule VmemoWeb.FileController do
     conn
     |> put_resp_header("content-type", detect_safe_mime(file_path))
     |> put_resp_header("content-disposition", "inline")
-    |> put_resp_header("cache-control", storage_cache_control(conn))
+    |> put_resp_header("cache-control", @cache_control)
     |> put_resp_header("etag", etag)
     |> put_resp_header("last-modified", last_modified)
   end
 
-  defp storage_cache_control(conn) do
-    case conn.query_params["v"] do
-      version when is_binary(version) and version != "" -> @immutable_cache_control
-      _ -> @revalidation_cache_control
-    end
-  end
-
   defp send_storage_body(conn, file_path) do
-    conn
-    |> put_resp_header("x-accel-redirect", internal_storage_path(file_path))
-    |> send_resp(200, "")
-  end
-
-  defp internal_storage_path(file_path) do
-    file_path
-    |> Path.expand()
-    |> Path.relative_to(@storage_root)
-    |> then(&Path.join(@internal_storage_prefix, &1))
+    send_file(conn, 200, file_path)
   end
 
   defp fresh?(conn, etag, stat) do
@@ -151,7 +148,6 @@ defmodule VmemoWeb.FileController do
   end
 
   defp build_etag(_file_path, stat) do
-    # Avoid reading whole file on every request; use stable metadata-based ETag instead.
     mtime = :calendar.datetime_to_gregorian_seconds(stat.mtime)
     size = stat.size
     inode = Map.get(stat, :inode, 0)
@@ -169,61 +165,6 @@ defmodule VmemoWeb.FileController do
     |> put_resp_content_type("text/plain")
     |> put_resp_header("cache-control", "no-store")
     |> send_resp(404, "File not found")
-  end
-
-  defp fallback_original_image_path(file_path) do
-    ext = Path.extname(file_path)
-    root = Path.rootname(file_path, ext)
-
-    fallback_root = thumbnail_source_root(root)
-
-    case fallback_root do
-      root when is_binary(root) ->
-        candidates =
-          [root <> ext]
-          |> Kernel.++(
-            @allowed_mime_types
-            |> Map.keys()
-            |> Enum.reject(&(&1 == ext))
-            |> Enum.map(&(root <> &1))
-          )
-
-        case Enum.find(candidates, &File.exists?/1) do
-          nil -> :error
-          path -> {:ok, path}
-        end
-
-      _ ->
-        :error
-    end
-  end
-
-  defp thumbnail_source_root(root) do
-    cond do
-      String.ends_with?(root, "--s") or String.ends_with?(root, "--m") ->
-        String.slice(root, 0, byte_size(root) - 3)
-
-      Regex.match?(~r/--\d+w$/, root) ->
-        Regex.replace(~r/--\d+w$/, root, "")
-
-      true ->
-        nil
-    end
-  end
-
-  defp resolve_image_path(file_path) do
-    if File.exists?(file_path) do
-      {:ok, file_path}
-    else
-      maybe_generate_thumbnail(file_path)
-    end
-  end
-
-  defp maybe_generate_thumbnail(file_path) do
-    case fallback_original_image_path(file_path) do
-      {:ok, original_path} -> ImageStorage.ensure_thumbnail_for_request(original_path, file_path)
-      :error -> :error
-    end
   end
 
   defp normalize_filename(filename) when is_binary(filename) do
@@ -245,6 +186,11 @@ defmodule VmemoWeb.FileController do
   end
 
   defp normalize_user_id(_), do: {:error, :invalid_user_id}
+
+  defp normalize_image_variant("thumb"), do: {:ok, :thumb}
+  defp normalize_image_variant("detail"), do: {:ok, :detail}
+  defp normalize_image_variant("original"), do: {:ok, :original}
+  defp normalize_image_variant(_), do: {:error, :invalid_variant}
 
   defp image_path(user_id, filename), do: safe_storage_path([user_id, "images", filename])
 

@@ -42,7 +42,7 @@ RUN mix release
 FROM base AS runner
 
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates imagemagick nginx=1.26.3-3+deb13u6 nginx-common=1.26.3-3+deb13u6 && \
+  apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 libtinfo6 locales ca-certificates imagemagick nginx && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the locale

@@ -2,15 +2,28 @@
 
 ## 概要
 用户通过 `UploadForm` 组件上传图片。每次提交生成一个 `upload_batch_id`，同批上传的图片共享该 ID。上传后图片进入 search embedding（Typesense）和 vision embedding（OpenRouter caption）异步处理流程。
-系统会保留上传原图到 storage；TIFF 上传会先规范化保存为 PNG，以保证浏览器可展示。仅在调用外部 vision 服务前对大图执行一次预处理，以降低请求体积。
+系统会保留上传原图到 storage；TIFF 上传会先规范化保存为 PNG，以保证浏览器可展示。上传/import 时会同步生成浏览器展示用的固定图片变体，请求图片时只做鉴权和文件读取，不在请求路径上生成缩略图。仅在调用外部 vision 服务前对大图执行一次预处理，以降低请求体积。
 
 ## 架构
 
 ### 上传流程
 1. 用户选择图片 → LiveView `allow_upload(:images, ...)` 管理暂存
 2. 提交时生成 `upload_batch_id`（UUID）
-3. 逐个 `consume_uploaded_entry` → `ImageUpload.store` → `Image.create_with_sync`
+3. 逐个 `consume_uploaded_entry` → `ImageUpload.store`（保存原图并生成展示变体） → `Image.create_with_sync`
 4. 创建成功的图片自动触发 Oban jobs：`sync_typesense` + `generate_caption`
+
+### 浏览器图片展示
+- 原图仍保存在 `storage/v1/<user_id>/images/<filename>`。
+- 每张图片生成两个固定 WebP 变体：
+  - `thumb`: 最大边 400px，用于列表、通知、tag grid 等小图。
+  - `detail`: 最大边 800px，用于详情页主图和 Moondream panel。
+- ImageMagick 使用 no-upscale resize；如果原图实际尺寸已经小于目标尺寸，变体保持原图尺寸，不放大也不额外缩小。
+- 浏览器展示 URL 使用 image id：
+  - `/media/images/:id/thumb`
+  - `/media/images/:id/detail`
+  - `/media/images/:id/original`
+- `/media/images` 请求不生成缺失变体；缺失文件返回 404。历史图片可通过 `mix storage.warm_images` 批量生成变体。
+- `<.img>` 只渲染传入的 `src`，不再自动生成 `srcset` / `sizes`。
 
 ### Vision 调用前图片预处理
 - 存储策略：`storage/v1/...` 保留上传图片；TIFF 会在入库前转换为 PNG，其他格式不写回压缩图。
