@@ -55,8 +55,8 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Status"
       assert html =~ "Caption failed."
       refute html =~ "Timeout"
-      assert html =~ "/storage/v1/"
-      assert html =~ "--160w.webp"
+      assert html =~ "/media/images/"
+      assert html =~ "/thumb"
       assert html =~ "Retry"
     end
 
@@ -100,7 +100,8 @@ defmodule VmemoWeb.JobsLiveTest do
 
       assert Regex.match?(~r/href="\/jobs\/[^"]+"/, html)
       assert html =~ "notification-item-thumb"
-      assert html =~ "--160w.webp"
+      assert html =~ "/media/images/"
+      assert html =~ "/thumb"
     end
 
     test "removes deleted image job notifications from a mounted page", %{

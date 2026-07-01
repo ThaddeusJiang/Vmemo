@@ -373,17 +373,16 @@ defmodule VmemoWeb.ImageIdLive do
                 </figcaption> --%>
 
                 <.img
-                  src={Storage.img(@image.url, :m)}
+                  src={Storage.img(@image, :detail)}
                   id={"image-main-#{@image_dom_version}"}
                   alt={@image.note}
-                  image_variant={:detail}
                   wrapper_class="w-full h-full rounded-lg"
                   class="block !w-full !h-full !max-w-none !max-h-none !object-contain rounded-lg shadow hover:shadow-lg transition-shadow duration-200"
                   style={"transform: rotate(#{@image_rotation}deg); transform-origin: center;"}
                 />
 
                 <.link
-                  href={@image.url}
+                  href={Storage.img(@image, :original)}
                   class="absolute bottom-2 right-14 btn btn-circle hidden group-hover:flex sm:group-hover:hidden items-center justify-center group-hover:bg-base-100"
                   aria-label={gettext("expand")}
                 >
@@ -629,10 +628,9 @@ defmodule VmemoWeb.ImageIdLive do
                   class="flex flex-col items-center justify-center gap-3"
                 >
                   <.img
-                    src={@image.url}
+                    src={Storage.img(@image, :original)}
                     id={"expanded_photo-image-#{@image_dom_version}"}
                     alt={@image.note}
-                    image_variant={:full}
                     class="!w-auto !h-auto max-w-[calc(100vw-4rem)] max-h-[calc(100vh-4rem)] rounded-md !shadow-none hover:!shadow-none block transition-transform duration-200"
                     style={"transform: rotate(#{@image_rotation}deg); transform-origin: center;"}
                   />

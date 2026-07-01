@@ -7,6 +7,24 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+## [Vmemo - 2026.6.16] - 2026-06-16
+
+### Added
+- Added npm-managed frontend vendor assets for a more maintainable asset pipeline. ([#212](https://github.com/ThaddeusJiang/Vmemo/pull/212))
+- Added responsive image loading so image pages can serve better-sized variants across viewport sizes. ([#218](https://github.com/ThaddeusJiang/Vmemo/pull/218))
+
+### Changed
+- Migrated release image publishing to GHCR and aligned release workflows with GitHub release events. ([#213](https://github.com/ThaddeusJiang/Vmemo/pull/213))
+- Updated Docker installation and self-hosting documentation for the current GHCR image flow. ([#214](https://github.com/ThaddeusJiang/Vmemo/pull/214))
+- Improved storage delivery and Zeabur deployment behavior for faster image responses. ([#211](https://github.com/ThaddeusJiang/Vmemo/pull/211))
+- Improved release workflow run titles so tag names are easier to identify in GitHub Actions. ([#216](https://github.com/ThaddeusJiang/Vmemo/pull/216))
+
+### Fixed
+- Fixed thumbnail loading performance issues and missing-thumbnail fallback behavior. ([#215](https://github.com/ThaddeusJiang/Vmemo/pull/215))
+- Allowed Google Fonts through the Content Security Policy for pages that depend on them. ([#217](https://github.com/ThaddeusJiang/Vmemo/pull/217))
+- Fixed stale job notifications by using cascade delete behavior for image job cleanup. ([#220](https://github.com/ThaddeusJiang/Vmemo/pull/220))
+- Fixed storage proxy responses so browser image requests are handled consistently. ([#221](https://github.com/ThaddeusJiang/Vmemo/pull/221))
+
 ## [2026.06.09] - 2026-06-09
 
 ### Changed

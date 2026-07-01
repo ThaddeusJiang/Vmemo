@@ -27,7 +27,7 @@ defmodule VmemoWeb.ImageIdLiveTest do
 
         assert html =~ "image-main-0"
         assert html =~ "Detail main image"
-        assert html =~ "--1280w.webp"
+        assert html =~ "/media/images/#{image.id}/detail"
       end)
     end
   end

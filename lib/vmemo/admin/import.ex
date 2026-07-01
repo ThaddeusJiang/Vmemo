@@ -7,6 +7,7 @@ defmodule Vmemo.Admin.Import do
   alias Vmemo.ImportExport.Json
   alias Vmemo.ImportExport.Zip
   alias Vmemo.Memo.Image
+  alias Vmemo.Memo.ImageStorage
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
 
@@ -424,9 +425,11 @@ defmodule Vmemo.Admin.Import do
     File.mkdir_p!(Path.dirname(dest))
 
     if File.exists?(dest) do
+      ImageStorage.generate_variants_for_image_file!(dest)
       %{acc | skipped: acc.skipped + 1}
     else
       File.cp!(source, dest)
+      ImageStorage.generate_variants_for_image_file!(dest)
       %{acc | copied: acc.copied + 1}
     end
   end

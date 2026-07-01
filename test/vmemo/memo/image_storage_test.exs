@@ -1,85 +1,19 @@
 defmodule Vmemo.Memo.ImageStorageTest do
   use ExUnit.Case, async: true
 
-  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Memo.ImageUpload
   alias Vmemo.Storage
 
   @storage_prefix Path.join(["storage", "v1"]) |> Path.expand()
 
-  test "Storage.img/2 appends thumbnail suffix for supported sizes" do
-    url = "/storage/v1/u1/images/123_photo.png"
+  test "Storage.img/2 returns fixed media routes for image variants" do
+    image = %{id: "123e4567-e89b-12d3-a456-426614174000"}
 
-    assert Storage.img(url, :s) == "/storage/v1/u1/images/123_photo--s.png"
-    assert Storage.img(url, :m) == "/storage/v1/u1/images/123_photo--m.png"
-    assert Storage.img(url, 640) == "/storage/v1/u1/images/123_photo--640w.webp"
-  end
-
-  test "Storage.srcset/1 exposes width-based responsive image candidates" do
-    url = "/storage/v1/u1/images/123_photo.png"
-
-    assert Storage.srcset(url) ==
-             "/storage/v1/u1/images/123_photo--160w.webp 160w, " <>
-               "/storage/v1/u1/images/123_photo--320w.webp 320w, " <>
-               "/storage/v1/u1/images/123_photo--640w.webp 640w, " <>
-               "/storage/v1/u1/images/123_photo--1280w.webp 1280w, " <>
-               "/storage/v1/u1/images/123_photo--1920w.webp 1920w"
-
-    assert Storage.srcset("/images/logo.svg") == nil
-  end
-
-  test "Storage.srcset/2 limits candidates by image usage" do
-    url = "/storage/v1/u1/images/123_photo.png"
-
-    assert Storage.srcset(url, :thumb) ==
-             "/storage/v1/u1/images/123_photo--160w.webp 160w, " <>
-               "/storage/v1/u1/images/123_photo--320w.webp 320w"
-
-    assert Storage.srcset(url, :grid) =~ "/storage/v1/u1/images/123_photo--640w.webp 640w"
-    refute Storage.srcset(url, :grid) =~ "1280w"
-
-    assert Storage.srcset(url, :detail) =~ "/storage/v1/u1/images/123_photo--1280w.webp 1280w"
-    refute Storage.srcset(url, :detail) =~ "1920w"
-  end
-
-  test "Storage.img/2 appends a browser cache version when the storage file exists" do
-    user_id = "u-#{System.unique_integer([:positive])}"
-    image_dir = Path.join([@storage_prefix, user_id, "images"])
-    File.mkdir_p!(image_dir)
-    image_path = Path.join(image_dir, "cache.png")
-    File.write!(image_path, "cache-data")
-
-    on_exit(fn ->
-      File.rm_rf!(Path.join([@storage_prefix, user_id]))
-    end)
-
-    assert Storage.img("/storage/v1/#{user_id}/images/cache.png", 640) =~
-             ~r|^/storage/v1/#{user_id}/images/cache--640w\.webp\?v=[A-Za-z0-9_-]+$|
-  end
-
-  test "Storage.srcset/2 appends the same browser cache version to each candidate" do
-    user_id = "u-#{System.unique_integer([:positive])}"
-    image_dir = Path.join([@storage_prefix, user_id, "images"])
-    File.mkdir_p!(image_dir)
-    image_path = Path.join(image_dir, "srcset.png")
-    File.write!(image_path, "srcset-data")
-
-    on_exit(fn ->
-      File.rm_rf!(Path.join([@storage_prefix, user_id]))
-    end)
-
-    srcset = Storage.srcset("/storage/v1/#{user_id}/images/srcset.png", :thumb)
-
-    assert [first, second] = String.split(srcset, ", ")
-    assert [_, version] = Regex.run(~r/\?v=([A-Za-z0-9_-]+) 160w$/, first)
-    assert String.ends_with?(second, "?v=#{version} 320w")
-  end
-
-  test "Storage.img_sizes/1 maps image usage to browser sizes hints" do
-    assert Storage.img_sizes(:thumb) == "96px"
-    assert Storage.img_sizes(:grid) == "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-    assert Storage.img_sizes(:detail) == "(max-width: 768px) 100vw, 640px"
-    assert Storage.img_sizes(:full) == "100vw"
+    assert Storage.img(image, :thumb) == "/media/images/#{image.id}/thumb"
+    assert Storage.img(image, :detail) == "/media/images/#{image.id}/detail"
+    assert Storage.img(image, :original) == "/media/images/#{image.id}/original"
+    assert Storage.img("/images/logo.svg", :thumb) == "/images/logo.svg"
   end
 
   test "storage_path_from_url/2 resolves absolute storage path from URL path" do
@@ -148,7 +82,7 @@ defmodule Vmemo.Memo.ImageStorageTest do
     assert <<0x89, 0x50, 0x4E, 0x47, _::binary>> = File.read!(dest)
   end
 
-  test "warm_variants!/1 generates variants only for original storage images" do
+  test "generate_variants!/1 creates fixed thumb and detail webp variants" do
     user_id = "u-#{System.unique_integer([:positive])}"
 
     storage_root =
@@ -159,18 +93,66 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
     fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
     original = Path.join(image_dir, "demo.png")
-    existing_variant = Path.join(image_dir, "already--160w.webp")
     File.cp!(fixture, original)
-    File.cp!(fixture, existing_variant)
 
     on_exit(fn -> File.rm_rf!(storage_root) end)
 
-    assert %{processed: 1, failed: 0} = ImageStorage.warm_variants!(storage_root)
-    assert File.exists?(Path.join(image_dir, "demo--160w.webp"))
-    refute File.exists?(Path.join(image_dir, "already--160w--160w.webp"))
+    assert :ok = ImageStorage.generate_variants!(original)
+
+    assert File.exists?(Path.join(image_dir, "demo.thumb.webp"))
+    assert File.exists?(Path.join(image_dir, "demo.detail.webp"))
+
+    assert {400, thumb_height} = image_dimensions(Path.join(image_dir, "demo.thumb.webp"))
+    assert thumb_height <= 400
+
+    assert {800, detail_height} = image_dimensions(Path.join(image_dir, "demo.detail.webp"))
+    assert detail_height <= 800
   end
 
-  test "warm_variants!/2 can limit processed originals" do
+  test "generate_variants!/1 does not upscale small images" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    image_dir = Path.join([@storage_prefix, user_id, "images"])
+    File.mkdir_p!(image_dir)
+
+    fixture = Path.expand("../../support/fixtures/images/test-red-image.png", __DIR__)
+    original = Path.join(image_dir, "small.png")
+    File.cp!(fixture, original)
+
+    on_exit(fn -> File.rm_rf!(Path.join([@storage_prefix, user_id])) end)
+
+    assert :ok = ImageStorage.generate_variants!(original)
+
+    assert {100, 100} = image_dimensions(Path.join(image_dir, "small.thumb.webp"))
+    assert {100, 100} = image_dimensions(Path.join(image_dir, "small.detail.webp"))
+  end
+
+  test "generate_variants_for_image_file!/1 only warms original image files" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    image_dir = Path.join([@storage_prefix, user_id, "images"])
+    avatar_dir = Path.join([@storage_prefix, user_id, "avatars"])
+    File.mkdir_p!(image_dir)
+    File.mkdir_p!(avatar_dir)
+
+    fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
+    original = Path.join(image_dir, "imported.png")
+    existing_variant = Path.join(image_dir, "imported.thumb.webp")
+    avatar = Path.join(avatar_dir, "avatar.png")
+    File.cp!(fixture, original)
+    File.cp!(fixture, existing_variant)
+    File.cp!(fixture, avatar)
+
+    on_exit(fn -> File.rm_rf!(Path.join([@storage_prefix, user_id])) end)
+
+    assert :ok = ImageStorage.generate_variants_for_image_file!(original)
+    assert :ok = ImageStorage.generate_variants_for_image_file!(existing_variant)
+    assert :ok = ImageStorage.generate_variants_for_image_file!(avatar)
+
+    assert File.exists?(Path.join(image_dir, "imported.detail.webp"))
+    refute File.exists?(Path.join(image_dir, "imported.thumb.thumb.webp"))
+    refute File.exists?(Path.join(avatar_dir, "avatar.thumb.webp"))
+  end
+
+  test "warm_variants!/2 generates fixed variants only for original storage images" do
     user_id = "u-#{System.unique_integer([:positive])}"
 
     storage_root =
@@ -182,6 +164,7 @@ defmodule Vmemo.Memo.ImageStorageTest do
     fixture = Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
     File.cp!(fixture, Path.join(image_dir, "demo-a.png"))
     File.cp!(fixture, Path.join(image_dir, "demo-b.png"))
+    File.cp!(fixture, Path.join(image_dir, "already.thumb.webp"))
 
     on_exit(fn -> File.rm_rf!(storage_root) end)
 
@@ -189,11 +172,12 @@ defmodule Vmemo.Memo.ImageStorageTest do
 
     warmed_count =
       image_dir
-      |> Path.join("*--160w.webp")
+      |> Path.join("*.thumb.webp")
       |> Path.wildcard()
       |> length()
 
-    assert warmed_count == 1
+    assert warmed_count == 2
+    refute File.exists?(Path.join(image_dir, "already.thumb.thumb.webp"))
   end
 
   test "storage_path_from_url/2 returns invalid_url for invalid params" do
@@ -206,5 +190,14 @@ defmodule Vmemo.Memo.ImageStorageTest do
   defp tiff_binary do
     "SUkqAAoAAAD//w8AAAEDAAEAAAABAAAAAQEDAAEAAAABAAAAAgEDAAEAAAAQAAAAAwEDAAEAAAABAAAABgEDAAEAAAABAAAACgEDAAEAAAABAAAAEQEEAAEAAAAIAAAAEgEDAAEAAAABAAAAFQEDAAEAAAABAAAAFgEDAAEAAAABAAAAFwEEAAEAAAACAAAAHAEDAAEAAAABAAAAKQEDAAIAAAAAAAEAPgEFAAIAAAD0AAAAPwEFAAYAAADEAAAAAAAAAIXrUQAAAIAAw/WoAAAAAALNzEwAAAAAAc3MTAAAAIAAzcxMAAAAAAKPwvUAAAAAEDcaoAAAAAACK4cKAAAAIAA="
     |> Base.decode64!()
+  end
+
+  defp image_dimensions(path) do
+    {output, 0} = System.cmd("identify", ["-format", "%w %h", path])
+
+    output
+    |> String.split(" ", trim: true)
+    |> Enum.map(&String.to_integer/1)
+    |> then(fn [width, height] -> {width, height} end)
   end
 end

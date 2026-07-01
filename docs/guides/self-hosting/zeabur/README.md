@@ -20,9 +20,9 @@ The template includes placeholder defaults for some required secrets. Replace
 placeholder values before using the service in production.
 
 The template exposes the Vmemo service on port `4000`. The production image starts
-Nginx on that public port and runs Phoenix internally on `4001`, so `/storage/v1`
-image requests keep the normal browser URL while Nginx handles the internal
-`X-Accel-Redirect` file response.
+Nginx on that public port and runs Phoenix internally on `4001`. Browser image
+display is authorized and served by Phoenix through `/media/images/:id/:variant`;
+Nginx is only a reverse proxy in this path.
 
 The template also deploys Typelens, a Typesense dashboard, and pre-connects it
 to the template's Typesense service. Typelens is protected with generated

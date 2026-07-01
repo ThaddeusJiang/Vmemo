@@ -4,7 +4,7 @@ defmodule Vmemo.MixProject do
   def project do
     [
       app: :vmemo,
-      version: "2026.6.9",
+      version: "2026.6.16",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
