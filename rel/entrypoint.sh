@@ -5,11 +5,6 @@ if [ "${1:-}" = "start" ]; then
   export PHX_PORT="${PHX_PORT:-4001}"
 fi
 
-if [ "${VMEMO_STORAGE_DIR+x}" = "x" ] && [ -z "${VMEMO_STORAGE_DIR}" ]; then
-  echo "VMEMO_STORAGE_DIR must be a non-empty storage directory path." >&2
-  exit 1
-fi
-
 VMEMO_STORAGE_DIR="${VMEMO_STORAGE_DIR:-/data/storage}"
 export VMEMO_STORAGE_DIR
 

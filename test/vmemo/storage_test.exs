@@ -14,11 +14,11 @@ defmodule Vmemo.StorageTest do
     end)
   end
 
-  test "default root is data/storage under the current working directory" do
+  test "default root is /data/storage when environment config is absent" do
     Application.delete_env(:vmemo, :storage_root)
 
-    assert Storage.root_path() == Path.expand("data/storage")
-    assert Storage.v1_path() == Path.expand("data/storage/v1")
+    assert Storage.root_path() == "/data/storage"
+    assert Storage.v1_path() == "/data/storage/v1"
   end
 
   test "builds physical paths under configured storage root" do

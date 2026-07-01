@@ -11,6 +11,8 @@ config :vmemo, Vmemo.Repo,
 # Admin token for development
 config :vmemo, admin_token: "admin"
 
+config :vmemo, storage_root: Path.expand("../data/storage", __DIR__)
+
 config :vmemo, Oban,
   repo: Vmemo.Repo,
   notifier: Oban.Notifiers.PG,

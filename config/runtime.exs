@@ -21,17 +21,29 @@ config :vmemo,
 
 config :vmemo, Vmemo.Repo, url: database_url
 
-if storage_dir = System.get_env("VMEMO_STORAGE_DIR") do
-  case String.trim(storage_dir) do
-    "" ->
-      raise """
-      environment variable VMEMO_STORAGE_DIR is invalid.
-      It must be a non-empty storage directory path.
-      """
-
-    value ->
-      config :vmemo, storage_root: Path.expand(value)
+default_storage_dir =
+  if config_env() in [:test, :prod] do
+    "/data/storage"
   end
+
+case System.get_env("VMEMO_STORAGE_DIR") do
+  nil when is_binary(default_storage_dir) ->
+    config :vmemo, storage_root: Path.expand(default_storage_dir)
+
+  nil ->
+    :ok
+
+  storage_dir ->
+    case String.trim(storage_dir) do
+      "" when is_binary(default_storage_dir) ->
+        config :vmemo, storage_root: Path.expand(default_storage_dir)
+
+      "" ->
+        :ok
+
+      value ->
+        config :vmemo, storage_root: Path.expand(value)
+    end
 end
 
 if image_upload_max_file_size = System.get_env("IMAGE_UPLOAD_MAX_FILE_SIZE") do
