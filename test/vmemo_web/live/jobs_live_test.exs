@@ -53,7 +53,7 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Jobs"
       assert html =~ "Type"
       assert html =~ "Status"
-      assert html =~ "Caption failed."
+      assert html =~ "Caption generation failed. Please retry later."
       refute html =~ "Timeout"
       assert html =~ "/media/images/"
       assert html =~ "/thumb"
@@ -230,10 +230,48 @@ defmodule VmemoWeb.JobsLiveTest do
       assert html =~ "Jobs"
       assert html =~ failed_image.id
       assert html =~ "Error"
-      assert html =~ "Caption failed."
+      assert html =~ "Caption generation failed. Please retry later."
       refute html =~ "Timeout"
       assert html =~ "Retry"
       assert html =~ ~s(href="/images/#{failed_image.id}")
+    end
+
+    test "renders simple failure guidance instead of internal job exception", %{
+      conn: conn,
+      user: user
+    } do
+      failed_image =
+        create_image!(%{
+          url: "/storage/v1/#{user.id}/images/detail-internal-error.jpg",
+          note: "detail-internal-error",
+          caption: "detail-internal-error",
+          file_id: "detail-internal-error.jpg",
+          user_id: user.id,
+          typesense_status: "completed",
+          moondream_status: "failed"
+        })
+
+      failed_job = get_job_by_image_and_kind!(failed_image.id, "caption")
+
+      internal_error =
+        "%Ash.Error.Unknown{bread_crumbs: [\"error returned from: Vmemo.Memo.Image.generate_caption_only\"], errors: [%ReqLLM.Error.API.Request{reason: \"Provider response error (401): Openrouter API error: User not found.\", status: 401}]}"
+
+      {:ok, failed_job} =
+        Ash.update(
+          failed_job,
+          %{error: internal_error},
+          action: :mark_failed,
+          actor: nil,
+          authorize?: false
+        )
+
+      {:ok, _lv, html} = live(conn, ~p"/jobs/#{failed_job.id}")
+
+      assert html =~ "Caption generation failed. Please retry later."
+
+      refute html =~ "%Ash.Error.Unknown"
+      refute html =~ "Provider response error"
+      refute html =~ "Openrouter API error"
     end
 
     test "renders caption text when caption succeeds in job detail page", %{

@@ -140,7 +140,7 @@ defmodule VmemoWeb.JobsLive do
 
                   <div class="mt-2 flex items-center justify-between gap-3">
                     <p class="min-w-0 text-sm text-base-content/70 truncate">
-                      {row.job.error || gettext("No errors recorded.")}
+                      {job_error_text(row.job)}
                     </p>
                     <.button
                       :if={
@@ -229,7 +229,7 @@ defmodule VmemoWeb.JobsLive do
                 <div class="rounded-xl border border-base-300 bg-base-50/30 p-3">
                   <p class="text-xs text-base-content/60">{gettext("Error / Execution log")}</p>
                   <p class="mt-1 text-sm break-words text-base-content/90">
-                    {@job.error || gettext("No errors recorded.")}
+                    {job_error_text(@job)}
                   </p>
                 </div>
 
@@ -364,9 +364,9 @@ defmodule VmemoWeb.JobsLive do
     }
   end
 
-  defp notification_message(%{status: status, kind: kind, error: error})
+  defp notification_message(%{status: status, kind: kind})
        when status in ["failed", "cancelled", "discarded"] do
-    error || "#{job_kind_label(kind)} failed."
+    job_failure_message(kind, status)
   end
 
   defp notification_message(%{status: "completed", kind: kind}),
@@ -384,6 +384,39 @@ defmodule VmemoWeb.JobsLive do
   defp job_kind_label("caption"), do: gettext("Caption")
   defp job_kind_label("typesense"), do: gettext("Search")
   defp job_kind_label(_), do: gettext("Job")
+
+  defp job_error_text(%{status: status, kind: kind})
+       when status in ["failed", "cancelled", "discarded"] do
+    job_failure_message(kind, status)
+  end
+
+  defp job_error_text(_job), do: gettext("No errors recorded.")
+
+  defp job_failure_message("caption", "failed"),
+    do: gettext("Caption generation failed. Please retry later.")
+
+  defp job_failure_message("caption", "cancelled"),
+    do: gettext("Caption job was cancelled. Please retry if needed.")
+
+  defp job_failure_message("caption", "discarded"),
+    do: gettext("Caption job was discarded. Please retry if needed.")
+
+  defp job_failure_message("typesense", "failed"),
+    do: gettext("Search indexing failed. Please retry later.")
+
+  defp job_failure_message("typesense", "cancelled"),
+    do: gettext("Search job was cancelled. Please retry if needed.")
+
+  defp job_failure_message("typesense", "discarded"),
+    do: gettext("Search job was discarded. Please retry if needed.")
+
+  defp job_failure_message(_kind, "failed"), do: gettext("Job failed. Please retry later.")
+
+  defp job_failure_message(_kind, "cancelled"),
+    do: gettext("Job was cancelled. Please retry if needed.")
+
+  defp job_failure_message(_kind, "discarded"),
+    do: gettext("Job was discarded. Please retry if needed.")
 
   defp display_status(_status, true), do: "processing"
   defp display_status(status, false), do: status

@@ -72,32 +72,51 @@ defmodule VmemoWeb.JobNotifications do
 
   defp message(%{kind: "caption", status: "completed"}, _image), do: gettext("Caption completed.")
 
-  defp message(%{kind: "caption", status: status, error: error}, _image)
+  defp message(%{kind: "caption", status: status}, _image)
        when status in ["failed", "cancelled", "discarded"],
-       do: error || caption_failure_message(status)
+       do: caption_failure_message(status)
 
   defp message(%{kind: "caption"}, _image), do: gettext("Caption is being generated.")
 
   defp message(%{kind: "typesense", status: "completed"}, _image),
     do: gettext("Search index synced.")
 
-  defp message(%{kind: "typesense", status: status, error: error}, _image)
+  defp message(%{kind: "typesense", status: status}, _image)
        when status in ["failed", "cancelled", "discarded"],
-       do: error || typesense_failure_message(status)
+       do: typesense_failure_message(status)
 
   defp message(%{kind: "typesense"}, _image), do: gettext("Search indexing in progress.")
   defp message(%{status: "completed"}, _image), do: gettext("Job completed.")
 
-  defp message(%{status: status, error: error}, _image)
-       when status in ["failed", "cancelled", "discarded"], do: error || gettext("Job failed.")
+  defp message(%{status: status}, _image)
+       when status in ["failed", "cancelled", "discarded"],
+       do: generic_failure_message(status)
 
   defp message(_job, _image), do: gettext("Job is processing.")
 
-  defp caption_failure_message("failed"), do: gettext("Caption generation failed.")
-  defp caption_failure_message("cancelled"), do: gettext("Caption job was cancelled.")
-  defp caption_failure_message("discarded"), do: gettext("Caption job was discarded.")
+  defp caption_failure_message("failed"),
+    do: gettext("Caption generation failed. Please retry later.")
 
-  defp typesense_failure_message("failed"), do: gettext("Search indexing failed.")
-  defp typesense_failure_message("cancelled"), do: gettext("Search job was cancelled.")
-  defp typesense_failure_message("discarded"), do: gettext("Search job was discarded.")
+  defp caption_failure_message("cancelled"),
+    do: gettext("Caption job was cancelled. Please retry if needed.")
+
+  defp caption_failure_message("discarded"),
+    do: gettext("Caption job was discarded. Please retry if needed.")
+
+  defp typesense_failure_message("failed"),
+    do: gettext("Search indexing failed. Please retry later.")
+
+  defp typesense_failure_message("cancelled"),
+    do: gettext("Search job was cancelled. Please retry if needed.")
+
+  defp typesense_failure_message("discarded"),
+    do: gettext("Search job was discarded. Please retry if needed.")
+
+  defp generic_failure_message("failed"), do: gettext("Job failed. Please retry later.")
+
+  defp generic_failure_message("cancelled"),
+    do: gettext("Job was cancelled. Please retry if needed.")
+
+  defp generic_failure_message("discarded"),
+    do: gettext("Job was discarded. Please retry if needed.")
 end
