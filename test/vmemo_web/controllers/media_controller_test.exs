@@ -5,8 +5,9 @@ defmodule VmemoWeb.MediaControllerTest do
 
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Storage
 
-  @base_dir Path.join(["storage", "v1"])
+  @base_dir Storage.v1_path()
   @fixture Path.expand("../../support/fixtures/images/wall-e.png", __DIR__)
 
   setup %{conn: conn} do

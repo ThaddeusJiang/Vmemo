@@ -13,6 +13,7 @@ defmodule Vmemo.Ai.VisionRequest do
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Storage
 
   postgres do
     table "ai_vision_requests"

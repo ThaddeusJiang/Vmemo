@@ -74,7 +74,7 @@ defmodule Vmemo.UserSettingsTest do
     assert import_result.images.created == 1
     assert import_result.notes.created == 1
     assert import_result.image_notes.created == 1
-    assert import_result.files.copied == 1
+    assert import_result.files.copied == 3
 
     target_photos =
       Image
