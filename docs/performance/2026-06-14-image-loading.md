@@ -10,6 +10,14 @@ The first fix changed storage image serving so missing `--s`, `--m`, and width-b
 
 The follow-up fix changes responsive variants to WebP and caps `srcset` candidates by UI usage. This keeps list/detail pages from requesting oversized 1280/1920 pixel derivatives for small UI elements, and provides a reusable warmup task so old storage files can be pre-generated before users hit the pages.
 
+Current update (2026-06-16): the responsive `srcset` design was simplified again. Browser UI now uses three explicit media routes:
+
+- `/media/images/:id/thumb` -> pre-generated WebP, max side 400px
+- `/media/images/:id/detail` -> pre-generated WebP, max side 800px
+- `/media/images/:id/original` -> original storage file
+
+Variants are generated during upload/import or by `mix storage.warm_images`; image requests no longer generate missing variants. Phoenix serves image bytes directly after authorization, so Nginx/X-Accel is no longer part of the image display contract.
+
 ## Production Baseline
 
 Target: `https://vmemo-develop.zeabur.app/images?q=`
@@ -125,6 +133,6 @@ The local browser probe also reported one stale local image row returning 404. T
 
 ## Rollout Notes
 
-- Deploying the fix prevents missing thumbnails from silently serving originals.
-- Existing missing thumbnails can still be generated lazily on first request, but list/detail pages should not depend on lazy generation for the 1s target. Run `mix storage.warm_images` once after deploying this change, and rerun it after bulk imports. Use `--limit` for batched rollout when storage is large.
-- New UI image rendering should prefer the shared `<.img>` component with an `image_variant` (`:thumb`, `:grid`, `:detail`, or `:full`) instead of hand-writing `--s` or `--m` URLs.
+- Deploying the current fix prevents browser requests from doing ImageMagick work.
+- Existing storage files should be warmed once with `mix storage.warm_images`, and rewarmed after bulk imports if variants are missing. Use `--limit` for batched rollout when storage is large.
+- New UI image rendering should pass explicit URLs from `Vmemo.Storage.img(image, :thumb | :detail | :original)` into the shared `<.img>` component.

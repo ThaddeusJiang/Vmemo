@@ -54,10 +54,10 @@ For local prerequisites and execution flow, follow:
 `bun run perf:images` verifies the `/images` list page and the first image detail page against a running Vmemo target and prints a JSON report with:
 
 - list/detail image ready time
-- `/storage/v1` response status, duration, content type, server, and bytes
+- `/media/images` response status, duration, content type, server, and bytes
 - browser image resource timing and decoded dimensions
 
-The default storage image response budget is 1s. Run `mix storage.warm_images` before the probe when measuring an existing dataset, because cold derivative generation is a warmup/backfill cost rather than normal page-load budget. Use `--limit 100` for batched warmup on large storage.
+The default image response budget is 1s. Run `mix storage.warm_images` before the probe when measuring an existing dataset, because fixed `thumb` and `detail` variants are generated during upload/import or warmup, not during normal page requests. Use `--limit 100` for batched warmup on large storage.
 
 ```bash
 PHOTOS_INDEX_READY_BUDGET_MS=3000 \

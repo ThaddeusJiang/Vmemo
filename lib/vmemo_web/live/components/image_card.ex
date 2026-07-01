@@ -73,11 +73,10 @@ defmodule VmemoWeb.LiveComponents.ImageCard do
 
   defp resolve_navigate(_), do: nil
 
-  defp resolve_photo_url(%{image: %{url: url}}) do
-    url
-    |> normalize_photo_url()
-    |> Storage.img(:s)
-  end
+  defp resolve_photo_url(%{image: %{id: id} = image}) when is_binary(id) and id != "",
+    do: Storage.img(image, :thumb)
+
+  defp resolve_photo_url(%{image: %{url: url}}), do: normalize_photo_url(url)
 
   defp resolve_photo_url(_), do: ""
 

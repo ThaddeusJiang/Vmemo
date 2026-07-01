@@ -12,7 +12,7 @@ defmodule Vmemo.Ai.VisionRequest do
   alias Vmemo.Ai.AshAiVision
   alias Vmemo.Ai.VisionConfig
   alias Vmemo.Memo.Image
-  alias Vmemo.Storage
+  alias Vmemo.Memo.ImageStorage
 
   postgres do
     table "ai_vision_requests"
@@ -391,7 +391,7 @@ defmodule Vmemo.Ai.VisionRequest do
   end
 
   defp read_image_as_base64(url) do
-    thumb_url = Storage.img(url, :s)
+    thumb_url = ImageStorage.variant_path(url, :thumb)
 
     with {:error, :file_not_found} <- read_image_binary(thumb_url),
          {:ok, binary} <- read_image_binary(url) do
