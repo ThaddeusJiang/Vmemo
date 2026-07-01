@@ -34,6 +34,8 @@ config :vmemo, Vmemo.Repo,
 # Admin token for test
 config :vmemo, admin_token: "admin"
 
+config :vmemo, storage_root: "data/storage"
+
 config :vmemo, Oban,
   repo: Vmemo.Repo,
   testing: :inline

@@ -21,31 +21,6 @@ config :vmemo,
 
 config :vmemo, Vmemo.Repo, url: database_url
 
-default_storage_dir =
-  if config_env() in [:test, :prod] do
-    "/data/storage"
-  end
-
-case System.get_env("VMEMO_STORAGE_DIR") do
-  nil when is_binary(default_storage_dir) ->
-    config :vmemo, storage_root: Path.expand(default_storage_dir)
-
-  nil ->
-    :ok
-
-  storage_dir ->
-    case String.trim(storage_dir) do
-      "" when is_binary(default_storage_dir) ->
-        config :vmemo, storage_root: Path.expand(default_storage_dir)
-
-      "" ->
-        :ok
-
-      value ->
-        config :vmemo, storage_root: Path.expand(value)
-    end
-end
-
 if image_upload_max_file_size = System.get_env("IMAGE_UPLOAD_MAX_FILE_SIZE") do
   case Integer.parse(image_upload_max_file_size) do
     {value, ""} when value > 0 ->
@@ -154,6 +129,12 @@ if config_env() == :prod do
       environment variable SENTRY_DSN is missing.
       """
 
+  storage_root =
+    case System.get_env("VMEMO_STORAGE_DIR") do
+      value when value in [nil, ""] -> "/data/storage"
+      value -> value
+    end
+
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :vmemo, Vmemo.Repo,
@@ -167,7 +148,8 @@ if config_env() == :prod do
     openrouter_api_key: openrouter_api_key,
     admin_token: admin_token,
     dns_cluster_query: System.get_env("DNS_CLUSTER_QUERY"),
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+    storage_root: storage_root
 
   config :req_llm, openrouter_api_key: openrouter_api_key
 

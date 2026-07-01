@@ -133,7 +133,8 @@
 - Web uses built-in LiveView upload (`allow_upload`)
 - API uses multipart with extension and magic-byte validation
 - Browser storage URL: `/storage/v1/<user_id>/images/<timestamp>_<filename>`
-- Physical storage path: `VMEMO_STORAGE_DIR/v1/<user_id>/images/<timestamp>_<filename>`
+- Physical storage path: `<storage_root>/v1/<user_id>/images/<timestamp>_<filename>`.
+  Dev/test default to `data/storage`; prod defaults to `VMEMO_STORAGE_DIR` or `/data/storage`.
 - `Photo.create_with_sync` auto-enqueues Typesense sync
 - `Photo/Image.destroy` relies on PostgreSQL `ON DELETE CASCADE` from `jobs.image_id` to remove related job records; notifications are derived from jobs and disappear with those records.
 
