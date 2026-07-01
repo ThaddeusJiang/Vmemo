@@ -767,33 +767,7 @@ defmodule VmemoWeb.ImageIdLive do
 
   defp image_storage_path(%{url: url, user_id: user_id})
        when is_binary(url) and not is_nil(user_id) do
-    storage_prefix = Path.join(["storage", "v1"]) |> Path.expand()
-    parsed = URI.parse(url)
-    raw_path = parsed.path || url
-
-    primary =
-      raw_path
-      |> String.trim_leading("/")
-      |> Path.expand()
-
-    fallback =
-      raw_path
-      |> Path.basename()
-      |> then(&Path.join(["storage", "v1", to_string(user_id), "images", &1]))
-      |> Path.expand()
-
-    cond do
-      String.starts_with?(primary, storage_prefix <> "/") and
-        String.contains?(primary, "/images/") and
-          File.exists?(primary) ->
-        {:ok, primary}
-
-      String.starts_with?(fallback, storage_prefix <> "/") and File.exists?(fallback) ->
-        {:ok, fallback}
-
-      true ->
-        {:error, :file_not_found}
-    end
+    ImageStorage.storage_path_from_url(url, user_id)
   end
 
   defp image_storage_path(_), do: {:error, :invalid_url}

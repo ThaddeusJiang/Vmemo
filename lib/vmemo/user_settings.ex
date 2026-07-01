@@ -13,6 +13,7 @@ defmodule Vmemo.UserSettings do
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
   alias Vmemo.Repo
+  alias Vmemo.Storage
 
   @error_limit 50
 
@@ -160,7 +161,7 @@ defmodule Vmemo.UserSettings do
   end
 
   defp copy_user_storage_for_export(tmp_dir, user_id) do
-    source_root = Path.join(["storage", "v1", user_id, "images"])
+    source_root = Storage.path(["v1", user_id, "images"])
     dest_root = Path.join([tmp_dir, "storage", "v1", user_id, "images"])
 
     if File.exists?(source_root) do
@@ -732,7 +733,7 @@ defmodule Vmemo.UserSettings do
 
   defp copy_user_storage_for_import(tmp_dir, source_user_id, target_user_id) do
     source_root = Path.join([tmp_dir, "storage", "v1", to_string(source_user_id || ""), "images"])
-    target_root = Path.join(["storage", "v1", target_user_id, "images"])
+    target_root = Storage.path(["v1", target_user_id, "images"])
 
     if source_user_id && File.exists?(source_root) do
       files =
@@ -906,17 +907,9 @@ defmodule Vmemo.UserSettings do
         %URI{path: parsed_path} -> parsed_path
       end
 
-    cond do
-      String.starts_with?(path, "/storage/v1/") ->
-        path
-        |> String.trim_leading("/")
-        |> Path.expand(File.cwd!())
-
-      String.starts_with?(path, "storage/v1/") ->
-        Path.expand(path, File.cwd!())
-
-      true ->
-        nil
+    case Storage.path_from_url(path) do
+      {:ok, storage_path} -> storage_path
+      {:error, _reason} -> nil
     end
   end
 

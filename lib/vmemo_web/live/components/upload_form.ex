@@ -13,6 +13,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
   alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
+  alias Vmemo.Storage
 
   @impl true
   def mount(socket) do
@@ -379,7 +380,7 @@ defmodule VmemoWeb.LiveComponents.UploadForm do
            Image.create_with_sync(
              %{
                note: note_text,
-               url: Path.join("/", dest),
+               url: Storage.url_path_from_path!(dest),
                file_id: stored_filename,
                user_id: user_id,
                upload_batch_id: upload_batch_id,

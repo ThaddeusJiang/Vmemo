@@ -8,6 +8,7 @@ defmodule Vmemo.UserSettingsTest do
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageNote
   alias Vmemo.Memo.Note
+  alias Vmemo.Storage
   alias Vmemo.UserSettings
 
   test "exports and imports data per user" do
@@ -16,9 +17,9 @@ defmodule Vmemo.UserSettingsTest do
     target_user = user_fixture()
 
     on_exit(fn ->
-      File.rm_rf(Path.join(["storage", "v1", source_user.id]))
-      File.rm_rf(Path.join(["storage", "v1", other_user.id]))
-      File.rm_rf(Path.join(["storage", "v1", target_user.id]))
+      File.rm_rf(Storage.path(["v1", source_user.id]))
+      File.rm_rf(Storage.path(["v1", other_user.id]))
+      File.rm_rf(Storage.path(["v1", target_user.id]))
     end)
 
     write_user_file_from_fixture!(
@@ -96,8 +97,8 @@ defmodule Vmemo.UserSettingsTest do
     target_user = user_fixture()
 
     on_exit(fn ->
-      File.rm_rf(Path.join(["storage", "v1", source_user.id]))
-      File.rm_rf(Path.join(["storage", "v1", target_user.id]))
+      File.rm_rf(Storage.path(["v1", source_user.id]))
+      File.rm_rf(Storage.path(["v1", target_user.id]))
     end)
 
     write_user_file_from_fixture!(
@@ -172,7 +173,7 @@ defmodule Vmemo.UserSettingsTest do
   end
 
   defp write_user_file_from_fixture!(user_id, filename, fixture_path) do
-    path = Path.join(["storage", "v1", user_id, "images", filename])
+    path = Storage.path(["v1", user_id, "images", filename])
     File.mkdir_p!(Path.dirname(path))
     File.cp!(fixture_path, path)
   end

@@ -28,7 +28,7 @@ spec:
             type: HTTP
         volumes:
           - id: data
-            dir: /app/storage
+            dir: /data
         instructions:
           - type: PASSWORD
             title: Admin Token
@@ -49,6 +49,9 @@ spec:
             expose: false
           PHX_SERVER:
             default: "true"
+            expose: false
+          VMEMO_STORAGE_DIR:
+            default: /data/storage
             expose: false
           SECRET_KEY_BASE:
             default: ${TYPESENSE_SERVICE_API_KEY}_${TYPESENSE_SERVICE_API_KEY}

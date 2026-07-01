@@ -10,6 +10,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
   alias Plug.Conn.Status
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageUpload
+  alias Vmemo.Storage
 
   require Logger
 
@@ -501,7 +502,7 @@ defmodule VmemoWeb.Api.V1.ImageController do
 
       attrs = %{
         note: note,
-        url: Path.join("/", dest),
+        url: Storage.url_path_from_path!(dest),
         file_id: stored_filename,
         user_id: user_id,
         inner_purpose: nil

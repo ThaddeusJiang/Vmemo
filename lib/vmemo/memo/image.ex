@@ -29,6 +29,7 @@ defmodule Vmemo.Memo.Image do
   alias Vmemo.Memo.ImageUpload
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.SearchEngine.TsImage
+  alias Vmemo.Storage
 
   postgres do
     table "memo_images"
@@ -400,7 +401,7 @@ defmodule Vmemo.Memo.Image do
                      __MODULE__,
                      %{
                        note: "",
-                       url: Path.join("/", dest),
+                       url: Storage.url_path_from_path!(dest),
                        file_id: stored_filename,
                        user_id: user_id,
                        inner_purpose: "search"
@@ -1064,7 +1065,7 @@ defmodule Vmemo.Memo.Image do
          {:ok, %{dest: dest, filename: stored_filename}} <-
            ImageUpload.store(tmp_path, user_id, final_filename) do
       _ = File.rm(tmp_path)
-      {:ok, %{url: Path.join("/", dest), file_id: stored_filename}}
+      {:ok, %{url: Storage.url_path_from_path!(dest), file_id: stored_filename}}
     else
       :error ->
         {:error, "Invalid file payload"}
@@ -1108,13 +1109,13 @@ defmodule Vmemo.Memo.Image do
 
   # Helper function to read image file as base64 with MIME type detection
   defp read_image_as_base64(url) do
-    relative_path =
-      url
-      |> String.trim_leading("/")
-      |> String.trim_leading("storage/v1/")
+    case Storage.path_from_url(url) do
+      {:ok, file_path} -> read_image_file_as_base64(file_path)
+      {:error, _reason} -> {:error, :invalid_path}
+    end
+  end
 
-    file_path = Path.join(["storage", "v1", relative_path])
-
+  defp read_image_file_as_base64(file_path) do
     case File.read(file_path) do
       {:ok, binary} ->
         mime_type = detect_mime_type_from_binary(binary) || "image/jpeg"

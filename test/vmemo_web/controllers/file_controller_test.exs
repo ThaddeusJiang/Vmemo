@@ -3,7 +3,9 @@ defmodule VmemoWeb.FileControllerTest do
 
   import Vmemo.AccountFixtures
 
-  @base_dir Path.join(["storage", "v1"])
+  alias Vmemo.Storage
+
+  @base_dir Storage.v1_path()
 
   setup %{conn: conn} do
     user = user_fixture()

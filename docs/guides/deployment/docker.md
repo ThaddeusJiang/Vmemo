@@ -63,7 +63,10 @@ Optional: `MOONDREAM_URL`, `OPENROUTER_VISION_MODEL`, `SENTRY_ENV`
 
 Image storage:
 
-- Original files stay under `/storage/v1`.
+- `VMEMO_STORAGE_DIR` defaults to `/data/storage` in the production image.
+- Leave `VMEMO_STORAGE_DIR` unset or empty to use `/data/storage`.
+- Mount a persistent volume at `/data` or set `VMEMO_STORAGE_DIR` to another absolute path.
+- Original files stay under `VMEMO_STORAGE_DIR/v1`.
 - Browser-facing image display uses `/media/images/:id/thumb`,
   `/media/images/:id/detail`, and `/media/images/:id/original`.
 - Phoenix performs the owner check and sends the file bytes directly.

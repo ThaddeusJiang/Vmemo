@@ -2,6 +2,7 @@ defmodule Vmemo.Memo.ImageStorage do
   @moduledoc false
   alias SmallSdk.FileSystem
   alias SmallSdk.ImageMagick
+  alias Vmemo.Storage
 
   @image_extensions [".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff"]
   @variant_sizes %{thumb: 400, detail: 800}
@@ -12,7 +13,7 @@ defmodule Vmemo.Memo.ImageStorage do
     {:ok, dest}
   end
 
-  def warm_variants!(storage_root \\ Path.join(["storage", "v1"]), opts \\ []) do
+  def warm_variants!(storage_root \\ Storage.v1_path(), opts \\ []) do
     storage_root
     |> storage_image_paths()
     |> maybe_take_limit(Keyword.get(opts, :limit))
@@ -58,27 +59,17 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   def storage_path_from_url(url, user_id) when is_binary(url) and not is_nil(user_id) do
-    storage_prefix = Path.join(["storage", "v1"]) |> Path.expand()
+    storage_prefix = Storage.v1_path()
     parsed = URI.parse(url)
     raw_path = parsed.path || url
-
-    primary =
-      raw_path
-      |> String.trim_leading("/")
-      |> Path.expand()
-
-    fallback =
-      raw_path
-      |> Path.basename()
-      |> then(&Path.join(["storage", "v1", to_string(user_id), "images", &1]))
-      |> Path.expand()
+    primary = storage_path_from_raw_url(raw_path)
+    fallback = fallback_storage_path(raw_path, user_id)
 
     cond do
-      String.starts_with?(primary, storage_prefix <> "/") and
-        String.contains?(primary, "/images/") and File.exists?(primary) ->
+      existing_image_storage_path?(primary, storage_prefix) ->
         {:ok, primary}
 
-      String.starts_with?(fallback, storage_prefix <> "/") and File.exists?(fallback) ->
+      existing_storage_path?(fallback, storage_prefix) ->
         {:ok, fallback}
 
       true ->
@@ -87,6 +78,31 @@ defmodule Vmemo.Memo.ImageStorage do
   end
 
   def storage_path_from_url(_, _), do: {:error, :invalid_url}
+
+  defp storage_path_from_raw_url(raw_path) do
+    case Storage.path_from_url(raw_path) do
+      {:ok, path} -> path
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp fallback_storage_path(raw_path, user_id) do
+    raw_path
+    |> Path.basename()
+    |> then(&Storage.path(["v1", to_string(user_id), "images", &1]))
+  end
+
+  defp existing_image_storage_path?(path, storage_prefix) when is_binary(path) do
+    existing_storage_path?(path, storage_prefix) and String.contains?(path, "/images/")
+  end
+
+  defp existing_image_storage_path?(_path, _storage_prefix), do: false
+
+  defp existing_storage_path?(path, storage_prefix) when is_binary(path) do
+    String.starts_with?(path, storage_prefix <> "/") and File.exists?(path)
+  end
+
+  defp existing_storage_path?(_path, _storage_prefix), do: false
 
   defp resize_to_fit_atomic!(input_path, output_path, max_side) do
     tmp_path = temporary_output_path(output_path)

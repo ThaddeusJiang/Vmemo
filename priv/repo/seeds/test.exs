@@ -4,6 +4,7 @@ defmodule Vmemo.Seeds.Test do
   """
 
   alias Vmemo.Repo
+  alias Vmemo.Storage
 
   @sql_file Path.join(__DIR__, "test.sql")
   @seeded_user_id "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -30,7 +31,7 @@ defmodule Vmemo.Seeds.Test do
 
   defp ensure_seed_image! do
     target =
-      Path.join(["storage", "v1", @seeded_user_id, "images", @seeded_image_name])
+      Storage.path(["v1", @seeded_user_id, "images", @seeded_image_name])
 
     target
     |> Path.dirname()

@@ -39,6 +39,10 @@ by default. Phoenix runs internally on `http://localhost:4001` for debugging.
 Browser image display uses `/media/images/:id/:variant`; the proxy forwards the
 request to Phoenix and does not serve storage bytes through `X-Accel-Redirect`.
 
+Local storage defaults to `./data/storage`; stored files live under
+`./data/storage/v1/...` while browser URLs remain `/storage/v1/...`. Override the
+physical root with `VMEMO_STORAGE_DIR` when needed.
+
 Test dependencies:
 
 ```bash
@@ -67,6 +71,7 @@ Typical local runtime values:
 [env]
 DATABASE_URL = "postgres://postgres:postgres@localhost:10001/vmemo_dev"
 TYPESENSE_URL = "http://localhost:10002"
+VMEMO_STORAGE_DIR = "./data/storage"
 MOONDREAM_URL = "http://localhost:2020/v1/"
 ```
 

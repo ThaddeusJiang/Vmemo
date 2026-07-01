@@ -5,6 +5,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
 
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageUpload
+  alias Vmemo.Storage
 
   @impl true
   def mount(socket) do
@@ -164,7 +165,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
                Image.create_with_sync(
                  %{
                    note: "",
-                   url: Path.join("/", dest),
+                   url: Storage.url_path_from_path!(dest),
                    file_id: stored_filename,
                    user_id: current_user.id,
                    upload_batch_id: Ecto.UUID.generate(),
@@ -253,7 +254,7 @@ defmodule VmemoWeb.LiveComponents.SearchBox do
              Image.create_with_sync(
                %{
                  note: "",
-                 url: Path.join("/", dest),
+                 url: Storage.url_path_from_path!(dest),
                  file_id: stored_filename,
                  user_id: current_user.id,
                  upload_batch_id: Ecto.UUID.generate(),

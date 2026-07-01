@@ -5,8 +5,9 @@ defmodule VmemoWeb.ImageLoadingPerformanceTest do
 
   alias Vmemo.Memo.ImageStorage
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
 
-  @base_dir Path.join(["storage", "v1"])
+  @base_dir Storage.v1_path()
   @moduletag :integration
   @threshold_ms 1_000
 

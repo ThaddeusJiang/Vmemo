@@ -3,8 +3,8 @@ defmodule VmemoWeb.FileController do
 
   alias Vmemo.Memo.Image
   alias Vmemo.Memo.ImageStorage
+  alias Vmemo.Storage
 
-  @storage_root Path.expand("storage/v1")
   @cache_control "public, max-age=0, must-revalidate"
   @allowed_mime_types %{
     ".png" => "image/png",
@@ -197,9 +197,10 @@ defmodule VmemoWeb.FileController do
   defp avatar_path(user_id, filename), do: safe_storage_path([user_id, "avatars", filename])
 
   defp safe_storage_path(parts) do
-    path = Path.join(["storage/v1" | parts]) |> Path.expand()
+    path = Storage.path(["v1" | parts])
+    storage_root = Storage.v1_path()
 
-    if String.starts_with?(path, @storage_root <> "/") do
+    if String.starts_with?(path, storage_root <> "/") do
       {:ok, path}
     else
       {:error, :invalid_path}

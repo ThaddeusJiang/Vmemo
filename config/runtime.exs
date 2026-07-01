@@ -21,6 +21,19 @@ config :vmemo,
 
 config :vmemo, Vmemo.Repo, url: database_url
 
+if storage_dir = System.get_env("VMEMO_STORAGE_DIR") do
+  case String.trim(storage_dir) do
+    "" ->
+      raise """
+      environment variable VMEMO_STORAGE_DIR is invalid.
+      It must be a non-empty storage directory path.
+      """
+
+    value ->
+      config :vmemo, storage_root: Path.expand(value)
+  end
+end
+
 if image_upload_max_file_size = System.get_env("IMAGE_UPLOAD_MAX_FILE_SIZE") do
   case Integer.parse(image_upload_max_file_size) do
     {value, ""} when value > 0 ->

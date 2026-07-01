@@ -26,7 +26,7 @@
 - `<.img>` 只渲染传入的 `src`，不再自动生成 `srcset` / `sizes`。
 
 ### Vision 调用前图片预处理
-- 存储策略：`storage/v1/...` 保留上传图片；TIFF 会在入库前转换为 PNG，其他格式不写回压缩图。
+- 存储策略：浏览器 URL 保持 `/storage/v1/...`；物理文件保存在 `VMEMO_STORAGE_DIR` 下的 `v1/...`。本地 `mix` 默认 `./data/storage`，Docker 镜像默认 `/data/storage`。TIFF 会在入库前转换为 PNG，其他格式不写回压缩图。
 - 调用策略：仅在外部 vision 请求前处理图片，处理结果只用于本次请求。
 - 处理规则：
   - 小图（< 500KB）跳过预处理。

@@ -70,7 +70,7 @@ One `--s.JPG` URL returned `404`, which matched the code path that lowercased sa
 - Filename validation preserves original case while still allowing only safe path characters.
 - Failed thumbnail generation returns the normal missing-image 404 path instead of crashing the request.
 - Storage image responses now use ETag/Last-Modified revalidation for unversioned URLs and long-lived immutable caching for versioned URLs. Application-rendered storage image URLs include a `v` query parameter derived from the source file metadata, so unchanged images can be served from browser cache without revalidation while rewritten files get a new cache key.
-- `mix storage.warm_images` pre-generates variants for existing files under `storage/v1/<user_id>/images`.
+- `mix storage.warm_images` pre-generates variants for existing files under the configured `v1/<user_id>/images` storage root.
 
 ## Fixed-Code Local Benchmark
 
@@ -111,7 +111,7 @@ X/Twitter-style feeds use generated media variants instead of making the feed re
 - Reusable performance test:
   - `DATABASE_URL='postgres://postgres:postgres@localhost:20001/vmemo_test' TYPESENSE_URL='http://localhost:20002' TYPESENSE_API_KEY='xyz' MIX_ENV=test mise exec -- mix test test/vmemo_web/controllers/image_loading_performance_test.exs --include integration`
 - Backfill/warm existing storage:
-  - `DATABASE_URL='postgres://postgres:postgres@localhost:20001/vmemo_test' TYPESENSE_URL='http://localhost:20002' TYPESENSE_API_KEY='xyz' MIX_ENV=test mise exec -- mix storage.warm_images --root storage/v1`
+  - `DATABASE_URL='postgres://postgres:postgres@localhost:20001/vmemo_test' TYPESENSE_URL='http://localhost:20002' TYPESENSE_API_KEY='xyz' MIX_ENV=test mise exec -- mix storage.warm_images --root data/storage/v1`
   - Add `--limit 100` for batched warmup on large local or production storage.
 - Browser performance probe through local Nginx:
   - `E2E_BASE_URL=http://localhost:4000 PHOTOS_INDEX_READY_BUDGET_MS=3000 STORAGE_IMAGE_RESPONSE_BUDGET_MS=1000 PHOTOS_INDEX_MIN_IMAGES=1 bun run perf:images`

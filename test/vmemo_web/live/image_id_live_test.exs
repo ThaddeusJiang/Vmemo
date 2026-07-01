@@ -5,6 +5,7 @@ defmodule VmemoWeb.ImageIdLiveTest do
   import Vmemo.AccountFixtures
 
   alias Vmemo.Memo.Image
+  alias Vmemo.Storage
 
   @fixture_image Path.expand("test/support/fixtures/images/wall-e.png")
 
@@ -41,9 +42,9 @@ defmodule VmemoWeb.ImageIdLiveTest do
   defp ensure_fixture_image!(attrs) do
     user_id = Map.fetch!(attrs, :user_id)
     url = Map.fetch!(attrs, :url)
-    storage_path = url |> String.trim_leading("/") |> Path.expand()
 
-    expected_prefix = Path.join(["storage", "v1", user_id, "images"]) |> Path.expand()
+    {:ok, storage_path} = Storage.path_from_url(url)
+    expected_prefix = Storage.path(["v1", user_id, "images"])
 
     if String.starts_with?(storage_path, expected_prefix <> "/") do
       File.mkdir_p!(Path.dirname(storage_path))

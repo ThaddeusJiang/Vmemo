@@ -5,7 +5,7 @@ defmodule Vmemo.Memo.ImageStorageTest do
   alias Vmemo.Memo.ImageUpload
   alias Vmemo.Storage
 
-  @storage_prefix Path.join(["storage", "v1"]) |> Path.expand()
+  @storage_prefix Storage.v1_path()
 
   test "Storage.img/2 returns fixed media routes for image variants" do
     image = %{id: "123e4567-e89b-12d3-a456-426614174000"}

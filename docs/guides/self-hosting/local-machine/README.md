@@ -33,6 +33,7 @@ export CLOUDFLARED_TOKEN="$(cloudflared tunnel token vmemo-dev)"
 Set these in `.env`:
 - `PHX_HOST="dev.vmemo.app"`
 - `CLOUDFLARED_TOKEN="<your token>"`
+- `VMEMO_STORAGE_DIR="/data/storage"` (matches the default persistent `/data` volume)
 
 3) Start the stack with the Docker Compose quick start in the root [README](../../../../README.md#install-vmemo).
 
@@ -115,4 +116,5 @@ http://localhost:14000
 ## Notes
 
 - For this self-hosting mode, host-level `ImageMagick` is not required. The Vmemo app image already bundles `ImageMagick`.
+- The Docker Compose file mounts `./vmemo_data` to `/data`; image files are stored under `/data/storage/v1`.
 - For detailed tunnel operations and troubleshooting, see [Cloudflare Tunnel CLI](cloudflare-tunnel-cli.md).

@@ -7,7 +7,7 @@ services:
     ports:
       - "14000:4000"
     volumes:
-      - ./vmemo_data/storage:/app/storage
+      - ./vmemo_data:/data
     depends_on:
       postgres:
         condition: service_healthy
