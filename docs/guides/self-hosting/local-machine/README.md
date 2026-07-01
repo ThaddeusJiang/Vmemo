@@ -76,6 +76,9 @@ docker compose ps
 docker compose logs -f
 ```
 
+For environment changes and server upgrades, see
+[Self-hosting Operations](../operations.md).
+
 ### SSL Redirect Regression Check (Proxy Headers)
 
 Use these checks after deployment-related changes to ensure there is no `Plug.SSL` redirect loop behind a reverse proxy:
