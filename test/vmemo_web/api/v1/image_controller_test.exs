@@ -609,8 +609,8 @@ defmodule VmemoWeb.Api.V1.ImageControllerTest do
   end
 
   defp large_png_binary(size) when size >= 12 do
-    png_header = <<0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0>>
-    png_header <> :binary.copy(<<0>>, size - byte_size(png_header))
+    image = File.read!(@fixture_image)
+    image <> :binary.copy(<<0>>, size - byte_size(image))
   end
 
   defp multipart_body(file_binary) do
