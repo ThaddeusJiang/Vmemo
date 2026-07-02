@@ -185,11 +185,6 @@ msgstr ""
 msgid "Remember more life."
 msgstr "记住更多生活。"
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Retry Vision AI caption"
-msgstr ""
-
 #: lib/vmemo_web/controllers/page_html/landing.html.heex
 #, elixir-autogen, elixir-format
 msgid "Review in seconds"
@@ -284,6 +279,7 @@ msgid "expand"
 msgstr ""
 
 #: lib/vmemo_web/live/home_page_live.ex
+#: lib/vmemo_web/live/tags_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "images"
 msgstr ""
@@ -543,25 +539,10 @@ msgstr ""
 msgid "Caption"
 msgstr "描述"
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Caption generation failed."
-msgstr "描述生成失败。"
-
-#: lib/vmemo_web/live/jobs_live.ex
+#: lib/vmemo_web/job_notifications.ex
 #, elixir-autogen, elixir-format
 msgid "Caption is being generated."
 msgstr "描述正在生成。"
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Caption result"
-msgstr "描述结果"
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Caption status"
-msgstr "描述状态"
 
 #: lib/vmemo_web/live/images_index_live.ex
 #, elixir-autogen, elixir-format
@@ -573,11 +554,6 @@ msgstr "清除搜索"
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Close"
 msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Completed"
-msgstr "已完成"
 
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
@@ -655,26 +631,11 @@ msgstr "过期时间"
 msgid "Failed"
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Failed to retry search embedding"
-msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Failed to retry vision embedding"
-msgstr ""
-
 #: lib/vmemo_web/live/api_token_live/index.ex
 #: lib/vmemo_web/live/api_token_live/show.ex
 #, elixir-autogen, elixir-format
 msgid "Failed to toggle status"
 msgstr "切换状态失败"
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Failure reason"
-msgstr "失败原因"
 
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
@@ -687,7 +648,6 @@ msgid "Image job"
 msgstr "图片任务"
 
 #: lib/vmemo_web/live/images_index_live.ex
-#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Image not found"
 msgstr ""
@@ -751,11 +711,6 @@ msgstr "通知"
 msgid "Partial Failed"
 msgstr "部分失败"
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Pending"
-msgstr "等待中"
-
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Please save the token immediately after creation, as you won't be able to view the full content again"
@@ -779,25 +734,10 @@ msgstr "处理中"
 msgid "Processing..."
 msgstr ""
 
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Retry"
-msgstr "重试"
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Retry requested. Caption is being generated."
-msgstr "已请求重试，正在生成描述。"
-
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Search embedding"
-msgstr "搜索向量"
 
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
@@ -904,6 +844,7 @@ msgstr "上传图片"
 
 #: lib/vmemo_web/live/api_token_live/index.ex
 #: lib/vmemo_web/live/api_token_live/show.ex
+#: lib/vmemo_web/live/tags_live/index.ex
 #, elixir-autogen, elixir-format
 msgid "Usage Count"
 msgstr "使用次数"
@@ -933,11 +874,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "View all notifications"
 msgstr "查看全部通知"
-
-#: lib/vmemo_web/live/jobs_live.ex
-#, elixir-autogen, elixir-format
-msgid "Vision embedding"
-msgstr "视觉向量"
 
 #: lib/vmemo_web/live/api_token_live/form.ex
 #, elixir-autogen, elixir-format
@@ -1094,6 +1030,242 @@ msgid "Failed to delete note, please try again later."
 msgstr "删除失败，请稍后重试。"
 
 #: lib/vmemo_web/live/components/note_update_form.ex
+#: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Updated"
 msgstr "已更新"
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Failed to save"
+msgstr ""
+
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "No tags yet. Add tags from the image Tags input."
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Please input at least one tag."
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Saved"
+msgstr ""
+
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Tag"
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#, elixir-autogen, elixir-format
+msgid "Tag already exists."
+msgstr ""
+
+#: lib/vmemo_web/live/image_id_live.ex
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "Tags"
+msgstr ""
+
+#: lib/vmemo_web/live/tags_live/index.ex
+#, elixir-autogen, elixir-format
+msgid "tags"
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#, elixir-autogen, elixir-format
+msgid "Caption completed."
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Created at"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Failed to retry job"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Image ID"
+msgstr "图片任务"
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Job"
+msgstr "任务"
+
+#: lib/vmemo_web/job_notifications.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Job completed."
+msgstr "已完成"
+
+#: lib/vmemo_web/job_notifications.ex
+#, elixir-autogen, elixir-format
+msgid "Job is processing."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#, elixir-autogen, elixir-format
+msgid "Search index synced."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#, elixir-autogen, elixir-format
+msgid "Search indexing in progress."
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Status"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Type"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Updated at"
+msgstr "已更新"
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Cancelled"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Completed"
+msgstr "已完成"
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Discarded"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "In progress"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Pending"
+msgstr "等待中"
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Queued"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Requested"
+msgstr "请求失败。"
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Async Job"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Image unavailable"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Source Image"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Error / Execution log"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job Kind"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "No errors recorded."
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Open image detail"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Recent Jobs"
+msgstr ""
+
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Retry job"
+msgstr "重试"
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Caption generation failed. Please retry later."
+msgstr "描述生成失败。"
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Caption job was cancelled. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Caption job was discarded. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job failed. Please retry later."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job was cancelled. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job was discarded. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Search indexing failed. Please retry later."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Search job was cancelled. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Search job was discarded. Please retry if needed."
+msgstr ""

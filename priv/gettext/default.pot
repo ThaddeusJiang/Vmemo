@@ -550,11 +550,6 @@ msgstr ""
 
 #: lib/vmemo_web/job_notifications.ex
 #, elixir-autogen, elixir-format
-msgid "Caption generation failed."
-msgstr ""
-
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
 msgid "Caption is being generated."
 msgstr ""
 
@@ -1095,16 +1090,6 @@ msgstr ""
 msgid "Caption completed."
 msgstr ""
 
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
-msgid "Caption job was cancelled."
-msgstr ""
-
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
-msgid "Caption job was discarded."
-msgstr ""
-
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Created at"
@@ -1132,11 +1117,6 @@ msgstr ""
 
 #: lib/vmemo_web/job_notifications.ex
 #, elixir-autogen, elixir-format
-msgid "Job failed."
-msgstr ""
-
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
 msgid "Job is processing."
 msgstr ""
 
@@ -1147,22 +1127,7 @@ msgstr ""
 
 #: lib/vmemo_web/job_notifications.ex
 #, elixir-autogen, elixir-format
-msgid "Search indexing failed."
-msgstr ""
-
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
 msgid "Search indexing in progress."
-msgstr ""
-
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
-msgid "Search job was cancelled."
-msgstr ""
-
-#: lib/vmemo_web/job_notifications.ex
-#, elixir-autogen, elixir-format
-msgid "Search job was discarded."
 msgstr ""
 
 #: lib/vmemo_web/live/jobs_live.ex
@@ -1258,4 +1223,58 @@ msgstr ""
 #: lib/vmemo_web/live/jobs_live.ex
 #, elixir-autogen, elixir-format
 msgid "Retry job"
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Caption generation failed. Please retry later."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Caption job was cancelled. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Caption job was discarded. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job failed. Please retry later."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job was cancelled. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Job was discarded. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Search indexing failed. Please retry later."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Search job was cancelled. Please retry if needed."
+msgstr ""
+
+#: lib/vmemo_web/job_notifications.ex
+#: lib/vmemo_web/live/jobs_live.ex
+#, elixir-autogen, elixir-format
+msgid "Search job was discarded. Please retry if needed."
 msgstr ""
