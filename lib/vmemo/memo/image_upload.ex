@@ -9,7 +9,7 @@ defmodule Vmemo.Memo.ImageUpload do
 
     try do
       with {:ok, dest} <- ImageStorage.cp_file(prepared.path, user_id, prepared.filename) do
-        maybe_generate_variants(dest)
+        ImageStorage.generate_variants!(dest)
         {:ok, %{dest: dest, filename: prepared.filename}}
       end
     after
@@ -19,12 +19,6 @@ defmodule Vmemo.Memo.ImageUpload do
     end
   rescue
     error -> {:error, error}
-  end
-
-  defp maybe_generate_variants(dest) do
-    ImageStorage.generate_variants!(dest)
-  rescue
-    _ -> :ok
   end
 
   defp prepare_for_storage!(src, filename) do

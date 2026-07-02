@@ -114,7 +114,7 @@ docker compose logs -f vmemo
 docker run -d --name vmemo \
   -p 4000:4000 \
   --env-file .env \
-  -v "$PWD/storage:/app/storage" \
+  -v "$PWD/data:/data" \
   ghcr.io/thaddeusjiang/vmemo:<version>
 ```
 
@@ -221,12 +221,13 @@ Recommended recovery order:
 
 On Zeabur, open the Typesense service, go to the Volumes tab, and delete only
 the volume mounted at `/data`. This permanently clears the Typesense index. Do
-not delete the PostgreSQL volume or the Vmemo `/app/storage` volume unless you
-intend to remove primary data.
+not delete the PostgreSQL volume or the Vmemo `/data` volume unless you intend
+to remove primary data.
 
-Typesense is a search index for Vmemo; PostgreSQL and `/app/storage` remain the
-primary data stores. Clearing Typesense can recover startup, but existing images
-and notes will not be searchable again until they are re-synced.
+Typesense is a search index for Vmemo; PostgreSQL and Vmemo storage under
+`/data/storage` remain the primary data stores. Clearing Typesense can recover
+startup, but existing images and notes will not be searchable again until they
+are re-synced.
 
 ## Roll Back
 

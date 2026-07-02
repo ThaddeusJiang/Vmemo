@@ -82,6 +82,19 @@ defmodule Vmemo.Memo.ImageStorageTest do
     assert <<0x89, 0x50, 0x4E, 0x47, _::binary>> = File.read!(dest)
   end
 
+  test "ImageUpload.store/3 returns an error when display variants cannot be generated" do
+    user_id = "u-#{System.unique_integer([:positive])}"
+    src = Path.join(System.tmp_dir!(), "vmemo-test-#{System.unique_integer([:positive])}.png")
+    File.write!(src, "not an image")
+
+    on_exit(fn ->
+      File.rm(src)
+      File.rm_rf!(Path.join([@storage_prefix, user_id]))
+    end)
+
+    assert {:error, _reason} = ImageUpload.store(src, user_id, "broken.png")
+  end
+
   test "generate_variants!/1 creates fixed thumb and detail webp variants" do
     user_id = "u-#{System.unique_integer([:positive])}"
 
