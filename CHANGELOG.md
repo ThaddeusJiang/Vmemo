@@ -7,6 +7,22 @@ and this project uses Calendar Versioning for releases.
 
 ## [Unreleased]
 
+## [Vmemo - 2026.7.3] - 2026-07-03
+
+### Added
+- Added fixed media variant routes for thumbnail, detail, and original image delivery, with WebP variants generated during upload, import, and warmup. ([#224](https://github.com/ThaddeusJiang/Vmemo/pull/224))
+- Added `VMEMO_STORAGE_DIR` for configuring the production storage root, with Docker and self-hosting defaults aligned around `/data/storage`. ([#228](https://github.com/ThaddeusJiang/Vmemo/pull/228))
+
+### Changed
+- Simplified browser image delivery by removing the storage alias and `X-Accel-Redirect` dependency from app-rendered image paths. ([#224](https://github.com/ThaddeusJiang/Vmemo/pull/224))
+- Expanded self-hosting operations documentation and aligned Zeabur setup guidance with the current release image flow. ([#223](https://github.com/ThaddeusJiang/Vmemo/pull/223))
+- Standardized dev, test, and production storage root behavior so stored `/storage/v1/...` paths resolve consistently across local and Docker deployments. ([#228](https://github.com/ThaddeusJiang/Vmemo/pull/228))
+
+### Fixed
+- Fixed Zeabur startup failures caused by transient Typesense connection errors during release migrations. ([#223](https://github.com/ThaddeusJiang/Vmemo/pull/223))
+- Fixed failed job notifications and detail pages so users see concise failure messages instead of internal exception details. ([#225](https://github.com/ThaddeusJiang/Vmemo/pull/225))
+- Fixed image uploads so failed display-variant generation returns an error instead of saving an image that cannot be shown. ([#228](https://github.com/ThaddeusJiang/Vmemo/pull/228))
+
 ## [Vmemo - 2026.6.16] - 2026-06-16
 
 ### Added
