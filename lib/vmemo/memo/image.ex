@@ -17,7 +17,7 @@ defmodule Vmemo.Memo.Image do
   use Ash.Resource,
     domain: Vmemo.Memo,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAdmin.Resource]
+    extensions: [AshAdmin.Resource, AshOban]
 
   require Ash.Query
   require Logger
@@ -50,6 +50,23 @@ defmodule Vmemo.Memo.Image do
     ])
   end
 
+  oban do
+    triggers do
+      trigger :generate_thumbnails do
+        action :generate_thumbnails
+        queue :default
+        max_attempts 5
+        backoff 5
+        timeout 120_000
+        lock_for_update? false
+        scheduler_cron false
+        where expr(true)
+        worker_module_name Vmemo.Memo.Image.Workers.GenerateThumbnails
+        scheduler_module_name Vmemo.Memo.Image.Schedulers.GenerateThumbnails
+      end
+    end
+  end
+
   code_interface do
     define :get, action: :read, get_by: [:id]
     define :import
@@ -70,6 +87,7 @@ defmodule Vmemo.Memo.Image do
     define :update_search_engine
     define :request_generate_caption
     define :request_generate_caption_only
+    define :request_generate_thumbnails
   end
 
   defp valid_uuid?(id) when is_binary(id) do
@@ -228,6 +246,12 @@ defmodule Vmemo.Memo.Image do
           {:ok, image}
         end)
       end
+    end
+
+    update :request_generate_thumbnails do
+      accept []
+      require_atomic? false
+      change run_oban_trigger(:generate_thumbnails)
     end
 
     update :generate_caption_only do
