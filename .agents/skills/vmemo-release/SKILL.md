@@ -38,6 +38,7 @@ Prepare a release PR safely while making config changes explicit before merge.
 Run:
 
 ```bash
+mise trust && mise install
 git fetch --tags --prune
 git rev-parse --abbrev-ref HEAD
 git status --porcelain
@@ -94,6 +95,7 @@ Required behavior:
 Example check:
 
 ```bash
+mix run --no-start -e 'IO.puts(Mix.Project.config()[:version])'
 rg -n 'version:\s*"' mix.exs
 rg -n '^## \[Vmemo - ' CHANGELOG.md
 git diff -- mix.exs CHANGELOG.md
