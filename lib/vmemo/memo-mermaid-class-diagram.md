@@ -14,6 +14,7 @@ classDiagram
         update_search_engine()
         request_generate_caption()
         request_generate_caption_only()
+        request_generate_thumbnails()
         generate_caption_only()
         generate_thumbnails()
         set_typesense_status(String typesense_status)
