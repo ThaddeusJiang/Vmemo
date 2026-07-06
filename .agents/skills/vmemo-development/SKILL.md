@@ -18,6 +18,12 @@ Focus only on:
 - Copy `.env` from the main checkout using `cp`.
 - Copy `AGENTS.override.md` from the main checkout using `cp`.
 
+## Local Command Environment
+
+- Never use `mise exec`.
+- If the task depends on mise-provided tools or environment, run `mise trust && mise install` first.
+- If a Mix command fails because `DATABASE_URL`, `TYPESENSE_URL`, or another runtime env var is missing, first fix local mise/environment setup yourself before reporting a blocker.
+
 ## Start Docker Compose
 
 1. Run `docker compose up -d`.

@@ -67,14 +67,16 @@ mix compile --warnings-as-errors
 mix test test/path/to_changed_test.exs
 ```
 
-If runtime env vars are required (for example `DATABASE_URL`), load env first:
+If the task depends on mise-provided tools or environment, prepare mise first. Never use `mise exec`.
 
 ```bash
-set -a; source .env; set +a
+mise trust && mise install
 mix format
 mix compile --warnings-as-errors
 mix test test/path/to_changed_test.exs
 ```
+
+If a Mix command fails because `DATABASE_URL`, `TYPESENSE_URL`, or another runtime env var is missing, fix local mise/environment setup and retry the normal Mix command before reporting a blocker.
 
 Rules:
 
