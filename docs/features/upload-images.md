@@ -22,7 +22,7 @@
   - `/media/images/:id/thumb`
   - `/media/images/:id/detail`
   - `/media/images/:id/original`
-- `/media/images` 请求不生成缺失变体；缺失文件返回 404。历史图片可通过 `mix storage.warm_images` 批量生成变体。
+- `/media/images` 请求不在响应路径同步生成缺失变体；`thumb` / `detail` 变体缺失时回退展示原图，并异步请求生成固定变体。历史图片仍可通过 `mix storage.warm_images` 批量预生成变体以恢复缩略图性能。
 - `<.img>` 只渲染传入的 `src`，不再自动生成 `srcset` / `sizes`。
 
 ### Vision 调用前图片预处理

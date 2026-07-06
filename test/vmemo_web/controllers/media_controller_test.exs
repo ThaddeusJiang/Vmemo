@@ -1,5 +1,6 @@
 defmodule VmemoWeb.MediaControllerTest do
   use VmemoWeb.ConnCase, async: false
+  use Oban.Testing, repo: Vmemo.Repo
 
   import Vmemo.AccountFixtures
 
@@ -45,16 +46,64 @@ defmodule VmemoWeb.MediaControllerTest do
     assert get_resp_header(conn, "content-type") == ["image/png"]
   end
 
-  test "does not generate a missing variant during the request", %{conn: conn, user: user} do
-    image = create_image_with_file!(user, "media-missing.png", generate_variants?: false)
+  test "falls back to the original image when a thumb variant is missing", %{
+    conn: conn,
+    user: user
+  } do
+    image = create_image_with_file!(user, "media-missing-thumb.png", generate_variants?: false)
     {:ok, original_path} = ImageStorage.storage_path_from_url(image.url, user.id)
     variant_path = ImageStorage.variant_path(original_path, :thumb)
     refute File.exists?(variant_path)
 
     conn = get(conn, ~p"/media/images/#{image.id}/thumb")
 
-    assert response(conn, 404) == "File not found"
+    assert response(conn, 200) == File.read!(original_path)
+    assert get_resp_header(conn, "content-type") == ["image/png"]
+    assert get_resp_header(conn, "x-accel-redirect") == []
+    assert File.exists?(variant_path)
+  end
+
+  test "enqueues async variant generation when falling back to the original image", %{
+    conn: conn,
+    user: user
+  } do
+    image = create_image_with_file!(user, "media-generate-later.png", generate_variants?: false)
+    {:ok, original_path} = ImageStorage.storage_path_from_url(image.url, user.id)
+    thumb_path = ImageStorage.variant_path(original_path, :thumb)
+    detail_path = ImageStorage.variant_path(original_path, :detail)
+    refute File.exists?(thumb_path)
+    refute File.exists?(detail_path)
+
+    conn =
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        get(conn, ~p"/media/images/#{image.id}/thumb")
+      end)
+
+    assert response(conn, 200) == File.read!(original_path)
+    refute File.exists?(thumb_path)
+    refute File.exists?(detail_path)
+
+    assert_enqueued(
+      worker: Vmemo.Memo.Image.Workers.GenerateThumbnails,
+      queue: :default
+    )
+  end
+
+  test "falls back to the original image when a detail variant is missing", %{
+    conn: conn,
+    user: user
+  } do
+    image = create_image_with_file!(user, "media-missing-detail.png", generate_variants?: false)
+    {:ok, original_path} = ImageStorage.storage_path_from_url(image.url, user.id)
+    variant_path = ImageStorage.variant_path(original_path, :detail)
     refute File.exists?(variant_path)
+
+    conn = get(conn, ~p"/media/images/#{image.id}/detail")
+
+    assert response(conn, 200) == File.read!(original_path)
+    assert get_resp_header(conn, "content-type") == ["image/png"]
+    assert get_resp_header(conn, "x-accel-redirect") == []
+    assert File.exists?(variant_path)
   end
 
   test "does not serve another user's image variant", %{

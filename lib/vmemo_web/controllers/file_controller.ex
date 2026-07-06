@@ -49,7 +49,9 @@ defmodule VmemoWeb.FileController do
          {:ok, image} <- Image.get(id, actor: current_user),
          ^user_id <- image.user_id,
          {:ok, original_path} <- ImageStorage.storage_path_from_url(image.url, user_id),
-         file_path <- ImageStorage.variant_path(original_path, variant),
+         file_path <- image_variant_path(original_path, variant),
+         :ok <-
+           request_missing_image_variants(image, current_user, original_path, variant, file_path),
          true <- File.exists?(file_path) do
       send_storage_file(conn, file_path)
     else
@@ -191,6 +193,33 @@ defmodule VmemoWeb.FileController do
   defp normalize_image_variant("detail"), do: {:ok, :detail}
   defp normalize_image_variant("original"), do: {:ok, :original}
   defp normalize_image_variant(_), do: {:error, :invalid_variant}
+
+  defp image_variant_path(original_path, :original), do: original_path
+
+  defp image_variant_path(original_path, variant) do
+    variant_path = ImageStorage.variant_path(original_path, variant)
+
+    if File.exists?(variant_path) do
+      variant_path
+    else
+      original_path
+    end
+  end
+
+  defp request_missing_image_variants(image, current_user, original_path, variant, file_path)
+       when variant in [:thumb, :detail] and file_path == original_path do
+    _ = Image.request_generate_thumbnails(image, %{}, actor: current_user)
+    :ok
+  end
+
+  defp request_missing_image_variants(
+         _image,
+         _current_user,
+         _original_path,
+         _variant,
+         _file_path
+       ),
+       do: :ok
 
   defp image_path(user_id, filename), do: safe_storage_path([user_id, "images", filename])
 
