@@ -60,7 +60,14 @@ vmemo/                          # Repository root
 - UI user-facing copy must support i18n via Gettext with `en`, `zh`, and `ja`.
 
 ## Delivery and PR rules
-Use the `@vmemo-github-pull-request` skill for delivery validation and PR workflow rules.
+- Write commit messages and PR titles and bodies in Chinese.
+- Use the `@vmemo-github-pull-request` skill for delivery validation and PR workflow rules.
+
+## Project workflow rules
+- The project is under active development. Do not preserve backward compatibility unless the user explicitly requires it; prefer lower complexity.
+- Do not repeatedly revise migration files within one PR.
+- Use TDD: write a failing test, implement the minimum change that passes, then refactor.
+- Keep plan documents synchronized with implementation. When the approach changes, update or split the affected document immediately so it does not describe abandoned behavior.
 
 ## Postmortems
 
