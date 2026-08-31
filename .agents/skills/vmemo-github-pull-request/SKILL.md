@@ -1,5 +1,5 @@
 ---
-name: "vmemo-github-Pull-Request-skill"
+name: "vmemo-github-pull-request"
 description: "Run the full GitHub PR lifecycle: create, update, assign, and keep PR content in sync with new commits."
 ---
 
